@@ -54,7 +54,10 @@
       "id": 21,
       "name": "Ascendant 1"
      },
-     "account_level": 120
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
     },
     {
      "puuid": "puuid-2",
@@ -84,7 +87,10 @@
       "id": 15,
       "name": "Ascendant 1"
      },
-     "account_level": 120
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
     },
     {
      "puuid": "puuid-3",
@@ -114,7 +120,10 @@
       "id": 21,
       "name": "Ascendant 1"
      },
-     "account_level": 120
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
     },
     {
      "puuid": "puuid-4",
@@ -144,7 +153,10 @@
       "id": 0,
       "name": "Ascendant 1"
      },
-     "account_level": 120
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
     }
    ],
    "observers": [],
@@ -169,8 +181,16 @@
      "premier_roster": null
     }
    ],
-   "rounds": [],
-   "kills": []
+   "rounds": [
+    {
+     "round": 0
+    }
+   ],
+   "kills": [
+    {
+     "kill": 0
+    }
+   ]
   },
   {
    "metadata": {
@@ -225,7 +245,10 @@
       "id": 21,
       "name": "Ascendant 1"
      },
-     "account_level": 120
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
     },
     {
      "puuid": "puuid-2",
@@ -255,7 +278,10 @@
       "id": 15,
       "name": "Ascendant 1"
      },
-     "account_level": 120
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
     },
     {
      "puuid": "puuid-3",
@@ -285,7 +311,10 @@
       "id": 21,
       "name": "Ascendant 1"
      },
-     "account_level": 120
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
     },
     {
      "puuid": "puuid-4",
@@ -315,7 +344,10 @@
       "id": 0,
       "name": "Ascendant 1"
      },
-     "account_level": 120
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
     }
    ],
    "observers": [],
@@ -340,8 +372,16 @@
      "premier_roster": null
     }
    ],
-   "rounds": [],
-   "kills": []
+   "rounds": [
+    {
+     "round": 0
+    }
+   ],
+   "kills": [
+    {
+     "kill": 0
+    }
+   ]
   }
  ]
 }

@@ -53,6 +53,12 @@ class HenrikTest(unittest.TestCase):
         self.henrik.account("名前 x", "JP1")
         self.assertIn("/v2/account/%E5%90%8D%E5%89%8D%20x/JP1", self.fetch.asked[0][0])
 
+    def test_matches_are_kept_without_rounds_and_kills(self):
+        matches = self.henrik.matches("ap", "Tester", "JP1")
+        self.assertEqual(set(matches[0]), {"metadata", "players", "teams"})
+        self.assertNotIn("ability_casts", matches[0]["players"][0])
+        self.assertEqual(set(self.henrik.mmr("ap", "Tester", "JP1")), {"current", "peak"})
+
     def test_unknown_region(self):
         self.henrik.mmr("zz", "A", "B")
         self.assertIn("/v3/mmr/ap/pc/A/B", self.fetch.asked[0][0])
@@ -91,6 +97,13 @@ class StatsTest(unittest.TestCase):
 
     def test_by_name(self):
         self.assertEqual(stats.find_player(self.match, name="mate", tag="0001")["puuid"], "puuid-2")
+
+    def test_summary_counts_the_standard_games(self):
+        line = stats.line(stats.find_player(self.match, "puuid-me"), 22)
+        row = {"line": line, "result": {"won": True}, "agent_id": "a", "agent_name": "A", "standard": True}
+        other = dict(row, result={"won": False}, standard=False)
+        self.assertEqual(stats.summary([row, other])["games"], 1)
+        self.assertEqual(stats.summary([other])["games"], 1, "only other games: they are counted")
 
     def test_nothing_to_sum(self):
         self.assertEqual(stats.summary([]), {})

@@ -24,6 +24,11 @@ NAME = re.compile(r"^[^#/\\?<>\x00-\x1f]{1,16}$")
 TAG = re.compile(r"^[^\W_]{2,5}$")
 MATCH_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 REGIONS = ("ap", "br", "eu", "kr", "latam", "na")
+#: What the pages use of a match. The rest (every round and kill, about 0.5 MB a match) is dropped before
+#: it is kept, so the memory of the small VM holds hundreds of matches instead of a few dozen.
+METADATA = ("match_id", "map", "game_length_in_ms", "started_at", "is_completed", "queue", "season", "region")
+PLAYER = ("puuid", "name", "tag", "team_id", "party_id", "agent", "stats", "tier", "account_level")
+TEAM = ("team_id", "rounds", "won")
 
 
 class HenrikError(Exception):
@@ -60,19 +65,18 @@ class Henrik:
     def mmr(self, region: str, name: str, tag: str) -> dict:
         """``{"current": {"tier": {"id", "name"}, "rr", "last_change", ...}, "peak": ..., "seasonal": [...]}``."""
         path = f"/valorant/v3/mmr/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}"
-        return self._get(("mmr", region, name.lower(), tag.lower()), path, KEEP["mmr"])
+        slim = lambda data: _pick(data, ("current", "peak"))  # noqa: E731 - the seasons' history is not shown
+        return self._get(("mmr", region, name.lower(), tag.lower()), path, KEEP["mmr"], slim)
 
     def matches(self, region: str, name: str, tag: str, size: int = 10) -> list:
         """The latest matches, newest first, each as ``match`` gives it."""
         path = f"/valorant/v4/matches/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}?" + urlencode(
             {"size": size}
         )
-        found = self._get(("matches", region, name.lower(), tag.lower(), size), path, KEEP["matches"])
-        if not isinstance(found, list):
-            raise HenrikError("down")
+        found = self._get(("matches", region, name.lower(), tag.lower(), size), path, KEEP["matches"], _slim_matches)
         for match in found:  # each one is also a whole match: opening it costs no call
-            match_id = (match.get("metadata") or {}).get("match_id") if isinstance(match, dict) else None
-            if match_id and (match.get("metadata") or {}).get("is_completed", True):
+            match_id = match["metadata"].get("match_id")
+            if match_id and match["metadata"].get("is_completed", True):
                 self.cache.put(("match", str(match_id)), match, KEEP["match"])
         return found
 
@@ -84,9 +88,9 @@ class Henrik:
         if kept is not None:
             return kept
         path = f"/valorant/v4/match/{_region(region)}/{match_id}"
-        return self._get(("match", match_id), path, KEEP["match"])
+        return self._get(("match", match_id), path, KEEP["match"], _slim_match)
 
-    def _get(self, cache_key, path: str, seconds: float):
+    def _get(self, cache_key, path: str, seconds: float, shape=None):
         kept = self.cache.get(cache_key)
         if kept is not None:
             return kept
@@ -110,8 +114,31 @@ class Henrik:
             raise HenrikError("down") from None
         if data is None:
             raise HenrikError("notfound")
+        if shape is not None:
+            data = shape(data)
         self.cache.put(cache_key, data, seconds)
         return data
+
+
+def _pick(item, keys) -> dict:
+    return {key: item.get(key) for key in keys} if isinstance(item, dict) else {}
+
+
+def _slim_match(match) -> dict:
+    """A match with what the pages use only (METADATA, PLAYER, TEAM)."""
+    if not isinstance(match, dict) or not isinstance(match.get("metadata"), dict):
+        raise HenrikError("down")
+    return {
+        "metadata": _pick(match["metadata"], METADATA),
+        "players": [_pick(player, PLAYER) for player in match.get("players") or [] if isinstance(player, dict)],
+        "teams": [_pick(team, TEAM) for team in match.get("teams") or [] if isinstance(team, dict)],
+    }
+
+
+def _slim_matches(matches) -> list:
+    if not isinstance(matches, list):
+        raise HenrikError("down")
+    return [_slim_match(match) for match in matches if isinstance(match, dict) and match.get("metadata")]
 
 
 def _part(text: str) -> str:

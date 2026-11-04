@@ -13,8 +13,9 @@ Fetch = Callable[[str, dict], tuple[int, bytes]]
 
 USER_AGENT = "VAL-Tracker/0.1 (+https://github.com/AlstRafe/valorant-project)"
 TIMEOUT = 10.0
-#: An answer bigger than this is not one of the answers we ask for.
-MAX_BYTES = 8 * 1024 * 1024
+#: An answer bigger than this is not one of the answers we ask for (HenrikDev's 10 latest matches, with every
+#: round and kill in them, are about 5 MB).
+MAX_BYTES = 24 * 1024 * 1024
 
 _TLS = ssl.create_default_context()
 

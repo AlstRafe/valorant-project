@@ -21,6 +21,8 @@ QUEUES = {
     "custom": "カスタム",
     "newmap": "新マップ",
     "snowball": "スノーボールファイト",
+    "skirmish_1v1": "スカーミッシュ",
+    "skirmish_2v2": "スカーミッシュ",
 }
 #: Why a player or match could not be shown -> (HTTP status, the visitor's words, the owner's words).
 FAILURES = {
@@ -109,6 +111,8 @@ def _row(match: dict, player: dict) -> dict:
         "result": stats.team_result(match, str(player.get("team_id") or "")),
         "line": stats.line(player, rounds),
         "rounds": rounds,
+        # Deathmatch, Skirmish and the like would skew the averages: the summary counts the standard games.
+        "standard": str((metadata.get("queue") or {}).get("mode_type") or "Standard") == "Standard",
     }
 
 

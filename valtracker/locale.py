@@ -149,6 +149,7 @@ TEXTS = {
     "プレミア": {"ko": "프리미어", "en-GB": "Premier", "zh-TW": "Premier"},
     "カスタム": {"ko": "사용자 설정", "en-GB": "Custom", "zh-TW": "自訂對戰"},
     "新マップ": {"ko": "새로운 맵", "en-GB": "New Map", "zh-TW": "新地圖"},
+    "スカーミッシュ": {"ko": "스커미시", "en-GB": "Skirmish", "zh-TW": "小規模戰鬥"},
     "スノーボールファイト": {"ko": "눈싸움", "en-GB": "Snowball Fight", "zh-TW": "雪球大戰"},
     # Agents
     "役割とアビリティの説明です。": {

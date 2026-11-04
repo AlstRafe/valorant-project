@@ -83,8 +83,9 @@ def find_player(match: dict, puuid: str = "", name: str = "", tag: str = "") -> 
 
 
 def summary(rows: list[dict]) -> dict:
-    """Over the matches shown: wins and losses, win rate, average K/D/A, ACS, HS%, and the agents played most."""
+    """Over the matches shown (the standard games, when there are any): wins and losses, win rate, average K/D/A, ACS, HS%, and the agents played most."""
     played = [row for row in rows if row.get("line")]
+    played = [row for row in played if row.get("standard", True)] or played
     if not played:
         return {}
     count = len(played)
