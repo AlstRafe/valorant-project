@@ -1,0 +1,15 @@
+{
+  "name": "valorant-project",
+  "private": true,
+  "description": "Tools for the scripts and styles in valtracker/static (Prettier, ESLint). The app itself is Python: requirements.txt.",
+  "scripts": {
+    "format": "prettier --write .",
+    "lint": "prettier --check . && eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.14.0",
+    "globals": "17.14.0",
+    "prettier": "3.9.10"
+  }
+}

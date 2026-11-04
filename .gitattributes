@@ -1,0 +1,7 @@
+# Line endings in every checkout (Windows too), as .editorconfig says. The same file in Home Page, News Site and Infra Game.
+* text=auto eol=lf
+# cmd.exe wants CRLF.
+*.bat text eol=crlf
+*.sh text eol=lf
+# A patch keeps the lines it changes exactly as they are.
+*.patch -text

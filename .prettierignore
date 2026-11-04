@@ -1,0 +1,6 @@
+# Jinja templates: Prettier does not know {{ }} and {% %}.
+*.html
+# The tests' made-up answers of the outside APIs stay as written.
+tests/fixtures/
+instance/
+package-lock.json

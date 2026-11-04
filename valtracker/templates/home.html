@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block main %}
+<section class="hero">
+<h1>{{ t('プレイヤーを探す') }}</h1>
+<p class="lead">{{ t('Riot ID（名前#タグ）でランクと最近の試合を調べられます。☆を付けたプレイヤーはこのブラウザに保存され、ここに並びます。') }}</p>
+<form class="search" action="{{ url_for('search') }}" method="get" role="search">
+<label for="q" class="sr">{{ t('Riot ID') }}</label>
+<input id="q" name="q" type="search" value="{{ query }}" placeholder="{{ t('名前#タグ') }}" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" maxlength="40" required{% if problem %} aria-invalid="true" aria-describedby="q-problem"{% endif %}>
+<button type="submit">{{ t('検索') }}</button>
+</form>
+{% if problem %}<p class="problem" id="q-problem" role="alert">{{ problem }}</p>{% endif %}
+</section>
+
+<section class="people" aria-labelledby="fav-title">
+<h2 id="fav-title">{{ t('お気に入り') }}</h2>
+<ul class="people-list" id="favorites" data-base="{{ request.script_root }}/p/" data-empty="{{ t('まだありません。プレイヤーのページで ☆ を押すと、ここに並びます。') }}"></ul>
+<noscript><p class="note">{{ t('お気に入りを使うには JavaScript を有効にしてください。') }}</p></noscript>
+</section>
+
+<section class="people" aria-labelledby="recent-title">
+<h2 id="recent-title">{{ t('最近見たプレイヤー') }}</h2>
+<ul class="people-list" id="recent" data-base="{{ request.script_root }}/p/" data-empty="{{ t('まだありません。') }}"></ul>
+</section>
+<template id="person"><li><a class="person"><span class="pname"></span><span class="ptag"></span></a></li></template>
+{% endblock %}

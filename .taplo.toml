@@ -1,0 +1,13 @@
+# TOML style (Taplo) for Home Page and News Site: the same file in each repository that has TOML files.
+# VS Code: the Even Better TOML extension reads it. Commands: uvx taplo@0.9.3 fmt (--check), the native Taplo from
+# PyPI like Ruff: the npm @taplo/cli finds no files on Windows, so its checks passed without looking.
+include = ["**/*.toml"]
+exclude = ["node_modules/**", ".venv/**", "instance/**"]
+
+[formatting]
+column_width = 120
+# One space before a comment: lining comments up would push them past the long lines (sites.toml).
+align_comments = false
+# Arrays stay as written: a short list on one line, a commented list one entry per line.
+array_auto_expand = false
+array_auto_collapse = false
