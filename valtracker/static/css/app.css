@@ -3479,10 +3479,11 @@ code {
   overflow-wrap: anywhere;
 }
 .versus-two tbody th {
+  font-size: 0.9rem;
   white-space: normal;
 }
 .versus-two th:first-child {
-  width: 30%;
+  width: 34%;
 }
 .versus-two .short-name {
   display: block;
