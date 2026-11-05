@@ -14,6 +14,7 @@ python -m unittest discover -s tests
 ```
 
 - 戦績には HenrikDev API のキーが要る。[ダッシュボード](https://api.henrikdev.xyz/dashboard/)の「API Keys」で作り、画面の「設定」に入れる（`instance/settings.json` に保存。Git には入らない）。試すだけなら環境変数 `VAL_HENRIK_KEY` でもよい
+- 所持品（`/val/collection`、持ち主だけ）は、設定に Riot の `ssid` クッキーを一度貼ると見られる（手順は設定ページ。仕組みは [DESIGN.md](docs/DESIGN.md#riot-のログイン段階2valtrackerriotpy)）
 - エージェントやマップの名前と絵は valorant-api.com から取り、`instance/` にためて自分のアドレスで出す（外部の読み込みはしない）
 
 ## Home Page に載せる
