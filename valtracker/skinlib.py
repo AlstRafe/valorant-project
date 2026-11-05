@@ -11,7 +11,7 @@ from flask import Flask, abort, current_app, g, redirect, render_template, reque
 
 from valtracker import security
 from valtracker.collection import TIERS, _tier, _weapon_order
-from valtracker.content import Content
+from valtracker.content import Content, variant_name
 from valtracker.views import _t
 
 #: Shown when the visitor has chosen nothing: the weapon most skins are bought for.
@@ -152,15 +152,6 @@ def _list_page(content: Content, lang: str) -> dict:
     }
 
 
-def _variant_name(name: str, skin_name: str) -> str:
-    """A chroma's own part of its name: "Reaver Vandal Level 4 (Variant 1 Red)" -> "Variant 1 Red"."""
-    inside = re.search(r"\(([^()]+)\)\s*$", name)
-    if inside:
-        return inside.group(1).strip()
-    rest = name[len(skin_name) :].strip() if name.startswith(skin_name) else name
-    return rest or name
-
-
 def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
     found = content.skins(lang).get(uuid)
     if not found:
@@ -178,7 +169,7 @@ def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
         chromas.append(
             {
                 "uuid": _id(part.get("uuid")),
-                "name": _t("標準") if number == 0 else _variant_name(_words(part.get("displayName")), name),
+                "name": _t("標準") if number == 0 else variant_name(part.get("displayName"), name),
                 "swatch": part.get("swatch") or "",
                 "image": part.get("fullRender") or part.get("displayIcon") or "",
                 "video": part.get("streamedVideo") or "",

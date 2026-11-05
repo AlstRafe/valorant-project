@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% macro bar(entry) -%}
+<li class="contract{% if entry.complete %} complete{% endif %}">
+{% if entry.icon %}<img src="{{ media(entry.icon) }}" alt="" width="40" height="40" loading="lazy">{% endif %}
+<div class="contract-text">
+<p class="contract-head"><strong>{{ entry.name }}</strong> <span>{% if entry.complete %}完了{% else %}レベル {{ entry.reached }} / {{ entry.main }}{% if entry.epilogue %}（エピローグ）{% endif %}{% endif %}</span></p>
+<meter min="0" max="100" value="{{ entry.share }}" aria-label="{{ entry.name }} の進み具合">{{ entry.share }}%</meter>
+<p class="contract-sub">{{ entry.share }}%{% if entry.next %} · 次のレベルまで {{ '{:,}'.format(entry.next - entry.toward) }} XP{% endif %}</p>
+</div>
+</li>
+{%- endmacro %}
+{% block title %}進み具合 · {{ site_name }}{% endblock %}
+{% block main %}
+<div lang="ja">
+<section class="hero">
+<h1>進み具合</h1>
+<p class="lead">バトルパス、イベントのパス、エージェントの契約、ミッションの進み具合です。</p>
+</section>
+{% include "_pages.html" %}
+{% if problem %}
+<p class="problem" role="alert">{{ problem }}{% if detail %} <code>{{ detail }}</code>{% endif %}</p>
+{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">設定で Riot と連携する</a></p>{% endif %}
+{% elif not read %}
+<p class="problem" role="alert">読み込めませんでした。時間をおいてもう一度どうぞ。{% if problem_detail %} <code>{{ problem_detail }}</code>{% endif %}</p>
+{% else %}
+<section aria-labelledby="pass-title">
+<h2 id="pass-title">バトルパス{% if act %} <small>{{ act }}</small>{% endif %}</h2>
+{% if battle_pass %}<ul class="contracts">{{ bar(battle_pass) }}</ul>{% else %}<p class="note">いまのアクトのバトルパスは見つかりませんでした。</p>{% endif %}
+</section>
+{% if events %}
+<section aria-labelledby="event-title">
+<h2 id="event-title">イベント</h2>
+<ul class="contracts">{% for entry in events %}{{ bar(entry) }}{% endfor %}</ul>
+</section>
+{% endif %}
+<section aria-labelledby="mission-title">
+<h2 id="mission-title">ミッション</h2>
+{% if missions.count %}<p><strong>{{ missions.done }} / {{ missions.count }}</strong> 完了{% if missions.ends %} · 次の締め切り <time datetime="{{ missions.ends.iso }}">{{ missions.ends.text }}</time>{% endif %}</p>{% else %}<p class="note">いまのミッションはありません。</p>{% endif %}
+{% if missions.refill %}<p class="note">週のミッションが補充されるのは <time datetime="{{ missions.refill.iso }}">{{ missions.refill.text }}</time></p>{% endif %}
+</section>
+{% if agents %}
+<section aria-labelledby="agent-title">
+<h2 id="agent-title">エージェントの契約</h2>
+<ul class="contracts">{% for entry in agents %}{{ bar(entry) }}{% endfor %}</ul>
+</section>
+{% endif %}
+{% if missing %}<p class="note">読み込めなかったもの: {{ missing|join(', ') }}{% if problem_detail %} <code>{{ problem_detail }}</code>{% endif %}</p>{% endif %}
+<p class="note">ゲームで進めた分は 2 分ほどで出ます。レベルごとの XP は valorant-api.com から。</p>
+{% endif %}
+</div>
+{% endblock %}

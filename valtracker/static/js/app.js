@@ -595,6 +595,16 @@
     }
   }
 
+  // The owner's match being played: the page is read again every few seconds while it is in view.
+  function refresh() {
+    var box = document.querySelector("[data-refresh]");
+    if (!box) return;
+    var seconds = Math.max(3, Number(box.getAttribute("data-refresh")) || 10);
+    setInterval(function () {
+      if (document.visibilityState === "visible" && !document.querySelector("select:focus")) location.reload();
+    }, seconds * 1000);
+  }
+
   // The owner's collection lists every item of a tab at once: the names are narrowed as they are typed.
   function finder() {
     var input = document.getElementById("find");
@@ -648,6 +658,7 @@
     zone();
     teams();
     night();
+    refresh();
   });
   addEventListener("storage", function (e) {
     if (e.key === FAVORITES || e.key === RECENT || e.key === null) lists();

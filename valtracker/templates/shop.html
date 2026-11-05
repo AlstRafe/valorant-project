@@ -36,7 +36,7 @@
 <h1>{{ t('ショップ') }}</h1>
 <p class="lead">{{ t('いまストアに並んでいるバンドルと、その値段（VALORANT ポイント）です。') }}</p>
 </section>
-<nav class="modes" aria-label="{{ t('ページ') }}"><a href="{{ url_for('shop') }}" aria-current="true">{{ t('ショップ') }}</a>{% if owner %}<a href="{{ url_for('collection') }}" lang="ja">所持品</a>{% endif %}<a href="{{ url_for('skins') }}">{{ t('スキン図鑑') }}</a></nav>
+{% include "_pages.html" %}
 {% if owner %}
 <div lang="ja">
 {% if own_problem %}

@@ -764,6 +764,9 @@ def register(app: Flask) -> None:
             values = {"problem": RIOT_FAILURES.get(error.kind, RIOT_FAILURES["down"]), "detail": error.detail}
             return render_template("collection.html", **values, settings_link=status == 200), status
         values = owned_items.page(found, current_app.config["VAL_CONTENT"], g.lang, show)
+        from valtracker.owner import equip_said
+
+        values["equip_said"], values["equip_ok"] = equip_said(request.args.get("equip", "")[:20])
         return render_template("collection.html", **values)
 
     @app.route("/settings", methods=["GET", "POST"])
@@ -805,11 +808,12 @@ def register(app: Flask) -> None:
             riot_link=AUTHORIZE,
         )
 
-    from valtracker import skinlib, tools, world
+    from valtracker import owner, skinlib, tools, world
 
     tools.register(app)
     world.register(app)
     skinlib.register(app)
+    owner.register(app)
 
     @app.errorhandler(404)
     def not_found(error):

@@ -2099,6 +2099,10 @@ meter {
 .item:not(:has(> img)) .badge {
   position: static;
 }
+/* A card that opens the skin's page has its picture in the link: the corner is still free. */
+.item:has(> .skin-link > img) .badge {
+  position: absolute;
+}
 /* The skin's tier, as the game colours it (Select, Deluxe, Premium, Exclusive, Ultra). */
 .skins .item {
   border-top: 4px solid var(--rule);
@@ -3193,6 +3197,164 @@ code {
 .history-night {
   margin: 1rem 0 0;
   font-size: 1rem;
+}
+
+/* The owner's progress (progress.html), the match being played (live.html) and wearing from the collection. */
+.contracts,
+.seats,
+.roles {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.contract,
+.seat {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.contract > img,
+.seat > img,
+.no-agent {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.no-agent {
+  display: grid;
+  place-items: center;
+  background: var(--rule);
+  color: var(--soft);
+  font-weight: 700;
+}
+.contract-text,
+.seat-text {
+  display: grid;
+  flex: 1;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.contract-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.2rem 0.8rem;
+  margin: 0;
+}
+.contract-head span,
+.contract-sub,
+.seat-text small {
+  color: var(--soft);
+  font-size: 0.85rem;
+}
+.contract-sub {
+  margin: 0;
+}
+.contract meter {
+  width: 100%;
+  height: 0.6rem;
+}
+.contract.complete {
+  opacity: 0.7;
+}
+.seat.me {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.seat.locked .seat-text small {
+  color: var(--ink);
+}
+.seat-text strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.seat-text .tag {
+  color: var(--soft);
+  font-weight: 400;
+}
+.hidden-name {
+  color: var(--soft);
+  font-weight: 400;
+}
+.seat-rank img {
+  display: block;
+  width: 1.75rem;
+  height: 1.75rem;
+}
+.live-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+}
+.live-head img {
+  width: 10rem;
+  max-width: 40%;
+  height: 3.5rem;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.roles li {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.6rem 0.9rem;
+  border-left: 4px solid var(--draw);
+  border-radius: 6px;
+  background: var(--card);
+}
+.role-agents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.8rem;
+}
+.role-agent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.role-agent img {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 6px;
+}
+.wear {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem;
+  width: 100%;
+  margin-top: 0.3rem;
+}
+.wear select {
+  flex: 1 1 7rem;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.4rem;
+  padding: 0 0.4rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+}
+.wear button,
+.titles .item button {
+  min-height: 2.4rem;
+  padding: 0 0.8rem;
+  font-size: 0.85rem;
+}
+.titles .item button {
+  margin-left: 0.4rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

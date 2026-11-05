@@ -47,6 +47,13 @@ const MADE_UP = [
   "/settings",
   "/skins/aa000000-0000-4000-8000-000000000001",
   "/skins/aa000000-0000-4000-8000-000000000001?chroma=aa000000-0000-4000-8000-000000000022",
+  "/shop/history",
+  "/progress",
+  "/live",
+  "/live?phase=pregame",
+  "/live?phase=ingame",
+  "/collection?show=cards",
+  "/collection?show=titles",
 ];
 // Found before the pages are looked at (the real site's skin video): added to the problems at the end.
 const early = [];

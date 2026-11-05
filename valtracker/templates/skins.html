@@ -14,7 +14,7 @@
 <h1>{{ t('スキン図鑑') }}</h1>
 <p class="lead">{{ t('VALORANT の武器スキンを全部。武器・ティア・名前で探して、バリエーションやレベルごとの動画を見られます。') }}</p>
 </section>
-<nav class="modes" aria-label="{{ t('ページ') }}"><a href="{{ url_for('shop') }}">{{ t('ショップ') }}</a>{% if owner %}<a href="{{ url_for('collection') }}" lang="ja">所持品</a>{% endif %}<a href="{{ url_for('skins') }}" aria-current="true">{{ t('スキン図鑑') }}</a></nav>
+{% include "_pages.html" %}
 {% if not total %}
 <p class="problem" role="alert">{{ t('スキンの一覧を読み込めませんでした。時間をおいてもう一度どうぞ。') }}</p>
 {% else %}

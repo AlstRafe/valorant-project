@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% macro person(row) -%}
+<li class="seat{% if row.me %} me{% endif %}{% if row.state %} {{ row.state }}{% endif %}">
+{% if row.agent_icon %}<img src="{{ media(row.agent_icon) }}" alt="" width="40" height="40">{% else %}<span class="no-agent" aria-hidden="true">?</span>{% endif %}
+<span class="seat-text">
+<strong>{% if row.name %}<a href="{{ url_for('player', name=row.name, tag=row.tag) }}">{{ row.name }}<span class="tag">#{{ row.tag }}</span></a>{% elif row.me %}あなた{% else %}<span class="hidden-name">名前を隠しています</span>{% endif %}</strong>
+<small>{% if row.agent %}{{ row.agent }}{% if row.state == 'selected' %}（選択中）{% elif row.state == 'locked' %}（確定）{% endif %}{% else %}まだ選んでいません{% endif %}{% if row.level %} · レベル {{ row.level }}{% endif %}</small>
+</span>
+{% if row.rank %}<span class="seat-rank">{% if row.rank.icon %}<img src="{{ media(row.rank.icon) }}" alt="" width="28" height="28">{% endif %}<span class="sr">{{ row.rank.name }}</span></span>{% endif %}
+</li>
+{%- endmacro %}
+{% block title %}いまの試合 · {{ site_name }}{% endblock %}
+{% block main %}
+<div lang="ja" data-refresh="{{ 5 if phase else 20 }}">
+<section class="hero">
+<h1>いまの試合</h1>
+<p class="lead">エージェント選択では味方の構成と足りない役割、試合中は全員のエージェントとランクです。ページは数秒ごとに新しくなります。</p>
+</section>
+{% include "_pages.html" %}
+{% if problem %}
+<p class="problem" role="alert">{{ problem }}{% if detail %} <code>{{ detail }}</code>{% endif %}</p>
+{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">設定で Riot と連携する</a></p>{% endif %}
+{% elif not phase %}
+<p class="note">いまは試合をしていません。キューに入ってエージェント選択が始まると、ここに出ます。</p>
+{% else %}
+<p class="live-head">{% if map.image %}<img src="{{ media(map.image) }}" alt="" width="160" height="60">{% endif %}<span><strong>{{ map.name or 'マップ' }}</strong>{% if queue %} · {{ queue }}{% endif %} · {{ 'エージェント選択' if phase == 'pregame' else '試合中' }}{% if left %} · 残り {{ left }} 秒{% endif %}</span></p>
+{% if phase == 'pregame' %}
+<section aria-labelledby="ally-title">
+<h2 id="ally-title">味方</h2>
+<ul class="seats">{% for row in players %}{{ person(row) }}{% endfor %}</ul>
+{% if enemy_size %}<p class="note">相手は {{ enemy_locked }} / {{ enemy_size }} 人が確定</p>{% endif %}
+</section>
+<section aria-labelledby="comp-title">
+<h2 id="comp-title">構成の目安</h2>
+{% if missing_roles %}
+<p>味方にまだいない役割です。{% if missing_roles|length > 1 %}上から順に埋めるのがよくある形です。{% endif %}</p>
+<ul class="roles">
+{% for role in missing_roles %}<li><strong>{{ role.name }}</strong>{% if role.agents %}<span class="role-agents">{% for agent in role.agents %}<span class="role-agent">{% if agent.icon %}<img src="{{ media(agent.icon) }}" alt="" width="28" height="28">{% endif %}{{ agent.name }}</span>{% endfor %}</span>{% else %}<small>持っているエージェントでは埋められません</small>{% endif %}</li>
+{% endfor %}</ul>
+<p class="note">あなたが持っているエージェントから、まだ選ばれていないものを出しています。マップや相手に合わせて選んでください。</p>
+{% else %}
+<p>役割はそろっています。</p>
+{% endif %}
+</section>
+{% else %}
+{% for team in teams %}
+<section aria-labelledby="team-{{ loop.index }}">
+<h2 id="team-{{ loop.index }}">{{ '味方' if team.ours else '相手' }}</h2>
+<ul class="seats">{% for row in team.players %}{{ person(row) }}{% endfor %}</ul>
+</section>
+{% endfor %}
+{% endif %}
+{% if names_missing %}<p class="note">名前を読み込めませんでした。</p>{% endif %}
+<p class="note">名前を隠しているプレイヤーの名前は出しません。</p>
+{% endif %}
+</div>
+{% endblock %}

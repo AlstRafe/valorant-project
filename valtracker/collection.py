@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from collections import Counter
 
-from valtracker.content import Content
+from valtracker.content import Content, variant_name
 
 #: The tabs: the collection's kind -> its name on the page (the owner's page: Japanese only).
 TABS = {
@@ -154,12 +154,28 @@ def _skins(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict
                 )
                 or (worn or (parts[0] if parts else {})).get("fullRender")
             )
+            # the variants the owner can wear: the first comes with the skin, the others once unlocked
+            wearable = [
+                {
+                    "uuid": _id(part.get("uuid")),
+                    "name": variant_name(part.get("displayName"), skin.get("displayName") or ""),
+                }
+                for number, part in enumerate(parts)
+                if number == 0 or _id(part.get("uuid")) in chromas
+            ]
+            for number, part in enumerate(wearable):
+                part["current"] = on and part["uuid"] == equipped.get(uuid)
+                if number == 0:
+                    part["name"] = "標準"
             items.append(
                 {
+                    "uuid": uuid,
+                    "weapon": _id(weapon.get("uuid")),
                     "name": skin.get("displayName") or "",
                     "image": picture,
                     "tier": _tier(skin, tiers),
                     "equipped": on,
+                    "wearable": wearable if len(wearable) > 1 else [],
                     # the first chroma comes with the skin; the others are unlocked one by one
                     "variants": 1 + sum(_id(part.get("uuid")) in chromas for part in parts[1:])
                     if len(parts) > 1
@@ -194,6 +210,7 @@ def _simple(kind: str, owned, content: Content, lang: str, picture, equipped: Co
             copies[_id(known.get("uuid"))] += count
     listed = [
         {
+            "uuid": uuid,
             "name": (name(known) if name else "") or known.get("displayName") or "",
             "image": picture(known),
             "copies": copies[uuid],
