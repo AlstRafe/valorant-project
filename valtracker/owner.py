@@ -89,6 +89,27 @@ def _wear_identity(found: dict, kind: str, uuid: str):
     return change, ""
 
 
+def _wear_spray(found: dict, uuid: str, slot: str):
+    """The change that puts an owned spray in one place of the wheel (one the loadout has)."""
+    index = current_app.config["VAL_CONTENT"].index("sprays", g.lang)
+    owned = {_id((index.get(item) or {}).get("uuid")) for item in (found.get("owned") or {}).get("sprays") or {}}
+    if uuid not in owned:  # PD names a spray's level (its uuid or its level's)
+        return None, "unknown"
+    loadout = found.get("loadout") if isinstance(found.get("loadout"), dict) else {}
+    slots = [str(spray.get("EquipSlotID")) for spray in loadout.get("Sprays") or [] if isinstance(spray, dict)]
+    if slot not in slots:
+        return None, "unknown"
+
+    def change(loadout: dict) -> None:
+        for spray in loadout.get("Sprays") or []:
+            if isinstance(spray, dict) and str(spray.get("EquipSlotID")) == slot:
+                spray["SprayID"], spray["SprayLevelID"] = uuid, None
+                return
+        raise RiotError("down", "equip: no spray slot")
+
+    return change, ""
+
+
 def register(app: Flask) -> None:
     @app.get("/progress")
     def progress():
@@ -124,7 +145,7 @@ def register(app: Flask) -> None:
     def equip():
         security.owner_only()
         show = request.form.get("show", "skins")
-        show = show if show in ("skins", "cards", "titles") else "skins"
+        show = show if show in ("skins", "cards", "titles", "sprays") else "skins"
         uuid = _id(request.form.get("item"))
         riot = current_app.config["VAL_RIOT"]
         try:
@@ -133,6 +154,8 @@ def register(app: Flask) -> None:
             return redirect(url_for("collection", show=None if show == "skins" else show, equip=error.kind), 303)
         if show == "skins":
             change, why = _wear_skin(found, uuid, _id(request.form.get(f"chroma.{uuid}")))
+        elif show == "sprays":
+            change, why = _wear_spray(found, uuid, request.form.get(f"slot.{uuid}", ""))
         else:
             change, why = _wear_identity(found, show, uuid)
         if change is not None:

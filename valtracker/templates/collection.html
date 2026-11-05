@@ -37,7 +37,7 @@
 <p class="note" lang="ja">まだありません。</p>
 {% else %}
 <p class="find" hidden><label for="find" class="sr" lang="ja">名前で絞り込む</label><input id="find" type="search" placeholder="名前で絞り込む" autocomplete="off" spellcheck="false" enterkeyhint="search"></p>
-{% set wear = show in ('skins', 'cards', 'titles') %}
+{% set wear = show in ('skins', 'cards', 'titles') or (show == 'sprays' and spray_slots) %}
 {% if wear %}<form class="equip-form" method="post" action="{{ url_for('equip') }}" lang="ja"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="show" value="{{ show }}">{% endif %}
 {% if show == 'skins' %}
 {% for group in items %}
@@ -68,7 +68,9 @@
 {% if item.image %}<img src="{{ media(item.image) }}" alt="" width="96" height="96" loading="lazy">{% endif %}
 <span class="iname">{{ item.name }}</span>
 {% if item.copies > 1 %}<small lang="ja">{{ item.copies }} 個</small>{% endif %}
-{% if item.equipped %}<span class="badge" lang="ja">装備中{% if item.equipped > 1 %} ×{{ item.equipped }}{% endif %}</span>{% elif show == 'cards' %}<span class="wear"><button type="submit" class="quiet" name="item" value="{{ item.uuid }}" aria-label="{{ item.name }} を装備する">装備</button></span>{% endif %}
+{% if item.equipped %}<span class="badge" lang="ja">装備中{% if item.equipped > 1 %} ×{{ item.equipped }}{% endif %}</span>{% endif %}
+{% if show == 'cards' and not item.equipped %}<span class="wear"><button type="submit" class="quiet" name="item" value="{{ item.uuid }}" aria-label="{{ item.name }} を装備する">装備</button></span>
+{% elif show == 'sprays' and spray_slots %}<span class="wear"><select name="slot.{{ item.uuid }}" aria-label="{{ item.name }} を入れる場所">{% for slot in spray_slots %}<option value="{{ slot.slot }}">{{ slot.number }}{% if slot.name %}（いま {{ slot.name }}）{% endif %}</option>{% endfor %}</select><button type="submit" class="quiet" name="item" value="{{ item.uuid }}" aria-label="{{ item.name }} を装備する">装備</button></span>{% endif %}
 </li>
 {% endfor %}</ul>
 {% endif %}

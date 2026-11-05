@@ -151,6 +151,35 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("equip=ok", answer.headers["Location"])
         self.assertEqual(self.riot.worn[0]["Identity"]["PlayerCardID"], found[0])
 
+    def test_wear_a_spray(self):
+        self.link()
+        text = self.page("/collection?show=sprays")
+        self.assertIn('name="slot.dd000000-0000-4000-8000-000000000001"', text)
+        self.assertIn("1（いま GG スプレー）", text, "each place of the wheel with the spray in it")
+        answer = self.client.post(
+            "/collection/equip",
+            data={
+                "csrf": self.token(),
+                "show": "sprays",
+                "item": "dd000000-0000-4000-8000-000000000001",
+                "slot.dd000000-0000-4000-8000-000000000001": "x",
+            },
+        )
+        self.assertIn("show=sprays", answer.headers["Location"])
+        self.assertIn("equip=ok", answer.headers["Location"])
+        self.assertEqual(self.riot.worn[0]["Sprays"][0]["SprayID"], "dd000000-0000-4000-8000-000000000001")
+        answer = self.client.post(
+            "/collection/equip",
+            data={
+                "csrf": self.token(),
+                "show": "sprays",
+                "item": "dd000000-0000-4000-8000-000000000001",
+                "slot.dd000000-0000-4000-8000-000000000001": "not-a-slot",
+            },
+        )
+        self.assertIn("equip=unknown", answer.headers["Location"], "only a place the wheel has")
+        self.assertEqual(len(self.riot.worn), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

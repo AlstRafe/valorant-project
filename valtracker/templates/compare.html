@@ -23,10 +23,13 @@
 </form>
 {% for side in sides %}{% if side.problem %}<p class="problem" id="problem-{{ loop.index }}" role="alert">{{ side.asked }}: {{ side.problem }}</p>{% endif %}{% endfor %}
 {% if rows %}
+<ul class="compare-who">
+{% for side in sides %}<li><a href="{{ url_for('player', name=side.found.name, tag=side.found.tag) }}">{% if side.found.card %}<img src="{{ media('https://media.valorant-api.com/playercards/' ~ side.found.card ~ '/smallart.png') }}" alt="" width="48" height="48" loading="lazy">{% endif %}<span><strong>{{ side.found.name }}<span class="tag">#{{ side.found.tag }}</span></strong><small>{{ t('{count} 項目で上', count=wins[loop.index0]) }}</small></span></a></li>
+{% endfor %}</ul>
 <div class="table-wrap"><table class="board plain versus-two">
 <caption class="sr">{{ t('{a} と {b} の比較', a=sides[0].asked, b=sides[1].asked) }}</caption>
 <thead><tr><th scope="col"><span class="sr">{{ t('項目') }}</span></th>
-{% for side in sides %}<th scope="col"><a class="who-cell" href="{{ url_for('player', name=side.found.name, tag=side.found.tag) }}">{% if side.found.card %}<img src="{{ media('https://media.valorant-api.com/playercards/' ~ side.found.card ~ '/smallart.png') }}" alt="" width="32" height="32" loading="lazy">{% endif %}<span>{{ side.found.name }}<span class="tag">#{{ side.found.tag }}</span><small>{{ t('{count} 項目で上', count=wins[loop.index0]) }}</small></span></a></th>
+{% for side in sides %}<th scope="col"><span class="short-name" title="{{ side.asked }}">{{ side.found.name }}</span></th>
 {% endfor %}</tr></thead>
 <tbody>
 {% for row in rows %}<tr>

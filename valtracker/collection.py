@@ -76,7 +76,22 @@ def page(found: dict, content: Content, lang: str, show: str) -> dict:
         "missing": show in (found.get("missing") or []) or show not in owned,
         "items": makers[show](owned, loadout, content, lang) if show in owned else [],
         "problem_detail": found.get("problem") or "",
+        "spray_slots": _spray_slots(loadout, content, lang) if show == "sprays" else [],
     }
+
+
+def _spray_slots(loadout: dict, content: Content, lang: str) -> list[dict]:
+    """The spray wheel's places, in the loadout's order: ``[{"slot": EquipSlotID, "number", "name": the spray in
+    it}]`` (the owner picks where a spray goes)."""
+    index = content.index("sprays", lang)
+    slots = []
+    for spray in loadout.get("Sprays") or []:
+        if isinstance(spray, dict) and spray.get("EquipSlotID"):
+            known = index.get(_id(spray.get("SprayID"))) or {}
+            slots.append(
+                {"slot": str(spray["EquipSlotID"]), "number": len(slots) + 1, "name": known.get("displayName") or ""}
+            )
+    return slots
 
 
 def _count(kind: str, owned: dict, content: Content, lang: str):

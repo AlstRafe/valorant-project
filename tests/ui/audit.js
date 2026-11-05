@@ -56,6 +56,7 @@ const MADE_UP = [
   "/live?phase=ingame",
   "/collection?show=cards",
   "/collection?show=titles",
+  "/collection?show=sprays",
   "/compare?a=Tester%23JP1&b=Other%23KR1",
   "/agents/stats?queue=competitive",
 ];

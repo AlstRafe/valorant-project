@@ -3435,33 +3435,59 @@ code {
 .compare-form label {
   max-width: 16rem;
 }
-.compare-form ~ .table-wrap {
-  margin-top: 1rem;
+.compare-who {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+.compare-who a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  height: 100%;
+  padding: 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+}
+.compare-who img {
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 8px;
+}
+.compare-who span {
+  display: grid;
+  min-width: 0;
+}
+.compare-who strong {
+  overflow-wrap: anywhere;
+}
+.compare-who small {
+  color: var(--soft);
 }
 .versus-two {
   table-layout: fixed;
 }
-.versus-two th,
 .versus-two td {
   white-space: normal;
   overflow-wrap: anywhere;
 }
+.versus-two tbody th {
+  white-space: normal;
+}
 .versus-two th:first-child {
   width: 30%;
 }
-.versus-two thead .who-cell {
-  display: grid;
-  justify-items: end;
-  gap: 0.3rem;
-  text-align: right;
-}
-.versus-two thead .who-cell > span {
-  display: grid;
-  min-width: 0;
-}
-.versus-two thead small {
-  color: var(--soft);
-  font-weight: 400;
+.versus-two .short-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .versus-two td.best {
   color: var(--win);
