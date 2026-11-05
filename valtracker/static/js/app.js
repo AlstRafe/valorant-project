@@ -215,6 +215,8 @@
         acts();
         times();
         days();
+        mapPick();
+        statCard();
         share();
         showCopies();
       })
@@ -343,7 +345,11 @@
   // A player's matches by day in the visitor's own time zone, each day with its wins, losses and RR.
   function days() {
     var list = document.querySelector(".match-list[data-day]");
-    if (!list || list.querySelector(".day") || !window.Intl) return;
+    if (!list || !window.Intl) return;
+    // asked again after the map filter: the heads are made anew for the matches shown
+    list.querySelectorAll(".day").forEach(function (head) {
+      head.remove();
+    });
     var format;
     try {
       format = new Intl.DateTimeFormat(document.documentElement.lang, {
@@ -356,6 +362,7 @@
     }
     var groups = [];
     list.querySelectorAll("li.match").forEach(function (item) {
+      if (item.hidden) return;
       var time = item.querySelector("time[datetime]");
       var moment = time ? new Date(time.getAttribute("datetime")) : null;
       if (!moment || isNaN(moment)) return;
@@ -451,6 +458,427 @@
     if (page && page.getAttribute("data-offset") !== String(minutes)) location.reload();
   }
 
+  // Esports: the teams the visitor marked (kept in this browser), their matches lit up and, if asked, alone; the
+  // matches by day in the visitor's own clock.
+  var TEAMS = "val.teams";
+
+  function marked() {
+    try {
+      var value = JSON.parse(localStorage.getItem(TEAMS) || "[]");
+      return Array.isArray(value)
+        ? value.filter(function (name) {
+            return typeof name === "string";
+          })
+        : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function teams() {
+    var list = document.querySelector(".schedule");
+    if (!list) return;
+    var only = document.getElementById("fav-only");
+    function paint() {
+      var names = marked();
+      list.querySelectorAll(".game").forEach(function (game) {
+        var any = false;
+        game.querySelectorAll(".team-row").forEach(function (row) {
+          var name = row.getAttribute("data-team");
+          var on = names.indexOf(name) >= 0;
+          any = any || on;
+          var star = row.querySelector(".star");
+          star.hidden = false;
+          star.setAttribute("aria-pressed", on ? "true" : "false");
+          star.querySelector(".sr").textContent = list
+            .getAttribute(on ? "data-unmark" : "data-mark")
+            .replace("{team}", name);
+        });
+        game.classList.toggle("fav", any);
+        game.hidden = Boolean(only && only.checked && !any);
+      });
+      if (only) only.parentNode.parentNode.hidden = names.length === 0;
+    }
+    list.addEventListener("click", function (e) {
+      var star = e.target.closest ? e.target.closest(".star") : null;
+      if (!star) return;
+      var name = star.parentNode.getAttribute("data-team");
+      var names = marked();
+      var at = names.indexOf(name);
+      if (at >= 0) names.splice(at, 1);
+      else names.push(name);
+      write(TEAMS, names.slice(-100));
+      paint();
+    });
+    if (only) only.addEventListener("change", paint);
+    paint();
+    dayHeads(list, ".game");
+  }
+
+  // A heading before each day's first item: the day in the visitor's own clock and language.
+  function dayHeads(list, items) {
+    if (!window.Intl || list.querySelector(".day")) return;
+    var format;
+    try {
+      format = new Intl.DateTimeFormat(document.documentElement.lang, {
+        month: "short",
+        day: "numeric",
+        weekday: "short",
+      });
+    } catch (e) {
+      return;
+    }
+    var last = "";
+    list.querySelectorAll(items).forEach(function (item) {
+      var time = item.querySelector("time[datetime]");
+      var moment = time ? new Date(time.getAttribute("datetime")) : null;
+      if (!moment || isNaN(moment)) return;
+      var key = moment.getFullYear() + "-" + moment.getMonth() + "-" + moment.getDate();
+      if (key === last) return;
+      last = key;
+      var head = document.createElement("li");
+      head.className = "day";
+      var title = document.createElement("strong");
+      title.textContent = format.format(moment);
+      head.appendChild(title);
+      list.insertBefore(head, item);
+    });
+  }
+
+  // A player's matches by map: the maps they were played on, as a choice above the list (the matches stay on the
+  // page, only hidden).
+  function mapPick() {
+    var list = document.querySelector(".match-list");
+    var box = document.getElementById("map-pick");
+    if (!list || !box || box.options.length > 1) return;
+    var names = [];
+    list.querySelectorAll("li.match[data-map]").forEach(function (item) {
+      var name = item.getAttribute("data-map");
+      if (name && names.indexOf(name) < 0) names.push(name);
+    });
+    if (names.length < 2) return;
+    names.sort().forEach(function (name) {
+      var option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      box.appendChild(option);
+    });
+    box.closest(".map-pick").hidden = false;
+    box.addEventListener("change", function () {
+      list.querySelectorAll("li.match").forEach(function (item) {
+        item.hidden = box.value !== "" && item.getAttribute("data-map") !== box.value;
+      });
+      days();
+    });
+  }
+
+  // A picture of a player's numbers to save or send (1200 × 630, the size link previews use). Every picture on it is
+  // this site's own (/media/), so the canvas can be saved.
+  function picture(address) {
+    return new Promise(function (done) {
+      if (!address) return done(null);
+      var image = new Image();
+      image.onload = function () {
+        done(image);
+      };
+      image.onerror = function () {
+        done(null);
+      };
+      image.src = address;
+    });
+  }
+
+  function fitted(context, words, width) {
+    var said = String(words);
+    while (said.length > 1 && context.measureText(said).width > width) said = said.slice(0, -2) + "…";
+    return said;
+  }
+
+  function drawCard(card, images) {
+    var canvas = document.createElement("canvas");
+    canvas.width = 1200;
+    canvas.height = 630;
+    var c = canvas.getContext("2d");
+    var font = 'system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Noto Sans KR", sans-serif';
+    c.fillStyle = "#161513";
+    c.fillRect(0, 0, 1200, 630);
+    if (images.wide) {
+      c.globalAlpha = 0.35;
+      c.drawImage(images.wide, 0, 0, 1200, 340);
+      c.globalAlpha = 1;
+      var fade = c.createLinearGradient(0, 120, 0, 340);
+      fade.addColorStop(0, "rgba(22,21,19,0)");
+      fade.addColorStop(1, "#161513");
+      c.fillStyle = fade;
+      c.fillRect(0, 0, 1200, 340);
+    }
+    c.fillStyle = "#ff4655";
+    c.fillRect(0, 0, 12, 630);
+    c.textBaseline = "alphabetic";
+    c.fillStyle = "#f6f4ef";
+    c.font = "700 64px " + font;
+    var name = fitted(c, card.name, 760);
+    c.fillText(name, 64, 120);
+    var after = c.measureText(name).width;
+    c.fillStyle = "#b9b4aa";
+    c.font = "500 40px " + font;
+    c.fillText("#" + card.tag, 64 + after + 12, 120);
+    var left = 64;
+    if (images.rank) {
+      c.drawImage(images.rank, 64, 150, 88, 88);
+      left = 172;
+    }
+    c.fillStyle = "#f6f4ef";
+    c.font = "700 40px " + font;
+    c.fillText(fitted(c, card.rank, 600), left, 196);
+    c.fillStyle = "#b9b4aa";
+    c.font = "500 26px " + font;
+    c.fillText(fitted(c, card.under, 700), left, 234);
+    c.fillStyle = "#b9b4aa";
+    c.font = "600 26px " + font;
+    c.fillText(fitted(c, card.title, 1080), 64, 312);
+    card.stats.forEach(function (stat, index) {
+      var x = 64 + (index % 3) * 360;
+      var y = 330 + Math.floor(index / 3) * 110;
+      c.fillStyle = "rgba(255,255,255,0.06)";
+      c.fillRect(x, y, 340, 96);
+      c.fillStyle = "#b9b4aa";
+      c.font = "500 24px " + font;
+      c.fillText(stat[0], x + 20, y + 34);
+      c.fillStyle = "#f6f4ef";
+      c.font = "700 40px " + font;
+      c.fillText(String(stat[1]), x + 20, y + 80);
+    });
+    var x = 64;
+    card.agents.forEach(function (agent, index) {
+      var image = images.agents[index];
+      if (image) {
+        c.drawImage(image, x, 560, 44, 44);
+        x += 54;
+      }
+      c.fillStyle = "#f6f4ef";
+      c.font = "600 26px " + font;
+      var said = fitted(c, agent.name, 220);
+      c.fillText(said, x, 592);
+      x += c.measureText(said).width + 32;
+    });
+    c.fillStyle = "#b9b4aa";
+    c.font = "500 24px " + font;
+    c.textAlign = "right";
+    c.fillText(card.site, 1136, 592);
+    return canvas;
+  }
+
+  function statCard() {
+    var button = document.getElementById("stat-card");
+    if (!button || !button.hidden || !window.Promise || !window.URL) return;
+    var card;
+    try {
+      card = JSON.parse(button.getAttribute("data-card"));
+    } catch (e) {
+      return;
+    }
+    var canvas = document.createElement("canvas");
+    if (!canvas.getContext || !canvas.toBlob) return;
+    button.hidden = false;
+    button.addEventListener("click", function () {
+      if (button.getAttribute("aria-busy")) return;
+      button.setAttribute("aria-busy", "true");
+      Promise.all(
+        [picture(card.wide), picture(card.rankIcon)].concat(
+          card.agents.map(function (agent) {
+            return picture(agent.icon);
+          }),
+        ),
+      )
+        .then(function (found) {
+          var drawn = drawCard(card, { wide: found[0], rank: found[1], agents: found.slice(2) });
+          drawn.toBlob(function (blob) {
+            button.removeAttribute("aria-busy");
+            if (!blob) return;
+            var named = (card.name + "_" + card.tag).replace(/[^\w\-぀-鿿가-힯]+/g, "_") + ".png";
+            var file = window.File ? new File([blob], named, { type: "image/png" }) : null;
+            if (
+              file &&
+              navigator.canShare &&
+              navigator.canShare({ files: [file] }) &&
+              matchMedia("(pointer: coarse)").matches
+            ) {
+              navigator.share({ files: [file], title: document.title }).catch(function () {});
+              return;
+            }
+            var link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = named;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(function () {
+              URL.revokeObjectURL(link.href);
+            }, 10000);
+          }, "image/png");
+        })
+        .catch(function () {
+          button.removeAttribute("aria-busy");
+        });
+    });
+  }
+
+  // Crosshairs kept in this browser: the one shown can be saved with a name, and the list is on the page.
+  var CROSSHAIRS = "val.crosshairs";
+  var CROSSHAIRS_MAX = 30;
+
+  function crosshairs() {
+    var box = document.getElementById("xh-saved");
+    if (!box) return;
+    var form = document.getElementById("xh-save");
+    var list = box.querySelector("ul");
+    function kept() {
+      var found;
+      try {
+        found = JSON.parse(localStorage.getItem(CROSSHAIRS) || "[]");
+      } catch (e) {
+        found = [];
+      }
+      return (Array.isArray(found) ? found : []).filter(function (item) {
+        return item && typeof item.code === "string" && item.code.length <= 600 && typeof item.name === "string";
+      });
+    }
+    function button(words, kind) {
+      var made = document.createElement("button");
+      made.type = "button";
+      made.className = "quiet " + kind;
+      made.textContent = words;
+      return made;
+    }
+    function show() {
+      var items = kept();
+      list.textContent = "";
+      items.forEach(function (item) {
+        var row = document.createElement("li");
+        var name = document.createElement("strong");
+        name.textContent = item.name || box.getAttribute("data-unnamed");
+        var code = document.createElement("code");
+        code.textContent = item.code;
+        var actions = document.createElement("p");
+        var link = document.createElement("a");
+        link.className = "button quiet";
+        link.href = box.getAttribute("data-show") + "?code=" + encodeURIComponent(item.code);
+        link.textContent = box.getAttribute("data-view");
+        actions.appendChild(link);
+        if (navigator.clipboard) {
+          var copy = button(box.getAttribute("data-copy-word"), "copy");
+          copy.setAttribute("data-copy", item.code);
+          copy.setAttribute("data-done", box.getAttribute("data-done"));
+          actions.appendChild(document.createTextNode(" "));
+          actions.appendChild(copy);
+        }
+        var remove = button(box.getAttribute("data-remove"), "remove");
+        remove.addEventListener("click", function () {
+          write(
+            CROSSHAIRS,
+            kept().filter(function (other) {
+              return other.code !== item.code;
+            }),
+          );
+          show();
+        });
+        actions.appendChild(document.createTextNode(" "));
+        actions.appendChild(remove);
+        row.appendChild(name);
+        row.appendChild(code);
+        row.appendChild(actions);
+        list.appendChild(row);
+      });
+      box.hidden = !items.length;
+    }
+    show();
+    if (!form) return;
+    form.hidden = false;
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var code = form.getAttribute("data-code");
+      var name = form.querySelector("input[name=name]").value.trim().slice(0, 30);
+      var items = kept().filter(function (item) {
+        return item.code !== code;
+      });
+      items.unshift({ code: code, name: name });
+      write(CROSSHAIRS, items.slice(0, CROSSHAIRS_MAX));
+      form.querySelector("[role=status]").textContent = form.getAttribute("data-saved");
+      show();
+    });
+    addEventListener("storage", function (e) {
+      if (e.key === CROSSHAIRS || e.key === null) show();
+    });
+  }
+
+  // The night market: the cards the game has not shown yet lie face down until turned, one by one or all at once,
+  // as in the game. Which ones were turned is remembered for that night market only.
+  var NIGHT = "val.night";
+
+  function turned(key) {
+    try {
+      var value = JSON.parse(localStorage.getItem(NIGHT) || "{}");
+      return value && value.key === key && Array.isArray(value.turned) ? value.turned : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function night() {
+    var shelf = document.querySelector(".night[data-night]");
+    if (!shelf) return;
+    var key = shelf.getAttribute("data-night");
+    var all = shelf.querySelector(".flip-all");
+    var cards = shelf.querySelectorAll(".item[data-flip]");
+    function turn(card, keep) {
+      card.classList.remove("face-down");
+      card.classList.add("turned");
+      var button = card.querySelector(".flip");
+      if (button) button.remove();
+      if (!keep) return;
+      var list = turned(key);
+      list.push(card.getAttribute("data-flip"));
+      try {
+        localStorage.setItem(NIGHT, JSON.stringify({ key: key, turned: list }));
+      } catch (e) {
+        // not kept: they lie face down again next time
+      }
+      if (all) all.hidden = !shelf.querySelector(".face-down");
+    }
+    var list = turned(key);
+    cards.forEach(function (card) {
+      if (list.indexOf(card.getAttribute("data-flip")) >= 0) return;
+      card.classList.add("face-down");
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "flip";
+      button.textContent = "めくる";
+      button.addEventListener("click", function () {
+        turn(card, true);
+      });
+      card.appendChild(button);
+    });
+    if (all && shelf.querySelector(".face-down")) {
+      all.hidden = false;
+      all.querySelector("button").addEventListener("click", function () {
+        shelf.querySelectorAll(".face-down").forEach(function (card) {
+          turn(card, true);
+        });
+      });
+    }
+  }
+
+  // The owner's match being played: the page is read again every few seconds while it is in view.
+  function refresh() {
+    var box = document.querySelector("[data-refresh]");
+    if (!box) return;
+    var seconds = Math.max(3, Number(box.getAttribute("data-refresh")) || 10);
+    setInterval(function () {
+      if (document.visibilityState === "visible" && !document.querySelector("select:focus")) location.reload();
+    }, seconds * 1000);
+  }
+
   // The owner's collection lists every item of a tab at once: the names are narrowed as they are typed.
   function finder() {
     var input = document.getElementById("find");
@@ -502,6 +930,12 @@
     copies();
     countdowns();
     zone();
+    teams();
+    night();
+    refresh();
+    mapPick();
+    statCard();
+    crosshairs();
   });
   addEventListener("storage", function (e) {
     if (e.key === FAVORITES || e.key === RECENT || e.key === null) lists();

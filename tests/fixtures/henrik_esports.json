@@ -1,0 +1,141 @@
+{
+ "status": 200,
+ "data": [
+  {
+   "date": "2026-11-05T09:00:00.000Z",
+   "state": "completed",
+   "type": "match",
+   "vod": "https://www.youtube.com/watch?v=abc",
+   "league": {
+    "name": "VCT Pacific",
+    "identifier": "vct_pacific",
+    "icon": "https://static.lolesports.com/leagues/pacific.png",
+    "region": "INTERNATIONAL"
+   },
+   "tournament": {
+    "name": "Stage 2",
+    "season": "2026"
+   },
+   "match": {
+    "id": "1",
+    "game_type": {
+     "type": "playAll",
+     "count": 3
+    },
+    "teams": [
+     {
+      "name": "ZETA DIVISION",
+      "code": "ZETA",
+      "icon": "https://static.lolesports.com/teams/zeta.png",
+      "has_won": true,
+      "game_wins": 2,
+      "record": {
+       "wins": 3,
+       "losses": 1
+      }
+     },
+     {
+      "name": "DRX",
+      "code": "DRX",
+      "icon": "https://static.lolesports.com/teams/drx.png",
+      "has_won": false,
+      "game_wins": 1,
+      "record": {
+       "wins": 2,
+       "losses": 2
+      }
+     }
+    ]
+   }
+  },
+  {
+   "date": "2026-11-05T12:00:00.000Z",
+   "state": "inProgress",
+   "type": "match",
+   "vod": null,
+   "league": {
+    "name": "VCT Pacific",
+    "identifier": "vct_pacific",
+    "icon": "https://static.lolesports.com/leagues/pacific.png",
+    "region": "INTERNATIONAL"
+   },
+   "tournament": {
+    "name": "Stage 2",
+    "season": "2026"
+   },
+   "match": {
+    "id": "2",
+    "game_type": {
+     "type": "playAll",
+     "count": 3
+    },
+    "teams": [
+     {
+      "name": "Paper Rex",
+      "code": "PRX",
+      "icon": "https://static.lolesports.com/teams/prx.png",
+      "has_won": false,
+      "game_wins": 1
+     },
+     {
+      "name": "<i>Gen.G</i>",
+      "code": "GEN",
+      "icon": null,
+      "has_won": false,
+      "game_wins": 0
+     }
+    ]
+   }
+  },
+  {
+   "date": "2026-11-07T08:00:00.000Z",
+   "state": "unstarted",
+   "type": "match",
+   "vod": null,
+   "league": {
+    "name": "VCT Americas",
+    "identifier": "vct_americas",
+    "icon": "",
+    "region": "NA"
+   },
+   "tournament": {
+    "name": "Stage 2",
+    "season": "2026"
+   },
+   "match": {
+    "id": "3",
+    "game_type": {
+     "type": "playAll",
+     "count": 3
+    },
+    "teams": [
+     {
+      "name": "Sentinels",
+      "code": "SEN",
+      "icon": "https://static.lolesports.com/teams/sen.png",
+      "has_won": false,
+      "game_wins": 0
+     },
+     {
+      "name": "Cloud9",
+      "code": "C9",
+      "icon": "https://static.lolesports.com/teams/c9.png",
+      "has_won": false,
+      "game_wins": 0
+     }
+    ]
+   }
+  },
+  {
+   "date": "2026-11-08T08:00:00.000Z",
+   "state": "unstarted",
+   "match": {
+    "teams": [
+     {
+      "name": "Only one"
+     }
+    ]
+   }
+  }
+ ]
+}

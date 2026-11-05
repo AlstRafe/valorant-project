@@ -7,11 +7,13 @@
 {%- endmacro %}
 {% macro things(items, icon) -%}
 <ul class="items offers">
-{% for item in items %}{% set picture = media(item.image) if item.image else '' %}<li class="item{% if item.tier and item.tier.key %} tier-{{ item.tier.key }}{% endif %}{% if item.owned %} have{% endif %}">
+{% for item in items %}{% set picture = media(item.image) if item.image else '' %}<li class="item{% if item.tier and item.tier.key %} tier-{{ item.tier.key }}{% endif %}{% if item.owned %} have{% endif %}{% if item.wanted %} want{% endif %}"{% if item.flip %} data-flip="{{ item.flip }}"{% endif %}>
+{% if item.skin %}<a class="skin-link" href="{{ url_for('skin', uuid=item.skin) }}">{% endif %}
 {% if picture %}<img src="{{ picture }}" alt="" width="256" height="96" loading="lazy">{% endif %}
 <span class="iname">{{ item.name or '—' }}{% if item.amount and item.amount > 1 %} ×{{ item.amount }}{% endif %}</span>
 {% if item.price %}{{ price(item.price, icon, item.base) }}{% endif %}
-{% if item.discount %}<span class="badge">−{{ item.discount }}%</span>{% elif item.owned %}<span class="badge" lang="ja">所持</span>{% endif %}
+{% if item.skin %}</a>{% endif %}
+{% if item.discount %}<span class="badge">−{{ item.discount }}%</span>{% elif item.owned %}<span class="badge" lang="ja">所持</span>{% elif item.wanted %}<span class="badge" lang="ja">欲しい</span>{% endif %}
 </li>
 {% endfor %}</ul>
 {%- endmacro %}
@@ -34,8 +36,8 @@
 <h1>{{ t('ショップ') }}</h1>
 <p class="lead">{{ t('いまストアに並んでいるバンドルと、その値段（VALORANT ポイント）です。') }}</p>
 </section>
+{% include "_pages.html" %}
 {% if owner %}
-<nav class="modes" aria-label="種類" lang="ja"><a href="{{ url_for('shop') }}" aria-current="true">ショップ</a><a href="{{ url_for('collection') }}">所持品</a></nav>
 <div lang="ja">
 {% if own_problem %}
 <p class="problem" role="alert">{{ own_problem }}{% if own_detail %} <code>{{ own_detail }}</code>{% endif %}</p>
@@ -46,13 +48,16 @@
 {% for coin in own.wallet %}<li title="{{ coin.name }}">{% if coin.icon %}<img src="{{ media(coin.icon) }}" alt="" width="24" height="24">{% endif %}<span class="sr">{{ coin.name }}</span><strong>{{ '{:,}'.format(coin.amount) }}</strong></li>
 {% endfor %}</ul>
 {% endif %}
+{% if own.wanted %}<p class="verdict ok" role="status">欲しいスキンが並んでいます: {{ own.wanted|join('、') }}</p>{% endif %}
 <section class="shelf">
 <h2>{{ own.name }} さんの今日のスキン {{ left(own.daily_left) }}</h2>
+<p class="meta">{% if own.streak > 1 %}<strong>{{ own.streak }} 日連続</strong>でチェック · {% endif %}<a href="{{ url_for('shop_history') }}">これまでのストア</a> · <a href="{{ url_for('skins', wants=1) }}">欲しいリスト</a></p>
 {% if own.daily %}{{ things(own.daily, own.vp_icon) }}{% else %}<p class="note">読み込めませんでした。</p>{% endif %}
 </section>
 {% if own.night is not none %}
-<section class="shelf night">
+<section class="shelf night" data-night="{{ own.night_key }}">
 <h2>ナイトマーケット {{ left(own.night_left) }}</h2>
+<p class="flip-all" hidden><button type="button" class="quiet">すべてめくる</button></p>
 {{ things(own.night, own.vp_icon) }}
 </section>
 {% endif %}
@@ -70,6 +75,7 @@
 {% endif %}
 {% if own.missing %}<p class="note">読み込めなかったもの: {{ own.missing|join(', ') }}{% if own.problem_detail %} <code>{{ own.problem_detail }}</code>{% endif %}</p>{% endif %}
 <p class="note">ストアは 2 分ほどで新しくなります。「所持」は持っているもの。</p>
+<p class="note"><a href="{{ url_for('shop_reminder') }}" download>入れ替わりをカレンダーに入れる（毎日の通知）</a></p>
 {% endif %}
 </div>
 {% endif %}
@@ -85,6 +91,7 @@
 {% endif %}
 <p class="note">{{ t('毎日入れ替わる 4 つのスキンとナイトマーケットは人ごとに違うため、ゲームの中でだけ見られます。') }}</p>
 {% if reset %}<p class="note">{{ t('毎日のスキンの次の入れ替わり') }}: <time datetime="{{ reset.when.iso }}">{{ reset.when.text }}</time> {{ left(reset.left) }}</p>{% endif %}
+<p class="note"><a href="{{ url_for('shop_reminder') }}" download>{{ t('入れ替わりをカレンダーに入れる（毎日の通知）') }}</a></p>
 </section>
 {% endif %}
 {% endblock %}

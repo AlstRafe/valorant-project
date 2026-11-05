@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from collections import Counter
 
-from valtracker.content import Content
+from valtracker.content import Content, variant_name
 
 #: The tabs: the collection's kind -> its name on the page (the owner's page: Japanese only).
 TABS = {
@@ -76,7 +76,22 @@ def page(found: dict, content: Content, lang: str, show: str) -> dict:
         "missing": show in (found.get("missing") or []) or show not in owned,
         "items": makers[show](owned, loadout, content, lang) if show in owned else [],
         "problem_detail": found.get("problem") or "",
+        "spray_slots": _spray_slots(loadout, content, lang) if show == "sprays" else [],
     }
+
+
+def _spray_slots(loadout: dict, content: Content, lang: str) -> list[dict]:
+    """The spray wheel's places, in the loadout's order: ``[{"slot": EquipSlotID, "number", "name": the spray in
+    it}]`` (the owner picks where a spray goes)."""
+    index = content.index("sprays", lang)
+    slots = []
+    for spray in loadout.get("Sprays") or []:
+        if isinstance(spray, dict) and spray.get("EquipSlotID"):
+            known = index.get(_id(spray.get("SprayID"))) or {}
+            slots.append(
+                {"slot": str(spray["EquipSlotID"]), "number": len(slots) + 1, "name": known.get("displayName") or ""}
+            )
+    return slots
 
 
 def _count(kind: str, owned: dict, content: Content, lang: str):
@@ -154,12 +169,28 @@ def _skins(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict
                 )
                 or (worn or (parts[0] if parts else {})).get("fullRender")
             )
+            # the variants the owner can wear: the first comes with the skin, the others once unlocked
+            wearable = [
+                {
+                    "uuid": _id(part.get("uuid")),
+                    "name": variant_name(part.get("displayName"), skin.get("displayName") or ""),
+                }
+                for number, part in enumerate(parts)
+                if number == 0 or _id(part.get("uuid")) in chromas
+            ]
+            for number, part in enumerate(wearable):
+                part["current"] = on and part["uuid"] == equipped.get(uuid)
+                if number == 0:
+                    part["name"] = "標準"
             items.append(
                 {
+                    "uuid": uuid,
+                    "weapon": _id(weapon.get("uuid")),
                     "name": skin.get("displayName") or "",
                     "image": picture,
                     "tier": _tier(skin, tiers),
                     "equipped": on,
+                    "wearable": wearable if len(wearable) > 1 else [],
                     # the first chroma comes with the skin; the others are unlocked one by one
                     "variants": 1 + sum(_id(part.get("uuid")) in chromas for part in parts[1:])
                     if len(parts) > 1
@@ -194,6 +225,7 @@ def _simple(kind: str, owned, content: Content, lang: str, picture, equipped: Co
             copies[_id(known.get("uuid"))] += count
     listed = [
         {
+            "uuid": uuid,
             "name": (name(known) if name else "") or known.get("displayName") or "",
             "image": picture(known),
             "copies": copies[uuid],

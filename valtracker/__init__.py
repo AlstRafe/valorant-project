@@ -16,8 +16,10 @@ from flask import Flask, g, request, url_for
 from valtracker import content, i18n, net, paths, security, theme
 from valtracker.activity import COLLECT_SECONDS, Activity, Collector
 from valtracker.content import Content
+from valtracker.diary import Diary
 from valtracker.henrik import Henrik
-from valtracker.media import Media
+from valtracker.media import Media, outside_path
+from valtracker.ratings import Ratings
 from valtracker.riot import Riot
 from valtracker.settings import Settings
 
@@ -37,11 +39,13 @@ def create_app(
     app.config["VAL_CONTENT"] = Content(instance, fetch)
     app.config["VAL_MEDIA"] = Media(instance, fetch)
     app.config["VAL_RIOT"] = Riot(instance, send, app.config["VAL_CONTENT"].client_version)
+    app.config["VAL_DIARY"] = Diary(instance)
     app.config["VAL_ACTIVITY"] = activity = Activity(instance)
     # VAL_COLLECT_SECONDS=0 turns the background look at more players off (activity.py)
     seconds = float(os.environ.get("VAL_COLLECT_SECONDS", COLLECT_SECONDS) or 0)
     app.config["VAL_COLLECTOR"] = collector = Collector(activity, app.config["VAL_HENRIK"], seconds)
     security.init_app(app, instance, mount)
+    app.config["VAL_RATINGS"] = Ratings(instance, app.secret_key)
 
     @app.before_request
     def _collect():
@@ -85,6 +89,11 @@ def create_app(
         path = content.media_path(url)
         return url_for("media", path=path) if path else ""
 
+    def picture(url) -> str:
+        """A news or esports picture through /pic/ (media.OUTSIDE), or "" for any other address."""
+        path = outside_path(url)
+        return url_for("picture", path=path) if path else ""
+
     @app.context_processor
     def _page():
         lang = getattr(g, "lang", i18n.DEFAULT)
@@ -97,6 +106,7 @@ def create_app(
             "theme_script": theme.THEME_SCRIPT,
             "asset": asset,
             "media": media,
+            "picture": picture,
             "site_name": NAME,
             "home": request.environ.get("homepage.home", ""),
             "owner": security.is_owner(),

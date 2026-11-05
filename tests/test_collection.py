@@ -193,7 +193,8 @@ class CollectionTest(unittest.TestCase):
         saved = json.loads((self.folder / "content" / "weapons-ja-JP.json").read_text(encoding="utf-8"))
         vandal = saved["data"][0]
         self.assertNotIn("weaponStats", vandal)
-        self.assertNotIn("streamedVideo", json.dumps(vandal))
+        self.assertNotIn("assetPath", json.dumps(vandal))
+        self.assertNotIn("example.org", json.dumps(vandal), "a video only from the known places (skin library)")
         self.assertEqual(vandal["cost"], 2900)
 
     def test_pd_is_told_the_game_version(self):

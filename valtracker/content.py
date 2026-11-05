@@ -10,6 +10,7 @@ from (no outside addresses, CSP): media.py fetches them once and serves them fro
 from __future__ import annotations
 
 import json
+import re
 import threading
 import time
 from datetime import datetime
@@ -19,6 +20,9 @@ from valtracker import i18n, net
 
 BASE = "https://valorant-api.com/v1"
 MEDIA = "https://media.valorant-api.com/"
+#: Where the skins' videos are (Riot's own CDN; valorant-api.com names them): the only outside addresses a page
+#: may play from (security.CSP's media-src).
+VIDEOS = ("https://valorant.dyn.riotcdn.net/", MEDIA)
 KINDS = {
     "agents": "/agents?isPlayableCharacter=true&language={lang}",
     "maps": "/maps?language={lang}",
@@ -34,6 +38,10 @@ KINDS = {
     "flex": "/flex?language={lang}",
     "contenttiers": "/contenttiers?language={lang}",
     "currencies": "/currencies?language={lang}",
+    # the skin library (skinlib.py): the names of the skins' series (Prime, Reaver, ...)
+    "themes": "/themes?language={lang}",
+    # the owner's progress (progress.py): the battle passes' and agents' contracts, the XP of each level
+    "contracts": "/contracts?language={lang}",
     # the store's bundles (shop.py): their names and pictures
     "bundles": "/bundles?language={lang}",
     # the episodes and acts, and when each ends
@@ -45,6 +53,9 @@ KINDS = {
 FRESH_SECONDS = 24 * 3600
 #: After a failed try, the saved list (or none) is used this long before the next try.
 RETRY_SECONDS = 600
+#: A list whose kept keys (SLIM) changed: a saved one of an older shape is asked for again at once (and used
+#: until the new one comes).
+SHAPES = {"weapons": 2}
 
 
 class Content:
@@ -92,7 +103,8 @@ class Content:
     def _read(self, kind: str, code: str):
         try:
             value = json.loads(self._file(kind, code).read_text(encoding="utf-8"))
-            return float(value["saved"]), list(value["data"])
+            fresh = value.get("shape", 1) == SHAPES.get(kind, 1)
+            return (float(value["saved"]) if fresh else 0.0), list(value["data"])
         except (OSError, ValueError, KeyError, TypeError):
             return None
 
@@ -101,7 +113,10 @@ class Content:
             self.folder.mkdir(parents=True, exist_ok=True)
             path = self._file(kind, code)
             temporary = path.with_suffix(".tmp")
-            temporary.write_text(json.dumps({"saved": now, "data": data}, ensure_ascii=False), encoding="utf-8")
+            temporary.write_text(
+                json.dumps({"saved": now, "shape": SHAPES.get(kind, 1), "data": data}, ensure_ascii=False),
+                encoding="utf-8",
+            )
             temporary.replace(path)
         except OSError:
             pass  # kept in memory for this run
@@ -179,7 +194,7 @@ class Content:
         }
 
     def act(self, lang: str, now: float | None = None) -> dict | None:
-        """The act being played: ``{"name": "EPISODE 9 · ACT III", "ends": datetime (UTC)}``, or None."""
+        """The act being played: ``{"name": "EPISODE 9 · ACT III", "ends": datetime (UTC), "uuid"}``, or None."""
         now = self.clock() if now is None else now
         seasons = [item for item in self._list("seasons", lang) if isinstance(item, dict)]
         by_id = {str(item.get("uuid") or "").lower(): item for item in seasons}
@@ -194,7 +209,11 @@ class Content:
             if start.timestamp() <= now < end.timestamp():
                 parent = by_id.get(str(item.get("parentUuid") or "").lower()) or {}
                 names = [str(parent.get("displayName") or ""), str(item.get("displayName") or "")]
-                return {"name": " · ".join(name for name in names if name), "ends": end}
+                return {
+                    "name": " · ".join(name for name in names if name),
+                    "ends": end,
+                    "uuid": str(item.get("uuid") or "").lower(),
+                }
         return None
 
     def weapons(self, lang: str) -> list:
@@ -214,16 +233,28 @@ def _parts(item: dict, kind: str, keys) -> list:
     return [_keep(part, keys) for part in item.get(kind) or [] if isinstance(part, dict) and part.get("uuid")]
 
 
+def _video(parts: list) -> list:
+    """A level's or chroma's video only from the known places (the pages may play only those, CSP)."""
+    for part in parts:
+        if not str(part.get("streamedVideo") or "").startswith(VIDEOS):
+            part.pop("streamedVideo", None)
+    return parts
+
+
 def _slim_weapon(weapon: dict) -> dict:
-    """A weapon with what the collection shows: valorant-api.com's /weapons is megabytes (stats, videos, every
-    level's asset path), which would fill the small VM's memory once per language."""
-    kept = _keep(weapon, ("uuid", "displayName", "category", "displayIcon"))
+    """A weapon with what the collection and the skin library show: valorant-api.com's /weapons is megabytes
+    (stats, every level's asset path), which would fill the small VM's memory once per language."""
+    kept = _keep(weapon, ("uuid", "displayName", "category", "displayIcon", "defaultSkinUuid"))
     kept["cost"] = int(((weapon.get("shopData") or {}).get("cost")) or 0)
     kept["skins"] = [
         {
-            **_keep(skin, ("uuid", "displayName", "contentTierUuid", "displayIcon")),
-            "levels": _parts(skin, "levels", ("uuid", "displayIcon")),
-            "chromas": _parts(skin, "chromas", ("uuid", "displayName", "displayIcon", "fullRender", "swatch")),
+            **_keep(skin, ("uuid", "displayName", "contentTierUuid", "themeUuid", "displayIcon")),
+            "levels": _video(
+                _parts(skin, "levels", ("uuid", "displayName", "levelItem", "displayIcon", "streamedVideo"))
+            ),
+            "chromas": _video(
+                _parts(skin, "chromas", ("uuid", "displayName", "displayIcon", "fullRender", "swatch", "streamedVideo"))
+            ),
         }
         for skin in weapon.get("skins") or []
         if isinstance(skin, dict) and skin.get("uuid")
@@ -231,8 +262,29 @@ def _slim_weapon(weapon: dict) -> dict:
     return kept
 
 
+def _slim_contract(item: dict) -> dict:
+    """A contract (a battle pass, an event's pass, an agent's): its kind, what it is for and each level's XP."""
+    about = item.get("content") if isinstance(item.get("content"), dict) else {}
+    levels, epilogue = [], 0
+    for chapter in about.get("chapters") or []:
+        if not isinstance(chapter, dict):
+            continue
+        for level in chapter.get("levels") or []:
+            if isinstance(level, dict):
+                levels.append(int(level.get("xp") or 0))
+                epilogue += bool(chapter.get("isEpilogue"))
+    return {
+        **_keep(item, ("uuid", "displayName", "displayIcon")),
+        "type": str(about.get("relationType") or ""),
+        "of": str(about.get("relationUuid") or "").lower(),
+        "levels": levels,
+        "epilogue": epilogue,
+    }
+
+
 #: What each of the collection's lists keeps of an item (the rest is dropped before it is saved).
 SLIM = {
+    "contracts": _slim_contract,
     "weapons": _slim_weapon,
     "buddies": lambda item: {
         **_keep(item, ("uuid", "displayName", "displayIcon")),
@@ -249,8 +301,19 @@ SLIM = {
     "contenttiers": lambda item: _keep(item, ("uuid", "displayName", "devName", "rank", "displayIcon")),
     "currencies": lambda item: _keep(item, ("uuid", "displayName", "displayNameSingular", "displayIcon")),
     "bundles": lambda item: _keep(item, ("uuid", "displayName", "displayIcon", "displayIcon2")),
+    "themes": lambda item: _keep(item, ("uuid", "displayName")),
     "seasons": lambda item: _keep(item, ("uuid", "displayName", "type", "startTime", "endTime", "parentUuid")),
 }
+
+
+def variant_name(name, skin_name: str) -> str:
+    """A chroma's own part of its name: "Reaver Vandal Level 4\r\n(Variant 1 Red)" -> "Variant 1 Red"."""
+    name = " ".join(str(name or "").split())
+    inside = re.search(r"\(([^()]+)\)\s*$", name)
+    if inside:
+        return inside.group(1).strip()
+    rest = name[len(skin_name) :].strip() if skin_name and name.startswith(skin_name) else name
+    return rest or name
 
 
 def media_path(url) -> str | None:

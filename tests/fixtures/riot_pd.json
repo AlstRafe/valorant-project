@@ -332,5 +332,186 @@
    }
   ],
   "GamePodPingServiceInfo": {}
- }
+ },
+ "contracts": {
+  "Version": 1,
+  "Subject": "0c0c0c0c-1111-4222-8333-444444444444",
+  "Contracts": [
+   {
+    "ContractDefinitionID": "c0000000-0000-4000-8000-000000000001",
+    "ContractProgression": {
+     "TotalProgressionEarned": 6500
+    },
+    "ProgressionLevelReached": 2,
+    "ProgressionTowardsNextLevel": 1500
+   },
+   {
+    "ContractDefinitionID": "c0000000-0000-4000-8000-000000000002",
+    "ProgressionLevelReached": 2,
+    "ProgressionTowardsNextLevel": 0
+   },
+   {
+    "ContractDefinitionID": "C0000000-0000-4000-8000-000000000003",
+    "ProgressionLevelReached": 5,
+    "ProgressionTowardsNextLevel": 0
+   },
+   {
+    "ContractDefinitionID": "c0000000-0000-4000-8000-000000000004",
+    "ProgressionLevelReached": 1,
+    "ProgressionTowardsNextLevel": 100
+   },
+   {
+    "ContractDefinitionID": "ffffffff-0000-4000-8000-000000000000",
+    "ProgressionLevelReached": 3
+   }
+  ],
+  "Missions": [
+   {
+    "ID": "m1",
+    "Objectives": {
+     "o1": 3
+    },
+    "Complete": true,
+    "ExpirationTime": "2040-01-08T00:00:00Z"
+   },
+   {
+    "ID": "m2",
+    "Objectives": {
+     "o2": 1
+    },
+    "Complete": false,
+    "ExpirationTime": "2040-01-02T00:00:00Z"
+   },
+   {
+    "ID": "m3",
+    "Objectives": {
+     "o3": 0
+    },
+    "Complete": false,
+    "ExpirationTime": "2040-01-08T00:00:00Z"
+   }
+  ],
+  "MissionMetadata": {
+   "NPECompleted": true,
+   "WeeklyCheckpoint": "2040-01-01T00:00:00Z",
+   "WeeklyRefillTime": "2040-01-03T00:00:00Z"
+  }
+ },
+ "pregame": {
+  "ID": "1d000000-0000-4000-8000-000000000001",
+  "AllyTeam": {
+   "TeamID": "Blue",
+   "Players": [
+    {
+     "Subject": "0c0c0c0c-1111-4222-8333-444444444444",
+     "CharacterID": "",
+     "CharacterSelectionState": "",
+     "CompetitiveTier": 18,
+     "PlayerIdentity": {
+      "Subject": "0c0c0c0c-1111-4222-8333-444444444444",
+      "AccountLevel": 187,
+      "Incognito": false,
+      "HideAccountLevel": false
+     }
+    },
+    {
+     "Subject": "a1111111-0000-4000-8000-000000000001",
+     "CharacterID": "11111111-1111-4111-8111-111111111111",
+     "CharacterSelectionState": "locked",
+     "CompetitiveTier": 16,
+     "PlayerIdentity": {
+      "AccountLevel": 50,
+      "Incognito": false,
+      "HideAccountLevel": true
+     }
+    },
+    {
+     "Subject": "a1111111-0000-4000-8000-000000000002",
+     "CharacterID": "",
+     "CharacterSelectionState": "",
+     "CompetitiveTier": 0,
+     "PlayerIdentity": {
+      "AccountLevel": 12,
+      "Incognito": true
+     }
+    }
+   ]
+  },
+  "EnemyTeamSize": 5,
+  "EnemyTeamLockCount": 2,
+  "MapID": "/Game/Maps/Ascent/Ascent",
+  "QueueID": "competitive",
+  "PhaseTimeRemainingNS": 61000000000
+ },
+ "coregame": {
+  "MatchID": "1d000000-0000-4000-8000-000000000002",
+  "State": "IN_PROGRESS",
+  "MapID": "/Game/Maps/Ascent/Ascent",
+  "MatchmakingData": {
+   "QueueID": "unrated",
+   "IsRanked": false
+  },
+  "Players": [
+   {
+    "Subject": "0c0c0c0c-1111-4222-8333-444444444444",
+    "TeamID": "Red",
+    "CharacterID": "22222222-2222-4222-8222-222222222222",
+    "PlayerIdentity": {
+     "AccountLevel": 187,
+     "Incognito": false
+    },
+    "SeasonalBadgeInfo": {
+     "Rank": 18
+    }
+   },
+   {
+    "Subject": "a1111111-0000-4000-8000-000000000001",
+    "TeamID": "Blue",
+    "CharacterID": "11111111-1111-4111-8111-111111111111",
+    "PlayerIdentity": {
+     "AccountLevel": 50,
+     "Incognito": false
+    },
+    "SeasonalBadgeInfo": {
+     "Rank": 21
+    }
+   },
+   {
+    "Subject": "a1111111-0000-4000-8000-000000000002",
+    "TeamID": "Blue",
+    "CharacterID": "22222222-2222-4222-8222-222222222222",
+    "PlayerIdentity": {
+     "AccountLevel": 12,
+     "Incognito": true
+    },
+    "SeasonalBadgeInfo": {
+     "Rank": 9
+    }
+   },
+   {
+    "Subject": "a1111111-0000-4000-8000-000000000003",
+    "TeamID": "Red",
+    "CharacterID": "",
+    "IsCoach": true,
+    "PlayerIdentity": {}
+   }
+  ]
+ },
+ "names": [
+  {
+   "Subject": "0c0c0c0c-1111-4222-8333-444444444444",
+   "GameName": "Owner",
+   "TagLine": "JP1"
+  },
+  {
+   "Subject": "a1111111-0000-4000-8000-000000000001",
+   "GameName": "Teammate",
+   "TagLine": "0001"
+  },
+  {
+   "Subject": "a1111111-0000-4000-8000-000000000002",
+   "GameName": "Secret",
+   "TagLine": "9999"
+  }
+ ]
 }

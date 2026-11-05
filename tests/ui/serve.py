@@ -97,11 +97,22 @@ def main() -> None:
     app, _, _ = make_app()
     app.config["VAL_RIOT"].sign_in("ssid-1")
     seed(app.config["VAL_ACTIVITY"], time.time())
+    # a few days of the owner's store, and a skin wanted that is in today's (diary.py)
+    diary = app.config["VAL_DIARY"]
+    for back in range(1, 4):
+        day = time.strftime("%Y-%m-%d", time.gmtime(time.time() - back * 86400))
+        diary.note(day, [{"uuid": "ac000000-0000-4000-8000-000000000001", "price": 3550}], None)
+    diary.want("ac000000-0000-4000-8000-000000000001", True)
     inner = app.wsgi_app
 
     def wsgi(environ, start):
         if "visitor=1" in environ.get("HTTP_COOKIE", ""):
             environ["homepage.visitor"] = True
+        # /live?phase=pregame or ingame: the made-up match the owner is in (helpers.FakeRiot)
+        if environ.get("PATH_INFO") == "/live":
+            phase = environ.get("QUERY_STRING", "").removeprefix("phase=")
+            app.riot.phase = phase if phase in ("pregame", "ingame") else ""
+            app.config["VAL_RIOT"].cache.put("live", None, 0)
         return inner(environ, start)
 
     app.wsgi_app = wsgi

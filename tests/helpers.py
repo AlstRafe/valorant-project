@@ -45,6 +45,10 @@ class FakeFetch:
                 return 200, fixture("henrik_status.json")
             if "/v2/store-featured" in url:
                 return 200, fixture("henrik_featured.json")
+            if "/v1/website/" in url:
+                return 200, fixture("henrik_news.json")
+            if "/v1/esports/schedule" in url:
+                return 200, fixture("henrik_esports.json")
             if "/v4/matches/" in url or "/v4/by-puuid/matches/" in url:
                 return 200, fixture("henrik_matches.json")
             if "/v4/match/" in url:
@@ -64,7 +68,14 @@ class FakeFetch:
         lists = json.loads(fixture("content_collection.json"))
         if kind in lists:
             return 200, json.dumps({"status": 200, "data": lists[kind]}).encode()
-        if url.startswith("https://media.valorant-api.com/"):
+        if url.startswith(
+            (
+                "https://media.valorant-api.com/",
+                "https://static.lolesports.com/",
+                "https://cmsassets",
+                "https://images.contentstack.io/",
+            )
+        ):
             return 200, PNG
         return 404, b""
 
@@ -97,6 +108,10 @@ class FakeRiot:
         self.refuse = 0
         self.broken: set[str] = set()
         self.pd = json.loads(fixture("riot_pd.json"))
+        #: The match the owner is in: "" (none), "pregame" (agent select) or "ingame".
+        self.phase = ""
+        #: The loadouts sent back (PUT playerloadout).
+        self.worn: list[dict] = []
 
     def address(self, access: str = ACCESS) -> str:
         return f"https://playvalorant.com/opt_in#access_token={access}&scope=account+openid&iss=x&id_token={ID_TOKEN}&token_type=Bearer&expires_in=3600"
@@ -131,12 +146,31 @@ class FakeRiot:
                 return 400, [], json.dumps({"httpStatus": 400, "errorCode": "BAD_CLAIMS"}).encode()
             if headers.get("X-Riot-Entitlements-JWT") != ENTITLEMENTS:
                 return 400, [], json.dumps({"errorCode": "BAD_CLAIMS"}).encode()
-            return self._pd(url)
+            return self._pd(url, method, body)
         return 404, [], b""
 
-    def _pd(self, url: str):
+    def _pd(self, url: str, method: str = "GET", body=None):
         from valtracker.riot import ITEM_TYPES
 
+        glz = "https://glz-ap-1.ap.a.pvp.net"
+        if url.endswith(f"/contracts/v1/contracts/{PUUID}"):
+            return self._answer("contracts", self.pd["contracts"])
+        for phase, path, match in (
+            ("pregame", "/pregame/v1", self.pd["pregame"]["ID"]),
+            ("ingame", "/core-game/v1", self.pd["coregame"]["MatchID"]),
+        ):
+            if url == f"{glz}{path}/players/{PUUID}":
+                if self.phase != phase:
+                    return 404, [], json.dumps({"errorCode": "RESOURCE_NOT_FOUND"}).encode()
+                return self._answer(phase, {"Subject": PUUID, "MatchID": match})
+            if url == f"{glz}{path}/matches/{match}":
+                return self._answer(phase, self.pd["pregame" if phase == "pregame" else "coregame"])
+        if url.endswith("/name-service/v2/players") and method == "PUT":
+            asked = set(json.loads(body))
+            return self._answer("names", [item for item in self.pd["names"] if item["Subject"] in asked])
+        if url.endswith(f"/personalization/v2/players/{PUUID}/playerloadout") and method == "PUT":
+            self.worn.append(json.loads(body))
+            return self._answer("equip", json.loads(body) | {"Version": 8})
         if url.endswith(f"/store/v3/storefront/{PUUID}"):
             return self._answer("storefront", self.pd["storefront"])
         if url == "https://glz-ap-1.ap.a.pvp.net/parties/v1/parties/customgameconfigs":
@@ -174,6 +208,7 @@ def make_app(key: str = "HDEV-test-key", mount: str = ""):
 
     def cleanup():
         app.config["VAL_ACTIVITY"].close()
+        app.config["VAL_RATINGS"].close()
         remove()
 
     folder.cleanup = cleanup

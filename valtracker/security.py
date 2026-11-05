@@ -2,6 +2,8 @@
 
 - Every answer carries a Content-Security-Policy that allows only this site's own files, and the one inline
   script (the theme, theme.py) by its hash; pictures of the game come through /media/, never from outside.
+  The one exception is the skin library's videos (megabytes each, far too many to keep here): played from
+  Riot's own CDN (content.VIDEOS) itself, and only when the visitor presses play (``preload="none"``).
 - A POST (the settings form) must carry the session's CSRF token (a random value only our own page knows),
   and a request the browser marks cross-site is refused before the token is looked at.
 - Pages for the owner only (settings) are refused to visitors: Home Page's server marks a request from the
@@ -19,6 +21,7 @@ from pathlib import Path
 from flask import Flask, abort, request, session
 from flask.sessions import SecureCookieSessionInterface
 
+from valtracker.content import VIDEOS
 from valtracker.theme import THEME_HASH
 
 VISITOR_KEY = "homepage.visitor"
@@ -30,6 +33,7 @@ CSP = "; ".join(
         f"script-src 'self' {THEME_HASH}",
         "style-src 'self'",
         "img-src 'self' data:",
+        "media-src 'self' " + " ".join(address.rstrip("/") for address in VIDEOS),
         "connect-src 'self'",
         "font-src 'self'",
         "object-src 'none'",

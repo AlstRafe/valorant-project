@@ -38,6 +38,18 @@
 </div>
 <p class="note">{{ t('1080p での大きさを 4 倍にしています。') }}{% if code and not problem %} <button type="button" class="quiet copy" data-copy="{{ code }}" data-done="{{ t('コピーしました') }}">{{ t('コードをコピー') }}</button>{% endif %}</p>
 {% if unknown %}<p class="note">{{ t('このサイトがまだ知らない設定（そのまま残ります）') }}: <code>{{ unknown|join(', ') }}</code></p>{% endif %}
+{% if code and not problem %}<form class="sens-form xh-save" id="xh-save" data-code="{{ code }}" data-saved="{{ t('保存しました') }}" hidden>
+<label><span>{{ t('名前（なくてもかまいません）') }}</span><input name="name" maxlength="30" autocomplete="off"></label>
+<button type="submit">{{ t('このブラウザに保存') }}</button>
+<button type="button" class="quiet copy" data-copy="{{ url_for('crosshair', code=code, _external=True) }}" data-done="{{ t('リンクをコピーしました') }}" hidden>{{ t('リンクをコピー') }}</button>
+<span class="sr" role="status"></span>
+</form>{% endif %}
+</section>
+
+<section id="xh-saved" aria-labelledby="saved-title" data-show="{{ url_for('crosshair') }}" data-view="{{ t('表示') }}" data-copy-word="{{ t('コピー') }}" data-done="{{ t('コピーしました') }}" data-remove="{{ t('消す') }}" data-unnamed="{{ t('名前なし') }}" hidden>
+<h2 id="saved-title">{{ t('保存したクロスヘア') }}</h2>
+<ul class="xh-saved"></ul>
+<p class="note">{{ t('このブラウザの中だけに保存されます。ほかの端末へはリンクをコピーして送ってください。') }}</p>
 </section>
 
 <section aria-labelledby="settings-title">

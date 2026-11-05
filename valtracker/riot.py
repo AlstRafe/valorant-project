@@ -40,6 +40,10 @@ PD = "https://pd.{shard}.a.pvp.net"
 GLZ = "https://glz-{shard}-1.{shard}.a.pvp.net"
 #: How long the queue settings are kept (seconds): they change with a patch or a map rotation.
 QUEUES_KEEP = 1800
+#: The match being played (agent select, or the match itself) is asked again after this long.
+LIVE_KEEP = 4
+#: The phases of a match the owner can be in, and where GLZ tells of each.
+PHASES = (("pregame", "/pregame/v1"), ("ingame", "/core-game/v1"))
 #: The account's region (Riot's geo answer) -> the PD server that keeps its items.
 SHARDS = {"na": "na", "latam": "na", "br": "na", "eu": "eu", "ap": "ap", "kr": "kr", "pbe": "pbe"}
 #: The PC game client, as PD wants to be told.
@@ -90,7 +94,7 @@ class Riot:
         """``version``: () -> valorant-api.com's /version (content.Content.client_version), which PD wants."""
         self.store = Settings(folder, "riot.json")
         self.send, self.version, self.clock = send, version, clock
-        self.cache = TTLCache(4)
+        self.cache = TTLCache(8)
         self._lock = threading.Lock()
 
     # -- what the pages use ---------------------------------------------------------------------------
@@ -128,7 +132,7 @@ class Riot:
             tokens["entitlements"] = self._entitlements(tokens["access"])
             account = self._account(tokens)
             self.store.save(cookies=cookies or None, token=tokens, signed_out=None, problem=None, **account)
-            self.cache = TTLCache(4)  # another account's collection is not shown
+            self.cache = TTLCache(8)  # another account's collection is not shown
         return self.status()
 
     def sign_out(self) -> None:
@@ -136,7 +140,7 @@ class Riot:
             self.store.save(
                 cookies=None, token=None, puuid=None, name=None, tag=None, shard=None, signed_out=None, problem=None
             )
-            self.cache = TTLCache(4)
+            self.cache = TTLCache(8)
 
     def collection(self) -> dict:
         """``{"name", "tag", "wallet": {currency uuid: amount} or None, "loadout": PD's playerloadout or None,
@@ -153,6 +157,106 @@ class Riot:
         """The game's settings of its queues (GLZ customgameconfigs: the same for everyone of the region, so the
         public pages may show them): ``{"config": Riot's answer, "at", "missing", "problem"}``."""
         return self._kept("queues", self._queues, QUEUES_KEEP)
+
+    def contracts(self) -> dict:
+        """The battle pass, the events' passes, the agents' contracts and the missions (PD's contracts):
+        ``{"contracts": PD's answer, "missing", "problem"}``. RiotError when it could not be read."""
+        return self._kept("contracts", self._contracts)
+
+    def live(self) -> dict:
+        """The match the owner is in now (GLZ): ``{"phase": "pregame" (agent select), "ingame" or "" (none),
+        "match": GLZ's answer or None, "names": {puuid: [name, tag]}, "at", "missing", "problem"}``. Names are
+        asked only for players who do not hide theirs (``Incognito``)."""
+        return self._kept("live", self._live, LIVE_KEEP)
+
+    def equip(self, change) -> dict:
+        """Changes the owner's loadout: ``change(loadout)`` edits PD's playerloadout (a fresh one) in place, and
+        it is sent back whole, as the game client does. The collection is read again afterwards."""
+
+        def send(tokens: dict, saved: dict) -> dict:
+            base, puuid, headers = self._base(saved), str(saved["puuid"]), self._headers(tokens)
+            url = f"{base}/personalization/v2/players/{puuid}/playerloadout"
+            loadout = self._pd("loadout", url, headers)
+            change(loadout)
+            loadout.pop("Version", None)  # PD gives the new one
+            body = json.dumps(loadout).encode()
+            answer = self._pd("equip", url, {**headers, "Content-Type": "application/json"}, "PUT", body)
+            return {"loadout": answer, "missing": [], "problem": ""}
+
+        self.cache = TTLCache(8)
+        try:
+            return self._kept("equip", send, 0)
+        finally:
+            self.cache = TTLCache(8)
+
+    def _contracts(self, tokens: dict, saved: dict) -> dict:
+        url = f"{self._base(saved)}/contracts/v1/contracts/{saved['puuid']}"
+        return {"contracts": self._pd("contracts", url, self._headers(tokens)), "missing": [], "problem": ""}
+
+    def _live(self, tokens: dict, saved: dict) -> dict:
+        shard = str(saved.get("shard") or "ap")
+        glz = GLZ.format(shard=shard if shard in SHARDS.values() and shard != "pbe" else "ap")
+        puuid, headers = str(saved["puuid"]), self._headers(tokens)
+        for phase, path in PHASES:
+            try:
+                player = self._pd(phase, f"{glz}{path}/players/{puuid}", headers)
+            except RiotError as error:
+                if error.kind == "down" and " 404" in f" {error.detail}":
+                    continue  # not in this phase
+                raise
+            match_id = str(player.get("MatchID") or "")
+            if not re.fullmatch(r"[0-9a-fA-F-]{36}", match_id):
+                continue
+            match = self._pd(phase, f"{glz}{path}/matches/{match_id}", headers)
+            team = match.get("AllyTeam") if isinstance(match.get("AllyTeam"), dict) else {}
+            players = (team.get("Players") if phase == "pregame" else match.get("Players")) or []
+            open_names = [
+                str(item.get("Subject")).lower()
+                for item in players
+                if isinstance(item, dict)
+                and item.get("Subject")
+                and not (item.get("PlayerIdentity") or {}).get("Incognito")
+            ]
+            names, problem = {}, ""
+            try:
+                names = self._names(saved, headers, open_names)
+            except RiotError as error:
+                if error.kind == "expired":
+                    raise
+                problem = error.detail or error.kind
+            return {
+                "phase": phase,
+                "match": match,
+                "names": names,
+                "at": self.clock(),
+                "missing": ["names"] if problem else [],
+                "problem": problem,
+            }
+        return {"phase": "", "match": None, "names": {}, "at": self.clock(), "missing": [], "problem": ""}
+
+    def _names(self, saved: dict, headers: dict, subjects: list[str]) -> dict:
+        """PD's name service: ``{puuid: [game name, tag]}`` of these players."""
+        if not subjects:
+            return {}
+        status, _, body = self.send(
+            "PUT",
+            f"{self._base(saved)}/name-service/v2/players",
+            {**headers, "Content-Type": "application/json"},
+            json.dumps(subjects).encode(),
+        )
+        if status == 401:
+            raise RiotError("expired", "names 401")
+        if status != 200:
+            raise RiotError("busy" if status == 429 else "down", f"names {status or 'no answer'}")
+        try:
+            answer = json.loads(body.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError, AttributeError):
+            answer = []
+        found = {}
+        for item in answer if isinstance(answer, list) else []:
+            if isinstance(item, dict) and item.get("Subject") and item.get("GameName"):
+                found[str(item["Subject"]).lower()] = [str(item["GameName"]), str(item.get("TagLine") or "")]
+        return found
 
     def _queues(self, tokens: dict, saved: dict) -> dict:
         shard = str(saved.get("shard") or "ap")

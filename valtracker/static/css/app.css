@@ -2099,6 +2099,10 @@ meter {
 .item:not(:has(> img)) .badge {
   position: static;
 }
+/* A card that opens the skin's page has its picture in the link: the corner is still free. */
+.item:has(> .skin-link > img) .badge {
+  position: absolute;
+}
 /* The skin's tier, as the game colours it (Select, Deluxe, Premium, Exclusive, Ultra). */
 .skins .item {
   border-top: 4px solid var(--rule);
@@ -2620,7 +2624,8 @@ code {
   font-size: 0.85rem;
 }
 .party-check,
-.sens-form {
+.sens-form,
+.skin-form {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
@@ -2628,7 +2633,8 @@ code {
   margin-top: 0.8rem;
 }
 .party-check label,
-.sens-form label {
+.sens-form label,
+.skin-form label {
   display: grid;
   gap: 0.2rem;
   flex: 1 1 9rem;
@@ -2638,7 +2644,9 @@ code {
 }
 .party-check select,
 .sens-form select,
-.sens-form input {
+.sens-form input,
+.skin-form select,
+.skin-form input {
   width: 100%;
   min-width: 0;
   min-height: 2.9rem;
@@ -2760,6 +2768,795 @@ code {
   font-size: 0.9rem;
 }
 
+/* News: Riot's articles as cards, the patch of now above them. */
+.patch-now {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  margin: 0.9rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  background: var(--card);
+}
+.patch-now a {
+  font-weight: 700;
+}
+.patch-now time {
+  color: var(--soft);
+  font-size: 0.85rem;
+}
+.news {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.8rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+.news a {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+}
+.news a:hover {
+  border-color: var(--accent);
+}
+.news img,
+.news .no-banner {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: color-mix(in srgb, var(--draw) 18%, var(--card));
+}
+.news .no-banner {
+  display: block;
+}
+.news-text {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.7rem 0.9rem 0.9rem;
+}
+.news-text small {
+  color: var(--soft);
+  font-size: 0.8rem;
+}
+.news-text strong {
+  line-height: 1.45;
+}
+
+/* Esports: a match a card, by day; the visitor's teams lit up. */
+.schedule {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  gap: 0.6rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+.schedule .day {
+  grid-column: 1 / -1;
+  margin-top: 0.6rem;
+  color: var(--soft);
+  font-size: 0.9rem;
+}
+.schedule .day strong {
+  color: var(--ink);
+}
+.game {
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.game.fav {
+  border-color: #c99a2e;
+  box-shadow: inset 4px 0 0 #c99a2e;
+}
+.game.inProgress {
+  border-color: var(--accent);
+}
+.game-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.6rem;
+  margin: 0 0 0.4rem;
+  color: var(--soft);
+  font-size: 0.82rem;
+}
+.game-head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.game-head img {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  object-fit: contain;
+}
+.game-head .live {
+  padding: 0 0.4rem;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--on-a);
+  font-weight: 800;
+}
+.teams {
+  display: grid;
+  gap: 0.3rem;
+}
+.team-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2rem;
+}
+.team-row img,
+.no-logo {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  object-fit: contain;
+}
+.no-logo {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--draw) 18%, var(--card));
+  color: var(--soft);
+  font-size: 0.6rem;
+  font-weight: 800;
+}
+.team-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.team-row.won .team-name {
+  font-weight: 800;
+}
+.wins {
+  min-width: 1.4rem;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.team-row:not(.won) .wins {
+  color: var(--soft);
+}
+.star {
+  flex: none;
+  width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--soft);
+}
+.star svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+}
+.star[aria-pressed="true"] {
+  color: #c99a2e;
+}
+.star[aria-pressed="true"] svg {
+  fill: currentColor;
+}
+.vod {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+}
+.fav-only {
+  margin: 0.6rem 0 0;
+}
+.fav-only label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+}
+
+/* The skin library (skins.html, skin.html): cards that open a skin, its variants, levels, videos and stars. */
+.item:has(> .skin-link) {
+  padding: 0;
+}
+.skin-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  width: 100%;
+  height: 100%;
+  padding: 0.8rem 0.6rem 0.7rem;
+  border-radius: inherit;
+  color: inherit;
+  text-decoration: none;
+}
+.skin-link:hover .iname {
+  text-decoration: underline;
+}
+.skin-link > img {
+  width: 100%;
+  height: 4.5rem;
+  object-fit: contain;
+}
+.skin-hero .meta .tier {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-right: 0.3rem;
+  vertical-align: -0.3rem;
+}
+.skin-art {
+  display: block;
+  width: 100%;
+  max-width: 40rem;
+  height: auto;
+  max-height: 13rem;
+  margin: 1rem 0 0;
+  object-fit: contain;
+}
+.chromas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.chromas a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.3rem 0.8rem 0.3rem 0.35rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+}
+.chromas a[aria-current] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  font-weight: 700;
+}
+.chromas img,
+.no-swatch {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+}
+.no-swatch {
+  background: var(--rule);
+}
+.skin-video,
+.level-video video {
+  display: block;
+  width: 100%;
+  max-width: 40rem;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  margin-top: 0.8rem;
+  border-radius: 10px;
+  background: #000;
+}
+.levels {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.levels li {
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.level-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.8rem;
+  margin: 0;
+}
+.level-head span,
+.level-about {
+  color: var(--soft);
+}
+.level-about {
+  margin: 0.3rem 0 0;
+  font-size: 0.9rem;
+}
+.level-video {
+  margin-top: 0.4rem;
+}
+.level-video summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+.score {
+  margin: 0;
+}
+.score strong {
+  font-size: 1.4rem;
+}
+.score small {
+  color: var(--soft);
+}
+.stars fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  border: 0;
+}
+.stars legend {
+  margin-bottom: 0.4rem;
+  padding: 0;
+  font-weight: 700;
+}
+.stars label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  padding: 0 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--card);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.stars label:has(:checked) {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.stars input {
+  accent-color: var(--accent);
+}
+.stars button {
+  margin-top: 0.7rem;
+}
+
+/* The owner's store: the skins they want, the night market's cards face down, the days before (shop_history.html). */
+.item.want {
+  border-color: var(--win);
+  box-shadow: inset 0 0 0 1px var(--win);
+}
+.item.want .badge {
+  background: var(--win);
+  color: var(--on-a);
+}
+.want-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  margin-top: 1rem;
+}
+.want-form .meta {
+  margin: 0;
+}
+.item.face-down {
+  background: repeating-linear-gradient(135deg, #3b2a7a 0 12px, #4a3593 12px 24px);
+}
+.item.face-down > :not(.flip) {
+  visibility: hidden;
+}
+.flip {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: transparent;
+  color: #fff;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+}
+.item.turned {
+  animation: turn 0.45s ease-out;
+}
+@keyframes turn {
+  from {
+    transform: perspective(600px) rotateY(90deg);
+  }
+  to {
+    transform: none;
+  }
+}
+.flip-all {
+  margin: 0 0 0.6rem;
+}
+.history-night {
+  margin: 1rem 0 0;
+  font-size: 1rem;
+}
+
+/* The owner's progress (progress.html), the match being played (live.html) and wearing from the collection. */
+.contracts,
+.seats,
+.roles {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.contract,
+.seat {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.contract > img,
+.seat > img,
+.no-agent {
+  flex: none;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.no-agent {
+  display: grid;
+  place-items: center;
+  background: var(--rule);
+  color: var(--soft);
+  font-weight: 700;
+}
+.contract-text,
+.seat-text {
+  display: grid;
+  flex: 1;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.contract-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.2rem 0.8rem;
+  margin: 0;
+}
+.contract-head span,
+.contract-sub,
+.seat-text small {
+  color: var(--soft);
+  font-size: 0.85rem;
+}
+.contract-sub {
+  margin: 0;
+}
+.contract meter {
+  width: 100%;
+  height: 0.6rem;
+}
+.contract.complete {
+  opacity: 0.7;
+}
+.seat.me {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.seat.locked .seat-text small {
+  color: var(--ink);
+}
+.seat-text strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.seat-text .tag {
+  color: var(--soft);
+  font-weight: 400;
+}
+.hidden-name {
+  color: var(--soft);
+  font-weight: 400;
+}
+.seat-rank img {
+  display: block;
+  width: 1.75rem;
+  height: 1.75rem;
+}
+.live-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+}
+.live-head img {
+  width: 10rem;
+  max-width: 40%;
+  height: 3.5rem;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.roles li {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.6rem 0.9rem;
+  border-left: 4px solid var(--draw);
+  border-radius: 6px;
+  background: var(--card);
+}
+.role-agents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.8rem;
+}
+.role-agent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.role-agent img {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 6px;
+}
+.wear {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem;
+  width: 100%;
+  margin-top: 0.3rem;
+}
+.wear select {
+  flex: 1 1 7rem;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.4rem;
+  padding: 0 0.4rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+}
+.wear button,
+.titles .item button {
+  min-height: 2.4rem;
+  padding: 0 0.8rem;
+  font-size: 0.85rem;
+}
+.titles .item button {
+  margin-left: 0.4rem;
+}
+
+/* The agents' pick and win rates (agent_stats.html). */
+.agent-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: inherit;
+  text-decoration: none;
+}
+.agent-cell img {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 6px;
+}
+.agent-cell span {
+  display: grid;
+}
+.agent-cell small {
+  color: var(--soft);
+  font-weight: 400;
+  font-size: 0.78rem;
+}
+.agent-stats td {
+  white-space: nowrap;
+}
+.share-bar {
+  display: inline-block;
+  width: 4rem;
+  height: 0.4rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  fill: var(--accent);
+}
+.share-bar .back {
+  fill: var(--rule);
+}
+.agent-stats strong.win {
+  color: var(--win);
+}
+.agent-stats strong.loss {
+  color: var(--loss);
+}
+.agent-stats tr.few td {
+  color: var(--soft);
+}
+
+/* A player's matches by map (app.js mapPick). */
+.map-pick {
+  margin: 0 0 0.6rem;
+}
+.map-pick label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--soft);
+  font-size: 0.9rem;
+}
+.map-pick select {
+  min-height: 2.6rem;
+  padding: 0 0.6rem;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+}
+.match-list li[hidden] {
+  display: none;
+}
+
+.profile-more,
+.summary-tools,
+.compare-more {
+  margin: 0.8rem 0 0;
+}
+.compare-form label {
+  max-width: 16rem;
+}
+.compare-who {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+.compare-who a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  height: 100%;
+  padding: 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+}
+.compare-who img {
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 8px;
+}
+.compare-who span {
+  display: grid;
+  min-width: 0;
+}
+.compare-who strong {
+  overflow-wrap: anywhere;
+}
+.compare-who small {
+  color: var(--soft);
+}
+.versus-two {
+  table-layout: fixed;
+}
+.versus-two td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.versus-two tbody th {
+  font-size: 0.9rem;
+  white-space: normal;
+}
+.versus-two th:first-child {
+  width: 34%;
+}
+.versus-two .short-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.versus-two td.best {
+  color: var(--win);
+  font-weight: 700;
+}
+.versus-two td.best::after {
+  content: " ▲";
+  content: " ▲" / "";
+  font-size: 0.75em;
+}
+.rank-cell,
+.agent-list span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.rank-cell img {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+.agent-list {
+  display: grid;
+  justify-items: end;
+  gap: 0.3rem;
+}
+.agent-list img {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 4px;
+}
+.agent-list span {
+  overflow-wrap: normal;
+}
+.xh-save label {
+  max-width: 18rem;
+}
+.xh-saved {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.7rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.xh-saved li {
+  min-width: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.xh-saved p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.6rem 0 0;
+}
+.xh-saved strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.xh-saved code {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--soft);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

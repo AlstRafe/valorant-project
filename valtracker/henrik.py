@@ -30,6 +30,8 @@ KEEP = {
     "leaderboard": 600,
     "status": 300,
     "featured": 1800,
+    "news": 1800,
+    "esports": 300,
 }
 #: Players on one page of a leaderboard.
 BOARD_PAGE = 50
@@ -203,6 +205,16 @@ class Henrik:
         """The store's featured bundles (the same for everyone): ``[{"uuid", "price", "until", "items"}]``."""
         return self._get(("featured",), "/valorant/v2/store-featured", KEEP["featured"], _slim_featured)
 
+    def news(self, country: str) -> list:
+        """Riot's VALORANT news in a language (``ja-jp``, ``en-gb``...): ``[{"title", "at", "category", "url",
+        "banner"}]``, the latest first."""
+        return self._get(("news", country), f"/valorant/v1/website/{_part(country)}", KEEP["news"], _slim_news)
+
+    def esports(self) -> list:
+        """The esports schedule (every league): ``[{"at", "state", "league": {"name", "region", "icon"},
+        "tournament", "best_of", "vod", "teams": [{"name", "code", "icon", "won", "wins"}]}]``, by time."""
+        return self._get(("esports",), "/valorant/v1/esports/schedule", KEEP["esports"], _slim_esports)
+
     def _get(self, cache_key, path: str, seconds: float, shape=None):
         kept = self.cache.get(cache_key)
         if kept is not None:
@@ -369,6 +381,69 @@ def _slim_board(data) -> dict:
     }
 
 
+def _https(value) -> str:
+    """An https address, or "" (nothing else is linked to or shown)."""
+    value = str(value or "")
+    return value if value.startswith("https://") else ""
+
+
+def _slim_news(data) -> list:
+    articles = []
+    for item in data if isinstance(data, list) else []:
+        if not isinstance(item, dict) or not item.get("title"):
+            continue
+        articles.append(
+            {
+                "title": str(item["title"])[:200],
+                "at": str(item.get("date") or ""),
+                "category": str(item.get("category") or "").lower(),
+                "url": _https(item.get("external_link")) or _https(item.get("url")),
+                "banner": _https(item.get("banner_url")),
+            }
+        )
+    return sorted(articles, key=lambda item: item["at"], reverse=True)
+
+
+def _slim_esports(data) -> list:
+    games = []
+    for item in data if isinstance(data, list) else []:
+        if not isinstance(item, dict):
+            continue
+        match = item.get("match") if isinstance(item.get("match"), dict) else {}
+        teams = [team for team in match.get("teams") or [] if isinstance(team, dict) and team.get("name")]
+        if len(teams) != 2:
+            continue
+        league = item.get("league") if isinstance(item.get("league"), dict) else {}
+        tournament = item.get("tournament") if isinstance(item.get("tournament"), dict) else {}
+        kind = match.get("game_type") if isinstance(match.get("game_type"), dict) else {}
+        games.append(
+            {
+                "at": str(item.get("date") or ""),
+                "state": str(item.get("state") or ""),
+                "league": {
+                    "name": str(league.get("name") or ""),
+                    "id": str(league.get("identifier") or league.get("name") or "").lower(),
+                    "region": str(league.get("region") or ""),
+                    "icon": _https(league.get("icon")),
+                },
+                "tournament": str(tournament.get("name") or ""),
+                "best_of": int(kind.get("count") or 0) if str(kind.get("count") or "").isdigit() else 0,
+                "vod": _https(item.get("vod")),
+                "teams": [
+                    {
+                        "name": str(team.get("name"))[:60],
+                        "code": str(team.get("code") or "")[:8],
+                        "icon": _https(team.get("icon")),
+                        "won": bool(team.get("has_won")),
+                        "wins": int(team.get("game_wins") or 0) if str(team.get("game_wins") or 0).isdigit() else 0,
+                    }
+                    for team in teams
+                ],
+            }
+        )
+    return sorted(games, key=lambda item: item["at"])
+
+
 def _slim_status(data) -> dict:
     """Each notice: ``{"kind": maintenance / incident, "severity", "status", "titles": {locale: words},
     "updates": [{"at", "words": {locale: words}}] (latest first), "at"}``."""
@@ -466,8 +541,12 @@ def _slim_collected(matches) -> list:
         {
             "metadata": _pick(match["metadata"], METADATA),
             "players": [
-                _pick(player, ("puuid", "tier")) for player in match.get("players") or [] if isinstance(player, dict)
+                _pick(player, ("puuid", "tier", "team_id", "agent"))
+                for player in match.get("players") or []
+                if isinstance(player, dict)
             ],
+            # which team won: the agents' win rates (activity.py)
+            "teams": [_pick(team, ("team_id", "won")) for team in match.get("teams") or [] if isinstance(team, dict)],
         }
         for match in matches
         if isinstance(match, dict) and isinstance(match.get("metadata"), dict)

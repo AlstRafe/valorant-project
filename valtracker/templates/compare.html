@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% macro cell(row, value) -%}
+{% if row.kind == 'rank' %}{% if value and value.tier %}<span class="rank-cell">{% if value.icon %}<img src="{{ media(value.icon) }}" alt="" width="28" height="28" loading="lazy">{% endif %}<span>{{ value.name }}</span></span>{% else %}—{% endif %}
+{%- elif row.kind == 'agents' %}{% if value %}<span class="agent-list">{% for agent in value %}<span title="{{ t('{games}試合', games=agent.games) }}">{% if agent.icon %}<img src="{{ media(agent.icon) }}" alt="" width="24" height="24" loading="lazy">{% endif %}{{ agent.name }}</span>{% endfor %}</span>{% else %}—{% endif %}
+{%- elif value is none %}—{% elif row.signed %}{{ '%+d'|format(value) }}{% else %}{{ value }}{{ row.unit }}{% endif %}
+{%- endmacro %}
+{% block title %}{% if rows %}{{ sides[0].asked }} vs {{ sides[1].asked }} · {% endif %}{{ t('プレイヤーを比べる') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('2 人のランクと最近の試合の成績を並べて見られます。') }}{% endblock %}
+{% block main %}
+<p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
+<section class="hero">
+<h1>{{ t('プレイヤーを比べる') }}</h1>
+<p class="lead">{{ t('2 人のランクと最近の試合の成績を並べて見られます。') }}</p>
+</section>
+<form class="sens-form compare-form" action="{{ url_for('compare') }}" method="get">
+{% for side in sides %}<label><span>{{ t('プレイヤー {number}', number=loop.index) }}</span>
+<input name="{{ 'ab'[loop.index0] }}" value="{{ side.asked }}" placeholder="Name#TAG" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="40" required{% if side.problem %} aria-invalid="true" aria-describedby="problem-{{ loop.index }}"{% endif %}></label>
+{% endfor %}<label><span>{{ t('モード') }}</span>
+<select name="mode">
+{% for item in modes %}<option value="{{ item.key }}"{% if item.key == mode %} selected{% endif %}>{{ item.name }}</option>
+{% endfor %}</select></label>
+<button type="submit">{{ t('比べる') }}</button>
+</form>
+{% for side in sides %}{% if side.problem %}<p class="problem" id="problem-{{ loop.index }}" role="alert">{{ side.asked }}: {{ side.problem }}</p>{% endif %}{% endfor %}
+{% if rows %}
+<ul class="compare-who">
+{% for side in sides %}<li><a href="{{ url_for('player', name=side.found.name, tag=side.found.tag) }}">{% if side.found.card %}<img src="{{ media('https://media.valorant-api.com/playercards/' ~ side.found.card ~ '/smallart.png') }}" alt="" width="48" height="48" loading="lazy">{% endif %}<span><strong>{{ side.found.name }}<span class="tag">#{{ side.found.tag }}</span></strong><small>{{ t('{count} 項目で上', count=wins[loop.index0]) }}</small></span></a></li>
+{% endfor %}</ul>
+<div class="table-wrap"><table class="board plain versus-two">
+<caption class="sr">{{ t('{a} と {b} の比較', a=sides[0].asked, b=sides[1].asked) }}</caption>
+<thead><tr><th scope="col"><span class="sr">{{ t('項目') }}</span></th>
+{% for side in sides %}<th scope="col"><span class="short-name" title="{{ side.asked }}">{{ side.found.name }}</span></th>
+{% endfor %}</tr></thead>
+<tbody>
+{% for row in rows %}<tr>
+<th scope="row">{{ row.name }}</th>
+{% for value in row['values'] %}<td{% if row.best == loop.index0 %} class="best"{% endif %}>{{ cell(row, value) }}{% if row.best == loop.index0 %}<span class="sr"> {{ t('（上）') }}</span>{% endif %}</td>
+{% endfor %}</tr>
+{% endfor %}</tbody>
+</table></div>
+<p class="compare-more"><a class="button quiet" href="{{ swap_url }}">{{ t('左右を入れ替える') }}</a></p>
+<p class="note">{{ t('それぞれ最近の試合（多くて {count} 試合）の平均です。試合の数が少ないと、たまたまの差が大きく出ます。', count=recent) }}</p>
+{% endif %}
+{% endblock %}

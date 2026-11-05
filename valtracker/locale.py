@@ -819,6 +819,586 @@ TEXTS = {
     "マイアミ": {"ko": "마이애미", "en-GB": "Miami", "zh-TW": "邁阿密"},
     "サンティアゴ": {"ko": "산티아고", "en-GB": "Santiago", "zh-TW": "聖地牙哥"},
     "サンパウロ": {"ko": "상파울루", "en-GB": "São Paulo", "zh-TW": "聖保羅"},
+    "Riot が出している VALORANT のニュースとパッチノートです。種類で絞ったり、言葉で探したりできます。": {
+        "ko": "Riot이 올린 VALORANT 뉴스와 패치 노트입니다. 종류로 거르거나 단어로 찾을 수 있습니다.",
+        "en-GB": "Riot's VALORANT news and patch notes. Filter them by kind or search for a word.",
+        "zh-TW": "Riot 發布的 VALORANT 新聞與更新說明。可依類別篩選，或用關鍵字搜尋。",
+    },
+    "VCT などの大会の日程と結果、いま行われている試合のスコアです。好きなチームに印をつけられます。": {
+        "ko": "VCT 등 대회의 일정과 결과, 진행 중인 경기의 점수입니다. 좋아하는 팀에 표시할 수 있습니다.",
+        "en-GB": "The schedule and results of VCT and other events, and the score of matches being played. Star your teams.",
+        "zh-TW": "VCT 等賽事的賽程與結果，以及進行中比賽的比分。可以替喜歡的隊伍加上標記。",
+    },
+    "eスポーツ": {
+        "ko": "e스포츠",
+        "en-GB": "Esports",
+        "zh-TW": "電競",
+    },
+    "{count} 試合中": {
+        "ko": "{count}경기 진행 중",
+        "en-GB": "{count} live",
+        "zh-TW": "{count} 場進行中",
+    },
+    "{team} に印をつける": {
+        "ko": "{team} 표시하기",
+        "en-GB": "Star {team}",
+        "zh-TW": "標記 {team}",
+    },
+    "{team} の印を外す": {
+        "ko": "{team} 표시 해제",
+        "en-GB": "Unstar {team}",
+        "zh-TW": "取消標記 {team}",
+    },
+    "「{words}」に合うニュースはありませんでした。": {
+        "ko": "「{words}」에 맞는 뉴스가 없습니다.",
+        "en-GB": "No news matches “{words}”.",
+        "zh-TW": "沒有符合「{words}」的新聞。",
+    },
+    "いまのパッチ": {
+        "ko": "현재 패치",
+        "en-GB": "Current patch",
+        "zh-TW": "目前版本",
+    },
+    "これからの試合はまだ出ていません。": {
+        "ko": "아직 예정된 경기가 없습니다.",
+        "en-GB": "No matches to come are listed yet.",
+        "zh-TW": "目前還沒有接下來的比賽。",
+    },
+    "アップデート": {
+        "ko": "업데이트",
+        "en-GB": "Game updates",
+        "zh-TW": "遊戲更新",
+    },
+    "コミュニティ": {
+        "ko": "커뮤니티",
+        "en-GB": "Community",
+        "zh-TW": "社群",
+    },
+    "ニュース": {
+        "ko": "뉴스",
+        "en-GB": "News",
+        "zh-TW": "新聞",
+    },
+    "ニュースはまだありません。": {
+        "ko": "아직 뉴스가 없습니다.",
+        "en-GB": "No news yet.",
+        "zh-TW": "目前沒有新聞。",
+    },
+    "ニュースを探す": {
+        "ko": "뉴스 검색",
+        "en-GB": "Search the news",
+        "zh-TW": "搜尋新聞",
+    },
+    "パッチノート": {
+        "ko": "패치 노트",
+        "en-GB": "Patch notes",
+        "zh-TW": "更新說明",
+    },
+    "パッチノートとお知らせ。種類と言葉で探せます。": {
+        "ko": "패치 노트와 공지. 종류와 단어로 찾을 수 있습니다.",
+        "en-GB": "Patch notes and announcements, by kind or word.",
+        "zh-TW": "更新說明與公告，可依類別或關鍵字搜尋。",
+    },
+    "例: パッチ、エージェント": {
+        "ko": "예: 패치, 요원",
+        "en-GB": "e.g. patch, agent",
+        "zh-TW": "例：更新、特務",
+    },
+    "印をつけたチームだけ": {
+        "ko": "표시한 팀만",
+        "en-GB": "Starred teams only",
+        "zh-TW": "只看已標記的隊伍",
+    },
+    "大会": {
+        "ko": "대회",
+        "en-GB": "Event",
+        "zh-TW": "賽事",
+    },
+    "大会の日程・結果・試合中のスコア。好きなチームに印も。": {
+        "ko": "대회 일정·결과·진행 중 점수. 좋아하는 팀 표시도.",
+        "en-GB": "Event schedule, results and live scores. Star your teams.",
+        "zh-TW": "賽事賽程、結果與即時比分，也能標記隊伍。",
+    },
+    "探す": {
+        "ko": "찾기",
+        "en-GB": "Search",
+        "zh-TW": "搜尋",
+    },
+    "日程": {
+        "ko": "일정",
+        "en-GB": "Schedule",
+        "zh-TW": "賽程",
+    },
+    "時刻はあなたの端末の時計で出しています。スコアは数分ごとに新しくなります。": {
+        "ko": "시각은 사용자 기기의 시계 기준입니다. 점수는 몇 분마다 새로 고쳐집니다.",
+        "en-GB": "Times are in your device's clock. Scores refresh every few minutes.",
+        "zh-TW": "時間依你裝置的時鐘顯示。比分每隔幾分鐘更新。",
+    },
+    "種類": {
+        "ko": "종류",
+        "en-GB": "Kind",
+        "zh-TW": "類別",
+    },
+    "結果": {
+        "ko": "결과",
+        "en-GB": "Results",
+        "zh-TW": "結果",
+    },
+    "結果はまだありません。": {
+        "ko": "아직 결과가 없습니다.",
+        "en-GB": "No results yet.",
+        "zh-TW": "目前還沒有結果。",
+    },
+    "記事は Riot の公式サイト（playvalorant.com）で開きます。": {
+        "ko": "기사는 Riot 공식 사이트(playvalorant.com)에서 열립니다.",
+        "en-GB": "Articles open on Riot's own site (playvalorant.com).",
+        "zh-TW": "文章會在 Riot 官方網站（playvalorant.com）開啟。",
+    },
+    "試合の動画": {
+        "ko": "경기 영상",
+        "en-GB": "Watch the match",
+        "zh-TW": "比賽影片",
+    },
+    "試合中": {
+        "ko": "진행 중",
+        "en-GB": "Live",
+        "zh-TW": "進行中",
+    },
+    "開発": {
+        "ko": "개발",
+        "en-GB": "Dev",
+        "zh-TW": "開發",
+    },
+    "VALORANT の武器スキンを全部。武器・ティア・名前で探して、バリエーションやレベルごとの動画を見られます。": {
+        "ko": "VALORANT의 모든 무기 스킨. 무기·등급·이름으로 찾고, 변형과 레벨별 영상을 볼 수 있습니다.",
+        "en-GB": "Every VALORANT weapon skin. Find them by weapon, tier or name, and watch each variant's and level's video.",
+        "zh-TW": "VALORANT 的所有武器造型。可依武器、等級、名稱搜尋，並觀看各款式與等級的影片。",
+    },
+    "{count} 人が評価しました（3 人から平均を出します）": {
+        "ko": "{count}명이 평가했습니다 (3명부터 평균을 냅니다)",
+        "en-GB": "{count} rated so far (the average shows from 3)",
+        "zh-TW": "已有 {count} 人評分（滿 3 人才顯示平均）",
+    },
+    "{count} 人の評価": {
+        "ko": "{count}명의 평가",
+        "en-GB": "from {count} ratings",
+        "zh-TW": "{count} 人評分",
+    },
+    "{found} 件（全 {total} 件）": {
+        "ko": "{found}개 (전체 {total}개)",
+        "en-GB": "{found} of {total}",
+        "zh-TW": "{found} 款（共 {total} 款）",
+    },
+    "{name} のバリエーション、レベルごとの演出と動画、同じシリーズのスキン。": {
+        "ko": "{name}의 변형, 레벨별 효과와 영상, 같은 시리즈의 스킨.",
+        "en-GB": "{name}: its variants, what each level adds with videos, and the rest of its series.",
+        "zh-TW": "{name} 的款式、各等級的效果與影片，以及同系列的造型。",
+    },
+    "{name} の動画": {
+        "ko": "{name} 영상",
+        "en-GB": "{name} video",
+        "zh-TW": "{name} 的影片",
+    },
+    "あなたの評価": {
+        "ko": "내 평가",
+        "en-GB": "Your rating",
+        "zh-TW": "你的評分",
+    },
+    "いまは評価が多すぎます。時間をおいてもう一度どうぞ。": {
+        "ko": "지금은 평가가 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+        "en-GB": "Too many ratings just now. Please try again later.",
+        "zh-TW": "目前評分太多，請稍後再試。",
+    },
+    "すべての武器": {
+        "ko": "모든 무기",
+        "en-GB": "All weapons",
+        "zh-TW": "所有武器",
+    },
+    "ほかに {count} 件あります。武器やティアで絞り込んでください。": {
+        "ko": "{count}개가 더 있습니다. 무기나 등급으로 좁혀 주세요.",
+        "en-GB": "{count} more. Narrow it down by weapon or tier.",
+        "zh-TW": "還有 {count} 款，請用武器或等級縮小範圍。",
+    },
+    "まだ評価はありません。": {
+        "ko": "아직 평가가 없습니다.",
+        "en-GB": "No ratings yet.",
+        "zh-TW": "目前還沒有評分。",
+    },
+    "アカウントは要りません。このブラウザで 1 スキンに 1 つ、あとから変えられます。": {
+        "ko": "계정은 필요 없습니다. 이 브라우저에서 스킨 하나에 하나, 나중에 바꿀 수 있습니다.",
+        "en-GB": "No account needed. One rating per skin from this browser, and you can change it later.",
+        "zh-TW": "不需要帳號。這個瀏覽器每款造型可評一次，之後也能更改。",
+    },
+    "シリーズ: {name}": {
+        "ko": "시리즈: {name}",
+        "en-GB": "Series: {name}",
+        "zh-TW": "系列：{name}",
+    },
+    "スキンの一覧を読み込めませんでした。時間をおいてもう一度どうぞ。": {
+        "ko": "스킨 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        "en-GB": "The list of skins could not be loaded. Please try again later.",
+        "zh-TW": "無法載入造型列表，請稍後再試。",
+    },
+    "スキン図鑑": {
+        "ko": "스킨 도감",
+        "en-GB": "Skin library",
+        "zh-TW": "造型圖鑑",
+    },
+    "ティア": {
+        "ko": "등급",
+        "en-GB": "Tier",
+        "zh-TW": "等級",
+    },
+    "バリエーション": {
+        "ko": "변형",
+        "en-GB": "Variants",
+        "zh-TW": "款式",
+    },
+    "レベル": {
+        "ko": "레벨",
+        "en-GB": "Levels",
+        "zh-TW": "等級",
+    },
+    "レベル {number}": {
+        "ko": "레벨 {number}",
+        "en-GB": "Level {number}",
+        "zh-TW": "等級 {number}",
+    },
+    "レベル {number} の動画": {
+        "ko": "레벨 {number} 영상",
+        "en-GB": "Level {number} video",
+        "zh-TW": "等級 {number} 的影片",
+    },
+    "例: プライム": {
+        "ko": "예: 프라임",
+        "en-GB": "e.g. Prime",
+        "zh-TW": "例：Prime",
+    },
+    "全スキンのバリエーションとレベルの動画、みんなの評価。": {
+        "ko": "모든 스킨의 변형과 레벨 영상, 모두의 평가.",
+        "en-GB": "Every skin's variants and level videos, rated by visitors.",
+        "zh-TW": "所有造型的款式與等級影片，還有大家的評分。",
+    },
+    "動画 {count}": {
+        "ko": "영상 {count}",
+        "en-GB": "{count} videos",
+        "zh-TW": "影片 {count}",
+    },
+    "動画は Riot のサーバーから、再生したときだけ読み込みます。": {
+        "ko": "영상은 Riot 서버에서, 재생할 때만 불러옵니다.",
+        "en-GB": "Videos come from Riot's servers, and load only when you press play.",
+        "zh-TW": "影片來自 Riot 的伺服器，只在播放時才載入。",
+    },
+    "動画を見る": {
+        "ko": "영상 보기",
+        "en-GB": "Watch the video",
+        "zh-TW": "觀看影片",
+    },
+    "合うスキンはありませんでした。": {
+        "ko": "맞는 스킨이 없습니다.",
+        "en-GB": "No skins match.",
+        "zh-TW": "沒有符合的造型。",
+    },
+    "同じシリーズ": {
+        "ko": "같은 시리즈",
+        "en-GB": "Same series",
+        "zh-TW": "同系列",
+    },
+    "名前": {
+        "ko": "이름",
+        "en-GB": "Name",
+        "zh-TW": "名稱",
+    },
+    "名前・絵・動画は valorant-api.com と Riot から。": {
+        "ko": "이름·그림·영상은 valorant-api.com과 Riot에서.",
+        "en-GB": "Names, pictures and videos from valorant-api.com and Riot.",
+        "zh-TW": "名稱、圖片與影片來自 valorant-api.com 與 Riot。",
+    },
+    "基本の見た目": {
+        "ko": "기본 외형",
+        "en-GB": "Base look",
+        "zh-TW": "基本外觀",
+    },
+    "星 {count}": {
+        "ko": "별 {count}개",
+        "en-GB": "{count} stars",
+        "zh-TW": "{count} 顆星",
+    },
+    "標準": {
+        "ko": "기본",
+        "en-GB": "Base",
+        "zh-TW": "基本款",
+    },
+    "評価": {
+        "ko": "평가",
+        "en-GB": "Ratings",
+        "zh-TW": "評分",
+    },
+    "評価の高いスキン": {
+        "ko": "평가가 높은 스킨",
+        "en-GB": "Top-rated skins",
+        "zh-TW": "高評分造型",
+    },
+    "評価を受け付けました。": {
+        "ko": "평가를 받았습니다.",
+        "en-GB": "Thanks, your rating is in.",
+        "zh-TW": "已收到你的評分。",
+    },
+    "評価を変える": {
+        "ko": "평가 바꾸기",
+        "en-GB": "Change rating",
+        "zh-TW": "更改評分",
+    },
+    "評価を送る": {
+        "ko": "평가 보내기",
+        "en-GB": "Send rating",
+        "zh-TW": "送出評分",
+    },
+    "エフェクト": {
+        "ko": "이펙트",
+        "en-GB": "VFX",
+        "zh-TW": "特效",
+    },
+    "アニメーション": {
+        "ko": "애니메이션",
+        "en-GB": "Animation",
+        "zh-TW": "動畫",
+    },
+    "フィニッシャー": {
+        "ko": "피니셔",
+        "en-GB": "Finisher",
+        "zh-TW": "終結特效",
+    },
+    "サウンド": {
+        "ko": "사운드",
+        "en-GB": "Sound effects",
+        "zh-TW": "音效",
+    },
+    "キルカウンター": {
+        "ko": "킬 카운터",
+        "en-GB": "Kill counter",
+        "zh-TW": "擊殺計數器",
+    },
+    "インスペクトとキル演出": {
+        "ko": "검사 및 처치 효과",
+        "en-GB": "Inspect and kill effects",
+        "zh-TW": "檢視與擊殺特效",
+    },
+    "攻守で変わる見た目": {
+        "ko": "공수에 따라 바뀌는 외형",
+        "en-GB": "Changes for attack and defence",
+        "zh-TW": "攻守方不同外觀",
+    },
+    "トップフラグの演出": {
+        "ko": "탑 프래그 효과",
+        "en-GB": "Top-frag effect",
+        "zh-TW": "頭號擊殺特效",
+    },
+    "キルバナー": {
+        "ko": "킬 배너",
+        "en-GB": "Kill banner",
+        "zh-TW": "擊殺橫幅",
+    },
+    "キル演出": {
+        "ko": "처치 효과",
+        "en-GB": "Kill effect",
+        "zh-TW": "擊殺特效",
+    },
+    "変形": {
+        "ko": "변신",
+        "en-GB": "Transformation",
+        "zh-TW": "變形",
+    },
+    "VALORANT のストアが入れ替わりました": {
+        "ko": "VALORANT 상점이 바뀌었습니다",
+        "en-GB": "The VALORANT store has changed",
+        "zh-TW": "VALORANT 商店已更新",
+    },
+    "毎日の 4 つのスキンが新しくなりました。": {
+        "ko": "매일 바뀌는 스킨 4개가 새로 나왔습니다.",
+        "en-GB": "Today's four skins are in.",
+        "zh-TW": "每日的 4 款造型已更新。",
+    },
+    "VALORANT のストア": {
+        "ko": "VALORANT 상점",
+        "en-GB": "VALORANT store",
+        "zh-TW": "VALORANT 商店",
+    },
+    "入れ替わりをカレンダーに入れる（毎日の通知）": {
+        "ko": "교체 시각을 캘린더에 추가 (매일 알림)",
+        "en-GB": "Add the daily change to your calendar (a reminder every day)",
+        "zh-TW": "把更新時間加入行事曆（每天提醒）",
+    },
+    "使用率と勝率": {
+        "ko": "픽률과 승률",
+        "en-GB": "Pick and win rates",
+        "zh-TW": "選用率與勝率",
+    },
+    "使用率と勝率を見る": {
+        "ko": "픽률과 승률 보기",
+        "en-GB": "See pick and win rates",
+        "zh-TW": "查看選用率與勝率",
+    },
+    "エージェントがどれくらい選ばれ、選んだチームがどれくらい勝っているか。このサイトが見た試合からの目安です。": {
+        "ko": "요원이 얼마나 선택되고, 선택한 팀이 얼마나 이기는지. 이 사이트가 본 경기에서 낸 추정치입니다.",
+        "en-GB": "How often each agent is picked and how often the team that picked it wins: an estimate from the matches this site has seen.",
+        "zh-TW": "各特務被選用的頻率，以及選用的隊伍勝率。這是從本站看到的對戰得出的估計。",
+    },
+    "直近 {days} 日に見た {count} 試合から": {
+        "ko": "최근 {days}일 동안 본 {count}경기 기준",
+        "en-GB": "From {count} matches seen in the last {days} days",
+        "zh-TW": "取自最近 {days} 天看到的 {count} 場對戰",
+    },
+    "まだ試合が足りません。見られた試合が増えると出ます。": {
+        "ko": "아직 경기가 부족합니다. 본 경기가 늘면 표시됩니다.",
+        "en-GB": "Not enough matches yet. The numbers show as more are seen.",
+        "zh-TW": "對戰數量還不夠，看到的對戰變多後就會顯示。",
+    },
+    "並べ方": {
+        "ko": "정렬",
+        "en-GB": "Sort",
+        "zh-TW": "排序",
+    },
+    "使用率の高い順": {
+        "ko": "픽률 높은 순",
+        "en-GB": "Most picked",
+        "zh-TW": "選用率高到低",
+    },
+    "勝率の高い順": {
+        "ko": "승률 높은 순",
+        "en-GB": "Highest win rate",
+        "zh-TW": "勝率高到低",
+    },
+    "使用率": {
+        "ko": "픽률",
+        "en-GB": "Pick rate",
+        "zh-TW": "選用率",
+    },
+    "使用率はチームのうちそのエージェントを選んだ割合、勝率はそのチームが勝った割合です。{few} 試合より少ないものは勝率を出していません。": {
+        "ko": "픽률은 그 요원을 고른 팀의 비율, 승률은 그 팀이 이긴 비율입니다. {few}경기보다 적으면 승률을 표시하지 않습니다.",
+        "en-GB": "Pick rate is the share of teams that picked the agent; win rate is how often those teams won. Win rates from fewer than {few} matches are not shown.",
+        "zh-TW": "選用率是選了該特務的隊伍比例，勝率是這些隊伍獲勝的比例。少於 {few} 場的不顯示勝率。",
+    },
+    "2 人のランクと最近の試合の成績を並べて見られます。": {
+        "ko": "두 플레이어의 랭크와 최근 경기 성적을 나란히 볼 수 있습니다.",
+        "en-GB": "See two players' ranks and recent match numbers side by side.",
+        "zh-TW": "並排查看兩位玩家的牌位與近期對戰成績。",
+    },
+    "{a} と {b} の比較": {
+        "ko": "{a}와 {b} 비교",
+        "en-GB": "{a} compared with {b}",
+        "zh-TW": "{a} 與 {b} 的比較",
+    },
+    "{count} 項目で上": {
+        "ko": "{count}개 항목에서 우위",
+        "en-GB": "Ahead on {count}",
+        "zh-TW": "{count} 項領先",
+    },
+    "このブラウザに保存": {
+        "ko": "이 브라우저에 저장",
+        "en-GB": "Save in this browser",
+        "zh-TW": "儲存在此瀏覽器",
+    },
+    "このブラウザの中だけに保存されます。ほかの端末へはリンクをコピーして送ってください。": {
+        "ko": "이 브라우저 안에만 저장됩니다. 다른 기기에는 링크를 복사해서 보내 주세요.",
+        "en-GB": "Saved in this browser only. To use one on another device, copy its link and send it there.",
+        "zh-TW": "只會儲存在此瀏覽器中。要在其他裝置使用，請複製連結傳過去。",
+    },
+    "それぞれ最近の試合（多くて {count} 試合）の平均です。試合の数が少ないと、たまたまの差が大きく出ます。": {
+        "ko": "각자 최근 경기(최대 {count}경기)의 평균입니다. 경기 수가 적으면 우연한 차이가 크게 나타납니다.",
+        "en-GB": "Each is the average of that player's recent matches (up to {count}). With only a few matches, chance makes the gaps look bigger.",
+        "zh-TW": "各自為近期對戰（最多 {count} 場）的平均。場數少時，偶然造成的差距會比較大。",
+    },
+    "ほかのプレイヤーと比べる": {
+        "ko": "다른 플레이어와 비교",
+        "en-GB": "Compare with another player",
+        "zh-TW": "與其他玩家比較",
+    },
+    "アカウントレベル": {
+        "ko": "계정 레벨",
+        "en-GB": "Account level",
+        "zh-TW": "帳號等級",
+    },
+    "プレイヤー {number}": {
+        "ko": "플레이어 {number}",
+        "en-GB": "Player {number}",
+        "zh-TW": "玩家 {number}",
+    },
+    "プレイヤーを比べる": {
+        "ko": "플레이어 비교",
+        "en-GB": "Compare players",
+        "zh-TW": "比較玩家",
+    },
+    "リンクをコピー": {
+        "ko": "링크 복사",
+        "en-GB": "Copy link",
+        "zh-TW": "複製連結",
+    },
+    "保存したクロスヘア": {
+        "ko": "저장한 조준선",
+        "en-GB": "Saved crosshairs",
+        "zh-TW": "已儲存的準星",
+    },
+    "保存しました": {
+        "ko": "저장했습니다",
+        "en-GB": "Saved",
+        "zh-TW": "已儲存",
+    },
+    "名前なし": {
+        "ko": "이름 없음",
+        "en-GB": "Unnamed",
+        "zh-TW": "未命名",
+    },
+    "名前（なくてもかまいません）": {
+        "ko": "이름(없어도 됩니다)",
+        "en-GB": "Name (optional)",
+        "zh-TW": "名稱（可留空）",
+    },
+    "左右を入れ替える": {
+        "ko": "좌우 바꾸기",
+        "en-GB": "Swap sides",
+        "zh-TW": "左右互換",
+    },
+    "戦績を画像で保存": {
+        "ko": "전적을 이미지로 저장",
+        "en-GB": "Save as a picture",
+        "zh-TW": "將戰績存成圖片",
+    },
+    "比べる": {
+        "ko": "비교",
+        "en-GB": "Compare",
+        "zh-TW": "比較",
+    },
+    "消す": {
+        "ko": "삭제",
+        "en-GB": "Remove",
+        "zh-TW": "刪除",
+    },
+    "項目": {
+        "ko": "항목",
+        "en-GB": "Item",
+        "zh-TW": "項目",
+    },
+    "（上）": {
+        "ko": "(우위)",
+        "en-GB": "(ahead)",
+        "zh-TW": "（領先）",
+    },
+    "平均キル": {
+        "ko": "평균 킬",
+        "en-GB": "Kills per match",
+        "zh-TW": "平均擊殺",
+    },
+    "平均デス": {
+        "ko": "평균 데스",
+        "en-GB": "Deaths per match",
+        "zh-TW": "平均死亡",
+    },
+    "試合数": {
+        "ko": "경기 수",
+        "en-GB": "Matches",
+        "zh-TW": "場數",
+    },
 }
 
 #: Words only the owner sees (the settings, and why the search cannot work yet): Japanese only.

@@ -47,8 +47,8 @@ def _number(value) -> int:
 
 
 def item(kind: str, uuid: str, content: Content, lang: str, said: dict | None = None) -> dict:
-    """One thing on sale: ``{"kind", "name", "image", "tier"}`` (HenrikDev's own words, ``said``, when
-    valorant-api.com does not know it)."""
+    """One thing on sale: ``{"kind", "name", "image", "tier"}``, a skin's uuid too (``"skin"``: its page in
+    the skin library) (HenrikDev's own words, ``said``, when valorant-api.com does not know it)."""
     uuid, said = _id(uuid), said or {}
     if kind in ("skins", "chromas"):
         found = content.skins(lang).get(uuid)
@@ -63,7 +63,13 @@ def item(kind: str, uuid: str, content: Content, lang: str, said: dict | None = 
                 or next((part.get("fullRender") for part in skin.get("chromas") or [] if part.get("fullRender")), "")
             )
             tier = _tier(skin, content.index("contenttiers", lang))
-            return {"kind": "skins", "name": skin.get("displayName") or "", "image": picture, "tier": tier}
+            return {
+                "kind": "skins",
+                "name": skin.get("displayName") or "",
+                "image": picture,
+                "tier": tier,
+                "skin": _id(skin.get("uuid")),
+            }
     if kind in LISTS:
         listed, picture = LISTS[kind]
         known = content.index(listed, lang).get(uuid) or {}

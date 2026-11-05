@@ -31,6 +31,13 @@ const PAGES = [
   "/queues?rank=14&rank=17",
   "/sensitivity?sens=0.35&dpi=800&new_dpi=1600",
   "/agents",
+  "/news",
+  "/esports",
+  "/esports?show=results",
+  "/skins",
+  "/skins?weapon=all&tier=ultra",
+  "/agents/stats",
+  "/compare",
   "/p/nobody-here/0000",
 ];
 // With the tests' made-up answers (tests/ui/serve.py): their player, match and agent.
@@ -40,7 +47,21 @@ const MADE_UP = [
   "/agents/11111111-1111-4111-8111-111111111111",
   "/collection",
   "/settings",
+  "/skins/aa000000-0000-4000-8000-000000000001",
+  "/skins/aa000000-0000-4000-8000-000000000001?chroma=aa000000-0000-4000-8000-000000000022",
+  "/shop/history",
+  "/progress",
+  "/live",
+  "/live?phase=pregame",
+  "/live?phase=ingame",
+  "/collection?show=cards",
+  "/collection?show=titles",
+  "/collection?show=sprays",
+  "/compare?a=Tester%23JP1&b=Other%23KR1",
+  "/agents/stats?queue=competitive",
 ];
+// Found before the pages are looked at (the real site's skin video): added to the problems at the end.
+const early = [];
 
 // Runs in the page: every problem as {kind, where, text}.
 function inspect() {
@@ -198,7 +219,9 @@ function inspect() {
       "button, .button, select, input:not([type=hidden]), summary, nav a, .tabbar a",
     )) {
       if (!shown(el) || el.closest("[hidden]") || folded(el)) continue;
-      const box = el.getBoundingClientRect();
+      // a check box or radio button is tapped through its label too (WCAG: the label is part of the target)
+      const target = (el.matches("input[type=radio], input[type=checkbox]") && el.closest("label")) || el;
+      const box = target.getBoundingClientRect();
       if (box.width < 24 || box.height < 24)
         found.push({
           kind: "too small to tap",
@@ -360,6 +383,7 @@ async function main() {
     }
   }
   await browser.close();
+  for (const [kind, where, what, text] of early) add(kind, where, what, text, "once");
   console.log("\n--- all problems, and everywhere they show ---");
   for (const [key, { text, seen }] of [...problems].sort()) {
     const at = [...seen];
@@ -388,6 +412,21 @@ async function follow(page) {
   await page.goto(base + "/agents", { waitUntil: "networkidle", timeout: 60000 });
   const agent = await page.$eval("a[href*='/agents/']", (a) => a.getAttribute("href")).catch(() => null);
   if (agent) more.push(agent.replace(new URL(base).pathname.replace(/\/$/, ""), ""));
+  // the skin library's first skin (the best tier of the Vandal: variants, levels, videos), and that its video plays
+  await page.goto(base + "/skins", { waitUntil: "networkidle", timeout: 60000 });
+  const skin = await page.$eval("a.skin-link", (a) => a.getAttribute("href")).catch(() => null);
+  if (skin) {
+    const at = skin.replace(new URL(base).pathname.replace(/\/$/, ""), "");
+    more.push(at);
+    await page.goto(base + at, { waitUntil: "networkidle", timeout: 60000 });
+    const video = await page.$eval("video source", (source) => source.src).catch(() => null);
+    if (!video) early.push(["no video", at, "", ""]);
+    else {
+      const answer = await page.request.get(video, { headers: { Range: "bytes=0-1023" } }).catch(() => null);
+      if (!answer || answer.status() >= 400 || !/video|octet/.test(answer.headers()["content-type"] || ""))
+        early.push(["video does not play", at, video.slice(-70), answer ? String(answer.status()) : "no answer"]);
+    }
+  } else early.push(["no skin listed", "/skins", "", ""]);
   return more;
 }
 

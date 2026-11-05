@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 
 from flask import Flask, current_app, g, make_response, render_template, request, url_for
 
@@ -15,6 +15,7 @@ from valtracker import crosshair as crosshairs
 from valtracker import i18n, queues, security
 from valtracker import shop as store
 from valtracker.activity import BANDS, ENOUGH, FEW
+from valtracker.diary import store_day
 from valtracker.henrik import BOARD_PAGE, HenrikError
 from valtracker.riot import RiotError
 from valtracker.stats import JST
@@ -362,6 +363,82 @@ def _queues_page() -> tuple[dict, int]:
     return values, 200
 
 
+def _diary(own: dict) -> None:
+    """Notes the owner's store of today (diary.py) and marks the skins they want, and the days in a row."""
+    diary = current_app.config["VAL_DIARY"]
+    now = time.time()
+    day = store_day(own["daily_until"], now)
+    diary.note(
+        day,
+        [{"uuid": item["skin"], "price": item.get("price") or 0} for item in own["daily"] if item.get("skin")],
+        [
+            {"uuid": item["skin"], "price": item.get("price") or 0, "discount": item.get("discount") or 0}
+            for item in own["night"] or []
+            if item.get("skin")
+        ],
+    )
+    wants = set(diary.wants())
+    shown = own["daily"] + (own["night"] or []) + [thing for bundle in own["bundles"] for thing in bundle["items"]]
+    for item in shown:
+        item["wanted"] = bool(item.get("skin")) and item["skin"] in wants and not item.get("owned")
+    own["wanted"] = list(dict.fromkeys(item["name"] for item in shown if item["wanted"]))
+    own["streak"] = diary.streak(day)
+    # the night market's cards the game has not shown yet lie face down until turned (app.js, remembered there)
+    own["night_key"] = day
+    for number, item in enumerate(own["night"] or []):
+        item["flip"] = "" if item.get("seen") else str(number + 1)
+
+
+def _day_text(day: str) -> str:
+    try:
+        moment = datetime.fromisoformat(day)
+    except ValueError:
+        return day
+    weekday = "月火水木金土日"[moment.weekday()]
+    return f"{moment.month}月{moment.day}日（{weekday}）"
+
+
+def _ics(text: str) -> str:
+    """A calendar's text value: backslashes, commas, semicolons and line breaks escaped."""
+    return text.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+
+def _reminder():
+    now = time.time()
+    start = datetime.fromtimestamp(_next_reset(now), UTC).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.fromtimestamp(now, UTC).strftime("%Y%m%dT%H%M%SZ")
+    title = _ics(_t("VALORANT のストアが入れ替わりました"))
+    about = _ics(_t("毎日の 4 つのスキンが新しくなりました。") + " " + url_for("shop", _external=True))
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//VAL Tracker//Store//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        "X-WR-CALNAME:" + _ics(_t("VALORANT のストア")),
+        "BEGIN:VEVENT",
+        "UID:daily-store@val-tracker",
+        "DTSTAMP:" + stamp,
+        "DTSTART:" + start,
+        "DURATION:PT15M",
+        "RRULE:FREQ=DAILY",
+        "SUMMARY:" + title,
+        "DESCRIPTION:" + about,
+        "TRANSP:TRANSPARENT",
+        "BEGIN:VALARM",
+        "ACTION:DISPLAY",
+        "DESCRIPTION:" + title,
+        "TRIGGER:PT0M",
+        "END:VALARM",
+        "END:VEVENT",
+        "END:VCALENDAR",
+    ]
+    response = make_response("\r\n".join(lines) + "\r\n")
+    response.headers["Content-Type"] = "text/calendar; charset=utf-8"
+    response.headers["Content-Disposition"] = 'attachment; filename="valorant-store.ics"'
+    return response
+
+
 def _next_reset(now: float) -> float:
     """The daily store's next change: midnight UTC (9:00 in Japan)."""
     return (int(now) // 86400 + 1) * 86400
@@ -480,5 +557,40 @@ def register(app: Flask) -> None:
                     own[key + "_left"] = _left(own[key + "_until"])
                 for bundle in own["bundles"]:
                     bundle["left"] = _left(bundle["until"])
+                _diary(own)
                 values["own"] = own
         return render_template("shop.html", **values)
+
+    @app.get("/shop/history")
+    def shop_history():
+        """The owner's stores of the days before (diary.py), with the skins they want marked."""
+        security.owner_only()
+        content, diary = current_app.config["VAL_CONTENT"], current_app.config["VAL_DIARY"]
+        wants = set(diary.wants())
+        days = []
+        for day, entry in diary.days():
+            listed = {}
+            for key in ("daily", "night"):
+                listed[key] = [
+                    store.item("skins", thing.get("uuid"), content, g.lang)
+                    | {"price": thing.get("price") or 0, "discount": thing.get("discount") or 0}
+                    for thing in entry.get(key) or []
+                    if isinstance(thing, dict)
+                ]
+                for thing in listed[key]:
+                    thing["wanted"] = thing.get("skin") in wants
+            days.append({"day": day, "when": _day_text(day), **listed})
+        seen: dict[str, int] = {}
+        for item in (thing for day in days for thing in day["daily"]):
+            if item.get("skin"):
+                seen[item["skin"]] = seen.get(item["skin"], 0) + 1
+        today = store_day(_next_reset(time.time()), time.time())
+        vp = (content.index("currencies", g.lang).get(store.VP) or {}).get("displayIcon")
+        return render_template(
+            "shop_history.html", days=days, streak=diary.streak(today), vp_icon=vp, wants=len(wants), seen=seen
+        )
+
+    @app.get("/shop/reminder.ics")
+    def shop_reminder():
+        """A calendar with one event a day when the daily store changes (midnight UTC), for any calendar app."""
+        return _reminder()

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ t('ニュース') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('Riot が出している VALORANT のニュースとパッチノートです。種類で絞ったり、言葉で探したりできます。') }}{% endblock %}
+{% block main %}
+<p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
+<section class="hero">
+<h1>{{ t('ニュース') }}</h1>
+<p class="lead">{{ t('Riot が出している VALORANT のニュースとパッチノートです。種類で絞ったり、言葉で探したりできます。') }}</p>
+<form class="search" action="{{ url_for('news') }}" method="get" role="search">
+{% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
+<label for="news-q" class="sr">{{ t('ニュースを探す') }}</label>
+<input id="news-q" name="q" type="search" value="{{ q }}" placeholder="{{ t('例: パッチ、エージェント') }}" maxlength="60" autocomplete="off">
+<button type="submit">{{ t('探す') }}</button>
+</form>
+</section>
+{% if problem %}
+<p class="problem" role="alert">{{ problem }}</p>
+{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}">{{ t('設定を開く') }}</a></p>{% endif %}
+{% else %}
+{% if categories %}<nav class="modes" aria-label="{{ t('種類') }}">
+<a href="{{ every_url }}"{% if not category %} aria-current="true"{% endif %}>{{ t('すべて') }}</a>
+{% for item in categories %}<a href="{{ item.url }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
+{% endfor %}</nav>{% endif %}
+{% if patch %}<p class="patch-now"><span class="label">{{ t('いまのパッチ') }}</span> <a href="{{ patch.url }}" rel="noopener" target="_blank">{{ patch.title }}</a>{% if patch.when %} <time datetime="{{ patch.when.iso }}">{{ patch.when.text }}</time>{% endif %}</p>{% endif %}
+{% if not articles %}
+<p class="note">{{ t('「{words}」に合うニュースはありませんでした。', words=q) if q else t('ニュースはまだありません。') }}</p>
+{% else %}
+<ul class="news">
+{% for item in articles %}<li>
+<a href="{{ item.url }}" rel="noopener" target="_blank">
+{% set banner = picture(item.banner) %}{% if banner %}<img src="{{ banner }}" alt="" width="480" height="270" loading="lazy">{% else %}<span class="no-banner" aria-hidden="true"></span>{% endif %}
+<span class="news-text"><small>{% if item.category %}{{ item.category_name }}{% endif %}{% if item.when %}{% if item.category %} · {% endif %}<time datetime="{{ item.when.iso }}">{{ item.when.text }}</time>{% endif %}</small>
+<strong>{{ item.title }}</strong></span>
+</a>
+</li>
+{% endfor %}</ul>
+{% endif %}
+<p class="note">{{ t('記事は Riot の公式サイト（playvalorant.com）で開きます。') }}</p>
+{% endif %}
+{% endblock %}

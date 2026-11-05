@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ t('eスポーツ') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('VCT などの大会の日程と結果、いま行われている試合のスコアです。好きなチームに印をつけられます。') }}{% endblock %}
+{% block main %}
+<p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
+<section class="hero">
+<h1>{{ t('eスポーツ') }}</h1>
+<p class="lead">{{ t('VCT などの大会の日程と結果、いま行われている試合のスコアです。好きなチームに印をつけられます。') }}</p>
+</section>
+{% if problem %}
+<p class="problem" role="alert">{{ problem }}</p>
+{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}">{{ t('設定を開く') }}</a></p>{% endif %}
+{% else %}
+<nav class="modes" aria-label="{{ t('表示') }}">
+<a href="{{ show_urls.upcoming }}"{% if show == 'upcoming' %} aria-current="true"{% endif %}>{{ t('日程') }}{% if live %} · {{ t('{count} 試合中', count=live) }}{% endif %}</a>
+<a href="{{ show_urls.results }}"{% if show == 'results' %} aria-current="true"{% endif %}>{{ t('結果') }}</a>
+</nav>
+{% if leagues|length > 1 %}<nav class="modes" aria-label="{{ t('大会') }}">
+<a href="{{ every_url }}"{% if not league %} aria-current="true"{% endif %}>{{ t('すべて') }}</a>
+{% for item in leagues %}<a href="{{ item.url }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
+{% endfor %}</nav>{% endif %}
+<p class="fav-only" hidden><label><input type="checkbox" id="fav-only"> {{ t('印をつけたチームだけ') }}</label></p>
+{% if not games %}
+<p class="note">{{ t('結果はまだありません。') if show == 'results' else t('これからの試合はまだ出ていません。') }}</p>
+{% else %}
+<ul class="schedule" data-mark="{{ t('{team} に印をつける') }}" data-unmark="{{ t('{team} の印を外す') }}">
+{% for game in games %}<li class="game {{ game.state }}">
+<p class="game-head">{% if game.state == 'inProgress' %}<span class="live">{{ t('試合中') }}</span>{% elif game.when %}<time datetime="{{ game.when.iso }}">{{ game.when.text }}</time>{% endif %}<span>{% set icon = picture(game.league.icon) %}{% if icon %}<img src="{{ icon }}" alt="" width="20" height="20" loading="lazy">{% endif %}{{ game.league.name }}{% if game.tournament %} · {{ game.tournament }}{% endif %}{% if game.best_of %} · Bo{{ game.best_of }}{% endif %}</span></p>
+<div class="teams">
+{% for team in game.teams %}<div class="team-row{% if team.won %} won{% endif %}" data-team="{{ team.name }}">
+{% set logo = picture(team.icon) %}{% if logo %}<img src="{{ logo }}" alt="" width="28" height="28" loading="lazy">{% else %}<span class="no-logo" aria-hidden="true">{{ team.code[:3] }}</span>{% endif %}
+<span class="team-name">{{ team.name }}</span>
+<button type="button" class="star" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg><span class="sr">{{ t('{team} に印をつける', team=team.name) }}</span></button>
+{% if game.state != 'unstarted' %}<strong class="wins">{{ team.wins }}</strong>{% endif %}
+</div>
+{% endfor %}</div>
+{% if game.vod and game.state == 'completed' %}<p class="vod"><a href="{{ game.vod }}" rel="noopener" target="_blank">{{ t('試合の動画') }}</a></p>{% endif %}
+</li>
+{% endfor %}</ul>
+{% endif %}
+<p class="note">{{ t('時刻はあなたの端末の時計で出しています。スコアは数分ごとに新しくなります。') }}</p>
+{% endif %}
+{% endblock %}
