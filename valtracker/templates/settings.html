@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}設定 · {{ site_name }}{% endblock %}
+{% block main %}
+<section class="hero" lang="ja">
+<h1>設定</h1>
+<p class="lead">持ち主だけが見られるページです（公開の名前では、持ち主としてログインした端末だけ）。</p>
+{% if saved %}<p class="done" role="status">{{ saved }}</p>{% endif %}
+</section>
+<section class="panel" lang="ja" aria-labelledby="key-title">
+<h2 id="key-title">HenrikDev API キー</h2>
+<p>プレイヤーの検索と試合の取得に使います。<a href="https://api.henrikdev.xyz/dashboard/" rel="noopener noreferrer" target="_blank">HenrikDev のダッシュボード</a>で「API Keys」→「Generate New Key」から無料で作れます。キーはこのサーバーの <code>instance/settings.json</code> にだけ保存し、画面には一部しか出しません。</p>
+<p>いまのキー: {% if shown %}<code>{{ shown }}</code>{% else %}未設定{% endif %}</p>
+<form method="post" class="stack">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<label for="henrik_key">新しいキー</label>
+<input id="henrik_key" name="henrik_key" type="password" autocomplete="off" spellcheck="false" maxlength="200">
+<div class="row"><button type="submit" name="do" value="save">保存</button>{% if shown %}<button type="submit" name="do" value="clear" class="quiet">消す</button>{% endif %}</div>
+</form>
+</section>
+{% endblock %}

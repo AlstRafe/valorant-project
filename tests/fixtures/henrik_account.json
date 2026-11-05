@@ -1,0 +1,16 @@
+{
+ "status": 200,
+ "data": {
+  "puuid": "puuid-me",
+  "region": "ap",
+  "account_level": 120,
+  "name": "Tester",
+  "tag": "JP1",
+  "card": "33333333-3333-4333-8333-333333333333",
+  "title": "t",
+  "platforms": [
+   "pc"
+  ],
+  "updated_at": "x"
+ }
+}

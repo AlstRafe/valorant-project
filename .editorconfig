@@ -1,0 +1,28 @@
+# Editor settings shared by Home Page, News Site and Infra Game (the same file in each repository).
+# VS Code reads it through the EditorConfig extension; Prettier reads it too.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 120
+
+[*.py]
+indent_size = 4
+
+# Two spaces at the end of a Markdown line break it.
+[*.md]
+trim_trailing_whitespace = false
+
+# cmd.exe wants CRLF.
+[*.bat]
+end_of_line = crlf
+
+# A patch keeps the lines it changes exactly as they are.
+[*.patch]
+trim_trailing_whitespace = false
+insert_final_newline = false

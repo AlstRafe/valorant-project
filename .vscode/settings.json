@@ -1,0 +1,18 @@
+{
+  "editor.formatOnSave": true,
+  "editor.rulers": [120],
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "files.associations": { "valtracker/templates/*.html": "jinja-html" },
+  "prettier.requireConfig": true,
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": { "source.fixAll.ruff": "explicit", "source.organizeImports.ruff": "explicit" }
+  },
+  "[javascript][css][json][jsonc][markdown][yaml]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[toml]": { "editor.defaultFormatter": "tamasfe.even-better-toml" },
+  "[html][jinja-html]": { "editor.formatOnSave": false },
+  "python.testing.unittestEnabled": true,
+  "python.testing.unittestArgs": ["-s", "tests"]
+}

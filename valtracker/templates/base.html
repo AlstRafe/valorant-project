@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="format-detection" content="telephone=no">
+<meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161513" media="(prefers-color-scheme: dark)">
+<script>{{ theme_script|safe }}</script>
+<title>{% block title %}{{ site_name }}{% endblock %}</title>
+<meta name="description" content="{{ t('VALORANT のプレイヤーのランクと最近の試合、エージェントの能力を、スマホでもすぐ見られるトラッカー。') }}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ self.title() }}">
+<meta property="og:description" content="{{ t('VALORANT のプレイヤーのランクと最近の試合、エージェントの能力を、スマホでもすぐ見られるトラッカー。') }}">
+<meta property="og:url" content="{{ request.script_root }}{{ request.path }}">
+<meta property="og:locale" content="{{ locale }}">
+<meta property="og:image" content="{{ asset('og.png') }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+<link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+<link rel="stylesheet" href="{{ asset('css/app.css') }}">
+<script src="{{ asset('js/app.js') }}" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">{{ t('本文へ移動') }}</a>
+<header class="top">
+<div class="bar">
+<a class="brand" href="{{ url_for('top') }}"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 6h6l6 13 6-13h6L19 27h-6z"/></svg><span>{{ site_name }}</span></a>
+<nav class="tabs" aria-label="{{ t('メニュー') }}">
+{% set here = request.endpoint %}
+<a href="{{ url_for('top') }}"{% if here in ('top', 'search', 'player', 'match') %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg><span>{{ t('検索') }}</span></a>
+<a href="{{ url_for('agents') }}"{% if here in ('agents', 'agent') %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.2-7 8-7s7 2.5 8 7"/></svg><span>{{ t('エージェント') }}</span></a>
+{% if owner %}<a href="{{ url_for('settings') }}"{% if here == 'settings' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg><span>{{ t('設定') }}</span></a>{% endif %}
+</nav>
+<div class="tools">{{ theme_button|safe }}{{ language_menu|safe }}</div>
+</div>
+</header>
+<main id="main">
+{% block main %}{% endblock %}
+</main>
+<footer class="foot">
+{% if home %}<p><a class="back" href="{{ home }}">← {{ t('サイト一覧へ戻る') }}</a></p>{% endif %}
+<p class="legal">{{ t('VAL Tracker は Riot Games の承認を受けたものではなく、Riot Games や VALORANT の制作・運営に関わる人の見解を示すものではありません。VALORANT と Riot Games は Riot Games, Inc. の商標または登録商標です。') }}</p>
+<p class="legal">{{ t('戦績は HenrikDev API、ゲームの名前と画像は valorant-api.com から取得しています。') }}</p>
+</footer>
+</body>
+</html>

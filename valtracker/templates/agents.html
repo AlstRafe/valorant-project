@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ t('エージェント') }} · {{ site_name }}{% endblock %}
+{% block main %}
+<section class="hero">
+<h1>{{ t('エージェント') }}</h1>
+<p class="lead">{{ t('役割とアビリティの説明です。') }}</p>
+</section>
+{% if not agents %}
+<p class="problem" role="alert">{{ t('エージェントの一覧を取得できませんでした。時間をおいてもう一度どうぞ。') }}</p>
+{% else %}
+<ul class="agent-grid">
+{% for agent in agents %}
+<li><a href="{{ url_for('agent', uuid=agent.uuid) }}">{% if agent.displayIcon %}<img src="{{ media(agent.displayIcon) }}" alt="" width="96" height="96" loading="lazy">{% endif %}<strong>{{ agent.displayName }}</strong><small>{{ (agent.role or {}).displayName }}</small></a></li>
+{% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

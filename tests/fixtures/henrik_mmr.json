@@ -1,0 +1,35 @@
+{
+ "status": 200,
+ "data": {
+  "account": {
+   "name": "Tester",
+   "tag": "JP1",
+   "puuid": "puuid-me"
+  },
+  "current": {
+   "tier": {
+    "id": 21,
+    "name": "Ascendant 1"
+   },
+   "rr": 42,
+   "last_change": 18,
+   "elo": 1842,
+   "games_needed_for_rating": 0,
+   "rank_protection_shields": 0,
+   "leaderboard_placement": null
+  },
+  "peak": {
+   "season": {
+    "id": "s",
+    "short": "e9a3"
+   },
+   "ranking_schema": "x",
+   "rr": 80,
+   "tier": {
+    "id": 22,
+    "name": "Ascendant 2"
+   }
+  },
+  "seasonal": []
+ }
+}

@@ -1,0 +1,387 @@
+{
+ "status": 200,
+ "data": [
+  {
+   "metadata": {
+    "match_id": "aaaaaaaa-0000-4000-8000-000000000001",
+    "map": {
+     "id": "7eaecc1b-4337-bbf6-6ab9-04b8f06b3319",
+     "name": "Ascent"
+    },
+    "game_version": "x",
+    "game_length_in_ms": 2400000,
+    "started_at": "2026-11-04T12:05:00.000Z",
+    "is_completed": true,
+    "queue": {
+     "id": "competitive",
+     "name": "Competitive",
+     "mode_type": "Standard"
+    },
+    "season": {
+     "id": "s",
+     "short": "e10a1"
+    },
+    "platform": "pc",
+    "region": "ap",
+    "cluster": "Tokyo"
+   },
+   "players": [
+    {
+     "puuid": "puuid-me",
+     "name": "Tester",
+     "tag": "JP1",
+     "team_id": "Red",
+     "platform": "pc",
+     "party_id": "x",
+     "agent": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "Agent 1"
+     },
+     "stats": {
+      "score": 5600,
+      "kills": 20,
+      "deaths": 15,
+      "assists": 5,
+      "headshots": 10,
+      "bodyshots": 25,
+      "legshots": 5,
+      "damage": {
+       "dealt": 3000,
+       "received": 1000
+      }
+     },
+     "tier": {
+      "id": 21,
+      "name": "Ascendant 1"
+     },
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
+    },
+    {
+     "puuid": "puuid-2",
+     "name": "Mate",
+     "tag": "0001",
+     "team_id": "Red",
+     "platform": "pc",
+     "party_id": "x",
+     "agent": {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "Agent 2"
+     },
+     "stats": {
+      "score": 4000,
+      "kills": 15,
+      "deaths": 16,
+      "assists": 8,
+      "headshots": 5,
+      "bodyshots": 30,
+      "legshots": 5,
+      "damage": {
+       "dealt": 2500,
+       "received": 1000
+      }
+     },
+     "tier": {
+      "id": 15,
+      "name": "Ascendant 1"
+     },
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
+    },
+    {
+     "puuid": "puuid-3",
+     "name": "<b>Foe</b>",
+     "tag": "KR1",
+     "team_id": "Blue",
+     "platform": "pc",
+     "party_id": "x",
+     "agent": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "Agent 1"
+     },
+     "stats": {
+      "score": 5000,
+      "kills": 18,
+      "deaths": 17,
+      "assists": 3,
+      "headshots": 8,
+      "bodyshots": 20,
+      "legshots": 2,
+      "damage": {
+       "dealt": 2800,
+       "received": 1000
+      }
+     },
+     "tier": {
+      "id": 21,
+      "name": "Ascendant 1"
+     },
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
+    },
+    {
+     "puuid": "puuid-4",
+     "name": "Other",
+     "tag": "EUW",
+     "team_id": "Blue",
+     "platform": "pc",
+     "party_id": "x",
+     "agent": {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "Agent 2"
+     },
+     "stats": {
+      "score": 3000,
+      "kills": 10,
+      "deaths": 19,
+      "assists": 9,
+      "headshots": 2,
+      "bodyshots": 30,
+      "legshots": 8,
+      "damage": {
+       "dealt": 1800,
+       "received": 1000
+      }
+     },
+     "tier": {
+      "id": 0,
+      "name": "Ascendant 1"
+     },
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
+    }
+   ],
+   "observers": [],
+   "coaches": [],
+   "teams": [
+    {
+     "team_id": "Red",
+     "rounds": {
+      "won": 13,
+      "lost": 9
+     },
+     "won": true,
+     "premier_roster": null
+    },
+    {
+     "team_id": "Blue",
+     "rounds": {
+      "won": 9,
+      "lost": 13
+     },
+     "won": false,
+     "premier_roster": null
+    }
+   ],
+   "rounds": [
+    {
+     "round": 0
+    }
+   ],
+   "kills": [
+    {
+     "kill": 0
+    }
+   ]
+  },
+  {
+   "metadata": {
+    "match_id": "aaaaaaaa-0000-4000-8000-000000000002",
+    "map": {
+     "id": "7eaecc1b-4337-bbf6-6ab9-04b8f06b3319",
+     "name": "Ascent"
+    },
+    "game_version": "x",
+    "game_length_in_ms": 2400000,
+    "started_at": "2026-11-04T12:05:00.000Z",
+    "is_completed": true,
+    "queue": {
+     "id": "competitive",
+     "name": "Competitive",
+     "mode_type": "Standard"
+    },
+    "season": {
+     "id": "s",
+     "short": "e10a1"
+    },
+    "platform": "pc",
+    "region": "ap",
+    "cluster": "Tokyo"
+   },
+   "players": [
+    {
+     "puuid": "puuid-me",
+     "name": "Tester",
+     "tag": "JP1",
+     "team_id": "Red",
+     "platform": "pc",
+     "party_id": "x",
+     "agent": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "Agent 1"
+     },
+     "stats": {
+      "score": 3500,
+      "kills": 20,
+      "deaths": 15,
+      "assists": 5,
+      "headshots": 10,
+      "bodyshots": 25,
+      "legshots": 5,
+      "damage": {
+       "dealt": 3000,
+       "received": 1000
+      }
+     },
+     "tier": {
+      "id": 21,
+      "name": "Ascendant 1"
+     },
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
+    },
+    {
+     "puuid": "puuid-2",
+     "name": "Mate",
+     "tag": "0001",
+     "team_id": "Red",
+     "platform": "pc",
+     "party_id": "x",
+     "agent": {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "Agent 2"
+     },
+     "stats": {
+      "score": 4000,
+      "kills": 15,
+      "deaths": 16,
+      "assists": 8,
+      "headshots": 5,
+      "bodyshots": 30,
+      "legshots": 5,
+      "damage": {
+       "dealt": 2500,
+       "received": 1000
+      }
+     },
+     "tier": {
+      "id": 15,
+      "name": "Ascendant 1"
+     },
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
+    },
+    {
+     "puuid": "puuid-3",
+     "name": "<b>Foe</b>",
+     "tag": "KR1",
+     "team_id": "Blue",
+     "platform": "pc",
+     "party_id": "x",
+     "agent": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "Agent 1"
+     },
+     "stats": {
+      "score": 5000,
+      "kills": 18,
+      "deaths": 17,
+      "assists": 3,
+      "headshots": 8,
+      "bodyshots": 20,
+      "legshots": 2,
+      "damage": {
+       "dealt": 2800,
+       "received": 1000
+      }
+     },
+     "tier": {
+      "id": 21,
+      "name": "Ascendant 1"
+     },
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
+    },
+    {
+     "puuid": "puuid-4",
+     "name": "Other",
+     "tag": "EUW",
+     "team_id": "Blue",
+     "platform": "pc",
+     "party_id": "x",
+     "agent": {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "Agent 2"
+     },
+     "stats": {
+      "score": 3000,
+      "kills": 10,
+      "deaths": 19,
+      "assists": 9,
+      "headshots": 2,
+      "bodyshots": 30,
+      "legshots": 8,
+      "damage": {
+       "dealt": 1800,
+       "received": 1000
+      }
+     },
+     "tier": {
+      "id": 0,
+      "name": "Ascendant 1"
+     },
+     "account_level": 120,
+     "ability_casts": {
+      "q": 1
+     }
+    }
+   ],
+   "observers": [],
+   "coaches": [],
+   "teams": [
+    {
+     "team_id": "Red",
+     "rounds": {
+      "won": 7,
+      "lost": 13
+     },
+     "won": false,
+     "premier_roster": null
+    },
+    {
+     "team_id": "Blue",
+     "rounds": {
+      "won": 13,
+      "lost": 7
+     },
+     "won": true,
+     "premier_roster": null
+    }
+   ],
+   "rounds": [
+    {
+     "round": 0
+    }
+   ],
+   "kills": [
+    {
+     "kill": 0
+    }
+   ]
+  }
+ ]
+}

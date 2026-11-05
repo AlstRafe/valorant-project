@@ -1,0 +1,144 @@
+{
+ "status": 200,
+ "data": [
+  {
+   "uuid": "old",
+   "tiers": []
+  },
+  {
+   "uuid": "03621f52-342b-cf4e-4f86-9350a49c6d04",
+   "tiers": [
+    {
+     "tier": 0,
+     "tierName": "UNRANKED",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/0/smallicon.png"
+    },
+    {
+     "tier": 3,
+     "tierName": "TIER 3",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/3/smallicon.png"
+    },
+    {
+     "tier": 4,
+     "tierName": "TIER 4",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/4/smallicon.png"
+    },
+    {
+     "tier": 5,
+     "tierName": "TIER 5",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/5/smallicon.png"
+    },
+    {
+     "tier": 6,
+     "tierName": "TIER 6",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/6/smallicon.png"
+    },
+    {
+     "tier": 7,
+     "tierName": "TIER 7",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/7/smallicon.png"
+    },
+    {
+     "tier": 8,
+     "tierName": "TIER 8",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/8/smallicon.png"
+    },
+    {
+     "tier": 9,
+     "tierName": "TIER 9",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/9/smallicon.png"
+    },
+    {
+     "tier": 10,
+     "tierName": "TIER 10",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/10/smallicon.png"
+    },
+    {
+     "tier": 11,
+     "tierName": "TIER 11",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/11/smallicon.png"
+    },
+    {
+     "tier": 12,
+     "tierName": "TIER 12",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/12/smallicon.png"
+    },
+    {
+     "tier": 13,
+     "tierName": "TIER 13",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/13/smallicon.png"
+    },
+    {
+     "tier": 14,
+     "tierName": "TIER 14",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/14/smallicon.png"
+    },
+    {
+     "tier": 15,
+     "tierName": "TIER 15",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/15/smallicon.png"
+    },
+    {
+     "tier": 16,
+     "tierName": "TIER 16",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/16/smallicon.png"
+    },
+    {
+     "tier": 17,
+     "tierName": "TIER 17",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/17/smallicon.png"
+    },
+    {
+     "tier": 18,
+     "tierName": "TIER 18",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/18/smallicon.png"
+    },
+    {
+     "tier": 19,
+     "tierName": "TIER 19",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/19/smallicon.png"
+    },
+    {
+     "tier": 20,
+     "tierName": "TIER 20",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/20/smallicon.png"
+    },
+    {
+     "tier": 21,
+     "tierName": "TIER 21",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/21/smallicon.png"
+    },
+    {
+     "tier": 22,
+     "tierName": "TIER 22",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/22/smallicon.png"
+    },
+    {
+     "tier": 23,
+     "tierName": "TIER 23",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/23/smallicon.png"
+    },
+    {
+     "tier": 24,
+     "tierName": "TIER 24",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/24/smallicon.png"
+    },
+    {
+     "tier": 25,
+     "tierName": "TIER 25",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/25/smallicon.png"
+    },
+    {
+     "tier": 26,
+     "tierName": "TIER 26",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/26/smallicon.png"
+    },
+    {
+     "tier": 27,
+     "tierName": "TIER 27",
+     "smallIcon": "https://media.valorant-api.com/competitivetiers/03621f52-342b-cf4e-4f86-9350a49c6d04/27/smallicon.png"
+    }
+   ]
+  }
+ ]
+}

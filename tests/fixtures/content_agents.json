@@ -1,0 +1,59 @@
+{
+ "status": 200,
+ "data": [
+  {
+   "uuid": "11111111-1111-4111-8111-111111111111",
+   "displayName": "ジェット",
+   "description": "ジェット の説明",
+   "displayIcon": "https://media.valorant-api.com/agents/11111111-1111-4111-8111-111111111111/displayicon.png",
+   "fullPortrait": "https://media.valorant-api.com/agents/11111111-1111-4111-8111-111111111111/fullportrait.png",
+   "isPlayableCharacter": true,
+   "role": {
+    "uuid": "r",
+    "displayName": "デュエリスト",
+    "displayIcon": "https://media.valorant-api.com/agents/roles/dbe8757e-9e92-4ed4-b39f-9dfc589691d4/displayicon.png"
+   },
+   "abilities": [
+    {
+     "slot": "Ultimate",
+     "displayName": "Ult",
+     "description": "大技",
+     "displayIcon": null
+    },
+    {
+     "slot": "Ability1",
+     "displayName": "Q",
+     "description": "技1",
+     "displayIcon": null
+    }
+   ]
+  },
+  {
+   "uuid": "22222222-2222-4222-8222-222222222222",
+   "displayName": "ソーヴァ",
+   "description": "ソーヴァ の説明",
+   "displayIcon": "https://media.valorant-api.com/agents/22222222-2222-4222-8222-222222222222/displayicon.png",
+   "fullPortrait": "https://media.valorant-api.com/agents/22222222-2222-4222-8222-222222222222/fullportrait.png",
+   "isPlayableCharacter": true,
+   "role": {
+    "uuid": "r",
+    "displayName": "イニシエーター",
+    "displayIcon": "https://media.valorant-api.com/agents/roles/dbe8757e-9e92-4ed4-b39f-9dfc589691d4/displayicon.png"
+   },
+   "abilities": [
+    {
+     "slot": "Ultimate",
+     "displayName": "Ult",
+     "description": "大技",
+     "displayIcon": null
+    },
+    {
+     "slot": "Ability1",
+     "displayName": "Q",
+     "description": "技1",
+     "displayIcon": null
+    }
+   ]
+  }
+ ]
+}
