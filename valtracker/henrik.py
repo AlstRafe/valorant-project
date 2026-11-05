@@ -55,7 +55,17 @@ MODES = {
 }
 #: What the pages use of a match. Every round and kill (about 0.5 MB a match) is boiled down to ``digest``
 #: (rounds.py) and dropped before it is kept, so the memory of the small VM holds hundreds of matches.
-METADATA = ("match_id", "map", "game_length_in_ms", "started_at", "is_completed", "queue", "season", "region")
+METADATA = (
+    "match_id",
+    "map",
+    "game_length_in_ms",
+    "started_at",
+    "is_completed",
+    "queue",
+    "season",
+    "region",
+    "cluster",
+)
 PLAYER = ("puuid", "name", "tag", "team_id", "party_id", "agent", "stats", "tier", "account_level", "economy")
 TEAM = ("team_id", "rounds", "won")
 
@@ -165,6 +175,13 @@ class Henrik:
         query = urlencode({"size": BOARD_PAGE, "start_index": start})
         path = f"/valorant/v3/leaderboard/{_region(region)}/{PLATFORM}?{query}"
         return self._get(("leaderboard", _region(region), start), path, KEEP["leaderboard"], _slim_board)
+
+    def matches_by_puuid(self, region: str, puuid: str, size: int = 5) -> list:
+        """A player's latest matches by their puuid, only what activity.py keeps of them (the start, server,
+        queue, length, and each player's puuid and rank): for the background collector, which has no names."""
+        query = urlencode({"size": size})
+        path = f"/valorant/v4/by-puuid/matches/{_region(region)}/{PLATFORM}/{_part(puuid)}?{query}"
+        return self._get(("by-puuid", puuid), path, KEEP["matches"], _slim_collected)
 
     def has_board(self, region: str, start: int = 0) -> bool:
         """Whether that page of the leaderboard is kept: it needs no call."""
@@ -433,6 +450,21 @@ def _slim_match(match) -> dict:
         "teams": [_pick(team, TEAM) for team in match.get("teams") or [] if isinstance(team, dict)],
         "digest": rounds.digest(match),
     }
+
+
+def _slim_collected(matches) -> list:
+    if not isinstance(matches, list):
+        raise HenrikError("down")
+    return [
+        {
+            "metadata": _pick(match["metadata"], METADATA),
+            "players": [
+                _pick(player, ("puuid", "tier")) for player in match.get("players") or [] if isinstance(player, dict)
+            ],
+        }
+        for match in matches
+        if isinstance(match, dict) and isinstance(match.get("metadata"), dict)
+    ]
 
 
 def _slim_matches(matches) -> list:

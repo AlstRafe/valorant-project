@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import threading
 import time
+from datetime import datetime
 from pathlib import Path
 
 from valtracker import i18n, net
@@ -35,6 +36,8 @@ KINDS = {
     "currencies": "/currencies?language={lang}",
     # the store's bundles (shop.py): their names and pictures
     "bundles": "/bundles?language={lang}",
+    # the episodes and acts, and when each ends
+    "seasons": "/seasons?language={lang}",
     # the game's version, which Riot's own servers want to be told (riot.py)
     "version": "/version",
 }
@@ -175,6 +178,25 @@ class Content:
             if isinstance(item, dict) and item.get("uuid")
         }
 
+    def act(self, lang: str, now: float | None = None) -> dict | None:
+        """The act being played: ``{"name": "EPISODE 9 · ACT III", "ends": datetime (UTC)}``, or None."""
+        now = self.clock() if now is None else now
+        seasons = [item for item in self._list("seasons", lang) if isinstance(item, dict)]
+        by_id = {str(item.get("uuid") or "").lower(): item for item in seasons}
+        for item in seasons:
+            if "Act" not in str(item.get("type") or ""):
+                continue
+            try:
+                start = datetime.fromisoformat(str(item.get("startTime")).replace("Z", "+00:00"))
+                end = datetime.fromisoformat(str(item.get("endTime")).replace("Z", "+00:00"))
+            except ValueError:
+                continue
+            if start.timestamp() <= now < end.timestamp():
+                parent = by_id.get(str(item.get("parentUuid") or "").lower()) or {}
+                names = [str(parent.get("displayName") or ""), str(item.get("displayName") or "")]
+                return {"name": " · ".join(name for name in names if name), "ends": end}
+        return None
+
     def weapons(self, lang: str) -> list:
         return [weapon for weapon in self._list("weapons", lang) if isinstance(weapon, dict)]
 
@@ -227,6 +249,7 @@ SLIM = {
     "contenttiers": lambda item: _keep(item, ("uuid", "displayName", "devName", "rank", "displayIcon")),
     "currencies": lambda item: _keep(item, ("uuid", "displayName", "displayNameSingular", "displayIcon")),
     "bundles": lambda item: _keep(item, ("uuid", "displayName", "displayIcon", "displayIcon2")),
+    "seasons": lambda item: _keep(item, ("uuid", "displayName", "type", "startTime", "endTime", "parentUuid")),
 }
 
 

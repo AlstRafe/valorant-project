@@ -8,11 +8,13 @@ its mount (``/val``); ``python -m valtracker`` serves it on its own on this PC.
 from __future__ import annotations
 
 import hashlib
+import os
 from pathlib import Path
 
 from flask import Flask, g, request, url_for
 
 from valtracker import content, i18n, net, paths, security, theme
+from valtracker.activity import COLLECT_SECONDS, Activity, Collector
 from valtracker.content import Content
 from valtracker.henrik import Henrik
 from valtracker.media import Media
@@ -35,7 +37,16 @@ def create_app(
     app.config["VAL_CONTENT"] = Content(instance, fetch)
     app.config["VAL_MEDIA"] = Media(instance, fetch)
     app.config["VAL_RIOT"] = Riot(instance, send, app.config["VAL_CONTENT"].client_version)
+    app.config["VAL_ACTIVITY"] = activity = Activity(instance)
+    # VAL_COLLECT_SECONDS=0 turns the background look at more players off (activity.py)
+    seconds = float(os.environ.get("VAL_COLLECT_SECONDS", COLLECT_SECONDS) or 0)
+    app.config["VAL_COLLECTOR"] = collector = Collector(activity, app.config["VAL_HENRIK"], seconds)
     security.init_app(app, instance, mount)
+
+    @app.before_request
+    def _collect():
+        if not app.testing:
+            collector.start()  # once; it waits COLLECT_SECONDS before its first look
 
     @app.before_request
     def _language():

@@ -36,6 +36,10 @@ ENTITLEMENTS = "https://entitlements.auth.riotgames.com/api/token/v1"
 USERINFO = "https://auth.riotgames.com/userinfo"
 GEO = "https://riot-geo.pas.si.riotgames.com/pas/v1/product/valorant"
 PD = "https://pd.{shard}.a.pvp.net"
+#: The party server: the game's queue settings (map pools, who may queue together) come from here.
+GLZ = "https://glz-{shard}-1.{shard}.a.pvp.net"
+#: How long the queue settings are kept (seconds): they change with a patch or a map rotation.
+QUEUES_KEEP = 1800
 #: The account's region (Riot's geo answer) -> the PD server that keeps its items.
 SHARDS = {"na": "na", "latam": "na", "br": "na", "eu": "eu", "ap": "ap", "kr": "kr", "pbe": "pbe"}
 #: The PC game client, as PD wants to be told.
@@ -145,8 +149,24 @@ class Riot:
         "missing", "problem"}``. RiotError when nothing could be read."""
         return self._kept("shop", self._storefront)
 
-    def _kept(self, key: str, read) -> dict:
-        """``read(tokens, saved)``'s answer, kept KEEP seconds; a refused token is traded for a new one once."""
+    def queues(self) -> dict:
+        """The game's settings of its queues (GLZ customgameconfigs: the same for everyone of the region, so the
+        public pages may show them): ``{"config": Riot's answer, "at", "missing", "problem"}``."""
+        return self._kept("queues", self._queues, QUEUES_KEEP)
+
+    def _queues(self, tokens: dict, saved: dict) -> dict:
+        shard = str(saved.get("shard") or "ap")
+        shard = shard if shard in SHARDS.values() and shard != "pbe" else "ap"
+        url = GLZ.format(shard=shard) + "/parties/v1/parties/customgameconfigs"
+        return {
+            "config": self._pd("queues", url, self._headers(tokens)),
+            "at": self.clock(),
+            "missing": [],
+            "problem": "",
+        }
+
+    def _kept(self, key: str, read, seconds: float = KEEP) -> dict:
+        """``read(tokens, saved)``'s answer, kept ``seconds``; a refused token is traded for a new one once."""
         kept = self.cache.get(key)
         if kept is not None:
             return kept
@@ -161,7 +181,7 @@ class Riot:
                 if renew:  # a token just made is refused too: not the cookie's fault
                     raise RiotError("down", error.detail) from None
         self.store.save(problem=found["problem"] or None)
-        self.cache.put(key, found, KEEP)
+        self.cache.put(key, found, seconds)
         return found
 
     # -- tokens ---------------------------------------------------------------------------------------

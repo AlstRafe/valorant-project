@@ -45,7 +45,7 @@ class FakeFetch:
                 return 200, fixture("henrik_status.json")
             if "/v2/store-featured" in url:
                 return 200, fixture("henrik_featured.json")
-            if "/v4/matches/" in url:
+            if "/v4/matches/" in url or "/v4/by-puuid/matches/" in url:
                 return 200, fixture("henrik_matches.json")
             if "/v4/match/" in url:
                 matches = json.loads(fixture("henrik_matches.json"))["data"]
@@ -125,7 +125,7 @@ class FakeRiot:
             if json.loads(body).get("id_token") != ID_TOKEN:
                 return 400, [], b"{}"
             return 200, [], json.dumps({"token": "x", "affinities": {"pbe": "na", "live": "ap"}}).encode()
-        if url.startswith("https://pd.ap.a.pvp.net/"):
+        if url.startswith(("https://pd.ap.a.pvp.net/", "https://glz-ap-1.ap.a.pvp.net/")):
             if self.refuse:
                 self.refuse -= 1
                 return 400, [], json.dumps({"httpStatus": 400, "errorCode": "BAD_CLAIMS"}).encode()
@@ -139,6 +139,8 @@ class FakeRiot:
 
         if url.endswith(f"/store/v3/storefront/{PUUID}"):
             return self._answer("storefront", self.pd["storefront"])
+        if url == "https://glz-ap-1.ap.a.pvp.net/parties/v1/parties/customgameconfigs":
+            return self._answer("queues", self.pd["customgameconfigs"])
         if url.endswith(f"/store/v1/wallet/{PUUID}"):
             return self._answer("wallet", self.pd["wallet"])
         if url.endswith(f"/personalization/v2/players/{PUUID}/playerloadout"):
@@ -155,7 +157,7 @@ class FakeRiot:
         return 200, [], json.dumps(value).encode()
 
     def pd_calls(self) -> int:
-        return sum(url.startswith("https://pd.") for _, url, _, _ in self.asked)
+        return sum(url.startswith(("https://pd.", "https://glz-")) for _, url, _, _ in self.asked)
 
 
 def make_app(key: str = "HDEV-test-key", mount: str = ""):
@@ -168,5 +170,12 @@ def make_app(key: str = "HDEV-test-key", mount: str = ""):
     app.config["TESTING"] = True
     if key:
         app.config["VAL_SETTINGS"].save(henrik_key=key)
+    remove = folder.cleanup
+
+    def cleanup():
+        app.config["VAL_ACTIVITY"].close()
+        remove()
+
+    folder.cleanup = cleanup
     app._test_folder = folder  # removed with the app
     return app, fetch, Path(folder.name)

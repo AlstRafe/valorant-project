@@ -4,6 +4,7 @@
 <section class="hero">
 <h1>{{ t('ランキング') }}</h1>
 <p class="lead">{{ t('今のアクトのランクマッチ上位（イモータル以上）です。名前を押すと戦績が見られます。') }}</p>
+{% if act %}<p class="note">{{ act.text }}</p>{% endif %}
 </section>
 <nav class="modes" aria-label="{{ t('地域') }}">
 {% for item in regions %}<a href="{{ item.url }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>

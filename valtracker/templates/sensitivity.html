@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ t('感度の換算') }} · {{ site_name }}{% endblock %}
+{% block main %}
+<p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
+<section class="hero">
+<h1>{{ t('感度の換算') }}</h1>
+<p class="lead">{{ t('ほかのゲームの感度を VALORANT に（その逆も）。マウスの DPI を変えたときの感度と、振り向きに要る長さも出します。') }}</p>
+</section>
+<form class="sens-form" action="{{ url_for('sensitivity') }}" method="get">
+<label><span>{{ t('ゲーム') }}</span>
+<select name="game">
+{% for key, item in games.items() %}<option value="{{ key }}"{% if key == game %} selected{% endif %}>{{ item[0] }}</option>
+{% endfor %}</select></label>
+<label><span>{{ t('感度') }}</span><input name="sens" type="text" inputmode="decimal" value="{{ sens }}" placeholder="0.35" autocomplete="off" required{% if problem %} aria-invalid="true" aria-describedby="sens-problem"{% endif %}></label>
+<label><span>DPI</span><input name="dpi" type="text" inputmode="numeric" value="{{ dpi }}" placeholder="800" autocomplete="off" required></label>
+<label><span>{{ t('新しい DPI（任意）') }}</span><input name="new_dpi" type="text" inputmode="numeric" value="{{ new_dpi }}" placeholder="1600" autocomplete="off"></label>
+<button type="submit">{{ t('換算する') }}</button>
+</form>
+{% if problem %}<p class="problem" id="sens-problem" role="alert">{{ problem }}</p>{% endif %}
+{% if results %}
+<section aria-labelledby="sens-title">
+<h2 id="sens-title">{{ t('同じ振り向きになる感度') }}</h2>
+<dl class="turn">
+<div><dt>{{ t('振り向き（360°）') }}</dt><dd><strong>{{ results.cm }} cm</strong> <small>{{ results.inch }} in</small></dd></div>
+<div><dt>eDPI (VALORANT)</dt><dd><strong>{{ results.edpi }}</strong></dd></div>
+{% if results.new is not none %}<div><dt>{{ t('DPI {dpi} での VALORANT の感度', dpi=new_dpi) }}</dt><dd><strong>{{ results.new }}</strong></dd></div>{% endif %}
+</dl>
+<div class="table-wrap"><table class="board plain sens-table">
+<thead><tr><th scope="col">{{ t('ゲーム') }}</th><th scope="col">{{ t('感度') }}</th></tr></thead>
+<tbody>
+{% for row in results.rows %}<tr{% if row.key == game %} class="here"{% endif %}><td>{{ row.name }}</td><td><strong>{{ row.sens }}</strong> <button type="button" class="quiet copy" data-copy="{{ row.sens }}" data-done="{{ t('コピーしました') }}">{{ t('コピー') }}</button></td></tr>
+{% endfor %}</tbody>
+</table></div>
+<p class="note">{{ t('視野角（FOV）は揃えていません。腰だめの感度です。') }}</p>
+</section>
+{% endif %}
+{% endblock %}

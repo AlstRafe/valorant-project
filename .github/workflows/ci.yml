@@ -54,3 +54,31 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+
+  layout:
+    name: Layout (every page, 360-1440 px)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements.txt
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Chromium and the fonts it needs (Japanese, Korean and Chinese among them), so text is as wide as on a PC.
+      - run: npx playwright install --with-deps chromium
+      - name: Look for broken layout (the tests' made-up answers)
+        run: |
+          python tests/ui/serve.py 5077 > serve.log 2>&1 &
+          for i in $(seq 30); do curl -sf -o /dev/null http://127.0.0.1:5077/ && break; sleep 1; done
+          node tests/ui/audit.js http://127.0.0.1:5077 --quick
+      # By hand only (Actions -> CI -> Run workflow): the live site, with real players, matches and pictures.
+      - name: Look for broken layout (the live site)
+        if: github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        run: node tests/ui/audit.js https://haruxera.duckdns.org/val --live

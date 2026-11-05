@@ -13,7 +13,7 @@
 {% if map.image %}<img class="map" src="{{ media(map.image) }}" alt="" width="452" height="128">{% endif %}
 <div>
 <h1>{{ map.name }}</h1>
-<p class="meta">{{ queue }}{% if started %} · <time datetime="{{ started.isoformat() }}">{{ when }}</time>{% endif %}{% if minutes %} · {{ t('{minutes}分', minutes=minutes) }}{% endif %}</p>
+<p class="meta">{{ queue }}{% if started %} · <time datetime="{{ started.isoformat() }}">{{ when }}</time>{% endif %}{% if minutes %} · {{ t('{minutes}分', minutes=minutes) }}{% endif %}{% if server %} · {{ t('サーバー') }}: {{ server }}{% endif %}</p>
 {% if average %}<p class="meta avg">{{ t('平均ランク') }}: {% if average.icon %}<img src="{{ media(average.icon) }}" alt="" width="20" height="20">{% endif %}{{ average.name }}</p>{% endif %}
 </div>
 <button type="button" class="fav share-match" id="share" data-copied="{{ t('リンクをコピーしました') }}" title="{{ t('共有') }}" aria-label="{{ t('共有') }}" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1"/></svg></button>

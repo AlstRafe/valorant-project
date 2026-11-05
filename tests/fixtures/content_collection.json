@@ -340,5 +340,31 @@
    "displayIcon2": "https://media.valorant-api.com/bundles/fb000000-0000-4000-8000-000000000001/displayicon2.png",
    "assetPath": "x"
   }
+ ],
+ "seasons": [
+  {
+   "uuid": "aaaa0000-0000-4000-8000-000000000001",
+   "displayName": "エピソード 9",
+   "type": "EAresSeasonType::Episode",
+   "startTime": "2026-01-07T00:00:00Z",
+   "endTime": "2040-01-01T00:00:00Z",
+   "parentUuid": null
+  },
+  {
+   "uuid": "aaaa0000-0000-4000-8000-000000000002",
+   "displayName": "ACT I",
+   "type": "EAresSeasonType::Act",
+   "startTime": "2026-01-07T00:00:00Z",
+   "endTime": "2026-03-01T00:00:00Z",
+   "parentUuid": "aaaa0000-0000-4000-8000-000000000001"
+  },
+  {
+   "uuid": "aaaa0000-0000-4000-8000-000000000003",
+   "displayName": "ACT III",
+   "type": "EAresSeasonType::Act",
+   "startTime": "2026-03-01T00:00:00Z",
+   "endTime": "2040-01-01T00:00:00Z",
+   "parentUuid": "aaaa0000-0000-4000-8000-000000000001"
+  }
  ]
 }
