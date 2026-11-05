@@ -3427,6 +3427,109 @@ code {
   display: none;
 }
 
+.profile-more,
+.summary-tools,
+.compare-more {
+  margin: 0.8rem 0 0;
+}
+.compare-form label {
+  max-width: 16rem;
+}
+.compare-form ~ .table-wrap {
+  margin-top: 1rem;
+}
+.versus-two {
+  table-layout: fixed;
+}
+.versus-two th,
+.versus-two td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.versus-two th:first-child {
+  width: 30%;
+}
+.versus-two thead .who-cell {
+  display: grid;
+  justify-items: end;
+  gap: 0.3rem;
+  text-align: right;
+}
+.versus-two thead .who-cell > span {
+  display: grid;
+  min-width: 0;
+}
+.versus-two thead small {
+  color: var(--soft);
+  font-weight: 400;
+}
+.versus-two td.best {
+  color: var(--win);
+  font-weight: 700;
+}
+.versus-two td.best::after {
+  content: " ▲";
+  content: " ▲" / "";
+  font-size: 0.75em;
+}
+.rank-cell,
+.agent-list span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.rank-cell img {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+.agent-list {
+  display: grid;
+  justify-items: end;
+  gap: 0.3rem;
+}
+.agent-list img {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 4px;
+}
+.agent-list span {
+  overflow-wrap: normal;
+}
+.xh-save label {
+  max-width: 18rem;
+}
+.xh-saved {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.7rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.xh-saved li {
+  min-width: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.xh-saved p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.6rem 0 0;
+}
+.xh-saved strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.xh-saved code {
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--soft);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

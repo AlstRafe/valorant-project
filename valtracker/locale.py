@@ -1279,6 +1279,126 @@ TEXTS = {
         "en-GB": "Pick rate is the share of teams that picked the agent; win rate is how often those teams won. Win rates from fewer than {few} matches are not shown.",
         "zh-TW": "選用率是選了該特務的隊伍比例，勝率是這些隊伍獲勝的比例。少於 {few} 場的不顯示勝率。",
     },
+    "2 人のランクと最近の試合の成績を並べて見られます。": {
+        "ko": "두 플레이어의 랭크와 최근 경기 성적을 나란히 볼 수 있습니다.",
+        "en-GB": "See two players' ranks and recent match numbers side by side.",
+        "zh-TW": "並排查看兩位玩家的牌位與近期對戰成績。",
+    },
+    "{a} と {b} の比較": {
+        "ko": "{a}와 {b} 비교",
+        "en-GB": "{a} compared with {b}",
+        "zh-TW": "{a} 與 {b} 的比較",
+    },
+    "{count} 項目で上": {
+        "ko": "{count}개 항목에서 우위",
+        "en-GB": "Ahead on {count}",
+        "zh-TW": "{count} 項領先",
+    },
+    "このブラウザに保存": {
+        "ko": "이 브라우저에 저장",
+        "en-GB": "Save in this browser",
+        "zh-TW": "儲存在此瀏覽器",
+    },
+    "このブラウザの中だけに保存されます。ほかの端末へはリンクをコピーして送ってください。": {
+        "ko": "이 브라우저 안에만 저장됩니다. 다른 기기에는 링크를 복사해서 보내 주세요.",
+        "en-GB": "Saved in this browser only. To use one on another device, copy its link and send it there.",
+        "zh-TW": "只會儲存在此瀏覽器中。要在其他裝置使用，請複製連結傳過去。",
+    },
+    "それぞれ最近の試合（多くて {count} 試合）の平均です。試合の数が少ないと、たまたまの差が大きく出ます。": {
+        "ko": "각자 최근 경기(최대 {count}경기)의 평균입니다. 경기 수가 적으면 우연한 차이가 크게 나타납니다.",
+        "en-GB": "Each is the average of that player's recent matches (up to {count}). With only a few matches, chance makes the gaps look bigger.",
+        "zh-TW": "各自為近期對戰（最多 {count} 場）的平均。場數少時，偶然造成的差距會比較大。",
+    },
+    "ほかのプレイヤーと比べる": {
+        "ko": "다른 플레이어와 비교",
+        "en-GB": "Compare with another player",
+        "zh-TW": "與其他玩家比較",
+    },
+    "アカウントレベル": {
+        "ko": "계정 레벨",
+        "en-GB": "Account level",
+        "zh-TW": "帳號等級",
+    },
+    "プレイヤー {number}": {
+        "ko": "플레이어 {number}",
+        "en-GB": "Player {number}",
+        "zh-TW": "玩家 {number}",
+    },
+    "プレイヤーを比べる": {
+        "ko": "플레이어 비교",
+        "en-GB": "Compare players",
+        "zh-TW": "比較玩家",
+    },
+    "リンクをコピー": {
+        "ko": "링크 복사",
+        "en-GB": "Copy link",
+        "zh-TW": "複製連結",
+    },
+    "保存したクロスヘア": {
+        "ko": "저장한 조준선",
+        "en-GB": "Saved crosshairs",
+        "zh-TW": "已儲存的準星",
+    },
+    "保存しました": {
+        "ko": "저장했습니다",
+        "en-GB": "Saved",
+        "zh-TW": "已儲存",
+    },
+    "名前なし": {
+        "ko": "이름 없음",
+        "en-GB": "Unnamed",
+        "zh-TW": "未命名",
+    },
+    "名前（なくてもかまいません）": {
+        "ko": "이름(없어도 됩니다)",
+        "en-GB": "Name (optional)",
+        "zh-TW": "名稱（可留空）",
+    },
+    "左右を入れ替える": {
+        "ko": "좌우 바꾸기",
+        "en-GB": "Swap sides",
+        "zh-TW": "左右互換",
+    },
+    "戦績を画像で保存": {
+        "ko": "전적을 이미지로 저장",
+        "en-GB": "Save as a picture",
+        "zh-TW": "將戰績存成圖片",
+    },
+    "比べる": {
+        "ko": "비교",
+        "en-GB": "Compare",
+        "zh-TW": "比較",
+    },
+    "消す": {
+        "ko": "삭제",
+        "en-GB": "Remove",
+        "zh-TW": "刪除",
+    },
+    "項目": {
+        "ko": "항목",
+        "en-GB": "Item",
+        "zh-TW": "項目",
+    },
+    "（上）": {
+        "ko": "(우위)",
+        "en-GB": "(ahead)",
+        "zh-TW": "（領先）",
+    },
+    "平均キル": {
+        "ko": "평균 킬",
+        "en-GB": "Kills per match",
+        "zh-TW": "平均擊殺",
+    },
+    "平均デス": {
+        "ko": "평균 데스",
+        "en-GB": "Deaths per match",
+        "zh-TW": "平均死亡",
+    },
+    "試合数": {
+        "ko": "경기 수",
+        "en-GB": "Matches",
+        "zh-TW": "場數",
+    },
 }
 
 #: Words only the owner sees (the settings, and why the search cannot work yet): Japanese only.

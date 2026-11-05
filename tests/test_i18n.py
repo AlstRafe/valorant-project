@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from valtracker import crosshair, i18n
+from valtracker.compare import LINES
 from valtracker.locale import OWNER_ONLY, TEXTS
 from valtracker.skinlib import LEVEL_ITEMS
 from valtracker.tools import CLOCKS, PARTY_WORDS, REGION_NAMES
@@ -40,6 +41,7 @@ def used_texts() -> set[str]:
     found.update(PARTY_WORDS.values())
     found.update(CATEGORIES.values())
     found.update(LEVEL_ITEMS.values())
+    found.update(name for _, name, _, _ in LINES if re.search(r"[ぁ-んァ-ヶ一-龯]", name))
     found.update(name for _, name in CLOCKS.values())
     found.update(crosshair.COLOUR_NAMES)
     found.update(crosshair.PRESETS)

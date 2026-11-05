@@ -40,6 +40,7 @@
 </div>
 {% endif %}
 </div>
+<p class="profile-more"><a class="button quiet" href="{{ url_for('compare', a=name ~ '#' ~ tag) }}">{{ t('ほかのプレイヤーと比べる') }}</a></p>
 </section>
 
 {% if rr_chart %}
@@ -113,6 +114,20 @@
 {% endfor %}
 </ul>
 {% endif %}
+{% set mode_name = (modes|selectattr('current')|map(attribute='name')|first) or t('すべて') %}
+{% set picked = namespace(agents=[]) %}{% for agent in summary.agents %}{% set picked.agents = picked.agents + [{"name": agent.name, "icon": media(agent.icon) if agent.icon else ""}] %}{% endfor %}
+{% set card_data = {
+  "name": name, "tag": tag,
+  "rank": rank.name if rank and rank.tier > 2 else t('ランクなし'),
+  "rankIcon": media(rank.icon) if rank and rank.tier > 2 and rank.icon else "",
+  "under": ((rr ~ ' RR') if rank and rank.tier > 2 and rr is not none else '') ~ ((' · ' ~ t('最高ランク') ~ ' ' ~ peak.name) if peak and peak.tier > 2 else ''),
+  "wide": wide,
+  "title": mode_name ~ ' · ' ~ t('直近 {count} 試合', count=summary.games),
+  "stats": ([[t('勝率'), summary.win_rate ~ '%']] if summary.decided else []) + [["K/D", summary.kd]] + ([["ACS", summary.acs]] if summary.acs is not none else []) + [[t('HS率'), summary.hs ~ '%']] + ([["KAST", summary.kast ~ '%']] if summary.kast is not none else []) + ([["ADR", summary.adr]] if summary.adr is not none else []),
+  "agents": picked.agents,
+  "site": site_name,
+} %}
+<p class="summary-tools"><button type="button" class="button quiet" id="stat-card" data-card='{{ card_data|tojson }}' hidden>{{ t('戦績を画像で保存') }}</button></p>
 
 <div class="split">
 {% if summary.lobby %}

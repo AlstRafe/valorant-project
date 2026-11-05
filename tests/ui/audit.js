@@ -36,6 +36,8 @@ const PAGES = [
   "/esports?show=results",
   "/skins",
   "/skins?weapon=all&tier=ultra",
+  "/agents/stats",
+  "/compare",
   "/p/nobody-here/0000",
 ];
 // With the tests' made-up answers (tests/ui/serve.py): their player, match and agent.
@@ -54,6 +56,8 @@ const MADE_UP = [
   "/live?phase=ingame",
   "/collection?show=cards",
   "/collection?show=titles",
+  "/compare?a=Tester%23JP1&b=Other%23KR1",
+  "/agents/stats?queue=competitive",
 ];
 // Found before the pages are looked at (the real site's skin video): added to the problems at the end.
 const early = [];

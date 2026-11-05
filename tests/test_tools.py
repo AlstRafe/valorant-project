@@ -104,11 +104,15 @@ class ToolsTest(unittest.TestCase):
         self.assertIn("シアン", text)
         self.assertIn('data-copy="0;P;c;5;h;0;0l;4;0o;2;0a;1;1b;0"', text)
         self.assertNotIn('style="', text)
+        self.assertIn('id="xh-save" data-code="0;P;c;5;h;0;0l;4;0o;2;0a;1;1b;0"', text, "the one shown can be kept")
+        self.assertIn('data-copy="http://localhost/crosshair?code=0;P;c;5;h;0', text, "and its link sent")
+        self.assertIn('id="xh-saved"', text)
 
     def test_bad_crosshair_code(self):
         text = self.page("/crosshair?code=hello%20world", 400)
         self.assertIn("クロスヘアのコードではありませんでした", text)
-        self.page("/crosshair")
+        self.assertNotIn('id="xh-save"', text, "nothing to keep")
+        self.assertIn('id="xh-saved"', self.page("/crosshair"), "the ones kept are listed on every visit")
 
     def test_parse(self):
         found = crosshair.parse("0;s;1;P;c;8;u;FF8800FF;h;0;d;1;z;3;0l;0;1b;0;zz;9;A;c;1;S;c;0;d;1")
