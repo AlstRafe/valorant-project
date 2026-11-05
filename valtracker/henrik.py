@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import quote, urlencode
 
 from valtracker import net
@@ -18,12 +19,27 @@ from valtracker.cache import Budget, TTLCache
 BASE = "https://api.henrikdev.xyz"
 PLATFORM = "pc"
 #: How long each kind of answer is kept (seconds). A finished match never changes.
-KEEP = {"account": 6 * 3600, "mmr": 300, "matches": 180, "match": 7 * 24 * 3600}
+KEEP = {"account": 6 * 3600, "mmr": 300, "rr": 180, "matches": 180, "match": 7 * 24 * 3600}
 #: A Riot ID: the name (3-16 characters, spaces allowed) and the tag (3-5 letters or digits).
 NAME = re.compile(r"^[^#/\\?<>\x00-\x1f]{1,16}$")
 TAG = re.compile(r"^[^\W_]{2,5}$")
 MATCH_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 REGIONS = ("ap", "br", "eu", "kr", "latam", "na")
+#: How many matches a player's page lists: as many as the game's own career page shows.
+RECENT = 15
+#: The most matches one answer gives, so the list is asked for in two parts, side by side.
+PAGE = 10
+#: The modes a player's matches can be narrowed to: HenrikDev's name for it -> the queue id in its matches.
+MODES = {
+    "competitive": "competitive",
+    "unrated": "unrated",
+    "swiftplay": "swiftplay",
+    "spikerush": "spikerush",
+    "deathmatch": "deathmatch",
+    "teamdeathmatch": "hurm",
+    "escalation": "ggteam",
+    "premier": "premier",
+}
 #: What the pages use of a match. The rest (every round and kill, about 0.5 MB a match) is dropped before
 #: it is kept, so the memory of the small VM holds hundreds of matches instead of a few dozen.
 METADATA = ("match_id", "map", "game_length_in_ms", "started_at", "is_completed", "queue", "season", "region")
@@ -63,33 +79,60 @@ class Henrik:
         return self._get(("account", name.lower(), tag.lower()), path, KEEP["account"])
 
     def mmr(self, region: str, name: str, tag: str) -> dict:
-        """``{"current": {"tier": {"id", "name"}, "rr", "last_change", ...}, "peak": ..., "seasonal": [...]}``."""
+        """``{"current": {"tier": {"id", "name"}, "rr", "last_change", "games_needed_for_rating",
+        "leaderboard_placement", ...}, "peak": ..., "season": the latest act played (``seasonal``'s last)}``."""
         path = f"/valorant/v3/mmr/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}"
-        slim = lambda data: _pick(data, ("current", "peak"))  # noqa: E731 - the seasons' history is not shown
-        return self._get(("mmr", region, name.lower(), tag.lower()), path, KEEP["mmr"], slim)
+        return self._get(("mmr", region, name.lower(), tag.lower()), path, KEEP["mmr"], _slim_mmr)
 
-    def matches(self, region: str, name: str, tag: str, size: int = 10) -> list:
-        """The latest matches, newest first, each as ``match`` gives it."""
-        path = f"/valorant/v4/matches/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}?" + urlencode(
-            {"size": size}
-        )
-        found = self._get(("matches", region, name.lower(), tag.lower(), size), path, KEEP["matches"], _slim_matches)
-        for match in found:  # each one is also a whole match: opening it costs no call
-            match_id = match["metadata"].get("match_id")
-            if match_id and match["metadata"].get("is_completed", True):
-                self.cache.put(("match", str(match_id)), match, KEEP["match"])
-        return found
+    def rr_changes(self, region: str, name: str, tag: str) -> dict:
+        """The recent competitive matches' RR: ``{match id: {"change": +18, "tier": 21, "rr": 42}}``."""
+        path = f"/valorant/v1/mmr-history/{_region(region)}/{_part(name)}/{_part(tag)}"
+        return self._get(("rr", region, name.lower(), tag.lower()), path, KEEP["rr"], _slim_rr)
 
-    def has_player(self, name: str, tag: str) -> bool:
+    def matches(self, region: str, name: str, tag: str, mode: str = "") -> list:
+        """The latest RECENT matches (of one of MODES, or of any), newest first, each as ``match`` gives it.
+        Without the newest part there is no list (HenrikError); without the older one it is shorter."""
+        with ThreadPoolExecutor(2, thread_name_prefix="henrik-matches") as pool:
+            parts = [pool.submit(self._matches, region, name, tag, mode, start) for start in (0, PAGE)]
+        found = parts[0].result()
+        try:
+            found = found + parts[1].result()
+        except HenrikError:
+            pass
+        wanted = MODES.get(mode)
+        seen, kept = set(), []
+        for match in found:
+            metadata = match["metadata"]
+            match_id = str(metadata.get("match_id") or "")
+            if match_id in seen:  # an older part that came back the same as the newest
+                continue
+            seen.add(match_id)
+            if wanted and str((metadata.get("queue") or {}).get("id") or "").lower() != wanted:
+                continue
+            if match_id and metadata.get("is_completed", True):  # each one is a whole match: opening it costs no call
+                self.cache.put(("match", match_id), match, KEEP["match"])
+            kept.append(match)
+        return kept[:RECENT]
+
+    def _matches(self, region: str, name: str, tag: str, mode: str, start: int) -> list:
+        size = min(PAGE, RECENT - start)
+        query = {"size": size} | ({"start": start} if start else {}) | ({"mode": mode} if mode in MODES else {})
+        path = f"/valorant/v4/matches/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}?" + urlencode(query)
+        key = _matches_key(region, name, tag, mode, start)
+        return self._get(key, path, KEEP["matches"], _slim_matches)
+
+    def has_player(self, name: str, tag: str, mode: str = "") -> bool:
         """Whether the player's account, rank and matches are all kept: their page needs no call."""
         account = self.cache.get(("account", name.lower(), tag.lower()))
         if not isinstance(account, dict):
             return False
         region = str(account.get("region") or "ap")
-        name, tag = str(account.get("name") or name).lower(), str(account.get("tag") or tag).lower()
-        return all(
-            self.cache.get(key) is not None for key in (("mmr", region, name, tag), ("matches", region, name, tag, 10))
-        )
+        name, tag = str(account.get("name") or name), str(account.get("tag") or tag)
+        keys = [("mmr", region, name.lower(), tag.lower())]
+        keys += [_matches_key(region, name, tag, mode, start) for start in (0, PAGE)]
+        if shows_rr(mode):
+            keys.append(("rr", region, name.lower(), tag.lower()))
+        return all(self.cache.get(key) is not None for key in keys)
 
     def match(self, region: str, match_id: str) -> dict:
         """``{"metadata", "players", "teams", "rounds", "kills", ...}``."""
@@ -129,6 +172,50 @@ class Henrik:
             data = shape(data)
         self.cache.put(cache_key, data, seconds)
         return data
+
+
+def shows_rr(mode: str) -> bool:
+    """Whether a list of this mode has competitive matches, whose RR changes are worth a call."""
+    return mode in ("", "competitive") or mode not in MODES
+
+
+def _slim_mmr(data) -> dict:
+    slim = _pick(data, ("current", "peak"))
+    seasons = [season for season in (data or {}).get("seasonal") or [] if isinstance(season, dict)]
+    slim["season"] = max(seasons, key=lambda season: _act_order(season.get("season")), default=None)
+    return slim
+
+
+def _act_order(season) -> tuple:
+    """``{"short": "e9a3"}`` -> (9, 3): the latest act is the largest, whatever order the list is in."""
+    short = str((season or {}).get("short") or "") if isinstance(season, dict) else ""
+    return tuple(int(number) for number in re.findall(r"\d+", short))
+
+
+def _slim_rr(data) -> dict:
+    """v1's list (or v2's ``{"history": [...]}``) -> ``{match id: {"change", "tier", "rr"}}``."""
+    items = data.get("history") if isinstance(data, dict) else data
+    found = {}
+    for item in items if isinstance(items, list) else []:
+        if not isinstance(item, dict) or not item.get("match_id"):
+            continue
+        change = item.get("mmr_change_to_last_game", item.get("last_change"))
+        tier = item.get(
+            "currenttier", (item.get("tier") or {}).get("id") if isinstance(item.get("tier"), dict) else None
+        )
+        try:
+            found[str(item["match_id"])] = {
+                "change": int(change),
+                "tier": int(tier or 0),
+                "rr": int(item.get("ranking_in_tier", item.get("rr")) or 0),
+            }
+        except (TypeError, ValueError):
+            continue
+    return found
+
+
+def _matches_key(region: str, name: str, tag: str, mode: str, start: int) -> tuple:
+    return ("matches", region, name.lower(), tag.lower(), mode if mode in MODES else "", start)
 
 
 def _pick(item, keys) -> dict:

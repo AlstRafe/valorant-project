@@ -16,19 +16,23 @@
 </div>
 </section>
 {% for team in teams %}
-{% set outcome = 'win' if team.result.won is sameas true else ('loss' if team.result.won is sameas false else 'draw') %}
+{% set outcome = 'draw' if not team.result else ('win' if team.result.won is sameas true else ('loss' if team.result.won is sameas false else 'draw')) %}
 <section class="team {{ outcome }}" aria-labelledby="team-{{ loop.index }}">
-<h2 id="team-{{ loop.index }}"><span>{% if team.id|lower == 'red' %}{{ t('レッド') }}{% elif team.id|lower == 'blue' %}{{ t('ブルー') }}{% else %}{{ team.id }}{% endif %}</span> <strong>{{ team.result.us }}</strong> <small>{% if outcome == 'win' %}{{ t('勝ち') }}{% elif outcome == 'loss' %}{{ t('負け') }}{% else %}{{ t('引き分け') }}{% endif %}</small></h2>
+{% if team.result %}
+<h2 id="team-{{ loop.index }}"><span>{% if team.id|lower == 'red' %}{{ t('レッド') }}{% elif team.id|lower == 'blue' %}{{ t('ブルー') }}{% else %}{{ team.id }}{% endif %}</span>{% if team.result.rounds %} <strong>{{ team.result.us }}</strong>{% endif %} <small>{% if outcome == 'win' %}{{ t('勝ち') }}{% elif outcome == 'loss' %}{{ t('負け') }}{% else %}{{ t('引き分け') }}{% endif %}</small></h2>
+{% else %}
+<h2 id="team-{{ loop.index }}">{{ t('順位') }}</h2>
+{% endif %}
 <div class="table-wrap">
 <table class="board">
-<thead><tr><th scope="col">{{ t('プレイヤー') }}</th><th scope="col">ACS</th><th scope="col">K</th><th scope="col">D</th><th scope="col">A</th><th scope="col">+/−</th><th scope="col">ADR</th><th scope="col">{{ t('HS率') }}</th></tr></thead>
+<thead><tr><th scope="col">{{ t('プレイヤー') }}</th>{% if rounds %}<th scope="col">ACS</th>{% endif %}<th scope="col">K</th><th scope="col">D</th><th scope="col">A</th><th scope="col">+/−</th>{% if rounds %}<th scope="col">ADR</th>{% endif %}<th scope="col">{{ t('HS率') }}</th></tr></thead>
 <tbody>
 {% for player in team.players %}
-<tr>
+<tr{% if player.me %} class="me"{% endif %}>
 <th scope="row"><a href="{{ url_for('player', name=player.name, tag=player.tag) }}">{% if player.agent.icon %}<img src="{{ media(player.agent.icon) }}" alt="{{ player.agent.name }}" title="{{ player.agent.name }}" width="32" height="32">{% endif %}<span class="pn">{{ player.name }}<small>#{{ player.tag }}</small></span>{% if player.rank.icon and player.rank.tier > 2 %}<img class="tier" src="{{ media(player.rank.icon) }}" alt="{{ player.rank.name }}" title="{{ player.rank.name }}" width="24" height="24">{% endif %}</a></th>
-<td>{{ player.line.acs }}</td><td>{{ player.line.kills }}</td><td>{{ player.line.deaths }}</td><td>{{ player.line.assists }}</td>
+{% if rounds %}<td>{{ player.line.acs }}</td>{% endif %}<td>{{ player.line.kills }}</td><td>{{ player.line.deaths }}</td><td>{{ player.line.assists }}</td>
 <td class="{{ 'up' if player.line.diff > 0 else ('down' if player.line.diff < 0 else '') }}">{{ '%+d'|format(player.line.diff) }}</td>
-<td>{{ player.line.adr }}</td><td>{{ player.line.hs }}%</td>
+{% if rounds %}<td>{{ player.line.adr }}</td>{% endif %}<td>{{ player.line.hs }}%</td>
 </tr>
 {% endfor %}
 </tbody>

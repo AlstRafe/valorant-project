@@ -106,9 +106,42 @@
   // in place. A failure leaves the way to the page that waits for them (?full=1).
   function part() {
     var box = document.getElementById("player");
-    var address = box && box.getAttribute("data-part");
-    if (!address) return;
+    if (!box) return;
+    var address = box.getAttribute("data-part");
+    if (address) load(box, address, "");
+    // The mode filter: only the matches change, so only they are asked for again (the account and rank are kept).
+    box.addEventListener("click", function (e) {
+      var link = e.target.closest ? e.target.closest(".modes a") : null;
+      if (!link || !window.fetch || e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      if (link.getAttribute("aria-current")) return;
+      link.parentNode.querySelectorAll("a").forEach(function (other) {
+        other.removeAttribute("aria-current");
+      });
+      link.setAttribute("aria-current", "true");
+      var games = document.getElementById("games");
+      if (games) games.setAttribute("aria-busy", "true");
+      var asked = new URL(link.href);
+      asked.pathname += "/part";
+      load(box, asked.href, link.href);
+    });
+  }
+
+  // A mode further along the row (Premier on a phone) is scrolled into sight.
+  function chosen() {
+    var current = document.querySelector(".modes a[aria-current]");
+    var row = current && current.parentNode;
+    if (!row || row.scrollWidth <= row.clientWidth) return;
+    var left = current.offsetLeft - row.offsetLeft;
+    if (left < row.scrollLeft || left + current.offsetWidth > row.scrollLeft + row.clientWidth) {
+      row.scrollLeft = left - (row.clientWidth - current.offsetWidth) / 2;
+    }
+  }
+
+  // page: the address the visitor chose with the filter ("" for the first load).
+  function load(box, address, page) {
     function failed() {
+      if (page) return location.assign(page); // the plain page for that mode
       var wait = box.querySelector(".wait");
       if (wait) wait.textContent = box.getAttribute("data-failed");
       var retry = box.querySelector(".retry");
@@ -122,9 +155,19 @@
         return answer.text();
       })
       .then(function (html) {
-        box.innerHTML = html; // our own server's page, escaped by its templates
-        box.removeAttribute("data-part");
-        profile();
+        var fresh = document.createElement("template");
+        fresh.innerHTML = html; // our own server's page, escaped by its templates
+        var games = page ? document.getElementById("games") : null;
+        var found = fresh.content.getElementById("games");
+        if (games && found) {
+          games.replaceWith(found);
+          history.replaceState(null, "", page);
+        } else {
+          box.innerHTML = html;
+          box.removeAttribute("data-part");
+          profile();
+        }
+        chosen();
         times();
       })
       .catch(failed);
@@ -162,6 +205,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     part();
+    chosen();
     profile();
     lists();
     times();

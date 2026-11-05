@@ -36,6 +36,8 @@ class FakeFetch:
                 return 200, fixture("henrik_account.json")
             if "/v3/mmr/" in url:
                 return 200, fixture("henrik_mmr.json")
+            if "/v1/mmr-history/" in url:
+                return 200, fixture("henrik_mmr_history.json")
             if "/v4/matches/" in url:
                 return 200, fixture("henrik_matches.json")
             if "/v4/match/" in url:

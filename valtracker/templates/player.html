@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% block title %}{{ name }}#{{ tag }} · {{ site_name }}{% endblock %}
 {% block main %}
-<div id="player"{% if loading %} data-part="{{ url_for('player_part', name=name, tag=tag) }}" data-failed="{{ t('読み込めませんでした。') }}"{% endif %}>
+<div id="player"{% if loading %} data-part="{{ url_for('player_part', name=name, tag=tag, mode=mode or None) }}" data-failed="{{ t('読み込めませんでした。') }}"{% endif %}>
 {% if loading %}
 <section class="hero">
 <h1>{{ name }}<span class="tag">#{{ tag }}</span></h1>
 <p class="wait" role="status"><span class="spinner" aria-hidden="true"></span><span>{{ t('ランクと最近の試合を読み込んでいます…') }}</span></p>
-<p class="retry" hidden><a href="?full=1">{{ t('もう一度読み込む') }}</a></p>
-<noscript><p><a href="?full=1">{{ t('ランクと最近の試合を見る') }}</a></p></noscript>
+{% set full = url_for('player', name=name, tag=tag, mode=mode or None, full=1) %}
+<p class="retry" hidden><a href="{{ full }}">{{ t('もう一度読み込む') }}</a></p>
+<noscript><p><a href="{{ full }}">{{ t('ランクと最近の試合を見る') }}</a></p></noscript>
 </section>
 {% else %}
 {% include "_player.html" %}

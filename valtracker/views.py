@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 
 from flask import Flask, abort, current_app, g, make_response, redirect, render_template, request, send_file, url_for
 
 from valtracker import i18n, security, stats
-from valtracker.henrik import REGIONS, HenrikError, split_riot_id
+from valtracker.henrik import MODES, REGIONS, HenrikError, shows_rr, split_riot_id
 
 #: HenrikDev's queue ids -> what the game calls them (translated in locale.py).
 QUEUES = {
@@ -27,6 +28,18 @@ QUEUES = {
     "skirmish_1v1": "スカーミッシュ",
     "skirmish_2v2": "スカーミッシュ",
 }
+#: The filter above a player's matches, in the game's order ("" is every mode; the names are QUEUES').
+MODE_FILTER = (
+    "",
+    "competitive",
+    "unrated",
+    "swiftplay",
+    "spikerush",
+    "deathmatch",
+    "teamdeathmatch",
+    "escalation",
+    "premier",
+)
 #: Why a player or match could not be shown -> (HTTP status, the visitor's words, the owner's words).
 FAILURES = {
     "nokey": (
@@ -95,14 +108,15 @@ def _map(metadata: dict) -> dict:
     }
 
 
-def _row(match: dict, player: dict) -> dict:
+def _row(match: dict, player: dict, rr_changes: dict) -> dict:
     """One match in a player's list."""
     metadata = match.get("metadata") or {}
+    match_id = str(metadata.get("match_id") or "")
     rounds = stats.rounds_played(match)
     agent = _agent(player.get("agent"))
     moment = stats.started(match)
     return {
-        "id": str(metadata.get("match_id") or ""),
+        "id": match_id,
         "region": str(metadata.get("region") or ""),
         "map": _map(metadata),
         "queue": _queue(metadata),
@@ -112,6 +126,8 @@ def _row(match: dict, player: dict) -> dict:
         "agent_name": agent["name"],
         "agent_icon": agent["icon"],
         "result": stats.team_result(match, str(player.get("team_id") or "")),
+        "placing": stats.placing(match, player),
+        "rr": (rr_changes.get(match_id) or {}).get("change"),
         "line": stats.line(player, rounds),
         "rounds": rounds,
         # Deathmatch, Skirmish and the like would skew the averages: the summary counts the standard games.
@@ -119,7 +135,47 @@ def _row(match: dict, player: dict) -> dict:
     }
 
 
-def _player(name: str, tag: str) -> tuple[dict, int]:
+def _mode() -> str:
+    """The mode the visitor narrowed a player's matches to (``?mode=``), or "" for all of them."""
+    mode = request.args.get("mode", "")
+    return mode if mode in MODES else ""
+
+
+def _modes(mode: str) -> list[dict]:
+    return [
+        {"key": key, "name": _t(QUEUES[MODES[key]]) if key else _t("すべて"), "current": key == mode}
+        for key in MODE_FILTER
+    ]
+
+
+def _standing(current: dict, season: dict | None) -> dict:
+    """What else the rank card says: the placement games left, the leaderboard place, the latest act's record."""
+
+    def number(value) -> int:
+        try:
+            return int(value or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    board = current.get("leaderboard_placement")
+    act = {}
+    if isinstance(season, dict) and number(season.get("games")):
+        short = str((season.get("season") or {}).get("short") or "") if isinstance(season.get("season"), dict) else ""
+        games, wins = number(season.get("games")), number(season.get("wins"))
+        act = {
+            "name": re.sub(r"(\d)a(\d)", r"\1 A\2", short.lower()).upper(),
+            "games": games,
+            "wins": wins,
+            "win_rate": round(100 * wins / games),
+        }
+    return {
+        "placements": number(current.get("games_needed_for_rating")),
+        "leaderboard": number(board.get("rank")) if isinstance(board, dict) else 0,
+        "act": act,
+    }
+
+
+def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
     """What the player page shows, and its HTTP status. The account comes first (its region is needed); then
     the rank and the matches are asked for at the same time."""
     henrik = current_app.config["VAL_HENRIK"]
@@ -130,19 +186,24 @@ def _player(name: str, tag: str) -> tuple[dict, int]:
         return {"name": name, "tag": tag, "problem": problem, "settings_link": settings_link, "account": None}, status
     region = str(account.get("region") or "ap")
     name, tag = str(account.get("name") or name), str(account.get("tag") or tag)
-    with ThreadPoolExecutor(2, thread_name_prefix="henrik") as pool:
+    with ThreadPoolExecutor(3, thread_name_prefix="henrik") as pool:
         asked_mmr = pool.submit(henrik.mmr, region, name, tag)
-        asked_matches = pool.submit(henrik.matches, region, name, tag)
+        asked_matches = pool.submit(henrik.matches, region, name, tag, mode)
+        asked_rr = pool.submit(henrik.rr_changes, region, name, tag) if shows_rr(mode) else None
     try:
         mmr = asked_mmr.result()
     except HenrikError:
         mmr = None  # unranked, or the rank could not be read: the matches are still worth showing
+    try:
+        rr_changes = asked_rr.result() if asked_rr else {}
+    except HenrikError:
+        rr_changes = {}  # the list only goes without the RR each match gave
     rows, matches_problem = [], ""
     try:
         for match in asked_matches.result():
             found = stats.find_player(match, str(account.get("puuid") or ""), name, tag)
             if found:
-                rows.append(_row(match, found))
+                rows.append(_row(match, found, rr_changes))
     except HenrikError as error:
         matches_problem = _failure(error.kind)[1]
     current = (mmr or {}).get("current") or {}
@@ -157,9 +218,12 @@ def _player(name: str, tag: str) -> tuple[dict, int]:
         "rr": current.get("rr"),
         "last_change": current.get("last_change"),
         "peak": _rank(peak.get("tier")) if peak else None,
+        "standing": _standing(current, (mmr or {}).get("season")),
         "rows": rows,
         "summary": stats.summary(rows),
         "matches_problem": matches_problem,
+        "mode": mode,
+        "modes": _modes(mode),
         "problem": "",
         "settings_link": False,
     }, 200
@@ -186,12 +250,12 @@ def register(app: Flask) -> None:
         ``?full=1`` waits for them (the link for a browser without JavaScript)."""
         if not split_riot_id(f"{name}#{tag}"):
             abort(404)
-        henrik = current_app.config["VAL_HENRIK"]
-        if request.args.get("full") or not henrik.key() or henrik.has_player(name, tag):  # an answer at once
-            values, status = _player(name, tag)
+        henrik, mode = current_app.config["VAL_HENRIK"], _mode()
+        if request.args.get("full") or not henrik.key() or henrik.has_player(name, tag, mode):  # an answer at once
+            values, status = _player(name, tag, mode)
             return render_template("player.html", **values), status
         return render_template(
-            "player.html", name=name, tag=tag, loading=True, account=None, problem="", settings_link=False
+            "player.html", name=name, tag=tag, mode=mode, loading=True, account=None, problem="", settings_link=False
         )
 
     @app.get("/p/<name>/<tag>/part")
@@ -200,7 +264,7 @@ def register(app: Flask) -> None:
         if not split_riot_id(f"{name}#{tag}"):
             abort(404)
         start = time.monotonic()
-        values, status = _player(name, tag)
+        values, status = _player(name, tag, _mode())
         response = make_response(render_template("_player.html", **values), status)
         response.headers["Cache-Control"] = "no-store"
         # how long HenrikDev took, for the browser's developer tools (Network -> Timing)
@@ -220,9 +284,9 @@ def register(app: Flask) -> None:
             return render_template("match.html", problem=problem, settings_link=settings_link), status
         metadata = found.get("metadata") or {}
         rounds = stats.rounds_played(found)
-        teams = []
-        for team in found.get("teams") or []:
-            team_id = str(team.get("team_id") or "")
+        me = request.args.get("me", "").lower()  # the player whose list the visitor came from: their line stands out
+
+        def lines(team_id: str | None) -> list[dict]:
             players = [
                 {
                     "name": str(player.get("name") or ""),
@@ -230,12 +294,21 @@ def register(app: Flask) -> None:
                     "agent": _agent(player.get("agent")),
                     "rank": _rank(player.get("tier")),
                     "line": stats.line(player, rounds),
+                    "me": f"{player.get('name')}#{player.get('tag')}".lower() == me,
                 }
                 for player in found.get("players") or []
-                if str(player.get("team_id") or "") == team_id
+                if isinstance(player, dict) and (team_id is None or str(player.get("team_id") or "") == team_id)
             ]
-            players.sort(key=lambda player: -player["line"]["acs"])
-            teams.append({"id": team_id, "result": stats.team_result(found, team_id), "players": players})
+            # by combat score; without rounds (Deathmatch and the like) there is none, so by kills
+            players.sort(key=lambda player: -(player["line"]["acs"] if rounds else player["line"]["kills"]))
+            return players
+
+        teams = []
+        for team in found.get("teams") or []:
+            team_id = str(team.get("team_id") or "")
+            teams.append({"id": team_id, "result": stats.team_result(found, team_id), "players": lines(team_id)})
+        if not any(team["players"] for team in teams):  # Deathmatch: everyone for themselves, in one table
+            teams = [{"id": "", "result": None, "players": lines(None)}]
         moment = stats.started(found)
         length = int((metadata.get("game_length_in_ms") or 0) / 60000)
         return render_template(
@@ -246,6 +319,7 @@ def register(app: Flask) -> None:
             started=moment,
             when=i18n.when(g.lang, moment) if moment else "",
             minutes=length,
+            rounds=rounds,
             teams=teams,
         )
 

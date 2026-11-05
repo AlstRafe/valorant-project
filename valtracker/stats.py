@@ -57,14 +57,39 @@ def line(player: dict, rounds: int) -> dict:
 
 
 def team_result(match: dict, team_id: str) -> dict:
-    """``{"won": True/False/None (a draw or no teams), "us": rounds won, "them": rounds lost}``."""
+    """``{"won": True/False/None (a draw or no teams), "us": rounds won, "them": rounds lost, "rounds": whether
+    the mode has rounds}``. Team Deathmatch and Escalation have none: only who won."""
     for team in match.get("teams") or []:
         if isinstance(team, dict) and str(team.get("team_id")) == str(team_id):
             rounds = team.get("rounds") or {}
             us, them = _int(rounds.get("won")), _int(rounds.get("lost"))
             won = team.get("won")
-            return {"won": None if us == them else bool(won), "us": us, "them": them}
-    return {"won": None, "us": 0, "them": 0}
+            if not us and not them:
+                return {"won": won if isinstance(won, bool) else None, "us": 0, "them": 0, "rounds": False}
+            return {"won": None if us == them else bool(won), "us": us, "them": them, "rounds": True}
+    return {"won": None, "us": 0, "them": 0, "rounds": False}
+
+
+def placing(match: dict, player: dict) -> dict:
+    """Where the player finished among everyone: ``{"place": 1.., "of": players, "mvp": "match" / "team" / ""}``.
+    Places go by kills in a match without teams (Deathmatch), else by combat score; the MVPs (the game's
+    badges) only in a match with rounds."""
+    players = [other for other in match.get("players") or [] if isinstance(other, dict)]
+    teams = bool(team_result(match, str(player.get("team_id") or ""))["rounds"])
+    measure = "score" if teams else "kills"
+
+    def value(other: dict) -> int:
+        return _int((other.get("stats") or {}).get(measure))
+
+    mine = value(player)
+    place = 1 + sum(1 for other in players if value(other) > mine)
+    mvp = ""
+    if teams and players and mine > 0:
+        if place == 1:
+            mvp = "match"
+        elif all(value(other) <= mine for other in players if other.get("team_id") == player.get("team_id")):
+            mvp = "team"
+    return {"place": place, "of": len(players), "mvp": mvp}
 
 
 def find_player(match: dict, puuid: str = "", name: str = "", tag: str = "") -> dict | None:
@@ -94,6 +119,7 @@ def summary(rows: list[dict]) -> dict:
     kills = sum(row["line"]["kills"] for row in played)
     deaths = sum(row["line"]["deaths"] for row in played)
     shots = sum(row["line"]["shots"] for row in played)
+    with_rounds = [row for row in played if row.get("rounds")]
     agents: dict[str, dict] = {}
     for row in played:
         key = row["agent_id"] or row["agent_name"]
@@ -112,7 +138,15 @@ def summary(rows: list[dict]) -> dict:
         "deaths": round(deaths / count, 1),
         "assists": round(sum(row["line"]["assists"] for row in played) / count, 1),
         "kd": round(kills / deaths, 2) if deaths else float(kills),
-        "acs": round(sum(row["line"]["acs"] for row in played) / count),
+        # ACS and ADR are per round: a mode without rounds has neither
+        "acs": round(sum(row["line"]["acs"] for row in with_rounds) / len(with_rounds)) if with_rounds else None,
+        "adr": round(sum(row["line"]["adr"] for row in with_rounds) / len(with_rounds)) if with_rounds else None,
         "hs": round(100 * sum(row["line"]["headshots"] for row in played) / shots) if shots else 0,
+        "decided": wins + losses,  # 0: no wins or losses to speak of (Deathmatch)
+        "left_out": len([row for row in rows if row.get("line")]) - count,
+        "form": [
+            "win" if row["result"]["won"] is True else "loss" if row["result"]["won"] is False else "draw"
+            for row in played
+        ],
         "agents": sorted(agents.values(), key=lambda agent: -agent["games"])[:3],
     }
