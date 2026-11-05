@@ -1,0 +1,1 @@
+<a class="notice-line" href="{{ url_for('status', region=region) }}"><strong>{{ t('障害') if notices[0].kind == 'incident' else t('メンテナンス') }}</strong><span>{{ notices[0].title }}</span>{% if notices|length > 1 %}<small>{{ t('ほか {count} 件', count=notices|length - 1) }}</small>{% endif %}</a>

@@ -1,0 +1,46 @@
+{
+ "status": 200,
+ "data": [
+  {
+   "bundle_uuid": "FB000000-0000-4000-8000-000000000001",
+   "seconds_remaining": 500000,
+   "bundle_price": 2000,
+   "whole_sale_only": false,
+   "items": [
+    {
+     "uuid": "aa000000-0000-4000-8000-000000000011",
+     "name": "Prime Vandal",
+     "image": "https://media.valorant-api.com/weaponskinlevels/aa000000-0000-4000-8000-000000000011/displayicon.png",
+     "type": "skin_level",
+     "amount": 1,
+     "discount_percent": 0.2,
+     "base_price": 1775,
+     "discounted_price": 1420,
+     "promo_item": false
+    },
+    {
+     "uuid": "bb000000-0000-4000-8000-000000000011",
+     "name": "Chili Buddy",
+     "image": null,
+     "type": "buddy",
+     "amount": 1,
+     "discount_percent": 0,
+     "base_price": 475,
+     "discounted_price": 475,
+     "promo_item": false
+    },
+    {
+     "uuid": "12345678-0000-4000-8000-000000000000",
+     "name": "New Spray",
+     "image": "https://media.valorant-api.com/sprays/12345678-0000-4000-8000-000000000000/displayicon.png",
+     "type": "spray",
+     "amount": 1,
+     "discount_percent": 0,
+     "base_price": 325,
+     "discounted_price": 325,
+     "promo_item": false
+    }
+   ]
+  }
+ ]
+}

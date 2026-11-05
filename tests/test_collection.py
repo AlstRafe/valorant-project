@@ -39,8 +39,9 @@ class CollectionTest(unittest.TestCase):
 
     def test_only_the_owner_has_it(self):
         self.assertEqual(self.client.get("/collection", environ_base=VISITOR).status_code, 404)
-        self.assertNotIn('href="/collection"', self.client.get("/", environ_base=VISITOR).get_data(as_text=True))
-        self.assertIn('href="/collection"', self.client.get("/").get_data(as_text=True))
+        self.assertNotIn('href="/collection"', self.client.get("/tools", environ_base=VISITOR).get_data(as_text=True))
+        self.assertIn('href="/collection"', self.client.get("/tools").get_data(as_text=True))
+        self.assertIn('href="/collection"', self.client.get("/shop").get_data(as_text=True))
 
     def test_before_linking(self):
         text = self.page()

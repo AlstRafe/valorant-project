@@ -1,4 +1,5 @@
-"""The pages: the search and favourites (top), a player, a match, the agents, the owner's collection and settings."""
+"""The pages: the search and favourites (top), a player, a match, the agents, the owner's collection and settings
+(the leaderboard, the server status, crosshairs and the store are tools.py's)."""
 
 from __future__ import annotations
 
@@ -672,6 +673,10 @@ def register(app: Flask) -> None:
             riot_problem=riot_problem,
             riot_link=AUTHORIZE,
         )
+
+    from valtracker import tools
+
+    tools.register(app)
 
     @app.errorhandler(404)
     def not_found(error):

@@ -33,6 +33,8 @@ KINDS = {
     "flex": "/flex?language={lang}",
     "contenttiers": "/contenttiers?language={lang}",
     "currencies": "/currencies?language={lang}",
+    # the store's bundles (shop.py): their names and pictures
+    "bundles": "/bundles?language={lang}",
     # the game's version, which Riot's own servers want to be told (riot.py)
     "version": "/version",
 }
@@ -224,6 +226,7 @@ SLIM = {
     "flex": lambda item: _keep(item, ("uuid", "displayName", "displayIcon")),
     "contenttiers": lambda item: _keep(item, ("uuid", "displayName", "devName", "rank", "displayIcon")),
     "currencies": lambda item: _keep(item, ("uuid", "displayName", "displayNameSingular", "displayIcon")),
+    "bundles": lambda item: _keep(item, ("uuid", "displayName", "displayIcon", "displayIcon2")),
 }
 
 

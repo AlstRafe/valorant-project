@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% macro price(amount, icon, base=0) -%}
+<span class="price">{% if icon %}<img src="{{ media(icon) }}" alt="" width="16" height="16">{% endif %}{% if base and base > amount %}<s>{{ '{:,}'.format(base) }}</s> {% endif %}<strong>{{ '{:,}'.format(amount) }}</strong></span>
+{%- endmacro %}
+{% macro left(found) -%}
+{% if found %}<span class="left" data-until="{{ found.until }}" data-days="{{ t('残り {days} 日') }}" data-hours="{{ t('残り {hours} 時間 {minutes} 分') }}" data-over="{{ t('終わりました') }}">{{ found.text }}</span>{% endif %}
+{%- endmacro %}
+{% macro things(items, icon) -%}
+<ul class="items offers">
+{% for item in items %}{% set picture = media(item.image) if item.image else '' %}<li class="item{% if item.tier and item.tier.key %} tier-{{ item.tier.key }}{% endif %}{% if item.owned %} have{% endif %}">
+{% if picture %}<img src="{{ picture }}" alt="" width="256" height="96" loading="lazy">{% endif %}
+<span class="iname">{{ item.name or '—' }}{% if item.amount and item.amount > 1 %} ×{{ item.amount }}{% endif %}</span>
+{% if item.price %}{{ price(item.price, icon, item.base) }}{% endif %}
+{% if item.discount %}<span class="badge">−{{ item.discount }}%</span>{% elif item.owned %}<span class="badge" lang="ja">所持</span>{% endif %}
+</li>
+{% endfor %}</ul>
+{%- endmacro %}
+{% macro bundles(listed, icon) -%}
+{% for bundle in listed %}
+<section class="bundle">
+{% if bundle.image %}<img class="bundle-art" src="{{ media(bundle.image) }}" alt="" width="640" height="300" loading="lazy">{% endif %}
+<div class="bundle-head">
+<h3>{{ bundle.name or t('バンドル') }}</h3>
+<p>{{ price(bundle.price, icon, bundle.base) }} {{ left(bundle.left) }}</p>
+</div>
+{{ things(bundle['items'], icon) }}
+</section>
+{% endfor %}
+{%- endmacro %}
+{% block title %}{{ t('ショップ') }} · {{ site_name }}{% endblock %}
+{% block main %}
+<section class="hero">
+<h1>{{ t('ショップ') }}</h1>
+<p class="lead">{{ t('いまストアに並んでいるバンドルと、その値段（VALORANT ポイント）です。') }}</p>
+</section>
+{% if owner %}
+<nav class="modes" aria-label="種類" lang="ja"><a href="{{ url_for('shop') }}" aria-current="true">ショップ</a><a href="{{ url_for('collection') }}">所持品</a></nav>
+<div lang="ja">
+{% if own_problem %}
+<p class="problem" role="alert">{{ own_problem }}{% if own_detail %} <code>{{ own_detail }}</code>{% endif %}</p>
+{% if own_settings %}<p><a class="button" href="{{ url_for('settings') }}#riot">設定で Riot と連携する</a></p>{% endif %}
+{% elif own %}
+{% if own.wallet %}
+<ul class="wallet" aria-label="残高">
+{% for coin in own.wallet %}<li title="{{ coin.name }}">{% if coin.icon %}<img src="{{ media(coin.icon) }}" alt="" width="24" height="24">{% endif %}<span class="sr">{{ coin.name }}</span><strong>{{ '{:,}'.format(coin.amount) }}</strong></li>
+{% endfor %}</ul>
+{% endif %}
+<section class="shelf">
+<h2>{{ own.name }} さんの今日のスキン {{ left(own.daily_left) }}</h2>
+{% if own.daily %}{{ things(own.daily, own.vp_icon) }}{% else %}<p class="note">読み込めませんでした。</p>{% endif %}
+</section>
+{% if own.night is not none %}
+<section class="shelf night">
+<h2>ナイトマーケット {{ left(own.night_left) }}</h2>
+{{ things(own.night, own.vp_icon) }}
+</section>
+{% endif %}
+{% if own.bundles %}
+<section class="shelf">
+<h2>バンドル</h2>
+{{ bundles(own.bundles, own.vp_icon) }}
+</section>
+{% endif %}
+{% if own.accessories %}
+<section class="shelf">
+<h2>アクセサリー（キングダムクレジット） {{ left(own.accessories_left) }}</h2>
+{{ things(own.accessories, own.kingdom_icon) }}
+</section>
+{% endif %}
+{% if own.missing %}<p class="note">読み込めなかったもの: {{ own.missing|join(', ') }}{% if own.problem_detail %} <code>{{ own.problem_detail }}</code>{% endif %}</p>{% endif %}
+<p class="note">ストアは 2 分ほどで新しくなります。「所持」は持っているもの。</p>
+{% endif %}
+</div>
+{% endif %}
+{% if not (owner and own) %}
+<section class="shelf" aria-labelledby="featured-title">
+<h2 id="featured-title">{{ t('注目のバンドル') }}</h2>
+{% if featured_problem %}
+<p class="problem" role="alert">{{ featured_problem }}</p>
+{% elif not featured %}
+<p class="note">{{ t('いまはありません。') }}</p>
+{% else %}
+{{ bundles(featured, vp_icon) }}
+{% endif %}
+<p class="note">{{ t('毎日入れ替わる 4 つのスキンとナイトマーケットは人ごとに違うため、ゲームの中でだけ見られます。') }}</p>
+</section>
+{% endif %}
+{% endblock %}

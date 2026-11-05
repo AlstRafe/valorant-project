@@ -1,0 +1,37 @@
+{% if problem %}
+<p class="problem" role="alert">{{ problem }}</p>
+{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}">{{ t('設定を開く') }}</a></p>{% endif %}
+{% else %}
+{% if thresholds %}
+<ul class="thresholds" aria-label="{{ t('ランクに必要な RR') }}">
+{% for item in thresholds %}<li>{% if item.rank_shown.icon %}<img src="{{ media(item.rank_shown.icon) }}" alt="" width="32" height="32">{% endif %}<span><strong>{{ item.rank_shown.name }}</strong><small>{{ t('{rr} RR から', rr=item.rr) }}{% if item['from'] %} · {{ t('{place} 位から', place='{:,}'.format(item['from'])) }}{% endif %}</small></span></li>
+{% endfor %}</ul>
+{% endif %}
+{% if not players %}
+<p class="note">{{ t('まだ誰もいません。') }}</p>
+{% else %}
+<div class="table-wrap">
+<table class="board ladder">
+<caption class="sr">{{ t('ランキング') }}</caption>
+<thead><tr><th scope="col"><abbr title="{{ t('順位') }}">#</abbr></th><th scope="col">{{ t('プレイヤー') }}</th><th scope="col">{{ t('ランク') }}</th><th scope="col">RR</th><th scope="col" class="wins">{{ t('勝利数') }}</th></tr></thead>
+<tbody>
+{% for item in players %}<tr>
+<td class="place">{{ '{:,}'.format(item.rank) }}</td>
+<th scope="row">{% if item.url %}<a href="{{ item.url }}"><span class="pn">{{ item.name }}<small>#{{ item.tag }}</small></span></a>{% else %}<span class="pn hidden-name">{{ t('非公開のプレイヤー') }}</span>{% endif %}</th>
+<td class="tier-cell">{% if item.rank_shown %}{% if item.rank_shown.icon %}<img class="tier" src="{{ media(item.rank_shown.icon) }}" alt="{{ item.rank_shown.name }}" title="{{ item.rank_shown.name }}" width="24" height="24" loading="lazy">{% else %}{{ item.rank_shown.name }}{% endif %}{% endif %}</td>
+<td><strong>{{ '{:,}'.format(item.rr) }}</strong></td>
+<td class="wins">{{ '{:,}'.format(item.wins) }}</td>
+</tr>
+{% endfor %}</tbody>
+</table>
+</div>
+{% endif %}
+{% if earlier or later %}
+<nav class="pages" aria-label="{{ t('ページ') }}">
+{% if earlier %}<a class="button quiet" href="{{ earlier }}" rel="prev">← {{ t('前の 50 人') }}</a>{% endif %}
+<span>{{ t('{first}〜{last} 位', first='{:,}'.format((page - 1) * 50 + 1), last='{:,}'.format(page * 50)) }}</span>
+{% if later %}<a class="button quiet" href="{{ later }}" rel="next">{{ t('次の 50 人') }} →</a>{% endif %}
+</nav>
+{% endif %}
+{% if updated %}<p class="note">{{ t('更新') }}: <time datetime="{{ updated.iso }}">{{ updated.text }}</time> · {{ t('Riot が数分ごとに更新します。') }}</p>{% endif %}
+{% endif %}

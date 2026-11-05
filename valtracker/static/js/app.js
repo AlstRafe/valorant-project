@@ -220,6 +220,73 @@
       .catch(failed);
   }
 
+  // Other parts that HenrikDev takes seconds for (a page of the leaderboard, the top page's notice) are asked for
+  // the same way: [data-load] is their address. A quiet one ([data-quiet]) shows nothing when it fails.
+  function parts() {
+    document.querySelectorAll("[data-load]").forEach(function (box) {
+      var address = box.getAttribute("data-load");
+      box.removeAttribute("data-load");
+      function failed() {
+        if (box.hasAttribute("data-quiet")) return;
+        var wait = box.querySelector(".wait");
+        if (wait) wait.textContent = box.getAttribute("data-failed");
+        var retry = box.querySelector(".retry");
+        if (retry) retry.hidden = false;
+      }
+      if (!window.fetch) return failed();
+      fetch(address, { headers: { Accept: "text/html" }, credentials: "same-origin" })
+        .then(function (answer) {
+          if (answer.status >= 500 && answer.status !== 503) throw new Error(String(answer.status));
+          return answer.text();
+        })
+        .then(function (html) {
+          box.innerHTML = html; // our own server's part, escaped by its templates
+          box.hidden = !html.trim();
+          times();
+        })
+        .catch(failed);
+    });
+  }
+
+  // [data-copy]: its words to the clipboard (a crosshair code), and the button says so for a moment.
+  function copies() {
+    document.addEventListener("click", function (e) {
+      var button = e.target.closest ? e.target.closest("[data-copy]") : null;
+      if (!button || !navigator.clipboard) return;
+      navigator.clipboard.writeText(button.getAttribute("data-copy")).then(function () {
+        var before = button.textContent;
+        button.textContent = button.getAttribute("data-done") || before;
+        setTimeout(function () {
+          button.textContent = before;
+        }, 1600);
+      });
+    });
+  }
+
+  // The store's offers end at a set time: the time left is counted down each minute.
+  function countdowns() {
+    var boxes = document.querySelectorAll("[data-until]");
+    if (!boxes.length) return;
+    function tick() {
+      var now = Date.now() / 1000;
+      boxes.forEach(function (box) {
+        var left = Math.ceil((Number(box.getAttribute("data-until")) - now) / 60);
+        var words;
+        if (left <= 0) words = box.getAttribute("data-over");
+        else if (left >= 2 * 24 * 60) words = box.getAttribute("data-days").replace("{days}", Math.floor(left / 1440));
+        else {
+          words = box
+            .getAttribute("data-hours")
+            .replace("{hours}", Math.floor(left / 60))
+            .replace("{minutes}", left % 60);
+        }
+        box.textContent = words;
+      });
+    }
+    tick();
+    setInterval(tick, 30000);
+  }
+
   // Share a player's or a match's page: the phone's own share sheet, else the address copied.
   function share() {
     var button = document.getElementById("share");
@@ -384,6 +451,9 @@
     rounds();
     finder();
     typing();
+    parts();
+    copies();
+    countdowns();
   });
   addEventListener("storage", function (e) {
     if (e.key === FAVORITES || e.key === RECENT || e.key === null) lists();

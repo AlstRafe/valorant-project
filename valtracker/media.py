@@ -16,7 +16,7 @@ from pathlib import Path
 from valtracker import content, net
 
 PATH = re.compile(
-    r"^[a-z]{3,24}(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|/[0-9]{1,3}){1,3}/[a-z]{3,32}\.png$"
+    r"^[a-z]{3,24}(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|/[0-9]{1,3}){1,3}/[a-z]{3,32}2?\.png$"
 )
 PNG = b"\x89PNG\r\n\x1a\n"
 MAX_BYTES = 4 * 1024 * 1024

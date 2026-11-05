@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ t('ランキング') }} · {{ region_name }} · {{ site_name }}{% endblock %}
+{% block main %}
+<section class="hero">
+<h1>{{ t('ランキング') }}</h1>
+<p class="lead">{{ t('今のアクトのランクマッチ上位（イモータル以上）です。名前を押すと戦績が見られます。') }}</p>
+</section>
+<nav class="modes" aria-label="{{ t('地域') }}">
+{% for item in regions %}<a href="{{ item.url }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
+{% endfor %}</nav>
+<div id="board"{% if loading %} data-load="{{ url_for('leaderboard_part', region=region, page=page if page > 1 else None) }}" data-failed="{{ t('読み込めませんでした。') }}"{% endif %}>
+{% if loading %}
+<p class="wait" role="status"><span class="spinner" aria-hidden="true"></span><span>{{ t('ランキングを読み込んでいます…') }}</span></p>
+{% set full = url_for('leaderboard', region=region, page=page if page > 1 else None, full=1) %}
+<p class="retry" hidden><a href="{{ full }}">{{ t('もう一度読み込む') }}</a></p>
+<noscript><p><a href="{{ full }}">{{ t('ランキングを見る') }}</a></p></noscript>
+{% else %}
+{% include "_leaderboard.html" %}
+{% endif %}
+</div>
+{% endblock %}

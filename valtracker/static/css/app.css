@@ -172,7 +172,7 @@ h2 {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.4rem 0.7rem;
+  padding: 0.4rem 0.6rem;
   border-radius: 999px;
   color: var(--soft);
   font-size: 0.92rem;
@@ -305,6 +305,46 @@ h2 {
 }
 .lang a[aria-current]::after {
   content: "✓";
+}
+
+/* Five tabs fill the header (it is as wide as the page, 62rem, however wide the screen): what can go goes first,
+   as on every site of this host (docs/CONVENTIONS.md): the theme button's words, then the language's name, then
+   the site's name beside its logo. Measured in English and Japanese, the longest. */
+@media (min-width: 761px) {
+  .theme {
+    padding: 0 0.6rem;
+  }
+  .theme .words {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+@media (min-width: 761px) and (max-width: 940px) {
+  .lang summary {
+    padding: 0 0.6rem;
+  }
+  .lang summary span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+@media (min-width: 761px) and (max-width: 840px) {
+  .brand span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
 /* Phones: the pages are a tab bar at the bottom (hidden while typing, when the keyboard is up). */
@@ -2046,6 +2086,351 @@ code {
 }
 .back {
   font-size: 0.9rem;
+}
+
+/* The tools page (tools.py): a card for each tool. */
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.7rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.tool-grid a {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr;
+  gap: 0.1rem 0.8rem;
+  height: 100%;
+  padding: 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+}
+.tool-grid a:hover {
+  border-color: var(--accent);
+}
+.tool-grid svg {
+  grid-row: span 2;
+  width: 2.2rem;
+  height: 2.2rem;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.tool-grid small {
+  color: var(--soft);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* The leaderboard: the RR each top rank takes, then the players. */
+.thresholds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+.thresholds li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.9rem 0.4rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.thresholds img {
+  width: 2rem;
+  height: 2rem;
+}
+.thresholds span {
+  display: grid;
+  line-height: 1.35;
+}
+.thresholds small {
+  color: var(--soft);
+  font-size: 0.8rem;
+}
+.ladder th:first-child,
+.ladder td.place {
+  width: 3.5rem;
+  color: var(--soft);
+  text-align: right;
+}
+.ladder th[scope="row"] {
+  width: auto;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.ladder thead th:nth-child(2) {
+  text-align: left;
+}
+.ladder .tier-cell {
+  width: 2.8rem;
+  max-width: 2.8rem;
+  overflow: hidden;
+  text-align: center;
+}
+@media (max-width: 30rem) {
+  .ladder .wins {
+    display: none;
+  }
+}
+.ladder .tier-cell img {
+  width: 1.5rem;
+  height: 1.5rem;
+  vertical-align: middle;
+}
+.hidden-name {
+  color: var(--soft);
+  font-style: italic;
+}
+.pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem 1rem;
+  margin: 1rem 0;
+  font-variant-numeric: tabular-nums;
+}
+.button.quiet {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+}
+
+/* Riot's notices; the top page's line about one. */
+.notices {
+  display: grid;
+  gap: 0.7rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+.notice {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--draw);
+  border-radius: 10px;
+  background: var(--card);
+}
+.notice.incident {
+  border-left-color: var(--loss);
+}
+.notice h2 {
+  margin: 0.1rem 0 0.3rem;
+  font-size: 1.05rem;
+}
+.notice p {
+  margin: 0.2rem 0;
+}
+.notice-box {
+  margin-top: 0.8rem;
+}
+.notice-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  padding: 0.6rem 0.9rem;
+  border-left: 4px solid var(--loss);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--loss) 9%, transparent);
+  color: var(--ink);
+  text-decoration: none;
+}
+.notice-line strong {
+  color: var(--loss);
+}
+.notice-line small {
+  color: var(--soft);
+}
+
+/* Crosshairs: each drawn on a dark and a bright wall, at four times its size. */
+.xhair-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  margin-top: 0.8rem;
+}
+.xhair {
+  margin: 0;
+}
+.xhair-views {
+  display: flex;
+  gap: 0.4rem;
+}
+.xhair svg {
+  display: block;
+  max-width: calc((100vw - 2.5rem) / 2);
+  height: auto;
+  border-radius: 8px;
+  image-rendering: pixelated;
+}
+.xhair figcaption {
+  margin-top: 0.3rem;
+  color: var(--soft);
+  font-size: 0.85rem;
+}
+.xh-table {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+.xh-table div {
+  display: grid;
+  grid-template-columns: minmax(6rem, 8.5rem) 1fr;
+  gap: 0.6rem;
+}
+.xh-table dt {
+  color: var(--soft);
+  font-size: 0.88rem;
+}
+.xh-table dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.swatch {
+  margin-right: 0.35rem;
+  vertical-align: -0.15rem;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+}
+.presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.7rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.presets li {
+  padding: 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.presets code {
+  display: block;
+  margin-top: 0.4rem;
+  color: var(--soft);
+  font-size: 0.8rem;
+}
+.presets p {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.6rem 0 0;
+}
+.presets .button,
+.presets button,
+.copy {
+  min-height: 2.3rem;
+  padding: 0 0.9rem;
+  font-size: 0.9rem;
+}
+
+/* The store: offers with their prices and the time left. */
+.shelf {
+  margin-top: 1.4rem;
+}
+.shelf h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.8rem;
+}
+.left {
+  color: var(--soft);
+  font-size: 0.85rem;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.price {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-variant-numeric: tabular-nums;
+}
+.price img {
+  width: 1rem;
+  height: 1rem;
+}
+.price s {
+  color: var(--soft);
+  font-size: 0.85em;
+}
+.offers .item {
+  border-top: 4px solid var(--rule);
+}
+.offers .item > img {
+  width: 100%;
+  height: 4.5rem;
+}
+.offers .tier-select {
+  border-top-color: #5a9fe2;
+}
+.offers .tier-deluxe {
+  border-top-color: #009587;
+}
+.offers .tier-premium {
+  border-top-color: #d1548d;
+}
+.offers .tier-exclusive {
+  border-top-color: #f5955b;
+}
+.offers .tier-ultra {
+  border-top-color: #fad663;
+}
+.item.have {
+  opacity: 0.6;
+}
+.night .item {
+  background: color-mix(in srgb, #6b3fd1 8%, var(--card));
+}
+.bundle {
+  margin-top: 0.8rem;
+  padding: 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--card);
+}
+.bundle-art {
+  display: block;
+  width: 100%;
+  max-height: 14rem;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.bundle-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.2rem 1rem;
+  margin-top: 0.6rem;
+}
+.bundle-head h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.bundle-head p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.8rem;
+  margin: 0;
+}
+.bundle .items {
+  margin-top: 0.6rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

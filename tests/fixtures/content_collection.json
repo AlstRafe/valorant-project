@@ -329,5 +329,16 @@
   "branch": "release-09.10",
   "riotClientVersion": "release-09.10-shipping-14-2973541",
   "riotClientBuild": "91.0.2.1870.3774"
- }
+ },
+ "bundles": [
+  {
+   "uuid": "fb000000-0000-4000-8000-000000000001",
+   "displayName": "プライム",
+   "displayNameSubText": null,
+   "description": "x",
+   "displayIcon": "https://media.valorant-api.com/bundles/fb000000-0000-4000-8000-000000000001/displayicon.png",
+   "displayIcon2": "https://media.valorant-api.com/bundles/fb000000-0000-4000-8000-000000000001/displayicon2.png",
+   "assetPath": "x"
+  }
+ ]
 }

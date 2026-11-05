@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block main %}
+<div class="notice-box" data-load="{{ url_for('status_notice') }}" data-quiet hidden></div>
 <section class="hero">
 <h1>{{ t('プレイヤーを探す') }}</h1>
 <p class="lead">{{ t('Riot ID（名前#タグ）でランクと最近の試合を調べられます。☆を付けたプレイヤーはこのブラウザに保存され、ここに並びます。') }}</p>
