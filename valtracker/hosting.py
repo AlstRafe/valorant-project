@@ -16,7 +16,7 @@ from __future__ import annotations
 from valtracker import NAME, create_app, paths
 
 #: Under the mount, for crawlers to leave alone.
-DISALLOW = ("/media/", "/search", "/settings")
+DISALLOW = ("/media/", "/search", "/settings", "/collection")
 
 
 def site(mount: str = "/val", host: dict | None = None) -> dict:

@@ -1,5 +1,6 @@
-"""The game's names and pictures (agents, maps, ranks) in the visitor's language, from valorant-api.com:
-a free community API with no key, which has every one of our languages (English as en-US).
+"""The game's names and pictures (agents, maps, ranks, and the owner's collection: weapons and their skins,
+buddies, cards, sprays, titles) in the visitor's language, from valorant-api.com: a free community API with no
+key, which has every one of our languages (English as en-US).
 
 Each list is saved in instance/content/ and asked for again once a day; when the site cannot be reached the
 saved one is used, however old. Its pictures are on media.valorant-api.com, which the pages do not load
@@ -21,6 +22,17 @@ KINDS = {
     "agents": "/agents?isPlayableCharacter=true&language={lang}",
     "maps": "/maps?language={lang}",
     "competitivetiers": "/competitivetiers?language={lang}",
+    # the owner's collection (collection.py)
+    "weapons": "/weapons?language={lang}",
+    "buddies": "/buddies?language={lang}",
+    "playercards": "/playercards?language={lang}",
+    "sprays": "/sprays?language={lang}",
+    "playertitles": "/playertitles?language={lang}",
+    "flex": "/flex?language={lang}",
+    "contenttiers": "/contenttiers?language={lang}",
+    "currencies": "/currencies?language={lang}",
+    # the game's version, which Riot's own servers want to be told (riot.py)
+    "version": "/version",
 }
 #: A saved list is asked for again after this long.
 FRESH_SECONDS = 24 * 3600
@@ -56,8 +68,12 @@ class Content:
             data = json.loads(body.decode("utf-8")).get("data") if status == 200 else None
         except (ValueError, AttributeError, UnicodeDecodeError):
             data = None
+        if isinstance(data, dict):  # /version: one item
+            data = [data]
         if not isinstance(data, list):
             return saved[1] if saved else []
+        if kind in SLIM:
+            data = [SLIM[kind](item) for item in data if isinstance(item, dict) and item.get("uuid")]
         with self._lock:
             self._memory[key] = (now, data)
             self._write(kind, code, now, data)
@@ -114,6 +130,80 @@ class Content:
         if not episodes:
             return {}
         return {int(tier["tier"]): tier for tier in episodes[-1].get("tiers") or [] if isinstance(tier, dict)}
+
+    def index(self, kind: str, lang: str) -> dict:
+        """One of the collection's lists by uuid, the uuids of each item's levels (and a skin's chromas) too."""
+        found = {}
+        for item in self._list(kind, lang):
+            if not isinstance(item, dict) or not item.get("uuid"):
+                continue
+            found[str(item["uuid"]).lower()] = item
+            for part in (item.get("levels") or []) + (item.get("chromas") or []):
+                if isinstance(part, dict) and part.get("uuid"):
+                    found.setdefault(str(part["uuid"]).lower(), item)
+        return found
+
+    def skins(self, lang: str) -> dict:
+        """Every skin, its levels and chromas by uuid -> (the weapon, the skin)."""
+        found = {}
+        for weapon in self.weapons(lang):
+            for skin in weapon.get("skins") or []:
+                for part in [skin] + (skin.get("levels") or []) + (skin.get("chromas") or []):
+                    if isinstance(part, dict) and part.get("uuid"):
+                        found.setdefault(str(part["uuid"]).lower(), (weapon, skin))
+        return found
+
+    def weapons(self, lang: str) -> list:
+        return [weapon for weapon in self._list("weapons", lang) if isinstance(weapon, dict)]
+
+    def client_version(self) -> dict:
+        """``{"riotClientVersion": "release-09.10-shipping-...", "riotClientBuild": "91.0.2..."}`` or {}."""
+        found = self._list("version", i18n.DEFAULT)
+        return found[0] if found and isinstance(found[0], dict) else {}
+
+
+def _keep(item: dict, keys) -> dict:
+    return {key: item.get(key) for key in keys if item.get(key) not in (None, "")}
+
+
+def _parts(item: dict, kind: str, keys) -> list:
+    return [_keep(part, keys) for part in item.get(kind) or [] if isinstance(part, dict) and part.get("uuid")]
+
+
+def _slim_weapon(weapon: dict) -> dict:
+    """A weapon with what the collection shows: valorant-api.com's /weapons is megabytes (stats, videos, every
+    level's asset path), which would fill the small VM's memory once per language."""
+    kept = _keep(weapon, ("uuid", "displayName", "category", "displayIcon"))
+    kept["cost"] = int(((weapon.get("shopData") or {}).get("cost")) or 0)
+    kept["skins"] = [
+        {
+            **_keep(skin, ("uuid", "displayName", "contentTierUuid", "displayIcon")),
+            "levels": _parts(skin, "levels", ("uuid", "displayIcon")),
+            "chromas": _parts(skin, "chromas", ("uuid", "displayName", "displayIcon", "fullRender", "swatch")),
+        }
+        for skin in weapon.get("skins") or []
+        if isinstance(skin, dict) and skin.get("uuid")
+    ]
+    return kept
+
+
+#: What each of the collection's lists keeps of an item (the rest is dropped before it is saved).
+SLIM = {
+    "weapons": _slim_weapon,
+    "buddies": lambda item: {
+        **_keep(item, ("uuid", "displayName", "displayIcon")),
+        "levels": _parts(item, "levels", ("uuid",)),
+    },
+    "playercards": lambda item: _keep(item, ("uuid", "displayName", "smallArt", "wideArt")),
+    "sprays": lambda item: {
+        **_keep(item, ("uuid", "displayName", "displayIcon", "fullTransparentIcon")),
+        "levels": _parts(item, "levels", ("uuid",)),
+    },
+    "playertitles": lambda item: _keep(item, ("uuid", "displayName", "titleText")),
+    "flex": lambda item: _keep(item, ("uuid", "displayName", "displayIcon")),
+    "contenttiers": lambda item: _keep(item, ("uuid", "displayName", "devName", "rank", "displayIcon")),
+    "currencies": lambda item: _keep(item, ("uuid", "displayName", "displayNameSingular", "displayIcon")),
+}
 
 
 def media_path(url) -> str | None:

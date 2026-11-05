@@ -1,0 +1,333 @@
+{
+ "weapons": [
+  {
+   "uuid": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+   "displayName": "ヴァンダル",
+   "category": "EEquippableCategory::Rifle",
+   "defaultSkinUuid": "aa000000-0000-4000-8000-000000000009",
+   "displayIcon": "https://media.valorant-api.com/weapons/9c82e19d-4575-0200-1a81-3eacf00cf872/displayicon.png",
+   "killStreamIcon": "x",
+   "assetPath": "x",
+   "weaponStats": {
+    "fireRate": 9.75,
+    "magazineSize": 25
+   },
+   "shopData": {
+    "cost": 2900,
+    "category": "Rifles"
+   },
+   "skins": [
+    {
+     "uuid": "aa000000-0000-4000-8000-000000000001",
+     "displayName": "プライム ヴァンダル",
+     "themeUuid": "t",
+     "contentTierUuid": "60bca009-4182-7998-dee7-b8a2558dc369",
+     "displayIcon": null,
+     "wallpaper": null,
+     "assetPath": "x",
+     "chromas": [
+      {
+       "uuid": "aa000000-0000-4000-8000-000000000021",
+       "displayName": "プライム ヴァンダル",
+       "displayIcon": null,
+       "fullRender": "https://media.valorant-api.com/weaponskinchromas/aa000000-0000-4000-8000-000000000021/fullrender.png",
+       "swatch": null,
+       "streamedVideo": null,
+       "assetPath": "ShooterGame/x"
+      },
+      {
+       "uuid": "aa000000-0000-4000-8000-000000000022",
+       "displayName": "バリエーション 2 ゴールド",
+       "displayIcon": "https://media.valorant-api.com/weaponskinchromas/aa000000-0000-4000-8000-000000000022/displayicon.png",
+       "fullRender": "https://media.valorant-api.com/weaponskinchromas/aa000000-0000-4000-8000-000000000022/fullrender.png",
+       "swatch": null,
+       "streamedVideo": null,
+       "assetPath": "ShooterGame/x"
+      },
+      {
+       "uuid": "aa000000-0000-4000-8000-000000000023",
+       "displayName": "バリエーション 3 ブルー",
+       "displayIcon": "https://media.valorant-api.com/weaponskinchromas/aa000000-0000-4000-8000-000000000023/displayicon.png",
+       "fullRender": "https://media.valorant-api.com/weaponskinchromas/aa000000-0000-4000-8000-000000000023/fullrender.png",
+       "swatch": null,
+       "streamedVideo": null,
+       "assetPath": "ShooterGame/x"
+      }
+     ],
+     "levels": [
+      {
+       "uuid": "aa000000-0000-4000-8000-000000000011",
+       "displayName": "レベル",
+       "levelItem": null,
+       "displayIcon": "https://media.valorant-api.com/weaponskinlevels/aa000000-0000-4000-8000-000000000011/displayicon.png",
+       "streamedVideo": "https://example.org/video.mp4",
+       "assetPath": "ShooterGame/x"
+      },
+      {
+       "uuid": "aa000000-0000-4000-8000-000000000012",
+       "displayName": "レベル",
+       "levelItem": null,
+       "displayIcon": "https://media.valorant-api.com/weaponskinlevels/aa000000-0000-4000-8000-000000000012/displayicon.png",
+       "streamedVideo": "https://example.org/video.mp4",
+       "assetPath": "ShooterGame/x"
+      }
+     ]
+    },
+    {
+     "uuid": "aa000000-0000-4000-8000-000000000002",
+     "displayName": "レイヴァー ヴァンダル",
+     "themeUuid": "t",
+     "contentTierUuid": "e046854e-406c-37f4-6607-19a9ba8426fc",
+     "displayIcon": "https://media.valorant-api.com/weaponskins/aa000000-0000-4000-8000-000000000002/displayicon.png",
+     "wallpaper": null,
+     "assetPath": "x",
+     "chromas": [
+      {
+       "uuid": "aa000000-0000-4000-8000-000000000024",
+       "displayName": "レイヴァー ヴァンダル",
+       "displayIcon": null,
+       "fullRender": "https://media.valorant-api.com/weaponskinchromas/aa000000-0000-4000-8000-000000000024/fullrender.png",
+       "swatch": null,
+       "streamedVideo": null,
+       "assetPath": "ShooterGame/x"
+      }
+     ],
+     "levels": [
+      {
+       "uuid": "aa000000-0000-4000-8000-000000000013",
+       "displayName": "レベル",
+       "levelItem": null,
+       "displayIcon": "https://media.valorant-api.com/weaponskinlevels/aa000000-0000-4000-8000-000000000013/displayicon.png",
+       "streamedVideo": "https://example.org/video.mp4",
+       "assetPath": "ShooterGame/x"
+      }
+     ]
+    },
+    {
+     "uuid": "aa000000-0000-4000-8000-000000000009",
+     "displayName": "スタンダード ヴァンダル",
+     "themeUuid": "t",
+     "contentTierUuid": null,
+     "displayIcon": null,
+     "wallpaper": null,
+     "assetPath": "x",
+     "chromas": [
+      {
+       "uuid": "aa000000-0000-4000-8000-000000000029",
+       "displayName": "スタンダード ヴァンダル",
+       "displayIcon": null,
+       "fullRender": "https://media.valorant-api.com/weaponskinchromas/aa000000-0000-4000-8000-000000000029/fullrender.png",
+       "swatch": null,
+       "streamedVideo": null,
+       "assetPath": "ShooterGame/x"
+      }
+     ],
+     "levels": [
+      {
+       "uuid": "aa000000-0000-4000-8000-000000000019",
+       "displayName": "レベル",
+       "levelItem": null,
+       "displayIcon": "https://media.valorant-api.com/weaponskinlevels/aa000000-0000-4000-8000-000000000019/displayicon.png",
+       "streamedVideo": "https://example.org/video.mp4",
+       "assetPath": "ShooterGame/x"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "uuid": "2f59173c-4bed-b6c3-2191-dea9b58be9c7",
+   "displayName": "近接武器",
+   "category": "EEquippableCategory::Melee",
+   "displayIcon": "https://media.valorant-api.com/weapons/2f59173c-4bed-b6c3-2191-dea9b58be9c7/displayicon.png",
+   "shopData": null,
+   "skins": [
+    {
+     "uuid": "ac000000-0000-4000-8000-000000000001",
+     "displayName": "レイヴァー ナイフ",
+     "contentTierUuid": "e046854e-406c-37f4-6607-19a9ba8426fc",
+     "displayIcon": "https://media.valorant-api.com/weaponskins/ac000000-0000-4000-8000-000000000001/displayicon.png",
+     "chromas": [],
+     "levels": [
+      {
+       "uuid": "ac000000-0000-4000-8000-000000000011",
+       "displayName": "レベル",
+       "levelItem": null,
+       "displayIcon": "https://media.valorant-api.com/weaponskinlevels/ac000000-0000-4000-8000-000000000011/displayicon.png",
+       "streamedVideo": "https://example.org/video.mp4",
+       "assetPath": "ShooterGame/x"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "uuid": "29a0cfab-485b-f5d5-779a-b59f85e204a8",
+   "displayName": "クラシック",
+   "category": "EEquippableCategory::Sidearm",
+   "displayIcon": "https://media.valorant-api.com/weapons/29a0cfab-485b-f5d5-779a-b59f85e204a8/displayicon.png",
+   "shopData": {
+    "cost": 0
+   },
+   "skins": [
+    {
+     "uuid": "ab000000-0000-4000-8000-000000000001",
+     "displayName": "プライム クラシック",
+     "contentTierUuid": "12683d76-48d7-84a3-4e09-6985794f0445",
+     "displayIcon": null,
+     "chromas": [],
+     "levels": [
+      {
+       "uuid": "ab000000-0000-4000-8000-000000000011",
+       "displayName": "レベル",
+       "levelItem": null,
+       "displayIcon": "https://media.valorant-api.com/weaponskinlevels/ab000000-0000-4000-8000-000000000011/displayicon.png",
+       "streamedVideo": "https://example.org/video.mp4",
+       "assetPath": "ShooterGame/x"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "contenttiers": [
+  {
+   "uuid": "12683d76-48d7-84a3-4e09-6985794f0445",
+   "displayName": "SELECT EDITION",
+   "devName": "Select",
+   "rank": 0,
+   "juiceValue": 5,
+   "highlightColor": "5a9fe2ff",
+   "displayIcon": "https://media.valorant-api.com/contenttiers/12683d76-48d7-84a3-4e09-6985794f0445/displayicon.png",
+   "assetPath": "x"
+  },
+  {
+   "uuid": "60bca009-4182-7998-dee7-b8a2558dc369",
+   "displayName": "PREMIUM EDITION",
+   "devName": "Premium",
+   "rank": 2,
+   "highlightColor": "d1548dff",
+   "displayIcon": "https://media.valorant-api.com/contenttiers/60bca009-4182-7998-dee7-b8a2558dc369/displayicon.png"
+  },
+  {
+   "uuid": "e046854e-406c-37f4-6607-19a9ba8426fc",
+   "displayName": "EXCLUSIVE EDITION",
+   "devName": "Exclusive",
+   "rank": 3,
+   "highlightColor": "f5955bff",
+   "displayIcon": "https://media.valorant-api.com/contenttiers/e046854e-406c-37f4-6607-19a9ba8426fc/displayicon.png"
+  }
+ ],
+ "buddies": [
+  {
+   "uuid": "bb000000-0000-4000-8000-000000000001",
+   "displayName": "チリ バディー",
+   "isHiddenIfNotOwned": false,
+   "themeUuid": null,
+   "displayIcon": "https://media.valorant-api.com/buddies/bb000000-0000-4000-8000-000000000001/displayicon.png",
+   "assetPath": "x",
+   "levels": [
+    {
+     "uuid": "bb000000-0000-4000-8000-000000000011",
+     "charmLevel": 1,
+     "displayName": "チリ バディー",
+     "displayIcon": "x",
+     "assetPath": "x"
+    }
+   ]
+  },
+  {
+   "uuid": "bb000000-0000-4000-8000-000000000002",
+   "displayName": "ハート バディー",
+   "displayIcon": "https://media.valorant-api.com/buddies/bb000000-0000-4000-8000-000000000002/displayicon.png",
+   "levels": [
+    {
+     "uuid": "bb000000-0000-4000-8000-000000000012"
+    }
+   ]
+  }
+ ],
+ "playercards": [
+  {
+   "uuid": "cc000000-0000-4000-8000-000000000001",
+   "displayName": "ヴァロラント カード",
+   "isHiddenIfNotOwned": false,
+   "themeUuid": null,
+   "displayIcon": "x",
+   "smallArt": "https://media.valorant-api.com/playercards/cc000000-0000-4000-8000-000000000001/smallart.png",
+   "wideArt": "https://media.valorant-api.com/playercards/cc000000-0000-4000-8000-000000000001/wideart.png",
+   "largeArt": "x",
+   "assetPath": "x"
+  },
+  {
+   "uuid": "cc000000-0000-4000-8000-000000000002",
+   "displayName": "ゴールド カード",
+   "smallArt": "https://media.valorant-api.com/playercards/cc000000-0000-4000-8000-000000000002/smallart.png",
+   "wideArt": "https://media.valorant-api.com/playercards/cc000000-0000-4000-8000-000000000002/wideart.png"
+  }
+ ],
+ "sprays": [
+  {
+   "uuid": "dd000000-0000-4000-8000-000000000001",
+   "displayName": "GG スプレー",
+   "category": null,
+   "isNullSpray": false,
+   "displayIcon": "https://media.valorant-api.com/sprays/dd000000-0000-4000-8000-000000000001/displayicon.png",
+   "fullTransparentIcon": "https://media.valorant-api.com/sprays/dd000000-0000-4000-8000-000000000001/fulltransparenticon.png",
+   "animationGif": "x",
+   "levels": [
+    {
+     "uuid": "dd000000-0000-4000-8000-000000000011",
+     "sprayLevel": 1
+    }
+   ]
+  }
+ ],
+ "playertitles": [
+  {
+   "uuid": "ee000000-0000-4000-8000-000000000001",
+   "displayName": "ゴッド タイトル",
+   "titleText": "ゴッド",
+   "isHiddenIfNotOwned": false,
+   "assetPath": "x"
+  },
+  {
+   "uuid": "ee000000-0000-4000-8000-000000000002",
+   "displayName": "ルーキー タイトル",
+   "titleText": "ルーキー"
+  }
+ ],
+ "flex": [
+  {
+   "uuid": "ff000000-0000-4000-8000-000000000001",
+   "displayName": "ぬいぐるみ",
+   "displayNameAllCaps": "ぬいぐるみ",
+   "displayIcon": "https://media.valorant-api.com/flex/ff000000-0000-4000-8000-000000000001/displayicon.png",
+   "assetPath": "x"
+  }
+ ],
+ "currencies": [
+  {
+   "uuid": "85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741",
+   "displayName": "VALORANT ポイント",
+   "displayNameSingular": "VALORANT ポイント",
+   "displayIcon": "https://media.valorant-api.com/currencies/85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741/displayicon.png"
+  },
+  {
+   "uuid": "e59aa87c-4cbf-517a-5983-6e81511be9b7",
+   "displayName": "レディアナイト ポイント",
+   "displayIcon": "https://media.valorant-api.com/currencies/e59aa87c-4cbf-517a-5983-6e81511be9b7/displayicon.png"
+  },
+  {
+   "uuid": "85ca954a-41f2-ce94-9b45-8ca3dd39a00d",
+   "displayName": "キングダムクレジット",
+   "displayIcon": "https://media.valorant-api.com/currencies/85ca954a-41f2-ce94-9b45-8ca3dd39a00d/displayicon.png"
+  }
+ ],
+ "version": {
+  "manifestId": "x",
+  "branch": "release-09.10",
+  "riotClientVersion": "release-09.10-shipping-14-2973541",
+  "riotClientBuild": "91.0.2.1870.3774"
+ }
+}

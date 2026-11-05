@@ -1,6 +1,6 @@
 // VAL Tracker's pages: favourite and recently viewed players (kept in this browser), match times in the
-// visitor's own time zone, and the phone's tab bar hidden while typing. The pages work without it, except
-// for the lists of players, which live only in this browser.
+// visitor's own time zone, the collection's name filter, and the phone's tab bar hidden while typing. The pages
+// work without it, except for the lists of players, which live only in this browser.
 (function () {
   "use strict";
 
@@ -193,6 +193,22 @@
     });
   }
 
+  // The owner's collection lists every item of a tab at once: the names are narrowed as they are typed.
+  function finder() {
+    var input = document.getElementById("find");
+    if (!input) return;
+    input.parentNode.hidden = false;
+    input.addEventListener("input", function () {
+      var words = input.value.trim().toLowerCase();
+      document.querySelectorAll("[data-name]").forEach(function (item) {
+        item.hidden = words !== "" && item.getAttribute("data-name").indexOf(words) < 0;
+      });
+      document.querySelectorAll("[data-group]").forEach(function (group) {
+        group.hidden = !group.querySelector("[data-name]:not([hidden])");
+      });
+    });
+  }
+
   // Phones: the tab bar at the bottom would sit on the keyboard while typing.
   function typing() {
     document.addEventListener("focusin", function (e) {
@@ -209,6 +225,7 @@
     profile();
     lists();
     times();
+    finder();
     typing();
   });
   addEventListener("storage", function (e) {

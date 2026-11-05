@@ -1,4 +1,4 @@
-"""The owner's settings, in instance/settings.json: the HenrikDev API key for now.
+"""The owner's settings, in instance/settings.json: the HenrikDev API key (and riot.py's sign-in, in riot.json).
 
 The environment variable ``VAL_HENRIK_KEY`` wins over the file (for a test run without saving the key).
 The file is written readable by its owner only; it never goes into Git (instance/ is ignored).
@@ -15,8 +15,8 @@ _lock = threading.Lock()
 
 
 class Settings:
-    def __init__(self, folder: Path):
-        self.path = Path(folder) / "settings.json"
+    def __init__(self, folder: Path, name: str = "settings.json"):
+        self.path = Path(folder) / name
 
     def load(self) -> dict:
         try:
