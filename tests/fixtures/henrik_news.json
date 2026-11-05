@@ -1,0 +1,40 @@
+{
+ "status": 200,
+ "data": [
+  {
+   "banner_url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/news/0123456789abcdef0123456789abcdef01234567-1920x1080.jpg",
+   "category": "patch_notes",
+   "date": "2026-11-04T17:00:00.000Z",
+   "external_link": null,
+   "title": "VALORANT パッチノート 11.10",
+   "url": "https://playvalorant.com/ja-jp/news/game-updates/valorant-patch-notes-11-10/"
+  },
+  {
+   "banner_url": "https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt0123456789abcdef/banner.jpg",
+   "category": "esports",
+   "date": "2026-11-03T10:00:00.000Z",
+   "external_link": "https://valorantesports.com/news/champions",
+   "title": "Champions の結果",
+   "url": "https://playvalorant.com/ja-jp/news/esports/champions/"
+  },
+  {
+   "banner_url": "https://example.com/not-ours.jpg",
+   "category": "game_updates",
+   "date": "2026-11-02T10:00:00.000Z",
+   "external_link": null,
+   "title": "新しいエージェント",
+   "url": "https://playvalorant.com/ja-jp/news/game-updates/new-agent/"
+  },
+  {
+   "banner_url": null,
+   "category": "dev",
+   "date": "2026-10-30T10:00:00.000Z",
+   "external_link": null,
+   "title": "<b>開発</b>の話",
+   "url": "javascript:alert(1)"
+  },
+  {
+   "title": ""
+  }
+ ]
+}

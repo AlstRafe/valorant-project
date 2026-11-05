@@ -16,6 +16,7 @@ from valtracker import collection as owned_items
 from valtracker import i18n, security, stats
 from valtracker import rounds as rounds_module
 from valtracker.henrik import MODES, REGIONS, HenrikError, shows_rr, split_riot_id
+from valtracker.media import kind as media_kind
 from valtracker.riot import AUTHORIZE, RiotError
 
 #: HenrikDev's queue ids -> what the game calls them (translated in locale.py).
@@ -738,6 +739,18 @@ def register(app: Flask) -> None:
         response.headers["Cache-Control"] = "public, max-age=2592000"
         return response
 
+    @app.get("/pic/<path:path>")
+    def picture(path: str):
+        """A news or esports picture (media.OUTSIDE), kept here like the game's."""
+        found = current_app.config["VAL_MEDIA"].outside(path)
+        if found is None:
+            abort(404)
+        with open(found, "rb") as file:
+            kind = media_kind(file.read(16)) or "image/png"
+        response = send_file(found, mimetype=kind, max_age=30 * 24 * 3600, conditional=True)
+        response.headers["Cache-Control"] = "public, max-age=2592000"
+        return response
+
     @app.get("/collection")
     def collection():
         """The owner's own skins, buddies, cards and the rest, from their Riot account (riot.py)."""
@@ -792,9 +805,10 @@ def register(app: Flask) -> None:
             riot_link=AUTHORIZE,
         )
 
-    from valtracker import tools
+    from valtracker import tools, world
 
     tools.register(app)
+    world.register(app)
 
     @app.errorhandler(404)
     def not_found(error):

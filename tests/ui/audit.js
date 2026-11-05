@@ -31,6 +31,9 @@ const PAGES = [
   "/queues?rank=14&rank=17",
   "/sensitivity?sens=0.35&dpi=800&new_dpi=1600",
   "/agents",
+  "/news",
+  "/esports",
+  "/esports?show=results",
   "/p/nobody-here/0000",
 ];
 // With the tests' made-up answers (tests/ui/serve.py): their player, match and agent.

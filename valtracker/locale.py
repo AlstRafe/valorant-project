@@ -819,6 +819,156 @@ TEXTS = {
     "マイアミ": {"ko": "마이애미", "en-GB": "Miami", "zh-TW": "邁阿密"},
     "サンティアゴ": {"ko": "산티아고", "en-GB": "Santiago", "zh-TW": "聖地牙哥"},
     "サンパウロ": {"ko": "상파울루", "en-GB": "São Paulo", "zh-TW": "聖保羅"},
+    "Riot が出している VALORANT のニュースとパッチノートです。種類で絞ったり、言葉で探したりできます。": {
+        "ko": "Riot이 올린 VALORANT 뉴스와 패치 노트입니다. 종류로 거르거나 단어로 찾을 수 있습니다.",
+        "en-GB": "Riot's VALORANT news and patch notes. Filter them by kind or search for a word.",
+        "zh-TW": "Riot 發布的 VALORANT 新聞與更新說明。可依類別篩選，或用關鍵字搜尋。",
+    },
+    "VCT などの大会の日程と結果、いま行われている試合のスコアです。好きなチームに印をつけられます。": {
+        "ko": "VCT 등 대회의 일정과 결과, 진행 중인 경기의 점수입니다. 좋아하는 팀에 표시할 수 있습니다.",
+        "en-GB": "The schedule and results of VCT and other events, and the score of matches being played. Star your teams.",
+        "zh-TW": "VCT 等賽事的賽程與結果，以及進行中比賽的比分。可以替喜歡的隊伍加上標記。",
+    },
+    "eスポーツ": {
+        "ko": "e스포츠",
+        "en-GB": "Esports",
+        "zh-TW": "電競",
+    },
+    "{count} 試合中": {
+        "ko": "{count}경기 진행 중",
+        "en-GB": "{count} live",
+        "zh-TW": "{count} 場進行中",
+    },
+    "{team} に印をつける": {
+        "ko": "{team} 표시하기",
+        "en-GB": "Star {team}",
+        "zh-TW": "標記 {team}",
+    },
+    "{team} の印を外す": {
+        "ko": "{team} 표시 해제",
+        "en-GB": "Unstar {team}",
+        "zh-TW": "取消標記 {team}",
+    },
+    "「{words}」に合うニュースはありませんでした。": {
+        "ko": "「{words}」에 맞는 뉴스가 없습니다.",
+        "en-GB": "No news matches “{words}”.",
+        "zh-TW": "沒有符合「{words}」的新聞。",
+    },
+    "いまのパッチ": {
+        "ko": "현재 패치",
+        "en-GB": "Current patch",
+        "zh-TW": "目前版本",
+    },
+    "これからの試合はまだ出ていません。": {
+        "ko": "아직 예정된 경기가 없습니다.",
+        "en-GB": "No matches to come are listed yet.",
+        "zh-TW": "目前還沒有接下來的比賽。",
+    },
+    "アップデート": {
+        "ko": "업데이트",
+        "en-GB": "Game updates",
+        "zh-TW": "遊戲更新",
+    },
+    "コミュニティ": {
+        "ko": "커뮤니티",
+        "en-GB": "Community",
+        "zh-TW": "社群",
+    },
+    "ニュース": {
+        "ko": "뉴스",
+        "en-GB": "News",
+        "zh-TW": "新聞",
+    },
+    "ニュースはまだありません。": {
+        "ko": "아직 뉴스가 없습니다.",
+        "en-GB": "No news yet.",
+        "zh-TW": "目前沒有新聞。",
+    },
+    "ニュースを探す": {
+        "ko": "뉴스 검색",
+        "en-GB": "Search the news",
+        "zh-TW": "搜尋新聞",
+    },
+    "パッチノート": {
+        "ko": "패치 노트",
+        "en-GB": "Patch notes",
+        "zh-TW": "更新說明",
+    },
+    "パッチノートとお知らせ。種類と言葉で探せます。": {
+        "ko": "패치 노트와 공지. 종류와 단어로 찾을 수 있습니다.",
+        "en-GB": "Patch notes and announcements, by kind or word.",
+        "zh-TW": "更新說明與公告，可依類別或關鍵字搜尋。",
+    },
+    "例: パッチ、エージェント": {
+        "ko": "예: 패치, 요원",
+        "en-GB": "e.g. patch, agent",
+        "zh-TW": "例：更新、特務",
+    },
+    "印をつけたチームだけ": {
+        "ko": "표시한 팀만",
+        "en-GB": "Starred teams only",
+        "zh-TW": "只看已標記的隊伍",
+    },
+    "大会": {
+        "ko": "대회",
+        "en-GB": "Event",
+        "zh-TW": "賽事",
+    },
+    "大会の日程・結果・試合中のスコア。好きなチームに印も。": {
+        "ko": "대회 일정·결과·진행 중 점수. 좋아하는 팀 표시도.",
+        "en-GB": "Event schedule, results and live scores. Star your teams.",
+        "zh-TW": "賽事賽程、結果與即時比分，也能標記隊伍。",
+    },
+    "探す": {
+        "ko": "찾기",
+        "en-GB": "Search",
+        "zh-TW": "搜尋",
+    },
+    "日程": {
+        "ko": "일정",
+        "en-GB": "Schedule",
+        "zh-TW": "賽程",
+    },
+    "時刻はあなたの端末の時計で出しています。スコアは数分ごとに新しくなります。": {
+        "ko": "시각은 사용자 기기의 시계 기준입니다. 점수는 몇 분마다 새로 고쳐집니다.",
+        "en-GB": "Times are in your device's clock. Scores refresh every few minutes.",
+        "zh-TW": "時間依你裝置的時鐘顯示。比分每隔幾分鐘更新。",
+    },
+    "種類": {
+        "ko": "종류",
+        "en-GB": "Kind",
+        "zh-TW": "類別",
+    },
+    "結果": {
+        "ko": "결과",
+        "en-GB": "Results",
+        "zh-TW": "結果",
+    },
+    "結果はまだありません。": {
+        "ko": "아직 결과가 없습니다.",
+        "en-GB": "No results yet.",
+        "zh-TW": "目前還沒有結果。",
+    },
+    "記事は Riot の公式サイト（playvalorant.com）で開きます。": {
+        "ko": "기사는 Riot 공식 사이트(playvalorant.com)에서 열립니다.",
+        "en-GB": "Articles open on Riot's own site (playvalorant.com).",
+        "zh-TW": "文章會在 Riot 官方網站（playvalorant.com）開啟。",
+    },
+    "試合の動画": {
+        "ko": "경기 영상",
+        "en-GB": "Watch the match",
+        "zh-TW": "比賽影片",
+    },
+    "試合中": {
+        "ko": "진행 중",
+        "en-GB": "Live",
+        "zh-TW": "進行中",
+    },
+    "開発": {
+        "ko": "개발",
+        "en-GB": "Dev",
+        "zh-TW": "開發",
+    },
 }
 
 #: Words only the owner sees (the settings, and why the search cannot work yet): Japanese only.

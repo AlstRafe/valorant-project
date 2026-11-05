@@ -45,6 +45,10 @@ class FakeFetch:
                 return 200, fixture("henrik_status.json")
             if "/v2/store-featured" in url:
                 return 200, fixture("henrik_featured.json")
+            if "/v1/website/" in url:
+                return 200, fixture("henrik_news.json")
+            if "/v1/esports/schedule" in url:
+                return 200, fixture("henrik_esports.json")
             if "/v4/matches/" in url or "/v4/by-puuid/matches/" in url:
                 return 200, fixture("henrik_matches.json")
             if "/v4/match/" in url:
@@ -64,7 +68,7 @@ class FakeFetch:
         lists = json.loads(fixture("content_collection.json"))
         if kind in lists:
             return 200, json.dumps({"status": 200, "data": lists[kind]}).encode()
-        if url.startswith("https://media.valorant-api.com/"):
+        if url.startswith(("https://media.valorant-api.com/", "https://static.lolesports.com/", "https://cmsassets")):
             return 200, PNG
         return 404, b""
 

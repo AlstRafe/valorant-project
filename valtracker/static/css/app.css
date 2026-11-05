@@ -2760,6 +2760,213 @@ code {
   font-size: 0.9rem;
 }
 
+/* News: Riot's articles as cards, the patch of now above them. */
+.patch-now {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  margin: 0.9rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  background: var(--card);
+}
+.patch-now a {
+  font-weight: 700;
+}
+.patch-now time {
+  color: var(--soft);
+  font-size: 0.85rem;
+}
+.news {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.8rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+.news a {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+}
+.news a:hover {
+  border-color: var(--accent);
+}
+.news img,
+.news .no-banner {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: color-mix(in srgb, var(--draw) 18%, var(--card));
+}
+.news .no-banner {
+  display: block;
+}
+.news-text {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.7rem 0.9rem 0.9rem;
+}
+.news-text small {
+  color: var(--soft);
+  font-size: 0.8rem;
+}
+.news-text strong {
+  line-height: 1.45;
+}
+
+/* Esports: a match a card, by day; the visitor's teams lit up. */
+.schedule {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr));
+  gap: 0.6rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+.schedule .day {
+  grid-column: 1 / -1;
+  margin-top: 0.6rem;
+  color: var(--soft);
+  font-size: 0.9rem;
+}
+.schedule .day strong {
+  color: var(--ink);
+}
+.game {
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.game.fav {
+  border-color: #c99a2e;
+  box-shadow: inset 4px 0 0 #c99a2e;
+}
+.game.inProgress {
+  border-color: var(--accent);
+}
+.game-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.6rem;
+  margin: 0 0 0.4rem;
+  color: var(--soft);
+  font-size: 0.82rem;
+}
+.game-head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.game-head img {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  object-fit: contain;
+}
+.game-head .live {
+  padding: 0 0.4rem;
+  border-radius: 4px;
+  background: var(--accent);
+  color: var(--on-a);
+  font-weight: 800;
+}
+.teams {
+  display: grid;
+  gap: 0.3rem;
+}
+.team-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2rem;
+}
+.team-row img,
+.no-logo {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  object-fit: contain;
+}
+.no-logo {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--draw) 18%, var(--card));
+  color: var(--soft);
+  font-size: 0.6rem;
+  font-weight: 800;
+}
+.team-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.team-row.won .team-name {
+  font-weight: 800;
+}
+.wins {
+  min-width: 1.4rem;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.team-row:not(.won) .wins {
+  color: var(--soft);
+}
+.star {
+  flex: none;
+  width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--soft);
+}
+.star svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+}
+.star[aria-pressed="true"] {
+  color: #c99a2e;
+}
+.star[aria-pressed="true"] svg {
+  fill: currentColor;
+}
+.vod {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+}
+.fav-only {
+  margin: 0.6rem 0 0;
+}
+.fav-only label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

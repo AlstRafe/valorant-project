@@ -18,6 +18,7 @@ from valtracker import NAME, create_app, paths
 #: Under the mount, for crawlers to leave alone.
 DISALLOW = (
     "/media/",
+    "/pic/",
     "/search",
     "/settings",
     "/collection",

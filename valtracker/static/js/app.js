@@ -451,6 +451,93 @@
     if (page && page.getAttribute("data-offset") !== String(minutes)) location.reload();
   }
 
+  // Esports: the teams the visitor marked (kept in this browser), their matches lit up and, if asked, alone; the
+  // matches by day in the visitor's own clock.
+  var TEAMS = "val.teams";
+
+  function marked() {
+    try {
+      var value = JSON.parse(localStorage.getItem(TEAMS) || "[]");
+      return Array.isArray(value)
+        ? value.filter(function (name) {
+            return typeof name === "string";
+          })
+        : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function teams() {
+    var list = document.querySelector(".schedule");
+    if (!list) return;
+    var only = document.getElementById("fav-only");
+    function paint() {
+      var names = marked();
+      list.querySelectorAll(".game").forEach(function (game) {
+        var any = false;
+        game.querySelectorAll(".team-row").forEach(function (row) {
+          var name = row.getAttribute("data-team");
+          var on = names.indexOf(name) >= 0;
+          any = any || on;
+          var star = row.querySelector(".star");
+          star.hidden = false;
+          star.setAttribute("aria-pressed", on ? "true" : "false");
+          star.querySelector(".sr").textContent = list
+            .getAttribute(on ? "data-unmark" : "data-mark")
+            .replace("{team}", name);
+        });
+        game.classList.toggle("fav", any);
+        game.hidden = Boolean(only && only.checked && !any);
+      });
+      if (only) only.parentNode.parentNode.hidden = names.length === 0;
+    }
+    list.addEventListener("click", function (e) {
+      var star = e.target.closest ? e.target.closest(".star") : null;
+      if (!star) return;
+      var name = star.parentNode.getAttribute("data-team");
+      var names = marked();
+      var at = names.indexOf(name);
+      if (at >= 0) names.splice(at, 1);
+      else names.push(name);
+      write(TEAMS, names.slice(-100));
+      paint();
+    });
+    if (only) only.addEventListener("change", paint);
+    paint();
+    dayHeads(list, ".game");
+  }
+
+  // A heading before each day's first item: the day in the visitor's own clock and language.
+  function dayHeads(list, items) {
+    if (!window.Intl || list.querySelector(".day")) return;
+    var format;
+    try {
+      format = new Intl.DateTimeFormat(document.documentElement.lang, {
+        month: "short",
+        day: "numeric",
+        weekday: "short",
+      });
+    } catch (e) {
+      return;
+    }
+    var last = "";
+    list.querySelectorAll(items).forEach(function (item) {
+      var time = item.querySelector("time[datetime]");
+      var moment = time ? new Date(time.getAttribute("datetime")) : null;
+      if (!moment || isNaN(moment)) return;
+      var key = moment.getFullYear() + "-" + moment.getMonth() + "-" + moment.getDate();
+      if (key === last) return;
+      last = key;
+      var head = document.createElement("li");
+      head.className = "day";
+      var title = document.createElement("strong");
+      title.textContent = format.format(moment);
+      head.appendChild(title);
+      list.insertBefore(head, item);
+    });
+  }
+
   // The owner's collection lists every item of a tab at once: the names are narrowed as they are typed.
   function finder() {
     var input = document.getElementById("find");
@@ -502,6 +589,7 @@
     copies();
     countdowns();
     zone();
+    teams();
   });
   addEventListener("storage", function (e) {
     if (e.key === FAVORITES || e.key === RECENT || e.key === null) lists();
