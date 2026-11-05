@@ -7,6 +7,11 @@
 <h1>{{ name }}</h1>
 <p class="meta">{% if tier.icon %}<img class="tier" src="{{ media(tier.icon) }}" alt="" width="20" height="20">{% endif %}{% if tier.name %}{{ tier.name }} · {% endif %}{{ weapon.name }}{% if theme %} · {{ t('シリーズ: {name}', name=theme) }}{% endif %}</p>
 {% if image %}<img class="skin-art" src="{{ media(image) }}" alt="" width="512" height="160">{% endif %}
+{% if owner %}<form class="want-form" id="want" method="post" action="{{ url_for('want_skin', uuid=uuid) }}" lang="ja">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="on" value="{{ '0' if wanted else '1' }}">
+<button type="submit"{% if wanted %} class="quiet"{% endif %} aria-pressed="{{ 'true' if wanted else 'false' }}">{{ '欲しいリストから外す' if wanted else '欲しいリストに入れる' }}</button>
+<span class="meta">{{ 'ストアに並んだら印がつきます。' if wanted else 'ストアに並んだときに印がつきます。' }}</span>
+</form>{% endif %}
 </section>
 
 {% if chromas %}

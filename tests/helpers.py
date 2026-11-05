@@ -68,7 +68,14 @@ class FakeFetch:
         lists = json.loads(fixture("content_collection.json"))
         if kind in lists:
             return 200, json.dumps({"status": 200, "data": lists[kind]}).encode()
-        if url.startswith(("https://media.valorant-api.com/", "https://static.lolesports.com/", "https://cmsassets")):
+        if url.startswith(
+            (
+                "https://media.valorant-api.com/",
+                "https://static.lolesports.com/",
+                "https://cmsassets",
+                "https://images.contentstack.io/",
+            )
+        ):
             return 200, PNG
         return 404, b""
 

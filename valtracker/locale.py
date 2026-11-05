@@ -1209,6 +1209,26 @@ TEXTS = {
         "en-GB": "Transformation",
         "zh-TW": "變形",
     },
+    "VALORANT のストアが入れ替わりました": {
+        "ko": "VALORANT 상점이 바뀌었습니다",
+        "en-GB": "The VALORANT store has changed",
+        "zh-TW": "VALORANT 商店已更新",
+    },
+    "毎日の 4 つのスキンが新しくなりました。": {
+        "ko": "매일 바뀌는 스킨 4개가 새로 나왔습니다.",
+        "en-GB": "Today's four skins are in.",
+        "zh-TW": "每日的 4 款造型已更新。",
+    },
+    "VALORANT のストア": {
+        "ko": "VALORANT 상점",
+        "en-GB": "VALORANT store",
+        "zh-TW": "VALORANT 商店",
+    },
+    "入れ替わりをカレンダーに入れる（毎日の通知）": {
+        "ko": "교체 시각을 캘린더에 추가 (매일 알림)",
+        "en-GB": "Add the daily change to your calendar (a reminder every day)",
+        "zh-TW": "把更新時間加入行事曆（每天提醒）",
+    },
 }
 
 #: Words only the owner sees (the settings, and why the search cannot work yet): Japanese only.

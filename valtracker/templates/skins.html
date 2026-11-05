@@ -5,6 +5,7 @@
 <li class="item{% if item.tier.key %} tier-{{ item.tier.key }}{% endif %}"><a class="skin-link" href="{{ item.url }}">
 <img src="{{ media(item.image) }}" alt="" width="256" height="96" loading="lazy">
 <span class="iname">{{ item.name }}</span>
+{% if item.wanted %}<span class="badge" lang="ja">欲しい</span>{% endif %}
 <small>{% if item.tier.icon %}<img class="tier" src="{{ media(item.tier.icon) }}" alt="" width="16" height="16">{% endif %}{{ item.tier.name }}{% if item.average is defined %} · <span class="stars-text">★ {{ item.average }}</span>{% elif item.videos %} · {{ t('動画 {count}', count=item.videos) }}{% endif %}</small>
 </a></li>
 {%- endmacro %}
@@ -31,6 +32,7 @@
 {% endfor %}</select></label>
 <button type="submit">{{ t('探す') }}</button>
 </form>
+{% if owner %}<p class="meta" lang="ja"><a href="{{ url_for('skins', wants=1) }}">欲しいリスト（{{ wants }}）</a> · スキンのページで入れられます。ストアに並ぶと印がつきます。</p>{% endif %}
 {% if top %}
 <section aria-labelledby="top-title">
 <h2 id="top-title">{{ t('評価の高いスキン') }}</h2>

@@ -3139,6 +3139,62 @@ code {
   margin-top: 0.7rem;
 }
 
+/* The owner's store: the skins they want, the night market's cards face down, the days before (shop_history.html). */
+.item.want {
+  border-color: var(--win);
+  box-shadow: inset 0 0 0 1px var(--win);
+}
+.item.want .badge {
+  background: var(--win);
+  color: var(--on-a);
+}
+.want-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  margin-top: 1rem;
+}
+.want-form .meta {
+  margin: 0;
+}
+.item.face-down {
+  background: repeating-linear-gradient(135deg, #3b2a7a 0 12px, #4a3593 12px 24px);
+}
+.item.face-down > :not(.flip) {
+  visibility: hidden;
+}
+.flip {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: transparent;
+  color: #fff;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+}
+.item.turned {
+  animation: turn 0.45s ease-out;
+}
+@keyframes turn {
+  from {
+    transform: perspective(600px) rotateY(90deg);
+  }
+  to {
+    transform: none;
+  }
+}
+.flip-all {
+  margin: 0 0 0.6rem;
+}
+.history-night {
+  margin: 1rem 0 0;
+  font-size: 1rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

@@ -207,7 +207,9 @@ function inspect() {
       "button, .button, select, input:not([type=hidden]), summary, nav a, .tabbar a",
     )) {
       if (!shown(el) || el.closest("[hidden]") || folded(el)) continue;
-      const box = el.getBoundingClientRect();
+      // a check box or radio button is tapped through its label too (WCAG: the label is part of the target)
+      const target = (el.matches("input[type=radio], input[type=checkbox]") && el.closest("label")) || el;
+      const box = target.getBoundingClientRect();
       if (box.width < 24 || box.height < 24)
         found.push({
           kind: "too small to tap",

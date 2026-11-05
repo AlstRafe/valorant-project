@@ -538,6 +538,63 @@
     });
   }
 
+  // The night market: the cards the game has not shown yet lie face down until turned, one by one or all at once,
+  // as in the game. Which ones were turned is remembered for that night market only.
+  var NIGHT = "val.night";
+
+  function turned(key) {
+    try {
+      var value = JSON.parse(localStorage.getItem(NIGHT) || "{}");
+      return value && value.key === key && Array.isArray(value.turned) ? value.turned : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function night() {
+    var shelf = document.querySelector(".night[data-night]");
+    if (!shelf) return;
+    var key = shelf.getAttribute("data-night");
+    var all = shelf.querySelector(".flip-all");
+    var cards = shelf.querySelectorAll(".item[data-flip]");
+    function turn(card, keep) {
+      card.classList.remove("face-down");
+      card.classList.add("turned");
+      var button = card.querySelector(".flip");
+      if (button) button.remove();
+      if (!keep) return;
+      var list = turned(key);
+      list.push(card.getAttribute("data-flip"));
+      try {
+        localStorage.setItem(NIGHT, JSON.stringify({ key: key, turned: list }));
+      } catch (e) {
+        // not kept: they lie face down again next time
+      }
+      if (all) all.hidden = !shelf.querySelector(".face-down");
+    }
+    var list = turned(key);
+    cards.forEach(function (card) {
+      if (list.indexOf(card.getAttribute("data-flip")) >= 0) return;
+      card.classList.add("face-down");
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "flip";
+      button.textContent = "めくる";
+      button.addEventListener("click", function () {
+        turn(card, true);
+      });
+      card.appendChild(button);
+    });
+    if (all && shelf.querySelector(".face-down")) {
+      all.hidden = false;
+      all.querySelector("button").addEventListener("click", function () {
+        shelf.querySelectorAll(".face-down").forEach(function (card) {
+          turn(card, true);
+        });
+      });
+    }
+  }
+
   // The owner's collection lists every item of a tab at once: the names are narrowed as they are typed.
   function finder() {
     var input = document.getElementById("find");
@@ -590,6 +647,7 @@
     countdowns();
     zone();
     teams();
+    night();
   });
   addEventListener("storage", function (e) {
     if (e.key === FAVORITES || e.key === RECENT || e.key === null) lists();

@@ -9,6 +9,7 @@ import secrets
 
 from flask import Flask, abort, current_app, g, redirect, render_template, request, url_for
 
+from valtracker import security
 from valtracker.collection import TIERS, _tier, _weapon_order
 from valtracker.content import Content
 from valtracker.views import _t
@@ -111,11 +112,17 @@ def _list_page(content: Content, lang: str) -> dict:
         and (not tier or entry["tier"]["key"] == tier)
         and (not words or words.lower() in entry["name"].lower())
     ]
+    wants = set(current_app.config["VAL_DIARY"].wants()) if security.is_owner() else set()
+    if request.args.get("wants") and wants:
+        picked = [entry for entry in every if entry["uuid"] in wants]
+        weapon = "wants"
     groups: list[dict] = []
     for entry in picked[:SHOWN]:
         if not groups or groups[-1]["uuid"] != entry["weapon"]["uuid"]:
             groups.append({**entry["weapon"], "items": []})
-        groups[-1]["items"].append(entry | {"url": url_for("skin", uuid=entry["uuid"])})
+        groups[-1]["items"].append(
+            entry | {"url": url_for("skin", uuid=entry["uuid"]), "wanted": entry["uuid"] in wants}
+        )
     known = content.index("contenttiers", lang)
     tiers = []
     for item in sorted(
@@ -140,7 +147,8 @@ def _list_page(content: Content, lang: str) -> dict:
         "tiers": tiers,
         "tier": tier,
         "q": words,
-        "top": top if not (words or tier or request.args.get("weapon")) else [],
+        "top": top if not (words or tier or request.args.get("weapon") or weapon == "wants") else [],
+        "wants": len(wants),
     }
 
 
@@ -218,6 +226,7 @@ def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
         "series": series[:24],
         "score": current_app.config["VAL_RATINGS"].score(uuid, _voter_cookie()),
         "rated": request.args.get("rated", ""),
+        "wanted": security.is_owner() and uuid in current_app.config["VAL_DIARY"].wants(),
     }
 
 
@@ -238,6 +247,16 @@ def register(app: Flask) -> None:
         if values is None:
             abort(404)
         return render_template("skin.html", **values)
+
+    @app.post("/skins/<uuid>/want")
+    def want_skin(uuid: str):
+        """The owner's wish list (diary.py): the store marks these skins when they come up."""
+        security.owner_only()
+        uuid = uuid.lower()
+        if not _UUID.match(uuid) or _skin_page(current_app.config["VAL_CONTENT"], g.lang, uuid) is None:
+            abort(404)
+        current_app.config["VAL_DIARY"].want(uuid, request.form.get("on") == "1")
+        return redirect(url_for("skin", uuid=uuid) + "#want", 303)
 
     @app.post("/skins/<uuid>/rate")
     def rate_skin(uuid: str):
