@@ -59,13 +59,21 @@ class HenrikTest(unittest.TestCase):
         self.assertEqual(set(matches[0]), {"metadata", "players", "teams"})
         self.assertNotIn("ability_casts", matches[0]["players"][0])
         mmr = self.henrik.mmr("ap", "Tester", "JP1")
-        self.assertEqual(set(mmr), {"current", "peak", "season"})
-        self.assertEqual(mmr["season"]["season"]["short"], "e9a3", "the latest act, not the whole history")
+        self.assertEqual(set(mmr), {"current", "peak", "seasons"})
+        latest = mmr["seasons"][0]
+        self.assertEqual(latest["short"], "e9a3")
+        # the badge keeps the 9 best wins, not the act's every win
+        self.assertEqual(latest["best"], [22, 21, 21, 21, 20, 20, 20, 19, 19])
+        self.assertEqual((latest["games"], latest["wins"], latest["end_tier"], latest["old"]), (20, 12, 21, False))
+        self.assertTrue(mmr["seasons"][-1]["old"], "Episode 4: the ranks before Ascendant")
 
-    def test_the_latest_act_whatever_the_order(self):
-        seasons = [{"season": {"short": short}, "games": 1} for short in ("e10a1", "e9a3", "e2a1")]
-        self.assertEqual(_slim_mmr({"seasonal": seasons})["season"]["season"]["short"], "e10a1")
-        self.assertIsNone(_slim_mmr({"seasonal": []})["season"])
+    def test_acts_latest_first_whatever_the_order(self):
+        seasons = [{"season": {"short": short}, "games": 1} for short in ("e9a3", "e10a1", "e2a1")]
+        seasons.append({"season": {"short": "e3a1"}, "games": 0})  # not played: not listed
+        self.assertEqual(
+            [act["short"] for act in _slim_mmr({"seasonal": seasons})["seasons"]], ["e10a1", "e9a3", "e2a1"]
+        )
+        self.assertEqual(_slim_mmr({"seasonal": None})["seasons"], [])
 
     def test_rr_changes(self):
         changes = self.henrik.rr_changes("ap", "Tester", "JP1")

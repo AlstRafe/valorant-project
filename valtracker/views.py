@@ -88,14 +88,14 @@ def _queue(metadata: dict) -> str:
     return _t(QUEUES[key]) if key in QUEUES else str(queue.get("name") or key or "")
 
 
-def _rank(tier: dict | None) -> dict:
+def _rank(tier: dict | None, old: bool = False) -> dict:
     """HenrikDev's ``{"id": 21, "name": "Ascendant 1"}`` in the visitor's language, with its picture."""
     tier = tier or {}
     try:
         number = int(tier.get("id") or 0)
     except (TypeError, ValueError):
         number = 0
-    known = current_app.config["VAL_CONTENT"].tiers(g.lang).get(number) or {}
+    known = current_app.config["VAL_CONTENT"].tiers(g.lang, old=old).get(number) or {}
     name = str(known.get("tierName") or tier.get("name") or "")
     return {"tier": number, "name": name.title() if name.isupper() else name, "icon": known.get("smallIcon")}
 
@@ -160,8 +160,8 @@ def _modes(mode: str) -> list[dict]:
     ]
 
 
-def _standing(current: dict, season: dict | None) -> dict:
-    """What else the rank card says: the placement games left, the leaderboard place, the latest act's record."""
+def _standing(current: dict) -> dict:
+    """What else the rank card says: the placement games left and the leaderboard place."""
 
     def number(value) -> int:
         try:
@@ -170,21 +170,48 @@ def _standing(current: dict, season: dict | None) -> dict:
             return 0
 
     board = current.get("leaderboard_placement")
-    act = {}
-    if isinstance(season, dict) and number(season.get("games")):
-        short = str((season.get("season") or {}).get("short") or "") if isinstance(season.get("season"), dict) else ""
-        games, wins = number(season.get("games")), number(season.get("wins"))
-        act = {
-            "name": re.sub(r"(\d)a(\d)", r"\1 A\2", short.lower()).upper(),
-            "games": games,
-            "wins": wins,
-            "win_rate": round(100 * wins / games),
-        }
     return {
         "placements": number(current.get("games_needed_for_rating")),
         "leaderboard": number(board.get("rank")) if isinstance(board, dict) else 0,
-        "act": act,
     }
+
+
+#: The act rank badge: rows of 1, 3 and 5 triangles, pointing up and down in turn; the best wins fill it
+#: from the top, left to right.
+BADGE_ROWS = ((True,), (True, False, True), (True, False, True, False, True))
+
+
+def _acts(seasons: list) -> list[dict]:
+    """Each act played, the latest first: its name, record, final rank and badge."""
+    acts = []
+    for season in seasons:
+        tiers = current_app.config["VAL_CONTENT"].tiers(g.lang, old=season.get("old", False))
+        best = iter(season.get("best") or [])
+        rows = []
+        for row in BADGE_ROWS:
+            slots = []
+            for up in row:
+                win = next(best, 0)
+                icon = (
+                    (tiers.get(win) or {}).get("rankTriangleUpIcon" if up else "rankTriangleDownIcon") if win else None
+                )
+                slots.append({"up": up, "tier": win, "icon": icon})
+            rows.append(slots)
+        games, wins = season["games"], season["wins"]
+        acts.append(
+            {
+                "key": season["short"],
+                "name": re.sub(r"(\d)a(\d)", r"\1 A\2", season["short"]).upper(),
+                "games": games,
+                "wins": wins,
+                "win_rate": round(100 * wins / games) if games else 0,
+                "end": _rank({"id": season.get("end_tier")}, old=season.get("old", False)),
+                "board": season.get("board", 0),
+                "rows": rows,
+                "shown": len(season.get("best") or []),
+            }
+        )
+    return acts
 
 
 def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
@@ -230,7 +257,8 @@ def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
         "rr": current.get("rr"),
         "last_change": current.get("last_change"),
         "peak": _rank(peak.get("tier")) if peak else None,
-        "standing": _standing(current, (mmr or {}).get("season")),
+        "standing": _standing(current),
+        "acts": _acts((mmr or {}).get("seasons") or []),
         "rows": rows,
         "summary": stats.summary(rows),
         "matches_problem": matches_problem,

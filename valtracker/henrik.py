@@ -80,7 +80,7 @@ class Henrik:
 
     def mmr(self, region: str, name: str, tag: str) -> dict:
         """``{"current": {"tier": {"id", "name"}, "rr", "last_change", "games_needed_for_rating",
-        "leaderboard_placement", ...}, "peak": ..., "season": the latest act played (``seasonal``'s last)}``."""
+        "leaderboard_placement", ...}, "peak": ..., "seasons": every act played, the latest first (_slim_act)}``."""
         path = f"/valorant/v3/mmr/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}"
         return self._get(("mmr", region, name.lower(), tag.lower()), path, KEEP["mmr"], _slim_mmr)
 
@@ -181,15 +181,47 @@ def shows_rr(mode: str) -> bool:
 
 def _slim_mmr(data) -> dict:
     slim = _pick(data, ("current", "peak"))
-    seasons = [season for season in (data or {}).get("seasonal") or [] if isinstance(season, dict)]
-    slim["season"] = max(seasons, key=lambda season: _act_order(season.get("season")), default=None)
+    seasons = [_slim_act(season) for season in (data or {}).get("seasonal") or [] if isinstance(season, dict)]
+    slim["seasons"] = sorted(
+        (act for act in seasons if act["games"]), key=lambda act: _act_order(act["short"]), reverse=True
+    )
     return slim
 
 
-def _act_order(season) -> tuple:
-    """``{"short": "e9a3"}`` -> (9, 3): the latest act is the largest, whatever order the list is in."""
-    short = str((season or {}).get("short") or "") if isinstance(season, dict) else ""
-    return tuple(int(number) for number in re.findall(r"\d+", short))
+#: The act rank badge (the triangle, "onigiri") shows this many wins: the best ones.
+BADGE_WINS = 9
+
+
+def _slim_act(season: dict) -> dict:
+    """One act of v3 mmr's ``seasonal``: its record, final rank, and the ranks of its best wins (``act_wins``)."""
+
+    def number(value) -> int:
+        try:
+            return int(value or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    def tier(value) -> int:
+        return number(value.get("id")) if isinstance(value, dict) else number(value)
+
+    short = str((season.get("season") or {}).get("short") or "") if isinstance(season.get("season"), dict) else ""
+    board = season.get("leaderboard_placement")
+    wins = sorted((tier(win) for win in season.get("act_wins") or []), reverse=True)
+    return {
+        "short": short.lower(),
+        "games": number(season.get("games")),
+        "wins": number(season.get("wins")),
+        "end_tier": tier(season.get("end_tier")),
+        # before Episode 5 the ranks had no Ascendant, so the same number was another rank
+        "old": str(season.get("ranking_schema") or "") == "base" or (_act_order(short)[:1] or (99,))[0] < 5,
+        "board": number(board.get("rank")) if isinstance(board, dict) else 0,
+        "best": [win for win in wins if win > 2][:BADGE_WINS],
+    }
+
+
+def _act_order(short: str) -> tuple:
+    """ "e9a3" -> (9, 3): the latest act is the largest, whatever order the list is in."""
+    return tuple(int(number) for number in re.findall(r"\d+", str(short or "")))
 
 
 def _slim_rr(data) -> dict:

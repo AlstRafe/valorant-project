@@ -19,7 +19,7 @@
 {% set outcome = 'draw' if not team.result else ('win' if team.result.won is sameas true else ('loss' if team.result.won is sameas false else 'draw')) %}
 <section class="team {{ outcome }}" aria-labelledby="team-{{ loop.index }}">
 {% if team.result %}
-<h2 id="team-{{ loop.index }}"><span>{% if team.id|lower == 'red' %}{{ t('レッド') }}{% elif team.id|lower == 'blue' %}{{ t('ブルー') }}{% else %}{{ team.id }}{% endif %}</span>{% if team.result.rounds %} <strong>{{ team.result.us }}</strong>{% endif %} <small>{% if outcome == 'win' %}{{ t('勝ち') }}{% elif outcome == 'loss' %}{{ t('負け') }}{% else %}{{ t('引き分け') }}{% endif %}</small></h2>
+<h2 id="team-{{ loop.index }}"><span>{% if team.id|lower == 'red' %}{{ t('レッド') }}{% elif team.id|lower == 'blue' %}{{ t('ブルー') }}{% else %}{{ team.id }}{% endif %}</span>{% if team.result.rounds %} <strong>{{ team.result.us }}</strong>{% endif %} <small>{% if outcome == 'win' %}{{ t('勝利') }}{% elif outcome == 'loss' %}{{ t('敗北') }}{% else %}{{ t('引き分け') }}{% endif %}</small></h2>
 {% else %}
 <h2 id="team-{{ loop.index }}">{{ t('順位') }}</h2>
 {% endif %}

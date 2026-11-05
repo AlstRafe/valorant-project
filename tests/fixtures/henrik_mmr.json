@@ -33,6 +33,43 @@
   "seasonal": [
    {
     "season": {
+     "id": "s0",
+     "short": "e4a3"
+    },
+    "wins": 5,
+    "games": 9,
+    "end_tier": {
+     "id": 21,
+     "name": "Immortal 1"
+    },
+    "end_rr": 10,
+    "ranking_schema": "base",
+    "leaderboard_placement": null,
+    "act_wins": [
+     {
+      "id": 21,
+      "name": "Tier 21"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 19,
+      "name": "Tier 19"
+     },
+     {
+      "id": 18,
+      "name": "Tier 18"
+     }
+    ]
+   },
+   {
+    "season": {
      "id": "s1",
      "short": "e9a2"
     },
@@ -42,9 +79,131 @@
      "id": 20,
      "name": "Diamond 3"
     },
-    "ranking_schema": "x",
+    "end_rr": 50,
+    "ranking_schema": "ascendant",
     "leaderboard_placement": null,
-    "act_wins": []
+    "act_wins": [
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 19,
+      "name": "Tier 19"
+     },
+     {
+      "id": 19,
+      "name": "Tier 19"
+     },
+     {
+      "id": 19,
+      "name": "Tier 19"
+     },
+     {
+      "id": 19,
+      "name": "Tier 19"
+     },
+     {
+      "id": 19,
+      "name": "Tier 19"
+     },
+     {
+      "id": 19,
+      "name": "Tier 19"
+     },
+     {
+      "id": 19,
+      "name": "Tier 19"
+     },
+     {
+      "id": 19,
+      "name": "Tier 19"
+     },
+     {
+      "id": 19,
+      "name": "Tier 19"
+     },
+     {
+      "id": 19,
+      "name": "Tier 19"
+     }
+    ]
    },
    {
     "season": {
@@ -57,9 +216,59 @@
      "id": 21,
      "name": "Ascendant 1"
     },
-    "ranking_schema": "x",
+    "end_rr": 42,
+    "ranking_schema": "ascendant",
     "leaderboard_placement": null,
-    "act_wins": []
+    "act_wins": [
+     {
+      "id": 19,
+      "name": "Tier 19"
+     },
+     {
+      "id": 21,
+      "name": "Tier 21"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 22,
+      "name": "Tier 22"
+     },
+     {
+      "id": 21,
+      "name": "Tier 21"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     },
+     {
+      "id": 19,
+      "name": "Tier 19"
+     },
+     {
+      "id": 18,
+      "name": "Tier 18"
+     },
+     {
+      "id": 18,
+      "name": "Tier 18"
+     },
+     {
+      "id": 17,
+      "name": "Tier 17"
+     },
+     {
+      "id": 21,
+      "name": "Tier 21"
+     },
+     {
+      "id": 20,
+      "name": "Tier 20"
+     }
+    ]
    }
   ]
  }
