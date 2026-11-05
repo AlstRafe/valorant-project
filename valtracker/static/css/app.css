@@ -429,6 +429,28 @@ button.quiet {
 .note {
   color: var(--soft);
 }
+/* A player's page while its rank and matches are on the way (app.js part()). */
+.wait {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1rem 0 0;
+  color: var(--soft);
+}
+.spinner {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .people-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));

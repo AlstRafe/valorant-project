@@ -1,0 +1,79 @@
+{# The part of a player's page that needs HenrikDev: player.html, or alone for the page's script (player_part). #}
+{% if not account %}
+<section class="hero">
+<h1>{{ name }}<span class="tag">#{{ tag }}</span></h1>
+<p class="problem" role="alert">{{ problem }}</p>
+{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}">{{ t('設定') }}</a></p>{% endif %}
+<p><a href="{{ url_for('top') }}">← {{ t('検索に戻る') }}</a></p>
+</section>
+{% else %}
+<section class="profile" id="profile" data-name="{{ name }}" data-tag="{{ tag }}" data-region="{{ region }}">
+{% set wide = media('https://media.valorant-api.com/playercards/' ~ card ~ '/wideart.png') if card else '' %}
+<div class="banner">
+{% if wide %}<img class="wide" src="{{ wide }}" alt="" width="452" height="128">{% endif %}
+{% if card %}<img class="card" src="{{ media('https://media.valorant-api.com/playercards/' ~ card ~ '/smallart.png') }}" alt="" width="64" height="64">{% endif %}
+<div class="who">
+<h1>{{ name }}<span class="tag">#{{ tag }}</span></h1>
+<p class="meta">{{ t('レベル {level}', level=account.account_level or '–') }} · {{ region|upper }}</p>
+</div>
+<button type="button" class="fav" id="fav" aria-pressed="false" data-on="{{ t('お気に入りから外す') }}" data-off="{{ t('お気に入りに追加') }}" title="{{ t('お気に入りに追加') }}" aria-label="{{ t('お気に入りに追加') }}" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg></button>
+</div>
+<div class="ranks">
+<div class="rank">
+<p class="label">{{ t('現在のランク') }}</p>
+{% if rank and rank.tier > 2 %}
+<p class="value">{% if rank.icon %}<img src="{{ media(rank.icon) }}" alt="" width="40" height="40">{% endif %}<span>{{ rank.name }}</span></p>
+<p class="sub">{{ rr }} RR{% if last_change %} <span class="{{ 'up' if last_change > 0 else 'down' }}">({{ '%+d'|format(last_change) }})</span>{% endif %}</p>
+{% else %}
+<p class="value"><span>{{ t('ランクなし') }}</span></p>
+{% endif %}
+</div>
+{% if peak and peak.tier > 2 %}
+<div class="rank">
+<p class="label">{{ t('最高ランク') }}</p>
+<p class="value">{% if peak.icon %}<img src="{{ media(peak.icon) }}" alt="" width="40" height="40">{% endif %}<span>{{ peak.name }}</span></p>
+</div>
+{% endif %}
+</div>
+</section>
+
+{% if summary %}
+<section class="summary" aria-labelledby="sum-title">
+<h2 id="sum-title">{{ t('直近 {count} 試合', count=summary.games) }}</h2>
+<dl class="numbers">
+<div><dt>{{ t('勝率') }}</dt><dd>{{ summary.win_rate }}%<small>{{ t('{wins}勝 {losses}敗', wins=summary.wins, losses=summary.losses) }}</small></dd></div>
+<div><dt>K / D / A</dt><dd>{{ summary.kills }}/{{ summary.deaths }}/{{ summary.assists }}<small>KD {{ summary.kd }}</small></dd></div>
+<div><dt>ACS</dt><dd>{{ summary.acs }}</dd></div>
+<div><dt>{{ t('HS率') }}</dt><dd>{{ summary.hs }}%</dd></div>
+</dl>
+{% if summary.agents %}
+<ul class="mains" aria-label="{{ t('よく使うエージェント') }}">
+{% for agent in summary.agents %}
+<li>{% if agent.icon %}<img src="{{ media(agent.icon) }}" alt="" width="32" height="32">{% endif %}<span>{{ agent.name }}</span><small>{{ t('{games}試合', games=agent.games) }} · {{ t('{wins}勝', wins=agent.wins) }}</small></li>
+{% endfor %}
+</ul>
+{% endif %}
+</section>
+{% endif %}
+
+<section class="matches" aria-labelledby="m-title">
+<h2 id="m-title">{{ t('最近の試合') }}</h2>
+{% if matches_problem %}<p class="problem" role="alert">{{ matches_problem }}</p>
+{% elif not rows %}<p class="note">{{ t('最近の試合が見つかりませんでした。') }}</p>
+{% else %}
+<ol class="match-list">
+{% for row in rows %}
+{% set outcome = 'win' if row.result.won is sameas true else ('loss' if row.result.won is sameas false else 'draw') %}
+<li class="match {{ outcome }}">
+<a href="{{ url_for('match', region=row.region or region, match_id=row.id) }}">
+{% if row.agent_icon %}<img class="agent" src="{{ media(row.agent_icon) }}" alt="{{ row.agent_name }}" width="44" height="44">{% else %}<span class="agent">{{ row.agent_name[:2] }}</span>{% endif %}
+<span class="what"><strong>{{ row.map.name }}</strong><small>{{ row.queue }}{% if row.started %} · <time datetime="{{ row.started.isoformat() }}">{{ row.when }}</time>{% endif %}</small></span>
+<span class="score"><strong>{{ row.result.us }}–{{ row.result.them }}</strong><small>{% if outcome == 'win' %}{{ t('勝ち') }}{% elif outcome == 'loss' %}{{ t('負け') }}{% else %}{{ t('引き分け') }}{% endif %}</small></span>
+<span class="kda"><strong>{{ row.line.kills }} / {{ row.line.deaths }} / {{ row.line.assists }}</strong><small>ACS {{ row.line.acs }} · HS {{ row.line.hs }}%</small></span>
+</a>
+</li>
+{% endfor %}
+</ol>
+{% endif %}
+</section>
+{% endif %}

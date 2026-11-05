@@ -37,6 +37,19 @@ TEXTS = {
         "en-GB": "Match data comes from the HenrikDev API; the game's names and pictures from valorant-api.com.",
         "zh-TW": "戰績來自 HenrikDev API，遊戲中的名稱與圖片來自 valorant-api.com。",
     },
+    # A player's page while its rank and matches are on the way
+    "ランクと最近の試合を読み込んでいます…": {
+        "ko": "랭크와 최근 경기를 불러오는 중…",
+        "en-GB": "Loading the rank and recent matches…",
+        "zh-TW": "正在載入牌位與近期對戰…",
+    },
+    "読み込めませんでした。": {"ko": "불러오지 못했습니다.", "en-GB": "Couldn't load them.", "zh-TW": "無法載入。"},
+    "もう一度読み込む": {"ko": "다시 불러오기", "en-GB": "Try again", "zh-TW": "重新載入"},
+    "ランクと最近の試合を見る": {
+        "ko": "랭크와 최근 경기 보기",
+        "en-GB": "Show the rank and recent matches",
+        "zh-TW": "查看牌位與近期對戰",
+    },
     # Errors
     "エラー {status}": {"ko": "오류 {status}", "en-GB": "Error {status}", "zh-TW": "錯誤 {status}"},
     "ページが見つかりません": {"ko": "페이지를 찾을 수 없습니다", "en-GB": "Page not found", "zh-TW": "找不到這個頁面"},
