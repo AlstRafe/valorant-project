@@ -147,7 +147,14 @@ TEXTS = {
         "en-GB": "{count} placement matches left",
         "zh-TW": "還需 {count} 場定位賽",
     },
-    "{act} の成績": {"ko": "{act} 전적", "en-GB": "{act} record", "zh-TW": "{act} 戰績"},
+    "アクトランク": {"ko": "액트 랭크", "en-GB": "Act rank", "zh-TW": "賽季階段牌位"},
+    "アクト": {"ko": "액트", "en-GB": "Act", "zh-TW": "賽季階段"},
+    "{act} のアクトランク：上位 {count} 勝のランク": {
+        "ko": "{act} 액트 랭크: 상위 {count}승의 랭크",
+        "en-GB": "{act} act rank: the ranks of the best {count} wins",
+        "zh-TW": "{act} 賽季階段牌位：前 {count} 場勝利的牌位",
+    },
+    "最終ランク": {"ko": "최종 랭크", "en-GB": "Final rank", "zh-TW": "最終牌位"},
     "デスマッチなどは除く": {
         "ko": "데스매치 등 제외",
         "en-GB": "Deathmatch and the like left out",
@@ -169,8 +176,8 @@ TEXTS = {
     },
     "モード": {"ko": "모드", "en-GB": "Mode", "zh-TW": "模式"},
     "すべて": {"ko": "전체", "en-GB": "All", "zh-TW": "全部"},
-    "勝ち": {"ko": "승리", "en-GB": "Win", "zh-TW": "勝"},
-    "負け": {"ko": "패배", "en-GB": "Loss", "zh-TW": "敗"},
+    "勝利": {"ko": "승리", "en-GB": "Victory", "zh-TW": "勝利"},
+    "敗北": {"ko": "패배", "en-GB": "Defeat", "zh-TW": "敗北"},
     "引き分け": {"ko": "무승부", "en-GB": "Draw", "zh-TW": "平手"},
     # A match
     "試合": {"ko": "경기", "en-GB": "Match", "zh-TW": "對戰"},

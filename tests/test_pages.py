@@ -129,8 +129,32 @@ class PagesTest(unittest.TestCase):
     def test_what_a_player_page_tells(self):
         text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
         self.assertIn('<progress class="rr-bar" max="100" value="42" aria-label="RR 42 / 100"></progress>', text)
-        self.assertIn("E9 A3 の成績", text)  # the latest act: 12 of 20
-        self.assertIn("勝率 60%", text)
+        self.assertIn('<option value="e9a3">E9 A3</option>', text)  # the act rank: the latest act first
+        self.assertIn('<div class="act" data-act="e9a3">', text)
+        self.assertIn('<div class="act" data-act="e9a2" hidden>', text)
+        self.assertIn("<span>60%</span>", text)  # 12 of 20
+        # the badge: the 9 best wins from the top, triangles pointing up and down in turn
+        badge = text[text.index('data-act="e9a3"') : text.index('data-act="e9a2"')]
+        triangles = re.findall(r"competitivetiers/[^/]+/(\d+)/ranktriangle(up|down)icon", badge)
+        self.assertEqual(
+            triangles,
+            [
+                ("22", "up"),
+                ("21", "up"),
+                ("21", "down"),
+                ("21", "up"),
+                ("20", "up"),
+                ("20", "down"),
+                ("20", "up"),
+                ("19", "down"),
+                ("19", "up"),
+            ],
+        )
+        old = text[text.index('data-act="e4a3"') :]
+        old = old[: old.index("</dl>")]
+        self.assertIn("Old 21", old, "Episode 4's 21 was Immortal 1")
+        self.assertEqual(old.count(' won"'), 5, "wins without a picture still fill their place")
+        self.assertEqual(old.count('"></span>') - old.count(' won"'), 4, "5 wins: 4 places left")
         self.assertIn('<span class="up">+18 RR</span>', text)  # each competitive match's RR
         self.assertIn('<span class="down">-15 RR</span>', text)
         self.assertIn('<span class="mvp match" title="マッチ MVP">MVP', text)  # the best combat score of the match
@@ -139,9 +163,13 @@ class PagesTest(unittest.TestCase):
         self.assertIn("ADR 143", text)  # (3000 / 22 -> 136, 3000 / 20 -> 150) / 2
         self.assertIn(f"/m/ap/{MATCH}?me=Tester%23JP1", text)
         self.assertNotIn("デスマッチなどは除く", text)
+        self.assertIn("勝利", text)  # the game's words
+        self.assertIn("敗北", text)
+        self.assertNotIn("勝ち", text)
 
         english = self.get("/p/Tester/JP1?full=1", lang="en-GB").get_data(as_text=True)
-        self.assertIn("E9 A3 record", english)
+        self.assertIn("E9 A3 act rank: the ranks of the best 9 wins", english)
+        self.assertIn("Victory", english)
         self.assertIn('<li class="win">W</li><li class="loss">L</li>', english)
 
     def test_rr_is_asked_only_where_it_shows(self):

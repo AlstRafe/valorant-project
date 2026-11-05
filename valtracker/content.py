@@ -108,12 +108,22 @@ class Content:
                 found[address] = item
         return found
 
-    def tiers(self, lang: str) -> dict:
-        """The current rank table: tier number -> {"tierName", "smallIcon", "color", ...}."""
-        episodes = [item for item in self._list("competitivetiers", lang) if isinstance(item, dict)]
-        if not episodes:
+    def tiers(self, lang: str, old: bool = False) -> dict:
+        """The rank table: tier number -> {"tierName", "smallIcon", "rankTriangleUpIcon", ...}. The current one,
+        or with ``old`` the one before Ascendant (Episodes 1-4: up to 24, Radiant), when it is there."""
+        tables = []
+        for item in self._list("competitivetiers", lang):
+            if isinstance(item, dict):
+                table = {int(tier["tier"]): tier for tier in item.get("tiers") or [] if isinstance(tier, dict)}
+                if table:
+                    tables.append(table)
+        if not tables:
             return {}
-        return {int(tier["tier"]): tier for tier in episodes[-1].get("tiers") or [] if isinstance(tier, dict)}
+        if old:
+            before = [table for table in tables if max(table) <= 24]
+            if before:
+                return before[-1]
+        return tables[-1]
 
 
 def media_path(url) -> str | None:

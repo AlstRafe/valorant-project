@@ -629,6 +629,108 @@ button.quiet {
 .down {
   color: var(--loss);
 }
+/* The act rank: the badge the game calls it by (a triangle of the best wins' ranks, "onigiri") and the act's
+   numbers beside it; one act at a time, picked from the list. */
+.acts {
+  margin-top: 1.5rem;
+}
+.acts-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+.acts-head h2 {
+  margin: 0;
+}
+.acts-head select {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.92rem;
+}
+.act-name {
+  color: var(--soft);
+  font-weight: 700;
+}
+.act {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 0.6rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.act[hidden] {
+  display: none;
+}
+.onigiri {
+  flex: none;
+  --w: 2.6rem;
+}
+.tri-row {
+  display: flex;
+  justify-content: center;
+}
+.tri {
+  display: block;
+  width: var(--w);
+  height: calc(var(--w) * 0.866);
+  object-fit: fill;
+}
+.tri + .tri {
+  margin-left: calc(var(--w) / -2);
+}
+span.tri {
+  background: var(--rule);
+}
+span.tri.won {
+  background: var(--accent); /* a win whose rank has no picture */
+}
+span.tri.up {
+  clip-path: polygon(50% 6%, 95% 97%, 5% 97%);
+}
+span.tri.down {
+  clip-path: polygon(5% 3%, 95% 3%, 50% 94%);
+}
+.act-numbers {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+}
+.act-numbers dt {
+  color: var(--soft);
+  font-size: 0.82rem;
+}
+.act-numbers dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.45rem;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.act-numbers small {
+  color: var(--soft);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+@media (max-width: 30rem) {
+  .act {
+    gap: 1rem;
+    padding: 0.9rem;
+  }
+  .onigiri {
+    --w: 2.1rem;
+  }
+}
+
 /* The mode filter above a player's matches; on a phone one row that scrolls sideways, like the game's own. */
 .modes {
   display: flex;

@@ -36,15 +36,31 @@
 <p class="value">{% if peak.icon %}<img src="{{ media(peak.icon) }}" alt="" width="40" height="40">{% endif %}<span>{{ peak.name }}</span></p>
 </div>
 {% endif %}
-{% if standing.act %}
-<div class="rank">
-<p class="label">{{ t('{act} の成績', act=standing.act.name) }}</p>
-<p class="value"><span>{{ t('勝率') }} {{ standing.act.win_rate }}%</span></p>
-<p class="sub">{{ t('{games}試合', games=standing.act.games) }} · {{ t('{wins}勝', wins=standing.act.wins) }}</p>
-</div>
-{% endif %}
 </div>
 </section>
+
+{% if acts %}
+<section class="acts" aria-labelledby="act-title">
+<div class="acts-head">
+<h2 id="act-title">{{ t('アクトランク') }}</h2>
+{% if acts|length > 1 %}<select id="act-pick" aria-label="{{ t('アクト') }}" hidden>
+{% for act in acts %}<option value="{{ act.key }}">{{ act.name }}</option>
+{% endfor %}</select>{% else %}<span class="act-name">{{ acts[0].name }}</span>{% endif %}
+</div>
+{% for act in acts %}
+<div class="act" data-act="{{ act.key }}"{% if not loop.first %} hidden{% endif %}>
+<div class="onigiri" role="img" aria-label="{{ t('{act} のアクトランク：上位 {count} 勝のランク', act=act.name, count=act.shown) }}">
+{% for row in act.rows %}<div class="tri-row">{% for slot in row %}{% if slot.icon %}<img class="tri" src="{{ media(slot.icon) }}" alt="" width="42" height="36" loading="lazy">{% else %}<span class="tri {{ 'up' if slot.up else 'down' }}{% if slot.tier %} won{% endif %}"></span>{% endif %}{% endfor %}</div>
+{% endfor %}</div>
+<dl class="act-numbers">
+<div><dt>{{ t('最終ランク') }}</dt><dd>{% if act.end.tier > 2 %}{% if act.end.icon %}<img src="{{ media(act.end.icon) }}" alt="" width="28" height="28" loading="lazy">{% endif %}<span>{{ act.end.name }}</span>{% else %}<span>{{ t('ランクなし') }}</span>{% endif %}</dd></div>
+<div><dt>{{ t('勝率') }}</dt><dd><span>{{ act.win_rate }}%</span><small>{{ t('{games}試合', games=act.games) }} · {{ t('{wins}勝', wins=act.wins) }}</small></dd></div>
+{% if act.board %}<div><dt>{{ t('リーダーボード') }}</dt><dd><span>#{{ act.board }}</span></dd></div>{% endif %}
+</dl>
+</div>
+{% endfor %}
+</section>
+{% endif %}
 
 <div id="games">
 <nav class="modes" aria-label="{{ t('モード') }}">
@@ -91,8 +107,8 @@
 <span class="score">
 {% if row.result.rounds %}<strong>{{ row.result.us }}–{{ row.result.them }}</strong>
 {% elif row.result.won is none %}<strong>{{ t('{place}位', place=row.placing.place) }}</strong>
-{% else %}<strong>{% if outcome == 'win' %}{{ t('勝ち') }}{% else %}{{ t('負け') }}{% endif %}</strong>{% endif %}
-<small>{% if not row.result.rounds and row.result.won is none %}{{ t('{count}人中', count=row.placing.of) }}{% elif row.result.rounds %}{% if outcome == 'win' %}{{ t('勝ち') }}{% elif outcome == 'loss' %}{{ t('負け') }}{% else %}{{ t('引き分け') }}{% endif %}{% endif %}{% if row.rr is not none %}{% if row.result.rounds %} · {% endif %}<span class="{{ 'up' if row.rr > 0 else ('down' if row.rr < 0 else '') }}">{{ '%+d'|format(row.rr) }} RR</span>{% endif %}</small>
+{% else %}<strong>{% if outcome == 'win' %}{{ t('勝利') }}{% else %}{{ t('敗北') }}{% endif %}</strong>{% endif %}
+<small>{% if not row.result.rounds and row.result.won is none %}{{ t('{count}人中', count=row.placing.of) }}{% elif row.result.rounds %}{% if outcome == 'win' %}{{ t('勝利') }}{% elif outcome == 'loss' %}{{ t('敗北') }}{% else %}{{ t('引き分け') }}{% endif %}{% endif %}{% if row.rr is not none %}{% if row.result.rounds %} · {% endif %}<span class="{{ 'up' if row.rr > 0 else ('down' if row.rr < 0 else '') }}">{{ '%+d'|format(row.rr) }} RR</span>{% endif %}</small>
 </span>
 <span class="kda"><strong>{{ row.line.kills }} / {{ row.line.deaths }} / {{ row.line.assists }}</strong><small>{% if row.rounds %}ACS {{ row.line.acs }} · {% endif %}HS {{ row.line.hs }}%</small></span>
 </a>

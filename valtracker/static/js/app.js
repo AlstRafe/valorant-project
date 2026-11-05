@@ -127,6 +127,18 @@
     });
   }
 
+  // The act rank: every act is on the page; the list shows the one chosen (without a script, the latest).
+  function acts() {
+    var pick = document.getElementById("act-pick");
+    if (!pick || !pick.hidden) return;
+    pick.hidden = false;
+    pick.addEventListener("change", function () {
+      document.querySelectorAll(".act").forEach(function (act) {
+        act.hidden = act.getAttribute("data-act") !== pick.value;
+      });
+    });
+  }
+
   // A mode further along the row (Premier on a phone) is scrolled into sight.
   function chosen() {
     var current = document.querySelector(".modes a[aria-current]");
@@ -168,6 +180,7 @@
           profile();
         }
         chosen();
+        acts();
         times();
       })
       .catch(failed);
@@ -206,6 +219,7 @@
   document.addEventListener("DOMContentLoaded", function () {
     part();
     chosen();
+    acts();
     profile();
     lists();
     times();
