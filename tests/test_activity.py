@@ -114,6 +114,20 @@ class ActivityTest(unittest.TestCase):
         self.activity._db = None
 
 
+class StreakTest(unittest.TestCase):
+    def test_streak(self):
+        from valtracker.views import _streak
+
+        def rows(*results, standard=True):
+            return [{"result": {"won": won}, "standard": standard} for won in results]
+
+        self.assertEqual(_streak(rows(True, True, True, False)), {"won": True, "count": 3})
+        self.assertEqual(_streak(rows(False, False)), {"won": False, "count": 2})
+        self.assertIsNone(_streak(rows(True, False, True)), "one is not a streak")
+        self.assertIsNone(_streak(rows(None, True, True)), "a draw ends it")
+        self.assertIsNone(_streak(rows(True, True, standard=False)), "deathmatch and the like are left out")
+
+
 class CollectorTest(unittest.TestCase):
     def setUp(self):
         folder = tempfile.TemporaryDirectory()
@@ -140,6 +154,15 @@ class CollectorTest(unittest.TestCase):
         collector.looked.update(f"p5-{i}" for i in range(9))
         region, puuid = collector.pick()
         self.assertEqual((region, puuid), ("ap", "low"), "no low rank looked at yet")
+
+    def test_now_and_then_a_region_not_looked_at_yet(self):
+        collector = Collector(self.activity, self.henrik, 0)
+        collector.regions = {"ap": 9, "kr": 3, "eu": 3, "na": 3, "latam": 3}
+        self.activity.candidates.append(("ap", "someone", 16))
+        with mock.patch("valtracker.activity.random.random", return_value=0.05):
+            collector.once()
+        self.assertEqual(self.henrik.leaderboard.call_args.args[0], "br", "the region looked at least")
+        self.assertEqual(collector.regions["br"], 1)
 
     def test_does_nothing_without_a_key(self):
         self.henrik.key.return_value = ""
@@ -266,6 +289,17 @@ class PagesTest(unittest.TestCase):
         text = self.page("/")
         for path in ("/leaderboard", "/servers", "/queues", "/crosshair", "/sensitivity"):
             self.assertIn(f'href="{path}"', text.split('class="quick"')[1].split("</nav>")[0])
+
+    def test_agents_by_role(self):
+        text = self.page("/agents")
+        self.assertIn("ジェット", text)
+        self.assertIn("ソーヴァ", text)
+        self.assertIn('href="/agents?role=dbe8757e-9e92-4ed4-b39f-9dfc589691d4"', text)
+        text = self.page("/agents?role=dbe8757e-9e92-4ed4-b39f-9dfc589691d4")
+        grid = text.split('class="agent-grid"')[1]
+        self.assertIn("ジェット", grid)
+        self.assertNotIn("ソーヴァ", grid)
+        self.assertIn("ソーヴァ", self.page("/agents?role=nothing").split('class="agent-grid"')[1])
 
     def test_queues_for_visitors_without_riot(self):
         text = self.page("/queues", 200, environ_base=VISITOR)

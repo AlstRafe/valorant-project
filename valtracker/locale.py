@@ -649,6 +649,9 @@ TEXTS = {
         "en-GB": "{player}'s rank, RR, recent matches and stats by agent.",
         "zh-TW": "{player} 的牌位、RR、近期對戰與各特務戰績。",
     },
+    "{count} 連勝中": {"ko": "{count}연승 중", "en-GB": "{count} wins in a row", "zh-TW": "{count} 連勝中"},
+    "{count} 連敗中": {"ko": "{count}연패 중", "en-GB": "{count} losses in a row", "zh-TW": "{count} 連敗中"},
+    "ロール": {"ko": "역할", "en-GB": "Role", "zh-TW": "角色"},
     "非公開": {"ko": "비공개", "en-GB": "Hidden", "zh-TW": "未公開"},
     "{count} 件": {"ko": "{count}건", "en-GB": "{count} samples", "zh-TW": "{count} 筆"},
     "同じ人が続けて遊んだ 2 試合の、前の試合の終わりから次の始まりまでです。マッチングに加えてエージェント選択と読み込みの時間も入っています。": {

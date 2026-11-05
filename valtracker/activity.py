@@ -26,6 +26,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+#: The regions the collector goes round (HenrikDev's names).
+REGIONS = ("ap", "kr", "eu", "na", "latam", "br")
 #: Rows older than this are dropped.
 KEEP_DAYS = 28
 #: The days the pages count.
@@ -295,6 +297,8 @@ class Collector:
         self._started = False
         self._lock = threading.Lock()
         self.looked: set[str] = set()
+        #: how many players of each region were looked at
+        self.regions: dict[str, int] = {}
 
     def start(self) -> None:
         with self._lock:
@@ -312,32 +316,35 @@ class Collector:
                 pass
 
     def pick(self) -> tuple[str, str] | None:
-        """A player not looked at yet, from the rank band with the fewest of them so far."""
+        """A player not looked at yet: from the region, then the rank band, with the fewest of them so far."""
         fresh = [item for item in self.activity.candidates if item[1] not in self.looked and item[0]]
         if not fresh:
             return None
-        counts: dict[str, int] = {}
+        bands: dict[str, int] = {}
         for _, puuid, tier in self.activity.candidates:
             if puuid in self.looked:
-                counts[band(tier)] = counts.get(band(tier), 0) + 1
-        fresh.sort(key=lambda item: (counts.get(band(item[2]), 0), random.random()))
+                bands[band(tier)] = bands.get(band(tier), 0) + 1
+        fresh.sort(key=lambda item: (self.regions.get(item[0], 0), bands.get(band(item[2]), 0), random.random()))
         region, puuid, _ = fresh[0]
         return region, puuid
 
     def once(self) -> int:
-        """One player's latest matches into the numbers; how many matches were new."""
+        """One player's latest matches into the numbers; how many matches were new. Now and then (and when no one
+        is left to look at) a player of the leaderboard of the region looked at least, so every region fills."""
         if not self.henrik.key():
             return 0
         chosen = self.pick()
-        if chosen is None:  # nothing seen yet: a player of a leaderboard to start from
-            region = random.choice(("ap", "kr", "eu", "na", "latam", "br"))
+        if chosen is None or random.random() < 0.1:
+            region = min(REGIONS, key=lambda key: (self.regions.get(key, 0), random.random()))
             board = self.henrik.leaderboard(region)
             players = [item for item in board.get("players") or [] if item.get("puuid") and not item.get("hidden")]
-            if not players:
-                return 0
-            chosen = (region, random.choice(players)["puuid"])
+            if players:
+                chosen = (region, random.choice(players)["puuid"])
+        if chosen is None:
+            return 0
         region, puuid = chosen
         self.looked.add(puuid)
+        self.regions[region] = self.regions.get(region, 0) + 1
         if len(self.looked) > 20 * CANDIDATES:
             self.looked.clear()
         return self.activity.seen(self.henrik.matches_by_puuid(region, puuid), puuid)

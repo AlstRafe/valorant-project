@@ -90,7 +90,7 @@
 <section class="summary" aria-labelledby="sum-title">
 <h2 id="sum-title">{{ t('直近 {count} 試合', count=summary.games) }}{% if summary.left_out and not mode %} <small>{{ t('デスマッチなどは除く') }}</small>{% endif %}</h2>
 <dl class="numbers">
-{% if summary.decided %}<div><dt>{{ t('勝率') }}</dt><dd>{{ summary.win_rate }}%<small>{{ t('{wins}勝 {losses}敗', wins=summary.wins, losses=summary.losses) }}</small></dd></div>{% endif %}
+{% if summary.decided %}<div><dt>{{ t('勝率') }}</dt><dd>{{ summary.win_rate }}%<small>{{ t('{wins}勝 {losses}敗', wins=summary.wins, losses=summary.losses) }}{% if summary.streak %} · <span class="{{ 'up' if summary.streak.won else 'down' }}">{{ t('{count} 連勝中', count=summary.streak.count) if summary.streak.won else t('{count} 連敗中', count=summary.streak.count) }}</span>{% endif %}</small></dd></div>{% endif %}
 <div><dt>K / D / A</dt><dd>{{ summary.kills }}/{{ summary.deaths }}/{{ summary.assists }}<small>KD {{ summary.kd }}</small></dd></div>
 {% if summary.acs is not none %}<div><dt>ACS</dt><dd>{{ summary.acs }}<small>ADR {{ summary.adr }}</small></dd></div>{% endif %}
 <div><dt>{{ t('HS率') }}</dt><dd>{{ summary.hs }}%</dd></div>

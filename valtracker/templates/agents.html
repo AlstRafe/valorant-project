@@ -6,9 +6,13 @@
 <h1>{{ t('エージェント') }}</h1>
 <p class="lead">{{ t('役割とアビリティの説明です。') }}</p>
 </section>
-{% if not agents %}
+{% if not every %}
 <p class="problem" role="alert">{{ t('エージェントの一覧を取得できませんでした。時間をおいてもう一度どうぞ。') }}</p>
 {% else %}
+{% if roles|length > 1 %}<nav class="modes" aria-label="{{ t('ロール') }}">
+<a href="{{ url_for('agents') }}"{% if not role %} aria-current="true"{% endif %}>{{ t('すべて') }}</a>
+{% for key, item in roles %}<a href="{{ url_for('agents', role=key) }}"{% if role == key %} aria-current="true"{% endif %}>{{ item.displayName }}</a>
+{% endfor %}</nav>{% endif %}
 <ul class="agent-grid">
 {% for agent in agents %}
 <li><a href="{{ url_for('agent', uuid=agent.uuid) }}">{% if agent.displayIcon %}<img src="{{ media(agent.displayIcon) }}" alt="" width="96" height="96" loading="lazy">{% endif %}<strong>{{ agent.displayName }}</strong><small>{{ (agent.role or {}).displayName }}</small></a></li>

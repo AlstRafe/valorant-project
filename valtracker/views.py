@@ -329,6 +329,15 @@ def _next_rank(rank: dict | None, rr, rr_changes: dict) -> dict | None:
     }
 
 
+def _streak(rows: list[dict]) -> dict | None:
+    """The wins or losses in a row up to the latest match (newest first; a draw ends it): two or more, or None."""
+    results = [row["result"]["won"] for row in rows if row["standard"]]
+    if not results or results[0] is None:
+        return None
+    count = next((index for index, won in enumerate(results) if won is not results[0]), len(results))
+    return {"won": results[0], "count": count} if count >= 2 else None
+
+
 def _weapon_said(rows: list[dict], key: str) -> str:
     """HenrikDev's own name of a weapon (English), for one valorant-api.com does not know."""
     for row in rows:
@@ -458,6 +467,7 @@ def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
             "minutes": round(sum(row["length"] for row in played_today) / 60000),
         }
     if summary:
+        summary["streak"] = _streak(rows)
         for weapon in summary["weapons"]:
             weapon.update(_weapon(weapon["key"], _weapon_said(rows, weapon["key"])))
         summary["lobby"] = _lobby_rows(summary["lobby"])
@@ -696,8 +706,18 @@ def register(app: Flask) -> None:
 
     @app.get("/agents")
     def agents():
+        """Every agent, or the ones of a role (``?role=`` its uuid): the roles as links above the list."""
         listed = current_app.config["VAL_CONTENT"].agents(g.lang)
-        return render_template("agents.html", agents=listed)
+        roles: dict[str, dict] = {}
+        for item in listed:
+            role = item.get("role") or {}
+            if role.get("uuid"):
+                roles.setdefault(str(role["uuid"]).lower(), role)
+        chosen = request.args.get("role", "").lower()
+        chosen = chosen if chosen in roles else ""
+        shown = [item for item in listed if not chosen or str((item.get("role") or {}).get("uuid")).lower() == chosen]
+        ordered = sorted(roles.items(), key=lambda pair: str(pair[1].get("displayName") or ""))
+        return render_template("agents.html", agents=shown, roles=ordered, role=chosen, every=bool(listed))
 
     @app.get("/agents/<uuid>")
     def agent(uuid: str):
