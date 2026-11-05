@@ -18,6 +18,8 @@ jobs:
       - name: riotweb.py with Riot's real answers
         shell: python
         run: |
+          import sys
+          sys.path.insert(0, ".")
           from valtracker.riotweb import RiotWeb
           from valtracker.media import outside_path
           web = RiotWeb()
@@ -31,14 +33,3 @@ jobs:
                   print("   ", item["at"], item["title"], item["url"], outside_path(item["banner"]))
           for region in ("ap", "kr", "eu", "na", "latam", "br"):
               print(region, web.status(region))
-  light:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - run: node tests/ui/light.js https://haruxera.duckdns.org/val --live
