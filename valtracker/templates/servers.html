@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ t('サーバーの混み具合') }} · {{ region_name }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('サーバーごとに、どの時間に試合が多いかと、次の試合が始まるまでの時間です。') }}{% endblock %}
 {% block main %}
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">
@@ -9,6 +10,7 @@
 <nav class="modes" aria-label="{{ t('地域') }}">
 {% for item in regions %}<a href="{{ item.url }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
 {% endfor %}</nav>
+<p class="note"><a href="{{ url_for('status', region=region) }}">{{ t('この地域のメンテナンス・障害のお知らせ') }}</a></p>
 <p class="note estimate">{{ t('Riot は接続人数も待ち時間も公開していません。ここの数はこのサイトが見た試合（ここ 14 日、{count} 試合）から出した目安です。', count='{:,}'.format(matches)) }}</p>
 {% if not servers %}
 <p class="note">{{ t('この地域の試合はまだ集まっていません。誰かの戦績が見られるたびに増えていきます。') }}</p>

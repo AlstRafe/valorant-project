@@ -10,7 +10,14 @@
 <button type="submit">{{ t('検索') }}</button>
 </form>
 {% if problem %}<p class="problem" id="q-problem" role="alert">{{ problem }}</p>{% endif %}
-<p class="note"><a href="{{ url_for('tools') }}#china">{{ t('中国大陸版（无畏契约）のアカウントは？') }}</a></p>
+<nav class="quick" aria-label="{{ t('ほかにできること') }}">
+<a href="{{ url_for('leaderboard') }}">{{ t('ランキング') }}</a>
+<a href="{{ url_for('servers') }}">{{ t('サーバーの混み具合') }}</a>
+<a href="{{ url_for('queue_settings') }}">{{ t('マップとパーティー') }}</a>
+<a href="{{ url_for('crosshair') }}">{{ t('クロスヘア') }}</a>
+<a href="{{ url_for('sensitivity') }}">{{ t('感度の換算') }}</a>
+</nav>
+<p class="note china-link"><a href="{{ url_for('tools') }}#china">{{ t('中国大陸版（无畏契约）のアカウントは？') }}</a></p>
 </section>
 
 <section class="people" aria-labelledby="fav-title">

@@ -216,6 +216,7 @@
         times();
         days();
         share();
+        showCopies();
       })
       .catch(failed);
   }
@@ -248,12 +249,36 @@
     });
   }
 
-  // [data-copy]: its words to the clipboard (a crosshair code), and the button says so for a moment.
+  // [data-copy]: its words to the clipboard (a crosshair code, a Riot ID), and the button says so for a moment.
+  // One that is only a picture (an icon) keeps it, and says so to screen readers and in its title instead.
+  function showCopies() {
+    if (!navigator.clipboard) return;
+    document.querySelectorAll("[data-copy][hidden]").forEach(function (button) {
+      button.hidden = false;
+    });
+  }
   function copies() {
+    if (!navigator.clipboard) return;
+    showCopies();
     document.addEventListener("click", function (e) {
       var button = e.target.closest ? e.target.closest("[data-copy]") : null;
-      if (!button || !navigator.clipboard) return;
+      if (!button) return;
       navigator.clipboard.writeText(button.getAttribute("data-copy")).then(function () {
+        if (button.querySelector("svg")) {
+          var said = button.querySelector("[role=status]") || button.appendChild(document.createElement("span"));
+          var title = button.title;
+          said.className = "sr";
+          said.setAttribute("role", "status");
+          said.textContent = button.getAttribute("data-done");
+          button.setAttribute("data-state", "copied");
+          button.title = said.textContent;
+          setTimeout(function () {
+            button.removeAttribute("data-state");
+            button.title = title;
+            said.textContent = "";
+          }, 1600);
+          return;
+        }
         var before = button.textContent;
         button.textContent = button.getAttribute("data-done") || before;
         setTimeout(function () {
@@ -436,6 +461,15 @@
     });
     document.addEventListener("focusout", function () {
       document.body.classList.remove("typing");
+    });
+    // "/" goes to the page's search box (as on GitHub and YouTube), unless one is being typed in already.
+    document.addEventListener("keydown", function (e) {
+      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey || e.target.closest("input, textarea, select")) return;
+      var box = document.querySelector("form.search input:not([type=hidden])");
+      if (!box) return;
+      e.preventDefault();
+      box.focus();
+      box.select();
     });
   }
 

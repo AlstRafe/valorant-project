@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ t('サーバー状況') }} · {{ region_name }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('Riot が出しているメンテナンスと障害のお知らせです（PC 版）。') }}{% endblock %}
 {% block main %}
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">

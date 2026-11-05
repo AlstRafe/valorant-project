@@ -632,6 +632,23 @@ TEXTS = {
         "en-GB": "Quiet: {start}:00–{end}:00",
         "zh-TW": "較空：{start}～{end} 點",
     },
+    "Riot ID をコピーしました": {"ko": "Riot ID를 복사했습니다", "en-GB": "Riot ID copied", "zh-TW": "已複製 Riot ID"},
+    "Riot ID をコピー（ゲームのフレンド追加に）": {
+        "ko": "Riot ID 복사 (게임에서 친구 추가용)",
+        "en-GB": "Copy the Riot ID (to add them as a friend in the game)",
+        "zh-TW": "複製 Riot ID（在遊戲中加好友用）",
+    },
+    "この地域のメンテナンス・障害のお知らせ": {
+        "ko": "이 지역의 점검·장애 공지",
+        "en-GB": "Maintenance and incidents in this region",
+        "zh-TW": "這個地區的維護與異常公告",
+    },
+    "ほかにできること": {"ko": "그 밖에 할 수 있는 것", "en-GB": "More to do", "zh-TW": "其他功能"},
+    "{player} のランク・RR・最近の試合・エージェント別の成績。": {
+        "ko": "{player}의 랭크·RR·최근 경기·요원별 성적.",
+        "en-GB": "{player}'s rank, RR, recent matches and stats by agent.",
+        "zh-TW": "{player} 的牌位、RR、近期對戰與各特務戰績。",
+    },
     "非公開": {"ko": "비공개", "en-GB": "Hidden", "zh-TW": "未公開"},
     "{count} 件": {"ko": "{count}건", "en-GB": "{count} samples", "zh-TW": "{count} 筆"},
     "同じ人が続けて遊んだ 2 試合の、前の試合の終わりから次の始まりまでです。マッチングに加えてエージェント選択と読み込みの時間も入っています。": {

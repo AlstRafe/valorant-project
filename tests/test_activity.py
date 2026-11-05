@@ -256,6 +256,17 @@ class PagesTest(unittest.TestCase):
         self.assertRegex(today, r"\d勝 \d敗")
         self.assertIn(" RR", today, "the RR of today's matches")
 
+    def test_player_page_extras(self):
+        text = self.page("/p/Tester/JP1?full=1")
+        self.assertIn('data-copy="Tester#JP1"', text, "the Riot ID to copy for a friend request")
+        self.assertIn('<meta name="description" content="Tester#JP1 のランク', text)
+        self.assertIn('<meta property="og:description" content="Tester#JP1 のランク', text)
+
+    def test_top_page_leads_a_first_visit_on(self):
+        text = self.page("/")
+        for path in ("/leaderboard", "/servers", "/queues", "/crosshair", "/sensitivity"):
+            self.assertIn(f'href="{path}"', text.split('class="quick"')[1].split("</nav>")[0])
+
     def test_queues_for_visitors_without_riot(self):
         text = self.page("/queues", 200, environ_base=VISITOR)
         self.assertIn("いまはゲームの設定を読めません", text)

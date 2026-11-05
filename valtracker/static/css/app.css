@@ -612,6 +612,36 @@ button.quiet {
     min-height: 2.5rem;
   }
 }
+/* Copy the Riot ID (to add the player as a friend in the game): it stays beside the tag */
+.tagged {
+  white-space: nowrap;
+}
+.id-copy {
+  display: inline-grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  min-height: 0;
+  margin-left: 0.4rem;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--soft);
+  vertical-align: 0.15rem;
+}
+.id-copy svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+.id-copy[data-state="copied"] {
+  border-color: var(--win);
+  color: var(--win);
+}
 .fav[data-state="copied"] {
   border-color: var(--win);
   color: var(--win);
@@ -799,6 +829,36 @@ span.tri.down {
   .onigiri {
     --w: 2.1rem;
   }
+}
+
+/* The top page's other things to do, for a first visit (nothing saved yet): small links that wrap. */
+.quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+.quick a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25rem;
+  padding: 0 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+.quick a:hover {
+  border-color: var(--accent);
+}
+.china-link {
+  margin: 0.8rem 0 0;
+  font-size: 0.85rem;
+}
+.china-link a {
+  color: var(--soft);
 }
 
 /* The mode filter above a player's matches; on a phone one row that scrolls sideways, like the game's own. */

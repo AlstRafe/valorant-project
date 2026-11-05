@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ agent.displayName }} · {{ site_name }}{% endblock %}
+{% block description %}{{ agent.description or t('役割とアビリティの説明です。') }}{% endblock %}
 {% block main %}
 <section class="agent-head">
 {% if agent.fullPortrait or agent.displayIcon %}<img class="portrait" src="{{ media(agent.fullPortrait or agent.displayIcon) }}" alt="" width="240" height="240">{% endif %}

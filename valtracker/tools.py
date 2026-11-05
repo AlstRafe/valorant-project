@@ -407,6 +407,7 @@ def register(app: Flask) -> None:
         region = _region()
         values = _servers_page(region)
         values["regions"] = _regions("servers", region)
+        values["region"] = region
         values["region_name"] = _t(REGION_NAMES[region])
         return render_template("servers.html", **values)
 

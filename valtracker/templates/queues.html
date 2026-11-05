@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ t('マップとパーティー') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('いまどのモードでどのマップが出るかと、誰とならコンペティティブに一緒に行けるかを、ゲームの設定から読んでいます。') }}{% endblock %}
 {% block main %}
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">

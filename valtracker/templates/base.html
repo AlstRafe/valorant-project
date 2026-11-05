@@ -9,10 +9,10 @@
 <meta name="theme-color" content="#161513" media="(prefers-color-scheme: dark)">
 <script>{{ theme_script|safe }}</script>
 <title>{% block title %}{{ site_name }}{% endblock %}</title>
-<meta name="description" content="{{ t('VALORANT のプレイヤーのランクと最近の試合、エージェントの能力を、スマホでもすぐ見られるトラッカー。') }}">
+<meta name="description" content="{% block description %}{{ t('VALORANT のプレイヤーのランクと最近の試合、エージェントの能力を、スマホでもすぐ見られるトラッカー。') }}{% endblock %}">
 <meta property="og:type" content="website">
 <meta property="og:title" content="{{ self.title() }}">
-<meta property="og:description" content="{{ t('VALORANT のプレイヤーのランクと最近の試合、エージェントの能力を、スマホでもすぐ見られるトラッカー。') }}">
+<meta property="og:description" content="{{ self.description() }}">
 <meta property="og:url" content="{{ request.base_url }}">
 <meta property="og:locale" content="{{ locale }}">
 <meta property="og:image" content="{{ asset('og.png', external=True) }}">

@@ -13,7 +13,7 @@
 {% if wide %}<img class="wide" src="{{ wide }}" alt="" width="452" height="128">{% endif %}
 {% if card %}<img class="card" src="{{ media('https://media.valorant-api.com/playercards/' ~ card ~ '/smallart.png') }}" alt="" width="64" height="64">{% endif %}
 <div class="who">
-<h1>{{ name }}<span class="tag">#{{ tag }}</span></h1>
+<h1>{{ name }}<span class="tagged"><span class="tag">#{{ tag }}</span><button type="button" class="id-copy" data-copy="{{ name }}#{{ tag }}" data-done="{{ t('Riot ID をコピーしました') }}" title="{{ t('Riot ID をコピー（ゲームのフレンド追加に）') }}" aria-label="{{ t('Riot ID をコピー（ゲームのフレンド追加に）') }}" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></svg></button></span></h1>
 <p class="meta">{{ t('レベル {level}', level=account.account_level or '–') }} · {{ region|upper }}</p>
 </div>
 <button type="button" class="fav" id="share" data-copied="{{ t('リンクをコピーしました') }}" title="{{ t('共有') }}" aria-label="{{ t('共有') }}" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1"/></svg></button>
@@ -27,7 +27,7 @@
 <p class="sub">{{ rr }} RR{% if last_change %} <span class="{{ 'up' if last_change > 0 else 'down' }}">({{ '%+d'|format(last_change) }})</span>{% endif %}</p>
 {% if rank.tier < 24 %}<progress class="rr-bar" max="100" value="{{ [rr or 0, 100]|min }}" aria-label="RR {{ rr or 0 }} / 100"></progress>{% endif %}
 {% if next_rank %}<p class="sub next">{{ t('{rank} まであと {rr} RR', rank=next_rank.rank.name, rr=next_rank.need) }}{% if next_rank.wins %} · {{ t('平均 +{gain} なら約 {wins} 勝', gain=next_rank.gain, wins=next_rank.wins) }}{% endif %}{% if next_rank.matches %} · {{ t('いまの勝率と増減なら約 {matches} 試合', matches=next_rank.matches) }}{% elif next_rank.flat %} · {{ t('いまの勝率と増減だと横ばい（平均 −{loss}）', loss=next_rank.loss) }}{% endif %}</p>{% endif %}
-{% if act %}<p class="sub act">{{ act.text }}</p>{% endif %}
+{% if act %}<p class="sub act-left">{{ act.text }}</p>{% endif %}
 {% else %}
 <p class="value"><span>{{ t('ランクなし') }}</span></p>
 {% if standing.placements %}<p class="sub">{{ t('ランク決定まであと {count} 試合', count=standing.placements) }}</p>{% endif %}
