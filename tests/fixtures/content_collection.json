@@ -6,7 +6,7 @@
    "category": "EEquippableCategory::Rifle",
    "defaultSkinUuid": "aa000000-0000-4000-8000-000000000009",
    "displayIcon": "https://media.valorant-api.com/weapons/9c82e19d-4575-0200-1a81-3eacf00cf872/displayicon.png",
-   "killStreamIcon": "x",
+   "killStreamIcon": "https://media.valorant-api.com/weapons/9c82e19d-4575-0200-1a81-3eacf00cf872/killstreamicon.png",
    "assetPath": "x",
    "weaponStats": {
     "fireRate": 9.75,

@@ -5,7 +5,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from helpers import FakeFetch, fixture
 
-from valtracker import paths, stats
+from valtracker import paths, rounds, stats
 from valtracker.cache import Budget, TTLCache
 from valtracker.henrik import Henrik, HenrikError, _slim_mmr, _slim_rr, split_riot_id
 from valtracker.hosting import site
@@ -56,8 +56,13 @@ class HenrikTest(unittest.TestCase):
 
     def test_matches_are_kept_without_rounds_and_kills(self):
         matches = self.henrik.matches("ap", "Tester", "JP1")
-        self.assertEqual(set(matches[0]), {"metadata", "players", "teams"})
+        self.assertEqual(set(matches[0]), {"metadata", "players", "teams", "digest"})
         self.assertNotIn("ability_casts", matches[0]["players"][0])
+        # what the pages use of the rounds and kills is kept, small (rounds.py)
+        digest = matches[0]["digest"]
+        self.assertEqual(len(digest["rounds"]), 22)
+        self.assertEqual(digest["kills"][0], [0, 10000, 0, 2, VANDAL_OR_CLASSIC, [1]])
+        self.assertEqual(matches[1]["digest"], {}, "a match without rounds or kills")
         mmr = self.henrik.mmr("ap", "Tester", "JP1")
         self.assertEqual(set(mmr), {"current", "peak", "seasons"})
         latest = mmr["seasons"][0]
@@ -77,12 +82,28 @@ class HenrikTest(unittest.TestCase):
 
     def test_rr_changes(self):
         changes = self.henrik.rr_changes("ap", "Tester", "JP1")
-        self.assertEqual(changes["aaaaaaaa-0000-4000-8000-000000000001"], {"change": 18, "tier": 21, "rr": 42})
+        self.assertEqual(
+            changes["aaaaaaaa-0000-4000-8000-000000000001"],
+            {"change": 18, "tier": 21, "rr": 42, "elo": 1842, "at": 1793761500},
+        )
         self.assertEqual(changes["aaaaaaaa-0000-4000-8000-000000000002"]["change"], -15)
         self.assertIn("/v1/mmr-history/ap/Tester/JP1", self.fetch.henrik_calls()[-1])
         # the newer answer's shape too, and nothing from what cannot be read
-        newer = {"history": [{"match_id": "m", "last_change": -3, "tier": {"id": 9}, "rr": 7}, {"match_id": "x"}, 5]}
-        self.assertEqual(_slim_rr(newer), {"m": {"change": -3, "tier": 9, "rr": 7}})
+        newer = {
+            "history": [
+                {
+                    "match_id": "m",
+                    "last_change": -3,
+                    "tier": {"id": 9},
+                    "rr": 7,
+                    "elo": 607,
+                    "date": "2026-11-04T12:00Z",
+                },
+                {"match_id": "x"},
+                5,
+            ]
+        }
+        self.assertEqual(_slim_rr(newer), {"m": {"change": -3, "tier": 9, "rr": 7, "elo": 607, "at": 1793793600}})
 
     def test_the_latest_15_matches_in_two_parts(self):
         # HenrikDev gives at most 10 matches an answer: the newest 10, then 5 more from the 10th
@@ -207,6 +228,145 @@ class StatsTest(unittest.TestCase):
     def test_nothing_to_sum(self):
         self.assertEqual(stats.summary([]), {})
         self.assertEqual(stats.line({}, 0)["acs"], 0)
+
+
+CLASSIC = "29a0cfab-485b-f5d5-779a-b59f85e204a8"
+VANDAL_OR_CLASSIC = CLASSIC  # the first round is a pistol round
+
+
+class RoundsTest(unittest.TestCase):
+    """The fixture's first match is told round by round (2 v 2, 13-9): Tester and Mate are Red, Foe and Other Blue."""
+
+    def setUp(self):
+        self.match = json.loads(fixture("henrik_matches.json"))["data"][0]
+        self.digest = rounds.digest(self.match)
+        self.me, self.mate, self.foe, self.other = self.digest["players"]
+
+    def test_first_kills_and_deaths(self):
+        self.assertEqual((self.me["fk"], self.me["fd"]), (13, 1))
+        self.assertEqual((self.foe["fk"], self.foe["fd"]), (9, 12))
+
+    def test_kast(self):
+        # Mate's round 1: an assist, then killed and traded by Tester 3 s later; round 2: killed, no trade
+        self.assertEqual((self.me["kast"], self.mate["kast"], self.me["rounds"]), (13, 13, 22))
+
+    def test_clutches_multi_kills_plants(self):
+        self.assertEqual((self.me["clutches"], self.me["clutch_best"]), (1, 1))  # round 1: last alive, 1 v 1, won
+        self.assertEqual(self.mate["clutches"], 1)  # round 15
+        self.assertEqual(self.other["clutches"], 0, "a clutch lost is not one")
+        self.assertEqual(self.me["mk"], [1, 0, 0, 0])
+        self.assertEqual((self.me["plants"], self.foe["plants"], self.mate["defuses"]), (1, 1, 1))
+
+    def test_rounds(self):
+        first, defused = self.digest["rounds"][0], self.digest["rounds"][14]
+        self.assertEqual(
+            (first["w"], first["e"], first["c"], first["s"], first["a"]), ("Red", "detonate", "clutch", "A", "Red")
+        )
+        self.assertEqual(first["l"], {"Red": 1600, "Blue": 1600})
+        self.assertEqual((defused["e"], defused["a"], defused["p"], defused["d"]), ("defuse", "Blue", 2, 1))
+        self.assertEqual(self.digest["sides"]["Red"], {"atk": [7, 12], "def": [6, 10]})
+        self.assertEqual(self.digest["weapons"][CLASSIC], "Classic")
+
+    def test_sides_follow_the_plants(self):
+        # a match whose blue team attacked first: every plant says so, and the guess turns round
+        for item in self.match["rounds"]:
+            if item.get("plant"):
+                item["plant"]["player"]["puuid"] = "puuid-3" if item["id"] < 12 else "puuid-me"
+        found = rounds.digest(self.match)
+        self.assertEqual(found["rounds"][0]["a"], "Blue")
+        self.assertEqual(found["rounds"][14]["a"], "Red")
+
+    def test_the_older_names(self):
+        # HenrikDev's v2 matches: other names for the same things
+        older = {
+            "metadata": {"queue": {"id": "competitive"}},
+            "players": [{"puuid": "a", "team_id": "Red"}, {"puuid": "b", "team_id": "Blue"}],
+            "rounds": [
+                {
+                    "winning_team": "Blue",
+                    "end_type": "Bomb defused",
+                    "bomb_planted": True,
+                    "plant_events": {"planted_by": {"puuid": "a"}, "plant_site": "C"},
+                    "bomb_defused": True,
+                    "defuse_events": {"defused_by": {"puuid": "b"}},
+                    "player_stats": [{"player_puuid": "a", "economy": {"loadout_value": 4000}}],
+                }
+            ],
+            "kills": [
+                {
+                    "round": 0,
+                    "kill_time_in_round": 900,
+                    "killer_puuid": "b",
+                    "victim_puuid": "a",
+                    "damage_weapon_name": "Ghost",
+                }
+            ],
+        }
+        found = rounds.digest(older)
+        self.assertEqual(
+            found["rounds"][0] | {"l": None},
+            {"w": "Blue", "e": "defuse", "c": "", "s": "C", "p": 0, "d": 1, "a": "Red", "l": None},
+        )
+        self.assertEqual(found["kills"], [[0, 900, 1, 0, "Ghost", []]])
+        self.assertEqual(found["players"][1]["weapons"], {"Ghost": 1})
+
+    def test_nothing_to_tell(self):
+        self.assertEqual(rounds.digest({"players": [], "rounds": [{"round": 0}], "kills": [{"kill": 0}]}), {})
+        self.assertEqual(rounds.digest({}), {})
+
+
+class MoreStatsTest(unittest.TestCase):
+    def setUp(self):
+        self.match = json.loads(fixture("henrik_matches.json"))["data"][0]
+        self.match["digest"] = rounds.digest(self.match)
+        self.me = stats.find_player(self.match, "puuid-me")
+
+    def test_the_line_with_the_rounds(self):
+        line = stats.line(self.me, 22, stats.advanced(self.match, self.me))
+        self.assertEqual((line["kast"], line["fk"], line["fd"], line["mk"], line["clutches"]), (59, 13, 1, 0, 1))
+        self.assertEqual(line["dd"], 91)  # (3000 - 1000) / 22
+        self.assertEqual(line["econ"], 50)  # 3000 damage for 60000 credits
+        self.assertIsNone(stats.line(self.me, 22)["kast"], "without the rounds: not known")
+
+    def test_lobby_and_mates(self):
+        lobby = stats.lobby(self.match, self.me, 22)
+        self.assertEqual(round(lobby["acs"]), 182)  # (182 + 227 + 136) / 3, team-mates and opponents alike
+        self.assertAlmostEqual(lobby["fk"], 9 / 3 / 22)
+        self.assertEqual([mate["name"] for mate in stats.mates(self.match, self.me)], ["Mate"])
+        self.assertIsNone(stats.lobby(self.match, self.me, 0))
+
+    def test_summary_by_agent_map_side(self):
+        row = {
+            "line": stats.line(self.me, 22, stats.advanced(self.match, self.me)),
+            "adv": stats.advanced(self.match, self.me),
+            "result": {"won": True, "rounds": True},
+            "rounds": 22,
+            "agent_id": "a",
+            "agent_name": "A",
+            "map": {"name": "Ascent"},
+            "side": self.match["digest"]["sides"]["Red"],
+            "length": 2400000,
+            "weapons": {"v": 3, "c": 1},
+            "lobby": stats.lobby(self.match, self.me, 22),
+            "mates": stats.mates(self.match, self.me),
+        }
+        lost = dict(row, result={"won": False, "rounds": True}, agent_id="b", agent_name="B")
+        summary = stats.summary([row, lost])
+        self.assertEqual((summary["kast"], summary["fk"], summary["clutches"], summary["minutes"]), (59, 26, 2, 80))
+        self.assertEqual([agent["name"] for agent in summary["agent_table"]], ["A", "B"])
+        self.assertEqual(summary["maps"][0] | {"image": None}, summary["maps"][0] | {"image": None})
+        self.assertEqual((summary["maps"][0]["games"], summary["maps"][0]["atk_rate"]), (2, 58))
+        self.assertEqual(summary["sides"]["def"], [12, 20])
+        self.assertEqual(summary["weapons"][0], {"key": "v", "kills": 6, "share": 75})
+        self.assertEqual(summary["aim"], {"head": 25, "body": 62, "leg": 13})
+        self.assertEqual(
+            summary["mates"][0] | {"puuid": ""},
+            {"puuid": "", "name": "Mate", "tag": "0001", "games": 2, "wins": 1, "losses": 1, "win_rate": 50},
+        )
+        acs = next(item for item in summary["lobby"] if item["key"] == "acs")
+        self.assertTrue(acs["better"])
+        fd = next(item for item in summary["lobby"] if item["key"] == "fd")
+        self.assertTrue(fd["better"], "fewer first deaths than the lobby is better")
 
 
 class HostingTest(unittest.TestCase):

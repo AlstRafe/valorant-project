@@ -11,9 +11,10 @@ from __future__ import annotations
 import json
 import re
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from urllib.parse import quote, urlencode
 
-from valtracker import net
+from valtracker import net, rounds
 from valtracker.cache import Budget, TTLCache
 
 BASE = "https://api.henrikdev.xyz"
@@ -40,10 +41,10 @@ MODES = {
     "escalation": "ggteam",
     "premier": "premier",
 }
-#: What the pages use of a match. The rest (every round and kill, about 0.5 MB a match) is dropped before
-#: it is kept, so the memory of the small VM holds hundreds of matches instead of a few dozen.
+#: What the pages use of a match. Every round and kill (about 0.5 MB a match) is boiled down to ``digest``
+#: (rounds.py) and dropped before it is kept, so the memory of the small VM holds hundreds of matches.
 METADATA = ("match_id", "map", "game_length_in_ms", "started_at", "is_completed", "queue", "season", "region")
-PLAYER = ("puuid", "name", "tag", "team_id", "party_id", "agent", "stats", "tier", "account_level")
+PLAYER = ("puuid", "name", "tag", "team_id", "party_id", "agent", "stats", "tier", "account_level", "economy")
 TEAM = ("team_id", "rounds", "won")
 
 
@@ -85,7 +86,8 @@ class Henrik:
         return self._get(("mmr", region, name.lower(), tag.lower()), path, KEEP["mmr"], _slim_mmr)
 
     def rr_changes(self, region: str, name: str, tag: str) -> dict:
-        """The recent competitive matches' RR: ``{match id: {"change": +18, "tier": 21, "rr": 42}}``."""
+        """The recent competitive matches' RR: ``{match id: {"change": +18, "tier": 21, "rr": 42, "elo": 1842,
+        "at": unix seconds}}`` (elo: the rank and RR as one number, 100 a rank)."""
         path = f"/valorant/v1/mmr-history/{_region(region)}/{_part(name)}/{_part(tag)}"
         return self._get(("rr", region, name.lower(), tag.lower()), path, KEEP["rr"], _slim_rr)
 
@@ -240,10 +242,22 @@ def _slim_rr(data) -> dict:
                 "change": int(change),
                 "tier": int(tier or 0),
                 "rr": int(item.get("ranking_in_tier", item.get("rr")) or 0),
+                "elo": int(item.get("elo") or 0),
+                "at": _moment(item.get("date_raw") or item.get("date")),
             }
         except (TypeError, ValueError):
             continue
     return found
+
+
+def _moment(value) -> int:
+    """Unix seconds from a number (v1's date_raw) or an ISO time (v2's date); 0 when it is neither."""
+    if isinstance(value, int | float):
+        return int(value)
+    try:
+        return int(datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp())
+    except ValueError:
+        return 0
 
 
 def _matches_key(region: str, name: str, tag: str, mode: str, start: int) -> tuple:
@@ -260,8 +274,10 @@ def _slim_match(match) -> dict:
         raise HenrikError("down")
     return {
         "metadata": _pick(match["metadata"], METADATA),
+        # in the order of the match's own list: the digest names players by their place in it
         "players": [_pick(player, PLAYER) for player in match.get("players") or [] if isinstance(player, dict)],
         "teams": [_pick(team, TEAM) for team in match.get("teams") or [] if isinstance(team, dict)],
+        "digest": rounds.digest(match),
     }
 
 

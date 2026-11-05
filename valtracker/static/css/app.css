@@ -11,6 +11,7 @@
   --win: #17704f;
   --loss: #b8202f;
   --draw: #6b6760;
+  --blue: #2a6fbf;
   --sans: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
   --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
   --tabbar: 0px;
@@ -28,6 +29,7 @@
     --win: #4cc79a;
     --loss: #ff6b76;
     --draw: #a8a49b;
+    --blue: #6aa8f0;
   }
 }
 :root[data-theme="dark"] {
@@ -41,6 +43,7 @@
   --win: #4cc79a;
   --loss: #ff6b76;
   --draw: #a8a49b;
+  --blue: #6aa8f0;
   color-scheme: dark;
 }
 :root[data-theme="light"] {
@@ -478,6 +481,13 @@ button.quiet {
 .person:hover {
   border-color: var(--accent);
 }
+.person .prank {
+  flex: none;
+  align-self: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-right: 0.4rem;
+}
 .pname {
   font-weight: 700;
   overflow: hidden;
@@ -492,6 +502,7 @@ button.quiet {
 .tag {
   margin-left: 0.15rem;
   font-size: 0.7em;
+  white-space: nowrap;
 }
 
 /* A player */
@@ -545,6 +556,25 @@ button.quiet {
 .fav svg {
   width: 1.4rem;
   height: 1.4rem;
+}
+.banner .fav + .fav {
+  margin-left: -0.5rem;
+}
+@media (max-width: 30rem) {
+  .banner {
+    gap: 0.7rem;
+  }
+  .who h1 {
+    font-size: 1.45rem;
+  }
+  .banner .fav {
+    width: 2.5rem;
+    min-height: 2.5rem;
+  }
+}
+.fav[data-state="copied"] {
+  border-color: var(--win);
+  color: var(--win);
 }
 .fav[aria-pressed="true"] {
   color: #d99a00;
@@ -963,6 +993,359 @@ span.tri.down {
   }
 }
 
+/* Within a player's page: the sections, one row of links that scrolls sideways on a phone */
+.jump {
+  display: flex;
+  gap: 0.3rem;
+  margin: 1rem 0 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  font-size: 0.85rem;
+}
+.jump::-webkit-scrollbar {
+  display: none;
+}
+.jump a {
+  flex: none;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  color: var(--soft);
+  text-decoration: none;
+}
+.jump a:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.next {
+  margin-top: 0.35rem !important;
+  font-size: 0.82rem;
+}
+abbr[title] {
+  text-decoration: underline dotted;
+  text-underline-offset: 0.15em;
+  cursor: help;
+}
+/* The RR of the recent competitive matches */
+.trend h2 small,
+.by h2 small {
+  color: var(--soft);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+.chart {
+  padding: 0.6rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.chart .grid {
+  stroke: var(--rule);
+  stroke-dasharray: 3 4;
+}
+.chart .grid-name {
+  fill: var(--soft);
+  font-size: 11px;
+}
+.chart .line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.chart circle {
+  fill: var(--card);
+  stroke: var(--draw);
+  stroke-width: 2.5;
+}
+.chart circle.up {
+  stroke: var(--win);
+}
+.chart circle.down {
+  stroke: var(--loss);
+}
+/* Beside the summary: the player and their lobbies, where the shots land, rounds won by side */
+.split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+.split > section {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.split h3 {
+  margin: 0 0 0.3rem;
+  font-size: 0.98rem;
+}
+.split h3 + .note {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+}
+.versus {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.versus th,
+.versus td {
+  padding: 0.35rem 0.2rem;
+  border-bottom: 1px solid var(--rule);
+  text-align: right;
+}
+.versus tbody tr:last-child > * {
+  border-bottom: 0;
+}
+.versus thead th {
+  color: var(--soft);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+.versus th[scope="row"] {
+  text-align: left;
+  font-weight: 400;
+}
+.versus td:nth-child(2) {
+  font-weight: 700;
+}
+.versus tr.better td:nth-child(2) {
+  color: var(--win);
+}
+.versus tr.worse td:nth-child(2) {
+  color: var(--loss);
+}
+.versus td:last-child {
+  color: var(--soft);
+}
+.pill {
+  display: inline-block;
+  margin-left: 0.25rem;
+  padding: 0 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.6;
+  vertical-align: 0.05rem;
+}
+.pill.good {
+  background: color-mix(in srgb, var(--win) 18%, transparent);
+  color: var(--win);
+}
+.pill.bad {
+  background: color-mix(in srgb, var(--loss) 16%, transparent);
+  color: var(--loss);
+}
+.body-figure {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+.body-figure svg {
+  flex: none;
+  width: 3.6rem;
+  height: 7.2rem;
+}
+.body-figure .part {
+  fill: var(--accent);
+  stroke: var(--accent);
+  stroke-width: 1;
+}
+.body-figure dl,
+.sides {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+}
+.body-figure dl div,
+.sides div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.body-figure dt,
+.sides dt {
+  min-width: 3rem;
+  color: var(--soft);
+  font-size: 0.85rem;
+}
+.body-figure dd,
+.sides dd {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.aim h3 + .sides,
+.body-figure + h3 {
+  margin-top: 0.9rem;
+}
+.sides small {
+  color: var(--soft);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+meter {
+  width: 7rem;
+  height: 0.5rem;
+}
+/* By agent, by map, the weapons and the party */
+.by .board td small {
+  display: block;
+  color: var(--soft);
+  font-size: 0.75rem;
+}
+.stats-table th[scope="row"] {
+  font-weight: 700;
+}
+.who-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.who-cell img {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 6px;
+}
+.map-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.map-cards li {
+  position: relative;
+  min-height: 5.2rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card);
+}
+.map-cards img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.25;
+}
+.map-cards div {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 0.1rem 0.6rem;
+  padding: 0.75rem 0.9rem;
+}
+.map-cards strong {
+  font-size: 1.05rem;
+}
+.map-cards span {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.map-cards small {
+  grid-column: 1 / -1;
+  color: var(--soft);
+  font-size: 0.8rem;
+}
+.weapons {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.weapons li {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr) minmax(4rem, 10rem) auto;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--card);
+}
+.wpic img {
+  display: block;
+  width: 6rem;
+  height: 2rem;
+  object-fit: contain;
+}
+/* The kill-feed pictures are white: on paper they need a dark plate */
+:root:not([data-theme="dark"]) .wpic img,
+:root:not([data-theme="dark"]) .gun img {
+  filter: invert(0.85);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .wpic img,
+  :root:not([data-theme="light"]) .gun img {
+    filter: none;
+  }
+}
+.weapons meter {
+  width: 100%;
+}
+.weapons span {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.weapons small {
+  margin-left: 0.35rem;
+  color: var(--soft);
+  font-weight: 400;
+}
+@media (max-width: 34rem) {
+  .weapons li {
+    grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  }
+  .wpic img {
+    width: 4.5rem;
+  }
+  .weapons meter {
+    display: none;
+  }
+}
+.person.mate {
+  flex-wrap: wrap;
+}
+.person.mate small {
+  flex-basis: 100%;
+  color: var(--soft);
+  font-size: 0.78rem;
+}
+/* The match list, a day at a time (app.js days()) */
+.match-list .day {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin: 0.7rem 0 0;
+  padding: 0 0.2rem;
+  color: var(--soft);
+  font-size: 0.85rem;
+}
+.match-list .day:first-child {
+  margin-top: 0;
+}
+.match-list .day strong {
+  color: var(--ink);
+}
+
 /* A match */
 .match-head {
   position: relative;
@@ -1063,6 +1446,290 @@ span.tri.down {
   margin-left: 0.15rem;
   color: var(--soft);
   font-weight: 400;
+}
+
+/* A match: the way back, the average rank, the rounds one by one, the parties, the duels and the kills */
+.crumb {
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
+}
+.match-head .avg {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.match-head .avg img {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.share-match {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+}
+.sprites {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.timeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.3rem, 1fr));
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.timeline li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.05rem;
+  padding: 0.3rem 0 0.35rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--draw) 16%, var(--card));
+  color: var(--soft);
+  cursor: default;
+}
+.timeline li.win {
+  background: color-mix(in srgb, var(--win) 22%, var(--card));
+  color: var(--win);
+}
+.timeline li.blue {
+  background: color-mix(in srgb, var(--blue) 22%, var(--card));
+  color: var(--blue);
+}
+.timeline li.loss,
+.timeline li.red {
+  background: color-mix(in srgb, var(--loss) 20%, var(--card));
+  color: var(--loss);
+}
+.timeline li.turn {
+  margin-left: 0.6rem;
+}
+.timeline a {
+  display: grid;
+  justify-items: center;
+  gap: 0.05rem;
+  color: inherit;
+  text-decoration: none;
+}
+.timeline a:focus-visible {
+  outline-offset: 0.3rem;
+}
+.timeline li:has(a) {
+  cursor: pointer;
+}
+.timeline li:has(a):hover {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+.timeline .rn {
+  color: var(--soft);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+.timeline svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.timeline .cer {
+  position: absolute;
+  top: -0.4rem;
+  right: -0.2rem;
+  padding: 0 0.2rem;
+  border-radius: 4px;
+  background: #c99a2e;
+  color: #1d1c1a;
+  font-size: 0.5rem;
+  font-weight: 800;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+}
+.key {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 3px;
+}
+.key.win {
+  background: var(--win);
+}
+.key.blue {
+  background: var(--blue);
+}
+.key.loss,
+.key.red {
+  background: var(--loss);
+}
+.party {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+.party.p1 {
+  background: #2f7dd1;
+}
+.party.p2 {
+  background: #9a46c9;
+}
+.party.p3 {
+  background: #c9741f;
+}
+.party.p4 {
+  background: #138a7d;
+}
+.party.p5 {
+  background: #6f6b63;
+}
+.mvp-tag {
+  flex: none;
+  padding: 0 0.25rem;
+  border-radius: 4px;
+  background: #c99a2e;
+  color: #1d1c1a;
+  font-size: 0.6rem;
+  font-weight: 800;
+  line-height: 1.5;
+}
+.mvp-tag.team {
+  background: #b9bcc2;
+}
+.duel-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.duel-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.8rem 0.45rem 0.45rem;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--card);
+}
+.duel-list img {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 6px;
+}
+.duel-list .pn {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+.score-pair {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.round-feed {
+  margin-top: 0.3rem;
+  scroll-margin-top: 4.5rem;
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--draw);
+  border-radius: 10px;
+  background: var(--card);
+}
+.round-feed.win {
+  border-left-color: var(--win);
+}
+.round-feed.blue {
+  border-left-color: var(--blue);
+}
+.round-feed.loss,
+.round-feed.red {
+  border-left-color: var(--loss);
+}
+.round-feed summary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+.round-feed summary small {
+  color: var(--soft);
+  font-weight: 400;
+}
+.kills {
+  margin: 0;
+  padding: 0 0.8rem 0.6rem;
+  list-style: none;
+  font-size: 0.88rem;
+}
+.kills li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.5rem;
+  padding: 0.3rem 0;
+  border-top: 1px solid var(--rule);
+}
+.kills time {
+  min-width: 2.4rem;
+  color: var(--soft);
+  font-variant-numeric: tabular-nums;
+}
+.kills .kp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 700;
+}
+.kills .kp img {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 4px;
+}
+.kills .mine {
+  color: var(--win);
+}
+.kills .blue {
+  color: var(--blue);
+}
+.kills .theirs,
+.kills .red {
+  color: var(--loss);
+}
+.gun {
+  color: var(--soft);
+  font-size: 0.8rem;
+}
+.gun img {
+  display: block;
+  width: 4.5rem;
+  height: 1.5rem;
+  object-fit: contain;
+}
+.helpers {
+  color: var(--soft);
+  font-size: 0.78rem;
 }
 
 /* Agents */

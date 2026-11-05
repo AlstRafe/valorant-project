@@ -11,6 +11,7 @@ from flask import Flask, abort, current_app, g, make_response, redirect, render_
 
 from valtracker import collection as owned_items
 from valtracker import i18n, security, stats
+from valtracker import rounds as rounds_module
 from valtracker.henrik import MODES, REGIONS, HenrikError, shows_rr, split_riot_id
 from valtracker.riot import AUTHORIZE, RiotError
 
@@ -127,6 +128,9 @@ def _row(match: dict, player: dict, rr_changes: dict) -> dict:
     rounds = stats.rounds_played(match)
     agent = _agent(player.get("agent"))
     moment = stats.started(match)
+    adv = stats.advanced(match, player)
+    result = stats.team_result(match, str(player.get("team_id") or ""))
+    side = ((match.get("digest") or {}).get("sides") or {}).get(str(player.get("team_id") or ""))
     return {
         "id": match_id,
         "region": str(metadata.get("region") or ""),
@@ -134,17 +138,125 @@ def _row(match: dict, player: dict, rr_changes: dict) -> dict:
         "queue": _queue(metadata),
         "started": moment,
         "when": i18n.when(g.lang, moment) if moment else "",
+        "length": int(metadata.get("game_length_in_ms") or 0),
         "agent_id": agent["id"],
         "agent_name": agent["name"],
         "agent_icon": agent["icon"],
-        "result": stats.team_result(match, str(player.get("team_id") or "")),
+        "result": result,
         "placing": stats.placing(match, player),
         "rr": (rr_changes.get(match_id) or {}).get("change"),
-        "line": stats.line(player, rounds),
+        "line": stats.line(player, rounds, adv),
+        "adv": adv,
         "rounds": rounds,
+        "side": side if result["rounds"] else None,
+        "weapons": adv.get("weapons") or {},
+        "weapon_names": (match.get("digest") or {}).get("weapons") or {},
+        "lobby": stats.lobby(match, player, rounds) if result["rounds"] else None,
+        "mates": stats.mates(match, player),
         # Deathmatch, Skirmish and the like would skew the averages: the summary counts the standard games.
         "standard": str((metadata.get("queue") or {}).get("mode_type") or "Standard") == "Standard",
     }
+
+
+def _weapon(key: str, said: str = "") -> dict:
+    """A weapon (or what else killed: an ability) in the visitor's language, with its kill-feed picture."""
+    known = current_app.config["VAL_CONTENT"].arsenal(g.lang).get(str(key).lower()) or {}
+    return {"name": str(known.get("displayName") or said or key), "icon": known.get("killStreamIcon")}
+
+
+#: The lobby comparison's rows: key -> what it is called, and how its numbers are written.
+LOBBY_LABELS = {
+    "acs": ("ACS", "{:.0f}"),
+    "adr": ("ADR", "{:.0f}"),
+    "kd": ("K/D", "{:.2f}"),
+    "hs": ("HS率", "{:.0f}%"),
+    "kast": ("KAST", "{:.0f}%"),
+    "fk": ("ファーストキル / ラウンド", "{:.2f}"),
+    "fd": ("ファーストデス / ラウンド", "{:.2f}"),
+}
+
+
+def _lobby_rows(compared: list[dict]) -> list[dict]:
+    """The player beside their lobbies, worded; the best and the weakest of them marked."""
+    found = []
+    for item in compared:
+        label, number = LOBBY_LABELS[item["key"]]
+        found.append(
+            dict(item, label=_t(label), mine_text=number.format(item["mine"]), lobby_text=number.format(item["lobby"]))
+        )
+    best = max(found, key=lambda item: item["score"], default=None)
+    worst = min(found, key=lambda item: item["score"], default=None)
+    for item in found:
+        item["strength"] = item is best and item["better"]
+        item["weakness"] = item is worst and item["worse"]
+    return found
+
+
+def _rr_chart(rr_changes: dict) -> dict | None:
+    """The RR of the recent competitive matches as a line (an SVG drawn here: no script), oldest first, with a
+    line where each rank begins (elo: 100 a rank, rank 3 at 0)."""
+    points = sorted(
+        (item for item in rr_changes.values() if item.get("elo") and item.get("at")), key=lambda item: item["at"]
+    )
+    if len(points) < 2:
+        return None
+    width, height, pad = 800, 150, 14
+    elos = [item["elo"] for item in points]
+    low, high = min(elos) - 12, max(elos) + 12
+    if high - low < 60:
+        middle = (high + low) / 2
+        low, high = middle - 30, middle + 30
+
+    def y(elo: float) -> float:
+        return round(pad + (high - elo) * (height - 2 * pad) / (high - low), 1)
+
+    step = (width - 2 * pad) / (len(points) - 1)
+    dots = [
+        {
+            "x": round(pad + number * step, 1),
+            "y": y(item["elo"]),
+            "change": item["change"],
+            "rank": _rank({"id": item["tier"]}),
+            "rr": item["rr"],
+        }
+        for number, item in enumerate(points)
+    ]
+    lines = []
+    for elo in range(int(low // 100 + 1) * 100, int(high) + 1, 100):
+        lines.append({"y": y(elo), "rank": _rank({"id": elo // 100 + 3})})
+    return {
+        "width": width,
+        "height": height,
+        "path": "M" + " L".join(f"{dot['x']},{dot['y']}" for dot in dots),
+        "dots": dots,
+        "lines": lines,
+        "net": sum(item["change"] for item in points),
+        "games": len(points),
+    }
+
+
+def _next_rank(rank: dict | None, rr, rr_changes: dict) -> dict | None:
+    """How far the next rank is: the RR it needs and, at the player's average gain, about how many wins."""
+    if not rank or not 3 <= rank["tier"] < 24 or rr is None:
+        return None
+    gains = [item["change"] for item in rr_changes.values() if item.get("change", 0) > 0]
+    need = max(1, 100 - int(rr))
+    gain = round(sum(gains) / len(gains)) if gains else 0
+    return {
+        "need": need,
+        "rank": _rank({"id": rank["tier"] + 1}),
+        "gain": gain,
+        "wins": -(-need // gain) if gain else None,
+    }
+
+
+def _weapon_said(rows: list[dict], key: str) -> str:
+    """HenrikDev's own name of a weapon (English), for one valorant-api.com does not know."""
+    for row in rows:
+        said = (row.get("weapon_names") or {}).get(key)
+        if said:
+            return said
+    return ""
 
 
 def _mode() -> str:
@@ -247,26 +359,184 @@ def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
         matches_problem = _failure(error.kind)[1]
     current = (mmr or {}).get("current") or {}
     peak = (mmr or {}).get("peak") or {}
+    rank = _rank(current.get("tier")) if current else None
+    summary = stats.summary(rows)
+    if summary:
+        for weapon in summary["weapons"]:
+            weapon.update(_weapon(weapon["key"], _weapon_said(rows, weapon["key"])))
+        summary["lobby"] = _lobby_rows(summary["lobby"])
     return {
         "name": name,
         "tag": tag,
         "account": account,
         "region": region,
         "card": str(account.get("card") or ""),
-        "rank": _rank(current.get("tier")) if current else None,
+        "rank": rank,
         "rr": current.get("rr"),
+        "next_rank": _next_rank(rank, current.get("rr"), rr_changes),
+        "rr_chart": _rr_chart(rr_changes) if shows_rr(mode) else None,
         "last_change": current.get("last_change"),
         "peak": _rank(peak.get("tier")) if peak else None,
         "standing": _standing(current),
         "acts": _acts((mmr or {}).get("seasons") or []),
         "rows": rows,
-        "summary": stats.summary(rows),
+        "summary": summary,
         "matches_problem": matches_problem,
         "mode": mode,
         "modes": _modes(mode),
         "problem": "",
         "settings_link": False,
     }, 200
+
+
+#: How a round ended -> the words of its picture's title.
+ENDINGS = {
+    "elim": "全員倒した",
+    "defuse": "スパイク解除",
+    "detonate": "スパイク爆発",
+    "time": "時間切れ",
+    "surrender": "降参",
+}
+
+
+#: A team's buy (_buy) -> its name.
+BUYS = {"eco": "エコ", "semi-eco": "セミエコ", "semi-buy": "セミバイ", "full": "フルバイ"}
+
+
+def _clock(ms: int) -> str:
+    seconds = max(0, int(ms) // 1000)
+    return f"{seconds // 60}:{seconds % 60:02d}"
+
+
+def _buy(loadout: int, players: int) -> str:
+    """A team's buy from its loadout: eco, semi-eco, semi-buy or full (by the average per player)."""
+    each = loadout / players if players else 0
+    return "eco" if each < 1000 else "semi-eco" if each < 2000 else "semi-buy" if each < 3900 else "full"
+
+
+def _match_page(found: dict, me: str) -> dict:
+    """What a match's page shows: the scoreboards (with the rounds' numbers), the rounds one by one and their
+    kills, the parties, and for the player the visitor came from their duels with each opponent."""
+    metadata = found.get("metadata") or {}
+    rounds = stats.rounds_played(found)
+    digest = found.get("digest") or {}
+    everyone = [player for player in found.get("players") or [] if isinstance(player, dict)]
+    me = me.lower()
+    mine = next(
+        (n for n, player in enumerate(everyone) if f"{player.get('name')}#{player.get('tag')}".lower() == me), -1
+    )
+    # parties of two or more, numbered in the order they appear
+    sizes: dict[str, int] = {}
+    for player in everyone:
+        if player.get("party_id"):
+            sizes[player["party_id"]] = sizes.get(player["party_id"], 0) + 1
+    parties: dict[str, int] = {}
+    for player in everyone:
+        party = player.get("party_id")
+        if party and sizes[party] > 1 and party not in parties:
+            parties[party] = len(parties) + 1
+    people = [
+        {
+            "name": str(player.get("name") or ""),
+            "tag": str(player.get("tag") or ""),
+            "team": str(player.get("team_id") or ""),
+            "agent": _agent(player.get("agent")),
+            "rank": _rank(player.get("tier")),
+            "line": stats.line(player, rounds, stats.advanced(found, player)),
+            "mvp": stats.placing(found, player)["mvp"],
+            "party": parties.get(player.get("party_id"), 0),
+            "me": number == mine,
+        }
+        for number, player in enumerate(everyone)
+    ]
+
+    def lines(team_id: str | None) -> list[dict]:
+        listed = [person for person in people if team_id is None or person["team"] == team_id]
+        # by combat score; without rounds (Deathmatch and the like) there is none, so by kills
+        listed.sort(key=lambda person: -(person["line"]["acs"] if rounds else person["line"]["kills"]))
+        return listed
+
+    teams = []
+    for team in found.get("teams") or []:
+        team_id = str(team.get("team_id") or "")
+        teams.append({"id": team_id, "result": stats.team_result(found, team_id), "players": lines(team_id)})
+    if not any(team["players"] for team in teams):  # Deathmatch: everyone for themselves, in one table
+        teams = [{"id": "", "result": None, "players": lines(None)}]
+    my_team = people[mine]["team"] if mine >= 0 else ""
+    team_sizes = {team["id"]: len(team["players"]) for team in teams}
+    queue = str((metadata.get("queue") or {}).get("id") or "").lower()
+    half = rounds_module.HALF.get(queue, 0)
+    said = digest.get("weapons") or {}
+    by_round: dict[int, list] = {}
+    for kill in digest.get("kills") or []:
+        by_round.setdefault(kill[0], []).append(kill)
+
+    def someone(number: int) -> dict | None:
+        return people[number] if 0 <= number < len(people) else None
+
+    timeline = []
+    for number, item in enumerate(digest.get("rounds") or []):
+        won = item["w"] == my_team if my_team else None
+        kills = []
+        for kill in by_round.get(number, []):
+            killer, victim = someone(kill[2]), someone(kill[3])
+            kills.append(
+                {
+                    "time": _clock(kill[1]),
+                    "killer": killer,
+                    "victim": victim,
+                    "weapon": _weapon(kill[4], said.get(kill[4], "")),
+                    "helpers": [someone(helper) for helper in kill[5] if someone(helper)],
+                }
+            )
+        timeline.append(
+            {
+                "number": number + 1,
+                "winner": item["w"],
+                "won": won,
+                "end": item["e"],
+                "end_words": _t(ENDINGS[item["e"]]) if item["e"] in ENDINGS else "",
+                "ceremony": item["c"],
+                "site": item["s"],
+                "attack": item["a"],
+                "buys": {team: _buy(value, team_sizes.get(team, 0)) for team, value in (item.get("l") or {}).items()},
+                # a gap before the second half and before overtime
+                "turn": bool(half) and number in (half, 2 * half),
+                "kills": kills,
+            }
+        )
+    duels = []
+    if mine >= 0 and digest.get("kills"):
+        for number, person in enumerate(people):
+            if person["team"] == my_team and my_team:
+                continue
+            if number == mine:
+                continue
+            took = sum(1 for kill in digest["kills"] if kill[2] == mine and kill[3] == number)
+            lost = sum(1 for kill in digest["kills"] if kill[2] == number and kill[3] == mine)
+            if took or lost:
+                duels.append({"person": person, "took": took, "lost": lost})
+        duels.sort(key=lambda duel: (-(duel["took"] - duel["lost"]), -duel["took"]))
+    tiers = [person["rank"]["tier"] for person in people if person["rank"]["tier"] > 2]
+    average = _rank({"id": round(sum(tiers) / len(tiers))}) if tiers else None
+    moment = stats.started(found)
+    return {
+        "map": _map(metadata),
+        "queue": _queue(metadata),
+        "started": moment,
+        "when": i18n.when(g.lang, moment) if moment else "",
+        "minutes": int((metadata.get("game_length_in_ms") or 0) / 60000),
+        "rounds": rounds,
+        "teams": teams,
+        "timeline": timeline,
+        "my_team": my_team,
+        "detailed": bool(digest.get("players")),
+        "duels": duels,
+        "average": average,
+        "me": people[mine] if mine >= 0 else None,
+        "parties": bool(parties),
+        "buy_words": {key: _t(words) for key, words in BUYS.items()},
+    }
 
 
 def register(app: Flask) -> None:
@@ -322,46 +592,8 @@ def register(app: Flask) -> None:
             if error.kind == "notfound":
                 abort(404)
             return render_template("match.html", problem=problem, settings_link=settings_link), status
-        metadata = found.get("metadata") or {}
-        rounds = stats.rounds_played(found)
-        me = request.args.get("me", "").lower()  # the player whose list the visitor came from: their line stands out
-
-        def lines(team_id: str | None) -> list[dict]:
-            players = [
-                {
-                    "name": str(player.get("name") or ""),
-                    "tag": str(player.get("tag") or ""),
-                    "agent": _agent(player.get("agent")),
-                    "rank": _rank(player.get("tier")),
-                    "line": stats.line(player, rounds),
-                    "me": f"{player.get('name')}#{player.get('tag')}".lower() == me,
-                }
-                for player in found.get("players") or []
-                if isinstance(player, dict) and (team_id is None or str(player.get("team_id") or "") == team_id)
-            ]
-            # by combat score; without rounds (Deathmatch and the like) there is none, so by kills
-            players.sort(key=lambda player: -(player["line"]["acs"] if rounds else player["line"]["kills"]))
-            return players
-
-        teams = []
-        for team in found.get("teams") or []:
-            team_id = str(team.get("team_id") or "")
-            teams.append({"id": team_id, "result": stats.team_result(found, team_id), "players": lines(team_id)})
-        if not any(team["players"] for team in teams):  # Deathmatch: everyone for themselves, in one table
-            teams = [{"id": "", "result": None, "players": lines(None)}]
-        moment = stats.started(found)
-        length = int((metadata.get("game_length_in_ms") or 0) / 60000)
-        return render_template(
-            "match.html",
-            problem="",
-            map=_map(metadata),
-            queue=_queue(metadata),
-            started=moment,
-            when=i18n.when(g.lang, moment) if moment else "",
-            minutes=length,
-            rounds=rounds,
-            teams=teams,
-        )
+        me = request.args.get("me", "")  # the player whose list the visitor came from: their line stands out
+        return render_template("match.html", problem="", **_match_page(found, me))
 
     @app.get("/agents")
     def agents():
