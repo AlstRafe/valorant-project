@@ -20,18 +20,27 @@
 </div>
 <div class="ranks">
 <div class="rank">
-<p class="label">{{ t('現在のランク') }}</p>
+<p class="label">{{ t('現在のランク') }}{% if standing.leaderboard %} · <span class="lb">{{ t('リーダーボード') }} #{{ standing.leaderboard }}</span>{% endif %}</p>
 {% if rank and rank.tier > 2 %}
 <p class="value">{% if rank.icon %}<img src="{{ media(rank.icon) }}" alt="" width="40" height="40">{% endif %}<span>{{ rank.name }}</span></p>
 <p class="sub">{{ rr }} RR{% if last_change %} <span class="{{ 'up' if last_change > 0 else 'down' }}">({{ '%+d'|format(last_change) }})</span>{% endif %}</p>
+{% if rank.tier < 24 %}<progress class="rr-bar" max="100" value="{{ [rr or 0, 100]|min }}" aria-label="RR {{ rr or 0 }} / 100"></progress>{% endif %}
 {% else %}
 <p class="value"><span>{{ t('ランクなし') }}</span></p>
+{% if standing.placements %}<p class="sub">{{ t('ランク決定まであと {count} 試合', count=standing.placements) }}</p>{% endif %}
 {% endif %}
 </div>
 {% if peak and peak.tier > 2 %}
 <div class="rank">
 <p class="label">{{ t('最高ランク') }}</p>
 <p class="value">{% if peak.icon %}<img src="{{ media(peak.icon) }}" alt="" width="40" height="40">{% endif %}<span>{{ peak.name }}</span></p>
+</div>
+{% endif %}
+{% if standing.act %}
+<div class="rank">
+<p class="label">{{ t('{act} の成績', act=standing.act.name) }}</p>
+<p class="value"><span>{{ t('勝率') }} {{ standing.act.win_rate }}%</span></p>
+<p class="sub">{{ t('{games}試合', games=standing.act.games) }} · {{ t('{wins}勝', wins=standing.act.wins) }}</p>
 </div>
 {% endif %}
 </div>
@@ -44,13 +53,18 @@
 
 {% if summary %}
 <section class="summary" aria-labelledby="sum-title">
-<h2 id="sum-title">{{ t('直近 {count} 試合', count=summary.games) }}</h2>
+<h2 id="sum-title">{{ t('直近 {count} 試合', count=summary.games) }}{% if summary.left_out and not mode %} <small>{{ t('デスマッチなどは除く') }}</small>{% endif %}</h2>
 <dl class="numbers">
-<div><dt>{{ t('勝率') }}</dt><dd>{{ summary.win_rate }}%<small>{{ t('{wins}勝 {losses}敗', wins=summary.wins, losses=summary.losses) }}</small></dd></div>
+{% if summary.decided %}<div><dt>{{ t('勝率') }}</dt><dd>{{ summary.win_rate }}%<small>{{ t('{wins}勝 {losses}敗', wins=summary.wins, losses=summary.losses) }}</small></dd></div>{% endif %}
 <div><dt>K / D / A</dt><dd>{{ summary.kills }}/{{ summary.deaths }}/{{ summary.assists }}<small>KD {{ summary.kd }}</small></dd></div>
-<div><dt>ACS</dt><dd>{{ summary.acs }}</dd></div>
+{% if summary.acs is not none %}<div><dt>ACS</dt><dd>{{ summary.acs }}<small>ADR {{ summary.adr }}</small></dd></div>{% endif %}
 <div><dt>{{ t('HS率') }}</dt><dd>{{ summary.hs }}%</dd></div>
 </dl>
+{% if summary.decided %}
+<ol class="form" aria-label="{{ t('勝敗（新しい順）') }}">
+{% for outcome in summary.form %}<li class="{{ outcome }}">{% if outcome == 'win' %}{{ t('勝') }}{% elif outcome == 'loss' %}{{ t('敗') }}{% else %}{{ t('分') }}{% endif %}</li>{% endfor %}
+</ol>
+{% endif %}
 {% if summary.agents %}
 <ul class="mains" aria-label="{{ t('よく使うエージェント') }}">
 {% for agent in summary.agents %}
@@ -68,13 +82,19 @@
 {% else %}
 <ol class="match-list">
 {% for row in rows %}
-{% set outcome = 'win' if row.result.won is sameas true else ('loss' if row.result.won is sameas false else 'draw') %}
+{% set outcome = 'win' if row.result.won is sameas true or (row.result.won is none and not row.result.rounds and row.placing.place == 1) else ('loss' if row.result.won is sameas false else 'draw') %}
 <li class="match {{ outcome }}">
-<a href="{{ url_for('match', region=row.region or region, match_id=row.id) }}">
-{% if row.agent_icon %}<img class="agent" src="{{ media(row.agent_icon) }}" alt="{{ row.agent_name }}" width="44" height="44">{% else %}<span class="agent">{{ row.agent_name[:2] }}</span>{% endif %}
-<span class="what"><strong>{{ row.map.name }}</strong><small>{{ row.queue }}{% if row.started %} · <time datetime="{{ row.started.isoformat() }}">{{ row.when }}</time>{% endif %}</small></span>
-<span class="score"><strong>{{ row.result.us }}–{{ row.result.them }}</strong><small>{% if outcome == 'win' %}{{ t('勝ち') }}{% elif outcome == 'loss' %}{{ t('負け') }}{% else %}{{ t('引き分け') }}{% endif %}</small></span>
-<span class="kda"><strong>{{ row.line.kills }} / {{ row.line.deaths }} / {{ row.line.assists }}</strong><small>ACS {{ row.line.acs }} · HS {{ row.line.hs }}%</small></span>
+<a href="{{ url_for('match', region=row.region or region, match_id=row.id, me=name ~ '#' ~ tag) }}">
+<span class="pic">{% if row.agent_icon %}<img class="agent" src="{{ media(row.agent_icon) }}" alt="{{ row.agent_name }}" width="44" height="44">{% else %}<span class="agent">{{ row.agent_name[:2] }}</span>{% endif %}
+{% if row.placing.mvp %}<span class="mvp {{ row.placing.mvp }}" title="{{ t('マッチ MVP') if row.placing.mvp == 'match' else t('チーム MVP') }}">MVP<span class="sr">{{ t('マッチ MVP') if row.placing.mvp == 'match' else t('チーム MVP') }}</span></span>{% endif %}</span>
+<span class="what"><strong>{{ row.map.name }}</strong><small>{% if not mode %}{{ row.queue }}{% if row.started %} · {% endif %}{% endif %}{% if row.started %}<time datetime="{{ row.started.isoformat() }}">{{ row.when }}</time>{% endif %}</small></span>
+<span class="score">
+{% if row.result.rounds %}<strong>{{ row.result.us }}–{{ row.result.them }}</strong>
+{% elif row.result.won is none %}<strong>{{ t('{place}位', place=row.placing.place) }}</strong>
+{% else %}<strong>{% if outcome == 'win' %}{{ t('勝ち') }}{% else %}{{ t('負け') }}{% endif %}</strong>{% endif %}
+<small>{% if not row.result.rounds and row.result.won is none %}{{ t('{count}人中', count=row.placing.of) }}{% elif row.result.rounds %}{% if outcome == 'win' %}{{ t('勝ち') }}{% elif outcome == 'loss' %}{{ t('負け') }}{% else %}{{ t('引き分け') }}{% endif %}{% endif %}{% if row.rr is not none %}{% if row.result.rounds %} · {% endif %}<span class="{{ 'up' if row.rr > 0 else ('down' if row.rr < 0 else '') }}">{{ '%+d'|format(row.rr) }} RR</span>{% endif %}</small>
+</span>
+<span class="kda"><strong>{{ row.line.kills }} / {{ row.line.deaths }} / {{ row.line.assists }}</strong><small>{% if row.rounds %}ACS {{ row.line.acs }} · {% endif %}HS {{ row.line.hs }}%</small></span>
 </a>
 </li>
 {% endfor %}

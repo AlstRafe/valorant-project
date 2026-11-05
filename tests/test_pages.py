@@ -122,8 +122,44 @@ class PagesTest(unittest.TestCase):
         self.assertNotIn("<html", text)
         self.assertEqual(part.headers["Cache-Control"], "no-store")
         self.assertRegex(part.headers["Server-Timing"], r"^henrik;dur=\d+$")
-        # the account, then side by side the rank and the matches (15: in two parts, as an answer gives 10 at most)
-        self.assertEqual(len(self.fetch.henrik_calls()), 4)
+        # the account, then side by side the rank, each match's RR and the matches (15: in two parts, as an answer
+        # gives 10 at most)
+        self.assertEqual(len(self.fetch.henrik_calls()), 5)
+
+    def test_what_a_player_page_tells(self):
+        text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
+        self.assertIn('<progress class="rr-bar" max="100" value="42" aria-label="RR 42 / 100"></progress>', text)
+        self.assertIn("E9 A3 の成績", text)  # the latest act: 12 of 20
+        self.assertIn("勝率 60%", text)
+        self.assertIn('<span class="up">+18 RR</span>', text)  # each competitive match's RR
+        self.assertIn('<span class="down">-15 RR</span>', text)
+        self.assertIn('<span class="mvp match" title="マッチ MVP">MVP', text)  # the best combat score of the match
+        self.assertEqual(text.count('class="mvp '), 1)
+        self.assertIn('<li class="win">勝</li><li class="loss">敗</li>', text)  # newest first
+        self.assertIn("ADR 143", text)  # (3000 / 22 -> 136, 3000 / 20 -> 150) / 2
+        self.assertIn(f"/m/ap/{MATCH}?me=Tester%23JP1", text)
+        self.assertNotIn("デスマッチなどは除く", text)
+
+        english = self.get("/p/Tester/JP1?full=1", lang="en-GB").get_data(as_text=True)
+        self.assertIn("E9 A3 record", english)
+        self.assertIn('<li class="win">W</li><li class="loss">L</li>', english)
+
+    def test_rr_is_asked_only_where_it_shows(self):
+        self.get("/p/Tester/JP1/part?mode=unrated")
+        self.assertFalse([url for url in self.fetch.henrik_calls() if "mmr-history" in url])
+        self.get("/p/Tester/JP1/part?mode=competitive")
+        self.assertTrue([url for url in self.fetch.henrik_calls() if "mmr-history" in url])
+
+    def test_the_rr_is_not_needed(self):
+        real = self.fetch.__call__
+
+        def without_history(url, headers):
+            return (404, b"{}") if "mmr-history" in url else real(url, headers)
+
+        self.app.config["VAL_HENRIK"].fetch = without_history
+        text = self.get("/p/Tester/JP1/part").get_data(as_text=True)
+        self.assertIn("13–9", text)
+        self.assertNotIn(" RR</span>", text)
 
     def test_matches_of_one_mode(self):
         text = self.get("/p/Tester/JP1?mode=competitive").get_data(as_text=True)
@@ -191,6 +227,22 @@ class PagesTest(unittest.TestCase):
         self.assertIn("レッド", text)
         self.assertIn("Mate", text)
         self.assertEqual(len(self.fetch.henrik_calls()), calls, "the match list had it already")
+
+    def test_the_players_own_line_stands_out(self):
+        text = self.get(f"/m/ap/{MATCH}?me=tester%23jp1").get_data(as_text=True)
+        self.assertEqual(text.count('<tr class="me">'), 1)
+        self.assertNotIn('class="me"', self.get(f"/m/ap/{MATCH}").get_data(as_text=True))
+
+    def test_a_deathmatch(self):
+        henrik = self.app.config["VAL_HENRIK"]
+        match = henrik.match("ap", MATCH)
+        deathmatch = dict(match, teams=[], players=[dict(p, team_id=p["puuid"]) for p in match["players"]])
+        deathmatch["metadata"] = dict(match["metadata"], queue={"id": "deathmatch", "mode_type": "Deathmatch"})
+        henrik.cache.put(("match", MATCH), deathmatch, 60)
+        text = self.get(f"/m/ap/{MATCH}").get_data(as_text=True)
+        self.assertIn("順位", text)
+        self.assertNotIn('<th scope="col">ACS</th>', text)
+        self.assertLess(text.index("Tester"), text.index("Foe"), "by kills: 20 before 18")
 
     def test_match_with_a_bad_id(self):
         self.assertEqual(self.get("/m/ap/not-an-id").status_code, 404)

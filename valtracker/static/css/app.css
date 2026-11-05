@@ -587,20 +587,62 @@ button.quiet {
   color: var(--soft);
   font-size: 0.9rem;
 }
+.lb {
+  color: var(--accent);
+  font-weight: 700;
+}
+/* How far into the rank: RR out of 100 (Immortal and up count on without a ceiling, so they have no bar) */
+.rr-bar {
+  display: block;
+  width: 100%;
+  height: 0.4rem;
+  margin-top: 0.45rem;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  appearance: none;
+  background: var(--rule);
+  color: var(--accent);
+}
+.rr-bar::-webkit-progress-bar {
+  background: var(--rule);
+}
+.rr-bar::-webkit-progress-value {
+  background: var(--accent);
+  border-radius: 999px;
+}
+.rr-bar::-moz-progress-bar {
+  background: var(--accent);
+  border-radius: 999px;
+}
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .up {
   color: var(--win);
 }
 .down {
   color: var(--loss);
 }
-/* The mode filter above a player's matches: one row that scrolls sideways on a phone, like the game's own. */
+/* The mode filter above a player's matches; on a phone one row that scrolls sideways, like the game's own. */
 .modes {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.4rem;
   margin: 1.5rem 0 0;
   padding: 0.1rem 0.1rem 0.3rem;
-  overflow-x: auto;
-  scrollbar-width: none;
+}
+@media (max-width: 760px) {
+  .modes {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
 }
 .modes::-webkit-scrollbar {
   display: none;
@@ -630,9 +672,14 @@ button.quiet {
   opacity: 0.45;
   transition: opacity 0.2s 0.1s;
 }
+.summary h2 small {
+  color: var(--soft);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
 .numbers {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
   gap: 0.6rem;
   margin: 0;
 }
@@ -663,6 +710,32 @@ button.quiet {
   .numbers {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+/* The latest results, newest first, one square each (like the game's own record) */
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.form li {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 5px;
+  background: var(--draw);
+  color: var(--on-a);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.form .win {
+  background: var(--win);
+}
+.form .loss {
+  background: var(--loss);
 }
 .mains {
   display: flex;
@@ -721,6 +794,28 @@ button.quiet {
 .match.loss a {
   border-left-color: var(--loss);
 }
+.match .pic {
+  position: relative;
+  display: block;
+}
+/* The game's badges: gold for the match's best combat score, silver for the team's */
+.mvp {
+  position: absolute;
+  left: 50%;
+  bottom: -0.35rem;
+  transform: translateX(-50%);
+  padding: 0 0.3rem;
+  border-radius: 4px;
+  background: #c99a2e;
+  color: #1d1c1a;
+  font-size: 0.6rem;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 0.02em;
+}
+.mvp.team {
+  background: #b9bcc2;
+}
 .match .agent {
   width: 2.75rem;
   height: 2.75rem;
@@ -748,6 +843,12 @@ button.quiet {
   color: var(--win);
 }
 .match.loss .score strong {
+  color: var(--loss);
+}
+.match .score small .up {
+  color: var(--win);
+}
+.match .score small .down {
   color: var(--loss);
 }
 @media (max-width: 34rem) {
@@ -831,6 +932,13 @@ button.quiet {
 .board th:first-child {
   width: 40%;
   text-align: left;
+}
+/* The player whose list the visitor came from */
+.board tr.me > * {
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+}
+.board tr.me .pn {
+  font-weight: 800;
 }
 .board th[scope="row"] a {
   display: flex;

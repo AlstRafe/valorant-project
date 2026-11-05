@@ -1,0 +1,39 @@
+{
+ "status": 200,
+ "name": "Tester",
+ "tag": "JP1",
+ "data": [
+  {
+   "currenttier": 21,
+   "currenttierpatched": "Ascendant 1",
+   "images": {},
+   "match_id": "aaaaaaaa-0000-4000-8000-000000000001",
+   "map": {
+    "name": "Ascent",
+    "id": "x"
+   },
+   "season_id": "s2",
+   "ranking_in_tier": 42,
+   "mmr_change_to_last_game": 18,
+   "elo": 1842,
+   "date": "Wednesday, November 4, 2026 3:05 AM",
+   "date_raw": 1793761500
+  },
+  {
+   "currenttier": 21,
+   "currenttierpatched": "Ascendant 1",
+   "images": {},
+   "match_id": "aaaaaaaa-0000-4000-8000-000000000002",
+   "map": {
+    "name": "Ascent",
+    "id": "x"
+   },
+   "season_id": "s2",
+   "ranking_in_tier": 24,
+   "mmr_change_to_last_game": -15,
+   "elo": 1824,
+   "date": "Tuesday, November 3, 2026 3:05 AM",
+   "date_raw": 1793675100
+  }
+ ]
+}

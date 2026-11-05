@@ -30,6 +30,37 @@
     "name": "Ascendant 2"
    }
   },
-  "seasonal": []
+  "seasonal": [
+   {
+    "season": {
+     "id": "s1",
+     "short": "e9a2"
+    },
+    "wins": 30,
+    "games": 50,
+    "end_tier": {
+     "id": 20,
+     "name": "Diamond 3"
+    },
+    "ranking_schema": "x",
+    "leaderboard_placement": null,
+    "act_wins": []
+   },
+   {
+    "season": {
+     "id": "s2",
+     "short": "e9a3"
+    },
+    "wins": 12,
+    "games": 20,
+    "end_tier": {
+     "id": 21,
+     "name": "Ascendant 1"
+    },
+    "ranking_schema": "x",
+    "leaderboard_placement": null,
+    "act_wins": []
+   }
+  ]
  }
 }

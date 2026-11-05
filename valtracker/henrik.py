@@ -19,7 +19,7 @@ from valtracker.cache import Budget, TTLCache
 BASE = "https://api.henrikdev.xyz"
 PLATFORM = "pc"
 #: How long each kind of answer is kept (seconds). A finished match never changes.
-KEEP = {"account": 6 * 3600, "mmr": 300, "matches": 180, "match": 7 * 24 * 3600}
+KEEP = {"account": 6 * 3600, "mmr": 300, "rr": 180, "matches": 180, "match": 7 * 24 * 3600}
 #: A Riot ID: the name (3-16 characters, spaces allowed) and the tag (3-5 letters or digits).
 NAME = re.compile(r"^[^#/\\?<>\x00-\x1f]{1,16}$")
 TAG = re.compile(r"^[^\W_]{2,5}$")
@@ -79,10 +79,15 @@ class Henrik:
         return self._get(("account", name.lower(), tag.lower()), path, KEEP["account"])
 
     def mmr(self, region: str, name: str, tag: str) -> dict:
-        """``{"current": {"tier": {"id", "name"}, "rr", "last_change", ...}, "peak": ..., "seasonal": [...]}``."""
+        """``{"current": {"tier": {"id", "name"}, "rr", "last_change", "games_needed_for_rating",
+        "leaderboard_placement", ...}, "peak": ..., "season": the latest act played (``seasonal``'s last)}``."""
         path = f"/valorant/v3/mmr/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}"
-        slim = lambda data: _pick(data, ("current", "peak"))  # noqa: E731 - the seasons' history is not shown
-        return self._get(("mmr", region, name.lower(), tag.lower()), path, KEEP["mmr"], slim)
+        return self._get(("mmr", region, name.lower(), tag.lower()), path, KEEP["mmr"], _slim_mmr)
+
+    def rr_changes(self, region: str, name: str, tag: str) -> dict:
+        """The recent competitive matches' RR: ``{match id: {"change": +18, "tier": 21, "rr": 42}}``."""
+        path = f"/valorant/v1/mmr-history/{_region(region)}/{_part(name)}/{_part(tag)}"
+        return self._get(("rr", region, name.lower(), tag.lower()), path, KEEP["rr"], _slim_rr)
 
     def matches(self, region: str, name: str, tag: str, mode: str = "") -> list:
         """The latest RECENT matches (of one of MODES, or of any), newest first, each as ``match`` gives it.
@@ -125,6 +130,8 @@ class Henrik:
         name, tag = str(account.get("name") or name), str(account.get("tag") or tag)
         keys = [("mmr", region, name.lower(), tag.lower())]
         keys += [_matches_key(region, name, tag, mode, start) for start in (0, PAGE)]
+        if shows_rr(mode):
+            keys.append(("rr", region, name.lower(), tag.lower()))
         return all(self.cache.get(key) is not None for key in keys)
 
     def match(self, region: str, match_id: str) -> dict:
@@ -165,6 +172,46 @@ class Henrik:
             data = shape(data)
         self.cache.put(cache_key, data, seconds)
         return data
+
+
+def shows_rr(mode: str) -> bool:
+    """Whether a list of this mode has competitive matches, whose RR changes are worth a call."""
+    return mode in ("", "competitive") or mode not in MODES
+
+
+def _slim_mmr(data) -> dict:
+    slim = _pick(data, ("current", "peak"))
+    seasons = [season for season in (data or {}).get("seasonal") or [] if isinstance(season, dict)]
+    slim["season"] = max(seasons, key=lambda season: _act_order(season.get("season")), default=None)
+    return slim
+
+
+def _act_order(season) -> tuple:
+    """``{"short": "e9a3"}`` -> (9, 3): the latest act is the largest, whatever order the list is in."""
+    short = str((season or {}).get("short") or "") if isinstance(season, dict) else ""
+    return tuple(int(number) for number in re.findall(r"\d+", short))
+
+
+def _slim_rr(data) -> dict:
+    """v1's list (or v2's ``{"history": [...]}``) -> ``{match id: {"change", "tier", "rr"}}``."""
+    items = data.get("history") if isinstance(data, dict) else data
+    found = {}
+    for item in items if isinstance(items, list) else []:
+        if not isinstance(item, dict) or not item.get("match_id"):
+            continue
+        change = item.get("mmr_change_to_last_game", item.get("last_change"))
+        tier = item.get(
+            "currenttier", (item.get("tier") or {}).get("id") if isinstance(item.get("tier"), dict) else None
+        )
+        try:
+            found[str(item["match_id"])] = {
+                "change": int(change),
+                "tier": int(tier or 0),
+                "rr": int(item.get("ranking_in_tier", item.get("rr")) or 0),
+            }
+        except (TypeError, ValueError):
+            continue
+    return found
 
 
 def _matches_key(region: str, name: str, tag: str, mode: str, start: int) -> tuple:

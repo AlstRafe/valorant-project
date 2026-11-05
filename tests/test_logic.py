@@ -7,7 +7,7 @@ from helpers import FakeFetch, fixture
 
 from valtracker import paths, stats
 from valtracker.cache import Budget, TTLCache
-from valtracker.henrik import Henrik, HenrikError, split_riot_id
+from valtracker.henrik import Henrik, HenrikError, _slim_mmr, _slim_rr, split_riot_id
 from valtracker.hosting import site
 
 
@@ -58,7 +58,23 @@ class HenrikTest(unittest.TestCase):
         matches = self.henrik.matches("ap", "Tester", "JP1")
         self.assertEqual(set(matches[0]), {"metadata", "players", "teams"})
         self.assertNotIn("ability_casts", matches[0]["players"][0])
-        self.assertEqual(set(self.henrik.mmr("ap", "Tester", "JP1")), {"current", "peak"})
+        mmr = self.henrik.mmr("ap", "Tester", "JP1")
+        self.assertEqual(set(mmr), {"current", "peak", "season"})
+        self.assertEqual(mmr["season"]["season"]["short"], "e9a3", "the latest act, not the whole history")
+
+    def test_the_latest_act_whatever_the_order(self):
+        seasons = [{"season": {"short": short}, "games": 1} for short in ("e10a1", "e9a3", "e2a1")]
+        self.assertEqual(_slim_mmr({"seasonal": seasons})["season"]["season"]["short"], "e10a1")
+        self.assertIsNone(_slim_mmr({"seasonal": []})["season"])
+
+    def test_rr_changes(self):
+        changes = self.henrik.rr_changes("ap", "Tester", "JP1")
+        self.assertEqual(changes["aaaaaaaa-0000-4000-8000-000000000001"], {"change": 18, "tier": 21, "rr": 42})
+        self.assertEqual(changes["aaaaaaaa-0000-4000-8000-000000000002"]["change"], -15)
+        self.assertIn("/v1/mmr-history/ap/Tester/JP1", self.fetch.henrik_calls()[-1])
+        # the newer answer's shape too, and nothing from what cannot be read
+        newer = {"history": [{"match_id": "m", "last_change": -3, "tier": {"id": 9}, "rr": 7}, {"match_id": "x"}, 5]}
+        self.assertEqual(_slim_rr(newer), {"m": {"change": -3, "tier": 9, "rr": 7}})
 
     def test_the_latest_15_matches_in_two_parts(self):
         # HenrikDev gives at most 10 matches an answer: the newest 10, then 5 more from the 10th
@@ -135,9 +151,40 @@ class StatsTest(unittest.TestCase):
         self.assertEqual(line["diff"], 5)
 
     def test_result_and_time(self):
-        self.assertEqual(stats.team_result(self.match, "Red"), {"won": True, "us": 13, "them": 9})
+        self.assertEqual(stats.team_result(self.match, "Red"), {"won": True, "us": 13, "them": 9, "rounds": True})
         self.assertEqual(stats.team_result(self.match, "Blue")["won"], False)
         self.assertEqual(stats.started(self.match), datetime.fromisoformat("2026-11-04T21:05:00+09:00"))
+
+    def test_a_mode_without_rounds(self):
+        # Team Deathmatch and Escalation: who won, without a score of rounds
+        match = json.loads(json.dumps(self.match))
+        for team in match["teams"]:
+            team["rounds"] = {"won": 0, "lost": 0}
+        self.assertEqual(stats.team_result(match, "Red"), {"won": True, "us": 0, "them": 0, "rounds": False})
+
+    def test_placing_and_mvp(self):
+        players = {player["name"]: player for player in self.match["players"]}
+        self.assertEqual(stats.placing(self.match, players["Tester"]), {"place": 1, "of": 4, "mvp": "match"})
+        self.assertEqual(stats.placing(self.match, players["<b>Foe</b>"]), {"place": 2, "of": 4, "mvp": "team"})
+        self.assertEqual(stats.placing(self.match, players["Mate"])["mvp"], "")
+        # Deathmatch: no teams, placed by kills, no MVP
+        deathmatch = {"teams": [], "players": self.match["players"]}
+        self.assertEqual(stats.placing(deathmatch, players["<b>Foe</b>"]), {"place": 2, "of": 4, "mvp": ""})
+
+    def test_summary_of_deathmatches(self):
+        deathmatch = {"teams": [], "players": self.match["players"]}
+        player = self.match["players"][0]
+        row = {
+            "result": stats.team_result(deathmatch, ""),
+            "line": stats.line(player, 0),
+            "rounds": 0,
+            "standard": False,
+            "agent_id": "a",
+            "agent_name": "A",
+        }
+        summary = stats.summary([row, row])
+        self.assertEqual((summary["games"], summary["decided"], summary["acs"], summary["adr"]), (2, 0, None, None))
+        self.assertEqual(summary["form"], ["draw", "draw"])
 
     def test_by_name(self):
         self.assertEqual(stats.find_player(self.match, name="mate", tag="0001")["puuid"], "puuid-2")

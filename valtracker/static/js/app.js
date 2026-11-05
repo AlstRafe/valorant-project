@@ -127,6 +127,17 @@
     });
   }
 
+  // A mode further along the row (Premier on a phone) is scrolled into sight.
+  function chosen() {
+    var current = document.querySelector(".modes a[aria-current]");
+    var row = current && current.parentNode;
+    if (!row || row.scrollWidth <= row.clientWidth) return;
+    var left = current.offsetLeft - row.offsetLeft;
+    if (left < row.scrollLeft || left + current.offsetWidth > row.scrollLeft + row.clientWidth) {
+      row.scrollLeft = left - (row.clientWidth - current.offsetWidth) / 2;
+    }
+  }
+
   // page: the address the visitor chose with the filter ("" for the first load).
   function load(box, address, page) {
     function failed() {
@@ -156,6 +167,7 @@
           box.removeAttribute("data-part");
           profile();
         }
+        chosen();
         times();
       })
       .catch(failed);
@@ -193,6 +205,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     part();
+    chosen();
     profile();
     lists();
     times();
