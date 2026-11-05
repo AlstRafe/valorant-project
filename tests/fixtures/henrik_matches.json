@@ -32,7 +32,7 @@
      "tag": "JP1",
      "team_id": "Red",
      "platform": "pc",
-     "party_id": "x",
+     "party_id": "party-a",
      "agent": {
       "id": "11111111-1111-4111-8111-111111111111",
       "name": "Agent 1"
@@ -57,6 +57,16 @@
      "account_level": 120,
      "ability_casts": {
       "q": 1
+     },
+     "economy": {
+      "spent": {
+       "overall": 60000,
+       "average": 2727
+      },
+      "loadout_value": {
+       "overall": 80000,
+       "average": 3636
+      }
      }
     },
     {
@@ -65,7 +75,7 @@
      "tag": "0001",
      "team_id": "Red",
      "platform": "pc",
-     "party_id": "x",
+     "party_id": "party-a",
      "agent": {
       "id": "22222222-2222-4222-8222-222222222222",
       "name": "Agent 2"
@@ -90,6 +100,16 @@
      "account_level": 120,
      "ability_casts": {
       "q": 1
+     },
+     "economy": {
+      "spent": {
+       "overall": 60000,
+       "average": 2727
+      },
+      "loadout_value": {
+       "overall": 80000,
+       "average": 3636
+      }
      }
     },
     {
@@ -98,7 +118,7 @@
      "tag": "KR1",
      "team_id": "Blue",
      "platform": "pc",
-     "party_id": "x",
+     "party_id": "party-b",
      "agent": {
       "id": "11111111-1111-4111-8111-111111111111",
       "name": "Agent 1"
@@ -123,6 +143,16 @@
      "account_level": 120,
      "ability_casts": {
       "q": 1
+     },
+     "economy": {
+      "spent": {
+       "overall": 60000,
+       "average": 2727
+      },
+      "loadout_value": {
+       "overall": 80000,
+       "average": 3636
+      }
      }
     },
     {
@@ -131,7 +161,7 @@
      "tag": "EUW",
      "team_id": "Blue",
      "platform": "pc",
-     "party_id": "x",
+     "party_id": "party-c",
      "agent": {
       "id": "22222222-2222-4222-8222-222222222222",
       "name": "Agent 2"
@@ -156,6 +186,16 @@
      "account_level": 120,
      "ability_casts": {
       "q": 1
+     },
+     "economy": {
+      "spent": {
+       "overall": 60000,
+       "average": 2727
+      },
+      "loadout_value": {
+       "overall": 80000,
+       "average": 3636
+      }
      }
     }
    ],
@@ -183,12 +223,4695 @@
    ],
    "rounds": [
     {
-     "round": 0
+     "id": 0,
+     "result": "Bomb detonated",
+     "ceremony": "CeremonyClutch",
+     "winning_team": "Red",
+     "plant": {
+      "round_time_in_ms": 30000,
+      "location": {
+       "x": 0,
+       "y": 0
+      },
+      "player": {
+       "puuid": "puuid-me",
+       "name": "Tester",
+       "tag": "JP1",
+       "team": "Red"
+      },
+      "player_locations": [],
+      "site": "A"
+     },
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 800,
+        "remaining": 200,
+        "weapon": {
+         "id": "29a0cfab-485b-f5d5-779a-b59f85e204a8",
+         "name": "Classic",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 800,
+        "remaining": 200,
+        "weapon": {
+         "id": "29a0cfab-485b-f5d5-779a-b59f85e204a8",
+         "name": "Classic",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 800,
+        "remaining": 200,
+        "weapon": {
+         "id": "29a0cfab-485b-f5d5-779a-b59f85e204a8",
+         "name": "Classic",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 800,
+        "remaining": 200,
+        "weapon": {
+         "id": "29a0cfab-485b-f5d5-779a-b59f85e204a8",
+         "name": "Classic",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 1,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Blue",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 2,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Red",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 3,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Blue",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 4,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Red",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 5,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Red",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 6,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Blue",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 7,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Red",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 8,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Blue",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 9,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Red",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 10,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Red",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 11,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Blue",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 12,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Red",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 800,
+        "remaining": 200,
+        "weapon": {
+         "id": "29a0cfab-485b-f5d5-779a-b59f85e204a8",
+         "name": "Classic",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 800,
+        "remaining": 200,
+        "weapon": {
+         "id": "29a0cfab-485b-f5d5-779a-b59f85e204a8",
+         "name": "Classic",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 800,
+        "remaining": 200,
+        "weapon": {
+         "id": "29a0cfab-485b-f5d5-779a-b59f85e204a8",
+         "name": "Classic",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 800,
+        "remaining": 200,
+        "weapon": {
+         "id": "29a0cfab-485b-f5d5-779a-b59f85e204a8",
+         "name": "Classic",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 13,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Blue",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 14,
+     "result": "Bomb defused",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Red",
+     "plant": {
+      "round_time_in_ms": 40000,
+      "location": {
+       "x": 0,
+       "y": 0
+      },
+      "player": {
+       "puuid": "puuid-3",
+       "name": "<b>Foe</b>",
+       "tag": "KR1",
+       "team": "Blue"
+      },
+      "player_locations": [],
+      "site": "B"
+     },
+     "defuse": {
+      "round_time_in_ms": 80000,
+      "location": {
+       "x": 0,
+       "y": 0
+      },
+      "player": {
+       "puuid": "puuid-2",
+       "name": "Mate",
+       "tag": "0001",
+       "team": "Red"
+      },
+      "player_locations": []
+     },
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 15,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Red",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 16,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Blue",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 17,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Red",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 18,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Blue",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 19,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Red",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 20,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Red",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
+    },
+    {
+     "id": 21,
+     "result": "Elimination",
+     "ceremony": "CeremonyDefault",
+     "winning_team": "Blue",
+     "plant": null,
+     "defuse": null,
+     "stats": [
+      {
+       "player": {
+        "puuid": "puuid-me",
+        "name": "Tester",
+        "tag": "JP1",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-2",
+        "name": "Mate",
+        "tag": "0001",
+        "team": "Red"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-3",
+        "name": "<b>Foe</b>",
+        "tag": "KR1",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      },
+      {
+       "player": {
+        "puuid": "puuid-4",
+        "name": "Other",
+        "tag": "EUW",
+        "team": "Blue"
+       },
+       "ability_casts": {
+        "grenade": 0,
+        "ability_1": 0,
+        "ability_2": 0,
+        "ultimate": 0
+       },
+       "damage_events": [],
+       "stats": {
+        "score": 200,
+        "kills": 1,
+        "headshots": 1,
+        "bodyshots": 0,
+        "legshots": 0
+       },
+       "economy": {
+        "loadout_value": 3900,
+        "remaining": 200,
+        "weapon": {
+         "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+         "name": "Vandal",
+         "type": "Weapon"
+        },
+        "armor": null
+       },
+       "was_afk": false,
+       "received_penalty": false,
+       "stayed_in_spawn": false
+      }
+     ]
     }
    ],
    "kills": [
     {
-     "kill": 0
+     "time_in_round_in_ms": 10000,
+     "time_in_match_in_ms": 10000,
+     "round": 0,
+     "killer": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "assistants": [
+      {
+       "puuid": "puuid-2",
+       "name": "Mate",
+       "tag": "0001",
+       "team": "Red"
+      }
+     ],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "29a0cfab-485b-f5d5-779a-b59f85e204a8",
+      "name": "Classic",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 15000,
+     "time_in_match_in_ms": 15000,
+     "round": 0,
+     "killer": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "29a0cfab-485b-f5d5-779a-b59f85e204a8",
+      "name": "Classic",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 18000,
+     "time_in_match_in_ms": 18000,
+     "round": 0,
+     "killer": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "29a0cfab-485b-f5d5-779a-b59f85e204a8",
+      "name": "Classic",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 5000,
+     "time_in_match_in_ms": 105000,
+     "round": 1,
+     "killer": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "e336c6b8-418d-9340-d77f-7a9e4cfe0702",
+      "name": "Sheriff",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 9000,
+     "time_in_match_in_ms": 109000,
+     "round": 1,
+     "killer": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "e336c6b8-418d-9340-d77f-7a9e4cfe0702",
+      "name": "Sheriff",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 220000,
+     "round": 2,
+     "killer": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 25000,
+     "time_in_match_in_ms": 225000,
+     "round": 2,
+     "killer": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 320000,
+     "round": 3,
+     "killer": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 30000,
+     "time_in_match_in_ms": 330000,
+     "round": 3,
+     "killer": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 420000,
+     "round": 4,
+     "killer": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 25000,
+     "time_in_match_in_ms": 425000,
+     "round": 4,
+     "killer": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 520000,
+     "round": 5,
+     "killer": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 25000,
+     "time_in_match_in_ms": 525000,
+     "round": 5,
+     "killer": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 620000,
+     "round": 6,
+     "killer": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 30000,
+     "time_in_match_in_ms": 630000,
+     "round": 6,
+     "killer": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 720000,
+     "round": 7,
+     "killer": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 25000,
+     "time_in_match_in_ms": 725000,
+     "round": 7,
+     "killer": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 820000,
+     "round": 8,
+     "killer": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 30000,
+     "time_in_match_in_ms": 830000,
+     "round": 8,
+     "killer": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 920000,
+     "round": 9,
+     "killer": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 25000,
+     "time_in_match_in_ms": 925000,
+     "round": 9,
+     "killer": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 1020000,
+     "round": 10,
+     "killer": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 25000,
+     "time_in_match_in_ms": 1025000,
+     "round": 10,
+     "killer": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 1120000,
+     "round": 11,
+     "killer": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 30000,
+     "time_in_match_in_ms": 1130000,
+     "round": 11,
+     "killer": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 1220000,
+     "round": 12,
+     "killer": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "29a0cfab-485b-f5d5-779a-b59f85e204a8",
+      "name": "Classic",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 25000,
+     "time_in_match_in_ms": 1225000,
+     "round": 12,
+     "killer": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "29a0cfab-485b-f5d5-779a-b59f85e204a8",
+      "name": "Classic",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 1320000,
+     "round": 13,
+     "killer": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 30000,
+     "time_in_match_in_ms": 1330000,
+     "round": 13,
+     "killer": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 30000,
+     "time_in_match_in_ms": 1430000,
+     "round": 14,
+     "killer": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "ee8e8d15-496b-07ac-e5f6-8fae5d4c7b1a",
+      "name": "Phantom",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 50000,
+     "time_in_match_in_ms": 1450000,
+     "round": 14,
+     "killer": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 60000,
+     "time_in_match_in_ms": 1460000,
+     "round": 14,
+     "killer": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "assistants": [
+      {
+       "puuid": "puuid-me",
+       "name": "Tester",
+       "tag": "JP1",
+       "team": "Red"
+      }
+     ],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 1520000,
+     "round": 15,
+     "killer": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 25000,
+     "time_in_match_in_ms": 1525000,
+     "round": 15,
+     "killer": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 1620000,
+     "round": 16,
+     "killer": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 30000,
+     "time_in_match_in_ms": 1630000,
+     "round": 16,
+     "killer": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 1720000,
+     "round": 17,
+     "killer": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 25000,
+     "time_in_match_in_ms": 1725000,
+     "round": 17,
+     "killer": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 1820000,
+     "round": 18,
+     "killer": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 30000,
+     "time_in_match_in_ms": 1830000,
+     "round": 18,
+     "killer": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 1920000,
+     "round": 19,
+     "killer": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 25000,
+     "time_in_match_in_ms": 1925000,
+     "round": 19,
+     "killer": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 2020000,
+     "round": 20,
+     "killer": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 25000,
+     "time_in_match_in_ms": 2025000,
+     "round": 20,
+     "killer": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "victim": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 20000,
+     "time_in_match_in_ms": 2120000,
+     "round": 21,
+     "killer": {
+      "puuid": "puuid-3",
+      "name": "<b>Foe</b>",
+      "tag": "KR1",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-2",
+      "name": "Mate",
+      "tag": "0001",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
+    },
+    {
+     "time_in_round_in_ms": 30000,
+     "time_in_match_in_ms": 2130000,
+     "round": 21,
+     "killer": {
+      "puuid": "puuid-4",
+      "name": "Other",
+      "tag": "EUW",
+      "team": "Blue"
+     },
+     "victim": {
+      "puuid": "puuid-me",
+      "name": "Tester",
+      "tag": "JP1",
+      "team": "Red"
+     },
+     "assistants": [],
+     "location": {
+      "x": 0,
+      "y": 0
+     },
+     "weapon": {
+      "id": "9c82e19d-4575-0200-1a81-3eacf00cf872",
+      "name": "Vandal",
+      "type": "Weapon"
+     },
+     "secondary_fire_mode": false,
+     "player_locations": []
     }
    ]
   },
@@ -223,7 +4946,7 @@
      "tag": "JP1",
      "team_id": "Red",
      "platform": "pc",
-     "party_id": "x",
+     "party_id": "party-a",
      "agent": {
       "id": "11111111-1111-4111-8111-111111111111",
       "name": "Agent 1"
@@ -256,7 +4979,7 @@
      "tag": "0001",
      "team_id": "Red",
      "platform": "pc",
-     "party_id": "x",
+     "party_id": "party-a",
      "agent": {
       "id": "22222222-2222-4222-8222-222222222222",
       "name": "Agent 2"
@@ -289,7 +5012,7 @@
      "tag": "KR1",
      "team_id": "Blue",
      "platform": "pc",
-     "party_id": "x",
+     "party_id": "party-b",
      "agent": {
       "id": "11111111-1111-4111-8111-111111111111",
       "name": "Agent 1"
@@ -322,7 +5045,7 @@
      "tag": "EUW",
      "team_id": "Blue",
      "platform": "pc",
-     "party_id": "x",
+     "party_id": "party-c",
      "agent": {
       "id": "22222222-2222-4222-8222-222222222222",
       "name": "Agent 2"

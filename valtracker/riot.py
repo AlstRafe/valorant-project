@@ -138,13 +138,22 @@ class Riot:
         """``{"name", "tag", "wallet": {currency uuid: amount} or None, "loadout": PD's playerloadout or None,
         "owned": {kind: {item uuid: copies}}, "missing": [what could not be read], "problem": why}``.
         RiotError when nothing could be read."""
-        kept = self.cache.get("collection")
+        return self._kept("collection", self._collect)
+
+    def shop(self) -> dict:
+        """Today's store (shop.py reads it): ``{"name", "tag", "wallet", "storefront": PD's storefront or None,
+        "missing", "problem"}``. RiotError when nothing could be read."""
+        return self._kept("shop", self._storefront)
+
+    def _kept(self, key: str, read) -> dict:
+        """``read(tokens, saved)``'s answer, kept KEEP seconds; a refused token is traded for a new one once."""
+        kept = self.cache.get(key)
         if kept is not None:
             return kept
         for renew in (False, True):
             tokens, saved = self._tokens(renew)
             try:
-                found = self._collect(tokens, saved)
+                found = read(tokens, saved)
                 break
             except RiotError as error:
                 if error.kind != "expired":
@@ -152,7 +161,7 @@ class Riot:
                 if renew:  # a token just made is refused too: not the cookie's fault
                     raise RiotError("down", error.detail) from None
         self.store.save(problem=found["problem"] or None)
-        self.cache.put("collection", found, KEEP)
+        self.cache.put(key, found, KEEP)
         return found
 
     # -- tokens ---------------------------------------------------------------------------------------
@@ -245,11 +254,8 @@ class Riot:
 
     # -- PD ---------------------------------------------------------------------------------------------
 
-    def _collect(self, tokens: dict, saved: dict) -> dict:
-        shard = str(saved.get("shard") or "ap")
-        base = PD.format(shard=shard if shard in SHARDS.values() else "ap")
-        puuid = str(saved["puuid"])
-        headers = {
+    def _headers(self, tokens: dict) -> dict:
+        return {
             "Authorization": f"Bearer {tokens['access']}",
             "X-Riot-Entitlements-JWT": str(tokens["entitlements"]),
             "X-Riot-ClientPlatform": PLATFORM,
@@ -257,6 +263,52 @@ class Riot:
             "User-Agent": "ShooterGame/13 Windows/10.0.19043.1.256.64bit",
             "Accept": "application/json",
         }
+
+    @staticmethod
+    def _base(saved: dict) -> str:
+        shard = str(saved.get("shard") or "ap")
+        return PD.format(shard=shard if shard in SHARDS.values() else "ap")
+
+    def _storefront(self, tokens: dict, saved: dict) -> dict:
+        """The store (PD's storefront: today's four skins, the bundles, the night market, the accessories) and
+        the wallet, side by side."""
+        base, puuid, headers = self._base(saved), str(saved["puuid"]), self._headers(tokens)
+        with ThreadPoolExecutor(2, thread_name_prefix="riot") as pool:
+            asked = {
+                # v3 is a POST since 2024 (v2's GET was turned off)
+                "storefront": pool.submit(
+                    self._pd,
+                    "storefront",
+                    f"{base}/store/v3/storefront/{puuid}",
+                    {**headers, "Content-Type": "application/json"},
+                    "POST",
+                    b"{}",
+                ),
+                "wallet": pool.submit(self._pd, "wallet", f"{base}/store/v1/wallet/{puuid}", headers),
+            }
+        answers, missing, problems = {}, [], []
+        for key, future in asked.items():
+            try:
+                answers[key] = future.result()
+            except RiotError as error:
+                if error.kind == "expired":
+                    raise
+                missing.append(key)
+                problems.append(error.detail or error.kind)
+        if "storefront" not in answers:
+            raise RiotError("down", problems[0] if problems else "")
+        return {
+            "name": str(saved.get("name") or ""),
+            "tag": str(saved.get("tag") or ""),
+            "wallet": _wallet(answers.get("wallet")),
+            "storefront": answers["storefront"],
+            "at": self.clock(),
+            "missing": missing,
+            "problem": ", ".join(dict.fromkeys(problems)),
+        }
+
+    def _collect(self, tokens: dict, saved: dict) -> dict:
+        base, puuid, headers = self._base(saved), str(saved["puuid"]), self._headers(tokens)
         asks = {"wallet": f"/store/v1/wallet/{puuid}", "loadout": f"/personalization/v2/players/{puuid}/playerloadout"}
         asks |= {kind: f"/store/v1/entitlements/{puuid}/{item_type}" for kind, item_type in ITEM_TYPES.items()}
         with ThreadPoolExecutor(4, thread_name_prefix="riot") as pool:
@@ -282,10 +334,7 @@ class Riot:
                     key = str(item["ItemID"]).lower()
                     counts[key] = counts.get(key, 0) + 1
             owned[kind] = counts
-        balances = (answers.get("wallet") or {}).get("Balances")
-        wallet = None
-        if isinstance(balances, dict):
-            wallet = {str(key).lower(): int(value) for key, value in balances.items() if isinstance(value, int | float)}
+        wallet = _wallet(answers.get("wallet"))
         return {
             "name": str(saved.get("name") or ""),
             "tag": str(saved.get("tag") or ""),
@@ -296,8 +345,8 @@ class Riot:
             "problem": ", ".join(dict.fromkeys(problems)),
         }
 
-    def _pd(self, key: str, url: str, headers: dict) -> dict:
-        status, _, body = self.send("GET", url, headers, None)
+    def _pd(self, key: str, url: str, headers: dict, method: str = "GET", body: bytes | None = None) -> dict:
+        status, _, body = self.send(method, url, headers, body)
         said = _json(body)
         code = str(said.get("errorCode") or "")
         if status == 401 or code in ("BAD_CLAIMS", "TOKEN_EXPIRED", "INVALID_TOKEN"):
@@ -306,6 +355,14 @@ class Riot:
             kind = "busy" if status == 429 else "down"
             raise RiotError(kind, f"{key} {status or 'no answer'} {code}".strip())
         return said
+
+
+def _wallet(answer) -> dict | None:
+    """PD's wallet -> ``{currency uuid: amount}`` (None without one)."""
+    balances = (answer or {}).get("Balances") if isinstance(answer, dict) else None
+    if not isinstance(balances, dict):
+        return None
+    return {str(key).lower(): int(value) for key, value in balances.items() if isinstance(value, int | float)}
 
 
 def _check(status: int, what: str) -> None:

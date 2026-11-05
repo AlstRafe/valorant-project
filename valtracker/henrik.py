@@ -10,16 +10,29 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from urllib.parse import quote, urlencode
 
-from valtracker import net
+from valtracker import net, rounds
 from valtracker.cache import Budget, TTLCache
 
 BASE = "https://api.henrikdev.xyz"
 PLATFORM = "pc"
 #: How long each kind of answer is kept (seconds). A finished match never changes.
-KEEP = {"account": 6 * 3600, "mmr": 300, "rr": 180, "matches": 180, "match": 7 * 24 * 3600}
+KEEP = {
+    "account": 6 * 3600,
+    "mmr": 300,
+    "rr": 180,
+    "matches": 180,
+    "match": 7 * 24 * 3600,
+    "leaderboard": 600,
+    "status": 300,
+    "featured": 1800,
+}
+#: Players on one page of a leaderboard.
+BOARD_PAGE = 50
 #: A Riot ID: the name (3-16 characters, spaces allowed) and the tag (3-5 letters or digits).
 NAME = re.compile(r"^[^#/\\?<>\x00-\x1f]{1,16}$")
 TAG = re.compile(r"^[^\W_]{2,5}$")
@@ -40,10 +53,10 @@ MODES = {
     "escalation": "ggteam",
     "premier": "premier",
 }
-#: What the pages use of a match. The rest (every round and kill, about 0.5 MB a match) is dropped before
-#: it is kept, so the memory of the small VM holds hundreds of matches instead of a few dozen.
+#: What the pages use of a match. Every round and kill (about 0.5 MB a match) is boiled down to ``digest``
+#: (rounds.py) and dropped before it is kept, so the memory of the small VM holds hundreds of matches.
 METADATA = ("match_id", "map", "game_length_in_ms", "started_at", "is_completed", "queue", "season", "region")
-PLAYER = ("puuid", "name", "tag", "team_id", "party_id", "agent", "stats", "tier", "account_level")
+PLAYER = ("puuid", "name", "tag", "team_id", "party_id", "agent", "stats", "tier", "account_level", "economy")
 TEAM = ("team_id", "rounds", "won")
 
 
@@ -85,7 +98,8 @@ class Henrik:
         return self._get(("mmr", region, name.lower(), tag.lower()), path, KEEP["mmr"], _slim_mmr)
 
     def rr_changes(self, region: str, name: str, tag: str) -> dict:
-        """The recent competitive matches' RR: ``{match id: {"change": +18, "tier": 21, "rr": 42}}``."""
+        """The recent competitive matches' RR: ``{match id: {"change": +18, "tier": 21, "rr": 42, "elo": 1842,
+        "at": unix seconds}}`` (elo: the rank and RR as one number, 100 a rank)."""
         path = f"/valorant/v1/mmr-history/{_region(region)}/{_part(name)}/{_part(tag)}"
         return self._get(("rr", region, name.lower(), tag.lower()), path, KEEP["rr"], _slim_rr)
 
@@ -143,6 +157,27 @@ class Henrik:
             return kept
         path = f"/valorant/v4/match/{_region(region)}/{match_id}"
         return self._get(("match", match_id), path, KEEP["match"], _slim_match)
+
+    def leaderboard(self, region: str, start: int = 0) -> dict:
+        """One page of a region's ranked leaderboard: ``{"players": [{"rank", "name", "tag", "puuid", "card",
+        "tier", "rr", "wins", "hidden"}], "thresholds": [{"tier", "rr", "from"}], "total", "updated"}``."""
+        start = max(0, int(start))
+        query = urlencode({"size": BOARD_PAGE, "start_index": start})
+        path = f"/valorant/v3/leaderboard/{_region(region)}/{PLATFORM}?{query}"
+        return self._get(("leaderboard", _region(region), start), path, KEEP["leaderboard"], _slim_board)
+
+    def has_board(self, region: str, start: int = 0) -> bool:
+        """Whether that page of the leaderboard is kept: it needs no call."""
+        return self.cache.get(("leaderboard", _region(region), max(0, int(start)))) is not None
+
+    def status(self, region: str) -> dict:
+        """Riot's notices for a region: ``{"maintenances": [...], "incidents": [...]}`` (_slim_status)."""
+        path = f"/valorant/v1/status/{_region(region)}"
+        return self._get(("status", _region(region)), path, KEEP["status"], _slim_status)
+
+    def featured(self) -> list:
+        """The store's featured bundles (the same for everyone): ``[{"uuid", "price", "until", "items"}]``."""
+        return self._get(("featured",), "/valorant/v2/store-featured", KEEP["featured"], _slim_featured)
 
     def _get(self, cache_key, path: str, seconds: float, shape=None):
         kept = self.cache.get(cache_key)
@@ -240,9 +275,142 @@ def _slim_rr(data) -> dict:
                 "change": int(change),
                 "tier": int(tier or 0),
                 "rr": int(item.get("ranking_in_tier", item.get("rr")) or 0),
+                "elo": int(item.get("elo") or 0),
+                "at": _moment(item.get("date_raw") or item.get("date")),
             }
         except (TypeError, ValueError):
             continue
+    return found
+
+
+def _moment(value) -> int:
+    """Unix seconds from a number (v1's date_raw) or an ISO time (v2's date); 0 when it is neither."""
+    if isinstance(value, int | float):
+        return int(value)
+    try:
+        return int(datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp())
+    except ValueError:
+        return 0
+
+
+def _number(value, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _slim_board(data) -> dict:
+    """v3's leaderboard (or v2's, whose names differ) -> what the page shows."""
+    if not isinstance(data, dict):
+        raise HenrikError("down")
+    players = []
+    for item in data.get("players") or []:
+        if not isinstance(item, dict):
+            continue
+        tier = item.get("tier", item.get("competitiveTier"))
+        players.append(
+            {
+                "rank": _number(item.get("leaderboard_rank", item.get("leaderboardRank"))),
+                "name": str(item.get("name", item.get("gameName")) or ""),
+                "tag": str(item.get("tag", item.get("tagLine")) or ""),
+                "puuid": str(item.get("puuid") or ""),
+                "card": str(item.get("card", item.get("PlayerCardID")) or "").lower(),
+                "tier": _number(tier.get("id") if isinstance(tier, dict) else tier),
+                "rr": _number(item.get("rr", item.get("rankedRating"))),
+                "wins": _number(item.get("wins", item.get("numberOfWins"))),
+                "hidden": bool(item.get("is_anonymized", item.get("IsAnonymized"))),
+            }
+        )
+    thresholds = []
+    for item in data.get("thresholds") or []:
+        if isinstance(item, dict):
+            tier = item.get("tier")
+            thresholds.append(
+                {
+                    "tier": _number(tier.get("id") if isinstance(tier, dict) else tier),
+                    "rr": _number(item.get("threshold")),
+                    "from": _number(item.get("start_index")) + 1,
+                }
+            )
+    for tier, key in ((27, "radiant_threshold"), (26, "immortal_3_threshold"), (25, "immortal_2_threshold")):
+        if not thresholds and data.get(key) is not None:  # v2
+            thresholds.append({"tier": tier, "rr": _number(data[key]), "from": 0})
+    results = data.get("results") if isinstance(data.get("results"), dict) else {}
+    return {
+        "players": players,
+        "thresholds": sorted(thresholds, key=lambda item: -item["tier"]),
+        "total": _number(results.get("total", data.get("total_players"))),
+        "updated": str(data.get("updated_at") or data.get("last_update") or ""),
+    }
+
+
+def _slim_status(data) -> dict:
+    """Each notice: ``{"kind": maintenance / incident, "severity", "status", "titles": {locale: words},
+    "updates": [{"at", "words": {locale: words}}] (latest first), "at"}``."""
+
+    def words(items) -> dict:
+        return {
+            str(item.get("locale") or "").replace("-", "_").lower(): str(item.get("content") or "")
+            for item in items or []
+            if isinstance(item, dict) and item.get("content")
+        }
+
+    found = {}
+    for kind in ("maintenances", "incidents"):
+        notices = []
+        for item in (data or {}).get(kind) or [] if isinstance(data, dict) else []:
+            if not isinstance(item, dict):
+                continue
+            updates = [
+                {"at": str(update.get("created_at") or ""), "words": words(update.get("translations"))}
+                for update in item.get("updates") or []
+                if isinstance(update, dict)
+            ]
+            notices.append(
+                {
+                    "kind": kind[:-1] if kind == "incidents" else "maintenance",
+                    "severity": str(item.get("incident_severity") or ""),
+                    "status": str(item.get("maintenance_status") or ""),
+                    "titles": words(item.get("titles")),
+                    "updates": sorted(updates, key=lambda update: update["at"], reverse=True)[:3],
+                    "at": str(item.get("created_at") or ""),
+                    "platforms": [str(name).lower() for name in item.get("platforms") or []],
+                }
+            )
+        found[kind] = notices
+    return found
+
+
+def _slim_featured(data) -> list:
+    """v2's store-featured: each bundle's uuid, price, time left and items (uuid, type, name, price)."""
+    bundles = data if isinstance(data, list) else []
+    found = []
+    for bundle in bundles:
+        if not isinstance(bundle, dict) or not bundle.get("bundle_uuid"):
+            continue
+        items = [
+            {
+                "uuid": str(item.get("uuid") or "").lower(),
+                "type": str(item.get("type") or ""),
+                "name": str(item.get("name") or ""),
+                "image": str(item.get("image") or ""),
+                "amount": _number(item.get("amount"), 1),
+                "price": _number(item.get("discounted_price", item.get("base_price"))),
+                "base": _number(item.get("base_price")),
+            }
+            for item in bundle.get("items") or []
+            if isinstance(item, dict)
+        ]
+        found.append(
+            {
+                "uuid": str(bundle["bundle_uuid"]).lower(),
+                "price": _number(bundle.get("bundle_price")),
+                "until": time.time() + _number(bundle.get("seconds_remaining")),  # kept a while: when it ends
+                "whole": bool(bundle.get("whole_sale_only")),
+                "items": items,
+            }
+        )
     return found
 
 
@@ -260,8 +428,10 @@ def _slim_match(match) -> dict:
         raise HenrikError("down")
     return {
         "metadata": _pick(match["metadata"], METADATA),
+        # in the order of the match's own list: the digest names players by their place in it
         "players": [_pick(player, PLAYER) for player in match.get("players") or [] if isinstance(player, dict)],
         "teams": [_pick(team, TEAM) for team in match.get("teams") or [] if isinstance(team, dict)],
+        "digest": rounds.digest(match),
     }
 
 

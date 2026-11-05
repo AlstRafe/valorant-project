@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block main %}
+<div class="notice-box" data-load="{{ url_for('status_notice') }}" data-quiet hidden></div>
 <section class="hero">
 <h1>{{ t('プレイヤーを探す') }}</h1>
 <p class="lead">{{ t('Riot ID（名前#タグ）でランクと最近の試合を調べられます。☆を付けたプレイヤーはこのブラウザに保存され、ここに並びます。') }}</p>
@@ -21,5 +22,5 @@
 <h2 id="recent-title">{{ t('最近見たプレイヤー') }}</h2>
 <ul class="people-list" id="recent" data-base="{{ request.script_root }}/p/" data-empty="{{ t('まだありません。') }}"></ul>
 </section>
-<template id="person"><li><a class="person"><span class="pname"></span><span class="ptag"></span></a></li></template>
+<template id="person"><li><a class="person"><img class="prank" alt="" width="24" height="24" hidden><span class="pname"></span><span class="ptag"></span></a></li></template>
 {% endblock %}

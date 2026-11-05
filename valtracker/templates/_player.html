@@ -7,7 +7,7 @@
 <p><a href="{{ url_for('top') }}">← {{ t('検索に戻る') }}</a></p>
 </section>
 {% else %}
-<section class="profile" id="profile" data-name="{{ name }}" data-tag="{{ tag }}" data-region="{{ region }}">
+<section class="profile" id="profile" data-name="{{ name }}" data-tag="{{ tag }}" data-region="{{ region }}"{% if rank and rank.tier > 2 %} data-rank="{{ rank.name }}"{% if rank.icon %} data-icon="{{ media(rank.icon) }}"{% endif %}{% endif %}>
 {% set wide = media('https://media.valorant-api.com/playercards/' ~ card ~ '/wideart.png') if card else '' %}
 <div class="banner">
 {% if wide %}<img class="wide" src="{{ wide }}" alt="" width="452" height="128">{% endif %}
@@ -16,6 +16,7 @@
 <h1>{{ name }}<span class="tag">#{{ tag }}</span></h1>
 <p class="meta">{{ t('レベル {level}', level=account.account_level or '–') }} · {{ region|upper }}</p>
 </div>
+<button type="button" class="fav" id="share" data-copied="{{ t('リンクをコピーしました') }}" title="{{ t('共有') }}" aria-label="{{ t('共有') }}" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1"/></svg></button>
 <button type="button" class="fav" id="fav" aria-pressed="false" data-on="{{ t('お気に入りから外す') }}" data-off="{{ t('お気に入りに追加') }}" title="{{ t('お気に入りに追加') }}" aria-label="{{ t('お気に入りに追加') }}" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg></button>
 </div>
 <div class="ranks">
@@ -25,6 +26,7 @@
 <p class="value">{% if rank.icon %}<img src="{{ media(rank.icon) }}" alt="" width="40" height="40">{% endif %}<span>{{ rank.name }}</span></p>
 <p class="sub">{{ rr }} RR{% if last_change %} <span class="{{ 'up' if last_change > 0 else 'down' }}">({{ '%+d'|format(last_change) }})</span>{% endif %}</p>
 {% if rank.tier < 24 %}<progress class="rr-bar" max="100" value="{{ [rr or 0, 100]|min }}" aria-label="RR {{ rr or 0 }} / 100"></progress>{% endif %}
+{% if next_rank %}<p class="sub next">{{ t('{rank} まであと {rr} RR', rank=next_rank.rank.name, rr=next_rank.need) }}{% if next_rank.wins %} · {{ t('平均 +{gain} なら約 {wins} 勝', gain=next_rank.gain, wins=next_rank.wins) }}{% endif %}</p>{% endif %}
 {% else %}
 <p class="value"><span>{{ t('ランクなし') }}</span></p>
 {% if standing.placements %}<p class="sub">{{ t('ランク決定まであと {count} 試合', count=standing.placements) }}</p>{% endif %}
@@ -38,6 +40,19 @@
 {% endif %}
 </div>
 </section>
+
+{% if rr_chart %}
+<section class="trend" aria-labelledby="rr-title">
+<h2 id="rr-title">{{ t('RR の推移') }} <small>{{ t('コンペティティブ {count} 試合', count=rr_chart.games) }} · <span class="{{ 'up' if rr_chart.net > 0 else ('down' if rr_chart.net < 0 else '') }}">{{ '%+d'|format(rr_chart.net) }} RR</span></small></h2>
+<div class="chart">
+<svg viewBox="0 0 {{ rr_chart.width }} {{ rr_chart.height }}" role="img" aria-label="{{ t('RR の推移') }}: {{ rr_chart.dots[0].rank.name }} {{ rr_chart.dots[0].rr }} RR → {{ rr_chart.dots[-1].rank.name }} {{ rr_chart.dots[-1].rr }} RR">
+{% for line in rr_chart.lines %}<line class="grid" x1="0" x2="{{ rr_chart.width }}" y1="{{ line.y }}" y2="{{ line.y }}"/><text class="grid-name" x="6" y="{{ line.y - 4 }}">{{ line.rank.name }}</text>
+{% endfor %}<path class="line" d="{{ rr_chart.path }}"/>
+{% for dot in rr_chart.dots %}<circle class="{{ 'up' if dot.change > 0 else ('down' if dot.change < 0 else 'even') }}" cx="{{ dot.x }}" cy="{{ dot.y }}" r="4.5"><title>{{ dot.rank.name }} {{ dot.rr }} RR ({{ '%+d'|format(dot.change) }})</title></circle>
+{% endfor %}</svg>
+</div>
+</section>
+{% endif %}
 
 {% if acts %}
 <section class="acts" aria-labelledby="act-title">
@@ -68,6 +83,9 @@
 {% endfor %}</nav>
 
 {% if summary %}
+<nav class="jump" aria-label="{{ t('このページの中') }}">
+<a href="#sum-title">{{ t('概要') }}</a><a href="#m-title">{{ t('試合') }}</a>{% if summary.agent_table %}<a href="#ag-title">{{ t('エージェント') }}</a>{% endif %}{% if summary.maps %}<a href="#map-title">{{ t('マップ') }}</a>{% endif %}{% if summary.weapons %}<a href="#wp-title">{{ t('武器') }}</a>{% endif %}{% if summary.mates %}<a href="#mate-title">{{ t('パーティ') }}</a>{% endif %}
+</nav>
 <section class="summary" aria-labelledby="sum-title">
 <h2 id="sum-title">{{ t('直近 {count} 試合', count=summary.games) }}{% if summary.left_out and not mode %} <small>{{ t('デスマッチなどは除く') }}</small>{% endif %}</h2>
 <dl class="numbers">
@@ -75,6 +93,11 @@
 <div><dt>K / D / A</dt><dd>{{ summary.kills }}/{{ summary.deaths }}/{{ summary.assists }}<small>KD {{ summary.kd }}</small></dd></div>
 {% if summary.acs is not none %}<div><dt>ACS</dt><dd>{{ summary.acs }}<small>ADR {{ summary.adr }}</small></dd></div>{% endif %}
 <div><dt>{{ t('HS率') }}</dt><dd>{{ summary.hs }}%</dd></div>
+{% if summary.kast is not none %}<div><dt><abbr title="{{ t('キル・アシスト・生存・トレードされたラウンドの割合') }}">KAST</abbr></dt><dd>{{ summary.kast }}%{% if summary.dd is not none %}<small><abbr title="{{ t('与えたダメージ − 受けたダメージ（1 ラウンドあたり）') }}">DDΔ</abbr> {{ '%+d'|format(summary.dd) }}</small>{% endif %}</dd></div>{% endif %}
+{% if summary.fk is not none %}<div><dt>{{ t('ファーストキル / デス') }}</dt><dd>{{ summary.fk }} / {{ summary.fd }}<small>{{ t('1 試合あたり {fk} / {fd}', fk='%.1f'|format(summary.fk / summary.games), fd='%.1f'|format(summary.fd / summary.games)) }}</small></dd></div>{% endif %}
+{% if summary.clutches is not none %}<div><dt>{{ t('クラッチ') }}</dt><dd>{{ summary.clutches }}{% if summary.clutch_best %}<small>{{ t('最高 1v{count}', count=summary.clutch_best) }}</small>{% endif %}</dd></div>{% endif %}
+{% if summary.multi %}<div><dt>{{ t('マルチキル') }}</dt><dd>{{ summary.multi[1] + summary.multi[2] + summary.multi[3] }}<small>3K {{ summary.multi[1] }} · 4K {{ summary.multi[2] }} · ACE {{ summary.multi[3] }}</small></dd></div>{% endif %}
+{% if summary.minutes %}<div><dt>{{ t('プレイ時間') }}</dt><dd>{% if summary.minutes >= 60 %}{{ t('{hours}時間{minutes}分', hours=summary.minutes // 60, minutes=summary.minutes % 60) }}{% else %}{{ t('{minutes}分', minutes=summary.minutes) }}{% endif %}{% if summary.plants is not none %}<small>{{ t('設置 {plants} · 解除 {defuses}', plants=summary.plants, defuses=summary.defuses) }}</small>{% endif %}</dd></div>{% endif %}
 </dl>
 {% if summary.decided %}
 <ol class="form" aria-label="{{ t('勝敗（新しい順）') }}">
@@ -88,6 +111,50 @@
 {% endfor %}
 </ul>
 {% endif %}
+
+<div class="split">
+{% if summary.lobby %}
+<section class="lobby" aria-labelledby="lobby-title">
+<h3 id="lobby-title">{{ t('同じ試合のプレイヤーと比べて') }}</h3>
+<p class="note">{{ t('同じ試合に出た他のプレイヤーの平均との比較です。') }}</p>
+<table class="versus">
+<thead><tr><th scope="col"><span class="sr">{{ t('指標') }}</span></th><th scope="col">{{ t('本人') }}</th><th scope="col">{{ t('平均') }}</th></tr></thead>
+<tbody>
+{% for item in summary.lobby %}
+<tr class="{{ 'better' if item.better else ('worse' if item.worse else '') }}"><th scope="row">{{ item.label }}{% if item.strength %} <span class="pill good">{{ t('強み') }}</span>{% elif item.weakness %} <span class="pill bad">{{ t('伸びしろ') }}</span>{% endif %}</th><td>{{ item.mine_text }}</td><td>{{ item.lobby_text }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</section>
+{% endif %}
+{% if summary.aim or summary.sides.atk_rate is not none %}
+<section class="aim" aria-labelledby="aim-title">
+{% if summary.aim %}
+<h3 id="aim-title">{{ t('命中部位') }}</h3>
+<div class="body-figure">
+<svg viewBox="0 0 60 120" role="img" aria-label="{{ t('頭 {head}%・体 {body}%・脚 {leg}%', head=summary.aim.head, body=summary.aim.body, leg=summary.aim.leg) }}">
+<circle class="part" cx="30" cy="13" r="10" fill-opacity="{{ '%.2f'|format(0.2 + summary.aim.head / 125) }}"/>
+<path class="part" d="M14 27h32l4 40H10z" fill-opacity="{{ '%.2f'|format(0.2 + summary.aim.body / 125) }}"/>
+<path class="part" d="M12 70h16l-2 47h-12zM32 70h16l-2 47H34z" fill-opacity="{{ '%.2f'|format(0.2 + summary.aim.leg / 125) }}"/>
+</svg>
+<dl>
+<div><dt>{{ t('頭') }}</dt><dd>{{ summary.aim.head }}%</dd></div>
+<div><dt>{{ t('体') }}</dt><dd>{{ summary.aim.body }}%</dd></div>
+<div><dt>{{ t('脚') }}</dt><dd>{{ summary.aim.leg }}%</dd></div>
+</dl>
+</div>
+{% endif %}
+{% if summary.sides.atk_rate is not none or summary.sides.def_rate is not none %}
+<h3>{{ t('攻守別のラウンド勝率') }}</h3>
+<dl class="sides">
+{% for side, label in (('atk', t('攻撃')), ('def', t('防衛'))) %}{% set rate = summary.sides[side ~ '_rate'] %}{% if rate is not none %}
+<div><dt>{{ label }}</dt><dd><meter min="0" max="100" value="{{ rate }}"></meter><span>{{ rate }}%</span><small>{{ summary.sides[side][0] }}/{{ summary.sides[side][1] }}</small></dd></div>
+{% endif %}{% endfor %}
+</dl>
+{% endif %}
+</section>
+{% endif %}
+</div>
 </section>
 {% endif %}
 
@@ -96,10 +163,10 @@
 {% if matches_problem %}<p class="problem" role="alert">{{ matches_problem }}</p>
 {% elif not rows %}<p class="note">{{ t('このモードの最近の試合はありません。') if mode else t('最近の試合が見つかりませんでした。') }}</p>
 {% else %}
-<ol class="match-list">
+<ol class="match-list" data-day="{{ t('{wins}勝 {losses}敗') }}">
 {% for row in rows %}
 {% set outcome = 'win' if row.result.won is sameas true or (row.result.won is none and not row.result.rounds and row.placing.place == 1) else ('loss' if row.result.won is sameas false else 'draw') %}
-<li class="match {{ outcome }}">
+<li class="match {{ outcome }}" data-outcome="{{ outcome }}"{% if row.rr is not none %} data-rr="{{ row.rr }}"{% endif %}>
 <a href="{{ url_for('match', region=row.region or region, match_id=row.id, me=name ~ '#' ~ tag) }}">
 <span class="pic">{% if row.agent_icon %}<img class="agent" src="{{ media(row.agent_icon) }}" alt="{{ row.agent_name }}" width="44" height="44">{% else %}<span class="agent">{{ row.agent_name[:2] }}</span>{% endif %}
 {% if row.placing.mvp %}<span class="mvp {{ row.placing.mvp }}" title="{{ t('マッチ MVP') if row.placing.mvp == 'match' else t('チーム MVP') }}">MVP<span class="sr">{{ t('マッチ MVP') if row.placing.mvp == 'match' else t('チーム MVP') }}</span></span>{% endif %}</span>
@@ -110,12 +177,61 @@
 {% else %}<strong>{% if outcome == 'win' %}{{ t('勝利') }}{% else %}{{ t('敗北') }}{% endif %}</strong>{% endif %}
 <small>{% if not row.result.rounds and row.result.won is none %}{{ t('{count}人中', count=row.placing.of) }}{% elif row.result.rounds %}{% if outcome == 'win' %}{{ t('勝利') }}{% elif outcome == 'loss' %}{{ t('敗北') }}{% else %}{{ t('引き分け') }}{% endif %}{% endif %}{% if row.rr is not none %}{% if row.result.rounds %} · {% endif %}<span class="{{ 'up' if row.rr > 0 else ('down' if row.rr < 0 else '') }}">{{ '%+d'|format(row.rr) }} RR</span>{% endif %}</small>
 </span>
-<span class="kda"><strong>{{ row.line.kills }} / {{ row.line.deaths }} / {{ row.line.assists }}</strong><small>{% if row.rounds %}ACS {{ row.line.acs }} · {% endif %}HS {{ row.line.hs }}%</small></span>
+<span class="kda"><strong>{{ row.line.kills }} / {{ row.line.deaths }} / {{ row.line.assists }}</strong><small>{% if row.rounds %}ACS {{ row.line.acs }} · {% endif %}{% if row.rounds and row.line.kast is not none %}KAST {{ row.line.kast }}% · {% endif %}HS {{ row.line.hs }}%</small></span>
 </a>
 </li>
 {% endfor %}
 </ol>
 {% endif %}
 </section>
+
+{% if summary %}
+{% if summary.agent_table %}
+<section class="by" aria-labelledby="ag-title">
+<h2 id="ag-title">{{ t('エージェント別') }}</h2>
+<div class="table-wrap">
+<table class="board stats-table">
+<thead><tr><th scope="col">{{ t('エージェント') }}</th><th scope="col">{{ t('試合') }}</th><th scope="col">{{ t('勝率') }}</th><th scope="col">K/D</th>{% if summary.acs is not none %}<th scope="col">ACS</th><th scope="col">ADR</th>{% endif %}<th scope="col">{{ t('HS率') }}</th></tr></thead>
+<tbody>
+{% for agent in summary.agent_table %}
+<tr><th scope="row"><span class="who-cell">{% if agent.icon %}<img src="{{ media(agent.icon) }}" alt="" width="28" height="28" loading="lazy">{% endif %}{{ agent.name }}</span></th><td>{{ agent.games }}</td><td>{% if agent.wins + agent.losses %}{{ agent.win_rate }}%<small>{{ agent.wins }}–{{ agent.losses }}</small>{% else %}–{% endif %}</td><td>{{ agent.kd }}</td>{% if summary.acs is not none %}<td>{{ agent.acs if agent.acs is not none else '–' }}</td><td>{{ agent.adr if agent.adr is not none else '–' }}</td>{% endif %}<td>{{ agent.hs }}%</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+</section>
+{% endif %}
+{% if summary.maps %}
+<section class="by" aria-labelledby="map-title">
+<h2 id="map-title">{{ t('マップ別') }}</h2>
+<ul class="map-cards">
+{% for item in summary.maps %}
+<li>{% if item.image %}<img src="{{ media(item.image) }}" alt="" width="452" height="128" loading="lazy">{% endif %}<div><strong>{{ item.name }}</strong><span class="{{ 'up' if item.win_rate > 50 else ('down' if item.win_rate < 50 else '') }}">{{ item.win_rate }}%</span><small>{{ t('{wins}勝 {losses}敗', wins=item.wins, losses=item.losses) }}{% if item.atk_rate is not none %} · {{ t('攻撃') }} {{ item.atk_rate }}%{% endif %}{% if item.def_rate is not none %} · {{ t('防衛') }} {{ item.def_rate }}%{% endif %}</small></div></li>
+{% endfor %}
+</ul>
+</section>
+{% endif %}
+{% if summary.weapons %}
+<section class="by" aria-labelledby="wp-title">
+<h2 id="wp-title">{{ t('武器別キル') }}</h2>
+<ul class="weapons">
+{% for weapon in summary.weapons %}
+{% set picture = media(weapon.icon) if weapon.icon else '' %}
+<li><span class="wpic">{% if picture %}<img src="{{ picture }}" alt="" width="96" height="32" loading="lazy">{% endif %}</span><strong>{{ weapon.name }}</strong><meter min="0" max="100" value="{{ weapon.share }}"></meter><span>{{ t('{count}キル', count=weapon.kills) }}<small>{{ weapon.share }}%</small></span></li>
+{% endfor %}
+</ul>
+</section>
+{% endif %}
+{% if summary.mates %}
+<section class="by" aria-labelledby="mate-title">
+<h2 id="mate-title">{{ t('一緒にパーティを組んだプレイヤー') }}</h2>
+<ul class="people-list">
+{% for mate in summary.mates %}
+<li><a class="person mate" href="{{ url_for('player', name=mate.name, tag=mate.tag) }}"><span class="pname">{{ mate.name }}</span><span class="ptag">#{{ mate.tag }}</span><small>{{ t('{games}試合', games=mate.games) }}{% if mate.win_rate is not none %} · {{ t('勝率') }} {{ mate.win_rate }}%{% endif %}</small></a></li>
+{% endfor %}
+</ul>
+</section>
+{% endif %}
+{% endif %}
 </div>
 {% endif %}

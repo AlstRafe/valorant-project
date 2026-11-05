@@ -172,6 +172,32 @@ class PagesTest(unittest.TestCase):
         self.assertIn("Victory", english)
         self.assertIn('<li class="win">W</li><li class="loss">L</li>', english)
 
+    def test_a_player_page_in_depth(self):
+        text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
+        self.assertIn("Tier 22 まであと 58 RR · 平均 +18 なら約 4 勝", text)  # 42 RR of 100
+        self.assertIn('<path class="line" d="M14.0,93.3 L786.0,56.7"/>', text)  # the RR trend: two competitive matches
+        self.assertIn("+3 RR", text)  # +18 - 15
+        self.assertIn("<dd>59%", text)  # KAST over the match told round by round
+        self.assertIn("13 / 1", text)  # first kills / deaths
+        self.assertIn("最高 1v1", text)
+        self.assertIn("1時間20分", text)  # two matches of 40 minutes
+        self.assertIn('class="versus"', text)
+        self.assertIn("強み", text)
+        self.assertIn("頭 25%・体 62%・脚 13%", text)
+        self.assertIn("攻撃", text)
+        self.assertIn('id="ag-title"', text)
+        self.assertIn('id="map-title"', text)
+        self.assertIn("ヴァンダル", text)  # the weapons by valorant-api.com's name
+        self.assertIn("/media/weapons/9c82e19d-4575-0200-1a81-3eacf00cf872/killstreamicon.png", text)
+        self.assertIn('href="/p/Mate/0001"', text)  # the party
+        self.assertIn('data-rank="Tier 21"', text)  # kept with the favourites
+        self.assertIn('data-day="{wins}勝 {losses}敗"', text)
+        self.assertIn('data-outcome="win" data-rr="18"', text)
+
+        english = self.get("/p/Tester/JP1?full=1", lang="en-GB").get_data(as_text=True)
+        self.assertIn("58 RR to Tier 22", english)
+        self.assertIn("Against the same lobbies", english)
+
     def test_rr_is_asked_only_where_it_shows(self):
         self.get("/p/Tester/JP1/part?mode=unrated")
         self.assertFalse([url for url in self.fetch.henrik_calls() if "mmr-history" in url])
@@ -255,6 +281,38 @@ class PagesTest(unittest.TestCase):
         self.assertIn("レッド", text)
         self.assertIn("Mate", text)
         self.assertEqual(len(self.fetch.henrik_calls()), calls, "the match list had it already")
+
+    def test_a_match_round_by_round(self):
+        text = self.get(f"/m/ap/{MATCH}?me=Tester%23JP1").get_data(as_text=True)
+        self.assertIn('href="/p/Tester/JP1">← Tester#JP1 の戦績', text)
+        self.assertIn("平均ランク", text)
+        self.assertEqual(text.count('<li class="win'), 13)  # Tester's team won 13 rounds
+        self.assertIn('<li class="win turn"', text)  # the second half begins at round 13
+        self.assertIn('<use href="#end-detonate"/>', text)
+        self.assertIn('<span class="cer">CLUTCH</span>', text)
+        self.assertIn("レッド: エコ", text)  # 800 a player in a pistol round
+        self.assertIn('<details class="round-feed win" id="r1">', text)
+        self.assertIn("スパイク爆発 · A サイト", text)
+        self.assertIn("0:10", text)
+        self.assertIn("+ Mate", text)  # the assist
+        self.assertIn(
+            '<th scope="col"><abbr title="キル・アシスト・生存・トレードされたラウンドの割合">KAST</abbr></th>', text
+        )
+        self.assertIn('<span class="party p1" title="パーティ 1">1</span>', text)
+        self.assertEqual(text.count('class="party '), 2, "only parties of two or more")
+        self.assertIn("Tester の対面成績", text)
+        self.assertIn('<span class="up" title="倒した">12</span>', text)  # Tester on Foe
+        # without the player the visitor came from: the rounds by team colour, no duels
+        plain = self.get(f"/m/ap/{MATCH}").get_data(as_text=True)
+        self.assertIn('<li class="red"', plain)
+        self.assertNotIn("対面成績", plain)
+
+    def test_a_match_without_its_rounds(self):
+        text = self.get("/m/ap/aaaaaaaa-0000-4000-8000-000000000002").get_data(as_text=True)
+        self.assertIn("7–13", self.get("/p/Tester/JP1?full=1").get_data(as_text=True))
+        self.assertNotIn("ラウンドの流れ", text)
+        self.assertNotIn("KAST", text)
+        self.assertIn("DDΔ", text)  # from the match's own numbers
 
     def test_the_players_own_line_stands_out(self):
         text = self.get(f"/m/ap/{MATCH}?me=tester%23jp1").get_data(as_text=True)

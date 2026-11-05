@@ -1,0 +1,80 @@
+{
+ "status": 200,
+ "results": {
+  "total": 3,
+  "returned": 3,
+  "before": 0,
+  "after": 0
+ },
+ "data": {
+  "updated_at": "2026-11-05T03:00:00.000Z",
+  "thresholds": [
+   {
+    "tier": {
+     "id": 27,
+     "name": "Radiant"
+    },
+    "start_index": 0,
+    "threshold": 620
+   },
+   {
+    "tier": {
+     "id": 26,
+     "name": "Immortal 3"
+    },
+    "start_index": 500,
+    "threshold": 310
+   },
+   {
+    "tier": {
+     "id": 25,
+     "name": "Immortal 2"
+    },
+    "start_index": 1500,
+    "threshold": 150
+   }
+  ],
+  "players": [
+   {
+    "card": "cc000000-0000-4000-8000-000000000001",
+    "title": "",
+    "is_banned": false,
+    "is_anonymized": false,
+    "puuid": "p1",
+    "name": "TopFrag",
+    "tag": "JP1",
+    "leaderboard_rank": 1,
+    "tier": 27,
+    "rr": 1234,
+    "wins": 321,
+    "updated_at": "2026-11-05T03:00:00Z"
+   },
+   {
+    "card": "",
+    "title": "",
+    "is_banned": false,
+    "is_anonymized": true,
+    "puuid": "",
+    "name": "",
+    "tag": "",
+    "leaderboard_rank": 2,
+    "tier": 27,
+    "rr": 1200,
+    "wins": 250
+   },
+   {
+    "card": "",
+    "title": "",
+    "is_banned": false,
+    "is_anonymized": false,
+    "puuid": "p3",
+    "name": "Second Best",
+    "tag": "kr1",
+    "leaderboard_rank": 3,
+    "tier": 26,
+    "rr": 980,
+    "wins": 199
+   }
+  ]
+ }
+}

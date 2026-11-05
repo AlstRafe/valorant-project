@@ -6,7 +6,7 @@
    "category": "EEquippableCategory::Rifle",
    "defaultSkinUuid": "aa000000-0000-4000-8000-000000000009",
    "displayIcon": "https://media.valorant-api.com/weapons/9c82e19d-4575-0200-1a81-3eacf00cf872/displayicon.png",
-   "killStreamIcon": "x",
+   "killStreamIcon": "https://media.valorant-api.com/weapons/9c82e19d-4575-0200-1a81-3eacf00cf872/killstreamicon.png",
    "assetPath": "x",
    "weaponStats": {
     "fireRate": 9.75,
@@ -329,5 +329,16 @@
   "branch": "release-09.10",
   "riotClientVersion": "release-09.10-shipping-14-2973541",
   "riotClientBuild": "91.0.2.1870.3774"
- }
+ },
+ "bundles": [
+  {
+   "uuid": "fb000000-0000-4000-8000-000000000001",
+   "displayName": "プライム",
+   "displayNameSubText": null,
+   "description": "x",
+   "displayIcon": "https://media.valorant-api.com/bundles/fb000000-0000-4000-8000-000000000001/displayicon.png",
+   "displayIcon2": "https://media.valorant-api.com/bundles/fb000000-0000-4000-8000-000000000001/displayicon2.png",
+   "assetPath": "x"
+  }
+ ]
 }

@@ -39,6 +39,12 @@ class FakeFetch:
                 return 200, fixture("henrik_mmr.json")
             if "/v1/mmr-history/" in url:
                 return 200, fixture("henrik_mmr_history.json")
+            if "/v3/leaderboard/" in url:
+                return 200, fixture("henrik_leaderboard.json")
+            if "/v1/status/" in url:
+                return 200, fixture("henrik_status.json")
+            if "/v2/store-featured" in url:
+                return 200, fixture("henrik_featured.json")
             if "/v4/matches/" in url:
                 return 200, fixture("henrik_matches.json")
             if "/v4/match/" in url:
@@ -97,6 +103,8 @@ class FakeRiot:
 
     def __call__(self, method: str, url: str, headers: dict, body):
         self.asked.append((method, url, headers, body))
+        if url.endswith(f"/store/v3/storefront/{PUUID}") and method != "POST":
+            return 404, [], b"{}"  # v2's GET is gone
         if url.startswith("https://auth.riotgames.com/authorize"):
             if f"ssid={self.ssid}" not in headers.get("Cookie", "").split("; "):
                 return 303, [("Location", "/login")], b""
@@ -129,6 +137,8 @@ class FakeRiot:
     def _pd(self, url: str):
         from valtracker.riot import ITEM_TYPES
 
+        if url.endswith(f"/store/v3/storefront/{PUUID}"):
+            return self._answer("storefront", self.pd["storefront"])
         if url.endswith(f"/store/v1/wallet/{PUUID}"):
             return self._answer("wallet", self.pd["wallet"])
         if url.endswith(f"/personalization/v2/players/{PUUID}/playerloadout"):

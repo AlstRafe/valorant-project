@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ t('サーバー状況') }} · {{ region_name }} · {{ site_name }}{% endblock %}
+{% block main %}
+<p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
+<section class="hero">
+<h1>{{ t('サーバー状況') }}</h1>
+<p class="lead">{{ t('Riot が出しているメンテナンスと障害のお知らせです（PC 版）。') }}</p>
+</section>
+<nav class="modes" aria-label="{{ t('地域') }}">
+{% for item in regions %}<a href="{{ item.url }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
+{% endfor %}</nav>
+{% if problem %}
+<p class="problem" role="alert">{{ problem }}</p>
+{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}">{{ t('設定を開く') }}</a></p>{% endif %}
+{% elif not notices %}
+<p class="done">{{ t('{region} では、いまメンテナンスも障害もありません。', region=region_name) }}</p>
+{% else %}
+<ul class="notices">
+{% for item in notices %}<li class="notice {{ item.kind }}">
+<p class="label">{{ t('障害') if item.kind == 'incident' else t('メンテナンス') }}{% if item.status == 'scheduled' %} · {{ t('予定') }}{% elif item.status == 'in_progress' %} · {{ t('実施中') }}{% endif %}{% if item.severity == 'critical' %} · {{ t('重大') }}{% endif %}</p>
+<h2>{{ item.title }}</h2>
+{% if item.words %}<p>{{ item.words }}</p>{% endif %}
+{% if item.when %}<p class="note"><time datetime="{{ item.when.iso }}">{{ item.when.text }}</time></p>{% endif %}
+</li>
+{% endfor %}</ul>
+{% endif %}
+<p class="note">{{ t('お知らせは Riot が書いたものを、その言語のものがなければ英語で出しています。') }}</p>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% macro draw(shapes, label, zoom=4, sniper=False) -%}
+{%- set ns = namespace(reach=8) -%}
+{%- for box in shapes -%}{%- set ns.reach = [ns.reach, (box.x|abs), (box.y|abs), ((box.x + box.w)|abs), ((box.y + box.h)|abs)]|max -%}{%- endfor -%}
+{%- set e = ((ns.reach + 4) | round(0, 'ceil') | int) if not sniper else 24 -%}
+<figure class="xhair">
+<div class="xhair-views">
+{% for back in ('dark', 'light') %}<svg class="xh-{{ back }}" viewBox="{{ -e }} {{ -e }} {{ 2 * e }} {{ 2 * e }}" width="{{ 2 * e * zoom }}" height="{{ 2 * e * zoom }}" shape-rendering="crispEdges" role="img" aria-label="{{ label }}">
+<rect x="{{ -e }}" y="{{ -e }}" width="{{ 2 * e }}" height="{{ 2 * e }}" fill="{{ '#2d3138' if back == 'dark' else '#cdc4b1' }}"/>
+{% if sniper %}<path d="M{{ -e }} 0H{{ e }}M0 {{ -e }}V{{ e }}" stroke="#000" stroke-width="0.6" fill="none"/>{% endif %}
+{% for box in shapes %}<rect x="{{ box.x }}" y="{{ box.y }}" width="{{ box.w }}" height="{{ box.h }}" fill="{{ box.fill }}" fill-opacity="{{ box.opacity }}"/>
+{% endfor %}</svg>
+{% endfor %}</div>
+<figcaption>{{ label }}</figcaption>
+</figure>
+{%- endmacro %}
+{% block title %}{{ t('クロスヘア') }} · {{ site_name }}{% endblock %}
+{% block main %}
+<p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
+<section class="hero">
+<h1>{{ t('クロスヘア') }}</h1>
+<p class="lead">{{ t('ゲームの「設定 → クロスヘア → プロファイルのコードをコピー」で出たコードを貼ると、ゲームでの見た目を暗い所と明るい所で確かめられます。') }}</p>
+<form class="search" action="{{ url_for('crosshair') }}" method="get">
+<label for="code" class="sr">{{ t('クロスヘアのコード') }}</label>
+<input id="code" name="code" type="text" value="{{ code }}" placeholder="0;P;c;5;h;0;0l;4;0o;2;0a;1;1b;0" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="600"{% if problem %} aria-invalid="true" aria-describedby="code-problem"{% endif %}>
+<button type="submit">{{ t('表示') }}</button>
+</form>
+{% if problem %}<p class="problem" id="code-problem" role="alert">{{ problem }}</p>{% endif %}
+</section>
+
+<section aria-labelledby="look-title">
+<h2 id="look-title">{{ t('見た目') if code and not problem else t('ゲームの初期設定') }}</h2>
+<div class="xhair-row">
+{{ draw(primary, t('通常')) }}
+{% if ads is not none %}{{ draw(ads, t('覗き込み')) }}{% endif %}
+{{ draw(sniper, t('スナイパーのスコープ'), sniper=True) }}
+</div>
+<p class="note">{{ t('1080p での大きさを 4 倍にしています。') }}{% if code and not problem %} <button type="button" class="quiet copy" data-copy="{{ code }}" data-done="{{ t('コピーしました') }}">{{ t('コードをコピー') }}</button>{% endif %}</p>
+{% if unknown %}<p class="note">{{ t('このサイトがまだ知らない設定（そのまま残ります）') }}: <code>{{ unknown|join(', ') }}</code></p>{% endif %}
+</section>
+
+<section aria-labelledby="settings-title">
+<h2 id="settings-title">{{ t('設定') }}</h2>
+<div class="split">
+{% for profile in described %}{% set about = profile.about %}
+<section>
+<h3>{{ profile.name }}</h3>
+<dl class="xh-table">
+<div><dt>{{ t('色') }}</dt><dd><svg class="swatch" viewBox="0 0 10 10" width="14" height="14" aria-hidden="true"><rect width="10" height="10" fill="{{ about.colour }}"/></svg>{{ about.colour_name }} <code>{{ about.colour }}</code></dd></div>
+<div><dt>{{ t('縁取り') }}</dt><dd>{% if about.outlines[0] %}{{ t('オン') }} · {{ t('太さ') }} {{ about.outlines[1]|int }} · {{ t('不透明度') }} {{ about.outlines[2] }}{% else %}{{ t('オフ') }}{% endif %}</dd></div>
+<div><dt>{{ t('センタードット') }}</dt><dd>{% if about.dot[0] %}{{ t('オン') }} · {{ t('太さ') }} {{ about.dot[1]|int }} · {{ t('不透明度') }} {{ about.dot[2] }}{% else %}{{ t('オフ') }}{% endif %}</dd></div>
+{% for key, name in (('inner', t('内側のライン')), ('outer', t('外側のライン'))) %}{% set ring = about[key] %}
+<div><dt>{{ name }}</dt><dd>{% if ring.on %}{{ t('長さ') }} {{ ring.length|int }}{% if ring.vertical is not none %} / {{ ring.vertical|int }}{% endif %} · {{ t('太さ') }} {{ ring.thickness|int }} · {{ t('間隔') }} {{ ring.offset|int }} · {{ t('不透明度') }} {{ ring.opacity }}{% else %}{{ t('オフ') }}{% endif %}</dd></div>
+{% endfor %}
+</dl>
+</section>
+{% endfor %}
+</div>
+</section>
+
+<section aria-labelledby="presets-title">
+<h2 id="presets-title">{{ t('よく使われる型') }}</h2>
+<ul class="presets">
+{% for preset in presets %}<li>
+{{ draw(preset.shapes, preset.name, zoom=3) }}
+<code>{{ preset.code }}</code>
+<p><a class="button quiet" href="{{ url_for('crosshair', code=preset.code) }}">{{ t('表示') }}</a> <button type="button" class="quiet copy" data-copy="{{ preset.code }}" data-done="{{ t('コピーしました') }}">{{ t('コピー') }}</button></p>
+</li>
+{% endfor %}</ul>
+<p class="note">{{ t('ゲームで「プロファイルのコードを読み込む」に貼ると使えます。') }}</p>
+</section>
+{% endblock %}

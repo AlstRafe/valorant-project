@@ -5,9 +5,10 @@ import re
 import unittest
 from pathlib import Path
 
-from valtracker import i18n
+from valtracker import crosshair, i18n
 from valtracker.locale import OWNER_ONLY, TEXTS
-from valtracker.views import FAILURES, QUEUES
+from valtracker.tools import REGION_NAMES
+from valtracker.views import BUYS, ENDINGS, FAILURES, LOBBY_LABELS, QUEUES
 
 PACKAGE = Path(__file__).resolve().parent.parent / "valtracker"
 #: The owner's pages: Japanese only.
@@ -30,6 +31,12 @@ def used_texts() -> set[str]:
                 arguments = [arg for arg in node.args if isinstance(arg, ast.Constant) and isinstance(arg.value, str)]
                 found.update(arg.value for arg in arguments if re.search(r"[ぁ-んァ-ヶ一-龯]", arg.value))
     found.update(QUEUES.values())
+    found.update(ENDINGS.values())
+    found.update(BUYS.values())
+    found.update(REGION_NAMES.values())
+    found.update(crosshair.COLOUR_NAMES)
+    found.update(crosshair.PRESETS)
+    found.update(label for label, _ in LOBBY_LABELS.values() if re.search(r"[ぁ-んァ-ヶ一-龯]", label))
     found.update(text for _, visitor, owner in FAILURES.values() for text in (visitor, owner) if text)
     found.update(("自動", "オフ", "オン"))
     return found - OWNER_ONLY

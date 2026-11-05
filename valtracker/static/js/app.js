@@ -1,6 +1,7 @@
-// VAL Tracker's pages: favourite and recently viewed players (kept in this browser), match times in the
-// visitor's own time zone, the collection's name filter, and the phone's tab bar hidden while typing. The pages
-// work without it, except for the lists of players, which live only in this browser.
+// VAL Tracker's pages: favourite and recently viewed players with their rank (kept in this browser), match times in
+// the visitor's own time zone and the matches by day, sharing a page, the collection's name filter, and the phone's
+// tab bar hidden while typing. The pages work without it, except for the lists of players, which live only in this
+// browser.
 (function () {
   "use strict";
 
@@ -20,6 +21,11 @@
     } catch (e) {
       return [];
     }
+  }
+
+  // A rank picture is one of our own (/val/media/...): anything else kept in the store is not shown.
+  function ownPicture(address) {
+    return typeof address === "string" && address.charAt(0) === "/" && address.charAt(1) !== "/" ? address : "";
   }
 
   function write(key, list) {
@@ -59,6 +65,13 @@
       link.href = list.getAttribute("data-base") + encodeURIComponent(p.name) + "/" + encodeURIComponent(p.tag);
       item.querySelector(".pname").textContent = p.name;
       item.querySelector(".ptag").textContent = "#" + p.tag;
+      var picture = item.querySelector(".prank");
+      if (picture && ownPicture(p.icon)) {
+        picture.src = p.icon;
+        picture.alt = typeof p.rank === "string" ? p.rank : "";
+        picture.title = picture.alt;
+        picture.hidden = false;
+      }
       list.appendChild(item);
     });
   }
@@ -75,7 +88,26 @@
     var box = document.getElementById("profile");
     if (!box) return;
     var person = { name: box.getAttribute("data-name"), tag: box.getAttribute("data-tag") };
+    if (box.getAttribute("data-rank")) {
+      person.rank = box.getAttribute("data-rank");
+      person.icon = ownPicture(box.getAttribute("data-icon"));
+    }
     write(RECENT, [person].concat(without(read(RECENT), person)).slice(0, RECENT_MAX));
+    // a favourite keeps the rank it was last seen with
+    var kept = read(FAVORITES);
+    if (
+      person.rank &&
+      kept.some(function (p) {
+        return same(p, person);
+      })
+    ) {
+      write(
+        FAVORITES,
+        kept.map(function (p) {
+          return same(p, person) ? person : p;
+        }),
+      );
+    }
     var button = document.getElementById("fav");
     if (!button) return;
     function show() {
@@ -182,8 +214,183 @@
         chosen();
         acts();
         times();
+        days();
+        share();
       })
       .catch(failed);
+  }
+
+  // Other parts that HenrikDev takes seconds for (a page of the leaderboard, the top page's notice) are asked for
+  // the same way: [data-load] is their address. A quiet one ([data-quiet]) shows nothing when it fails.
+  function parts() {
+    document.querySelectorAll("[data-load]").forEach(function (box) {
+      var address = box.getAttribute("data-load");
+      box.removeAttribute("data-load");
+      function failed() {
+        if (box.hasAttribute("data-quiet")) return;
+        var wait = box.querySelector(".wait");
+        if (wait) wait.textContent = box.getAttribute("data-failed");
+        var retry = box.querySelector(".retry");
+        if (retry) retry.hidden = false;
+      }
+      if (!window.fetch) return failed();
+      fetch(address, { headers: { Accept: "text/html" }, credentials: "same-origin" })
+        .then(function (answer) {
+          if (answer.status >= 500 && answer.status !== 503) throw new Error(String(answer.status));
+          return answer.text();
+        })
+        .then(function (html) {
+          box.innerHTML = html; // our own server's part, escaped by its templates
+          box.hidden = !html.trim();
+          times();
+        })
+        .catch(failed);
+    });
+  }
+
+  // [data-copy]: its words to the clipboard (a crosshair code), and the button says so for a moment.
+  function copies() {
+    document.addEventListener("click", function (e) {
+      var button = e.target.closest ? e.target.closest("[data-copy]") : null;
+      if (!button || !navigator.clipboard) return;
+      navigator.clipboard.writeText(button.getAttribute("data-copy")).then(function () {
+        var before = button.textContent;
+        button.textContent = button.getAttribute("data-done") || before;
+        setTimeout(function () {
+          button.textContent = before;
+        }, 1600);
+      });
+    });
+  }
+
+  // The store's offers end at a set time: the time left is counted down each minute.
+  function countdowns() {
+    var boxes = document.querySelectorAll("[data-until]");
+    if (!boxes.length) return;
+    function tick() {
+      var now = Date.now() / 1000;
+      boxes.forEach(function (box) {
+        var left = Math.ceil((Number(box.getAttribute("data-until")) - now) / 60);
+        var words;
+        if (left <= 0) words = box.getAttribute("data-over");
+        else if (left >= 2 * 24 * 60) words = box.getAttribute("data-days").replace("{days}", Math.floor(left / 1440));
+        else {
+          words = box
+            .getAttribute("data-hours")
+            .replace("{hours}", Math.floor(left / 60))
+            .replace("{minutes}", left % 60);
+        }
+        box.textContent = words;
+      });
+    }
+    tick();
+    setInterval(tick, 30000);
+  }
+
+  // Share a player's or a match's page: the phone's own share sheet, else the address copied.
+  function share() {
+    var button = document.getElementById("share");
+    if (!button || !button.hidden) return;
+    var copy = navigator.clipboard && navigator.clipboard.writeText;
+    if (!navigator.share && !copy) return;
+    button.hidden = false;
+    button.addEventListener("click", function () {
+      var address = location.href.split("#")[0];
+      if (navigator.share) {
+        navigator.share({ title: document.title, url: address }).catch(function () {});
+        return;
+      }
+      navigator.clipboard.writeText(address).then(function () {
+        var said = button.querySelector("[role=status]") || button.appendChild(document.createElement("span"));
+        said.className = "sr";
+        said.setAttribute("role", "status");
+        said.textContent = button.getAttribute("data-copied");
+        button.setAttribute("data-state", "copied");
+        button.title = said.textContent;
+        setTimeout(function () {
+          button.removeAttribute("data-state");
+          said.textContent = "";
+        }, 2500);
+      });
+    });
+  }
+
+  // A player's matches by day in the visitor's own time zone, each day with its wins, losses and RR.
+  function days() {
+    var list = document.querySelector(".match-list[data-day]");
+    if (!list || list.querySelector(".day") || !window.Intl) return;
+    var format;
+    try {
+      format = new Intl.DateTimeFormat(document.documentElement.lang, {
+        month: "short",
+        day: "numeric",
+        weekday: "short",
+      });
+    } catch (e) {
+      return;
+    }
+    var groups = [];
+    list.querySelectorAll("li.match").forEach(function (item) {
+      var time = item.querySelector("time[datetime]");
+      var moment = time ? new Date(time.getAttribute("datetime")) : null;
+      if (!moment || isNaN(moment)) return;
+      var key = moment.getFullYear() + "-" + moment.getMonth() + "-" + moment.getDate();
+      var last = groups[groups.length - 1];
+      if (!last || last.key !== key) {
+        last = { key: key, label: format.format(moment), items: [] };
+        groups.push(last);
+      }
+      last.items.push(item);
+    });
+    groups.forEach(function (group) {
+      var wins = 0;
+      var losses = 0;
+      var rr = 0;
+      var rated = false;
+      group.items.forEach(function (item) {
+        var outcome = item.getAttribute("data-outcome");
+        if (outcome === "win") wins += 1;
+        if (outcome === "loss") losses += 1;
+        var change = item.getAttribute("data-rr");
+        if (change !== null && !isNaN(Number(change))) {
+          rr += Number(change);
+          rated = true;
+        }
+      });
+      var head = document.createElement("li");
+      head.className = "day";
+      var title = document.createElement("strong");
+      title.textContent = group.label;
+      var record = document.createElement("span");
+      record.textContent = list.getAttribute("data-day").replace("{wins}", wins).replace("{losses}", losses);
+      head.appendChild(title);
+      head.appendChild(record);
+      if (rated) {
+        var net = document.createElement("span");
+        net.className = rr > 0 ? "up" : rr < 0 ? "down" : "";
+        net.textContent = (rr > 0 ? "+" : "") + rr + " RR";
+        record.appendChild(document.createTextNode(" · "));
+        record.appendChild(net);
+      }
+      list.insertBefore(head, group.items[0]);
+    });
+  }
+
+  // A match: a round of the line at the top opens its kills further down (the address's #r5 too).
+  function rounds() {
+    function open(hash) {
+      var target = /^#r\d+$/.test(hash) ? document.getElementById(hash.slice(1)) : null;
+      if (target && target.tagName === "DETAILS") target.open = true;
+    }
+    if (!document.querySelector(".timeline")) return;
+    open(location.hash);
+    addEventListener("hashchange", function () {
+      open(location.hash);
+    });
+    document.querySelector(".timeline").addEventListener("click", function (e) {
+      var link = e.target.closest ? e.target.closest("a[href^='#r']") : null;
+      if (link) open(link.getAttribute("href"));
+    });
   }
 
   // Times are written in Japan's time by the server; shown in the visitor's own zone and language.
@@ -239,8 +446,14 @@
     profile();
     lists();
     times();
+    days();
+    share();
+    rounds();
     finder();
     typing();
+    parts();
+    copies();
+    countdowns();
   });
   addEventListener("storage", function (e) {
     if (e.key === FAVORITES || e.key === RECENT || e.key === null) lists();

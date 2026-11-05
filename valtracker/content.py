@@ -22,6 +22,8 @@ KINDS = {
     "agents": "/agents?isPlayableCharacter=true&language={lang}",
     "maps": "/maps?language={lang}",
     "competitivetiers": "/competitivetiers?language={lang}",
+    # the weapons' names and kill-feed pictures for everyone's pages; "weapons" (with every skin) is the owner's
+    "arsenal": "/weapons?language={lang}",
     # the owner's collection (collection.py)
     "weapons": "/weapons?language={lang}",
     "buddies": "/buddies?language={lang}",
@@ -31,6 +33,8 @@ KINDS = {
     "flex": "/flex?language={lang}",
     "contenttiers": "/contenttiers?language={lang}",
     "currencies": "/currencies?language={lang}",
+    # the store's bundles (shop.py): their names and pictures
+    "bundles": "/bundles?language={lang}",
     # the game's version, which Riot's own servers want to be told (riot.py)
     "version": "/version",
 }
@@ -163,6 +167,14 @@ class Content:
                         found.setdefault(str(part["uuid"]).lower(), (weapon, skin))
         return found
 
+    def arsenal(self, lang: str) -> dict:
+        """Every weapon by uuid: ``{"displayName", "category", "killStreamIcon", "displayIcon"}``."""
+        return {
+            str(item["uuid"]).lower(): item
+            for item in self._list("arsenal", lang)
+            if isinstance(item, dict) and item.get("uuid")
+        }
+
     def weapons(self, lang: str) -> list:
         return [weapon for weapon in self._list("weapons", lang) if isinstance(weapon, dict)]
 
@@ -204,6 +216,7 @@ SLIM = {
         **_keep(item, ("uuid", "displayName", "displayIcon")),
         "levels": _parts(item, "levels", ("uuid",)),
     },
+    "arsenal": lambda item: _keep(item, ("uuid", "displayName", "category", "killStreamIcon", "displayIcon")),
     "playercards": lambda item: _keep(item, ("uuid", "displayName", "smallArt", "wideArt")),
     "sprays": lambda item: {
         **_keep(item, ("uuid", "displayName", "displayIcon", "fullTransparentIcon")),
@@ -213,6 +226,7 @@ SLIM = {
     "flex": lambda item: _keep(item, ("uuid", "displayName", "displayIcon")),
     "contenttiers": lambda item: _keep(item, ("uuid", "displayName", "devName", "rank", "displayIcon")),
     "currencies": lambda item: _keep(item, ("uuid", "displayName", "displayNameSingular", "displayIcon")),
+    "bundles": lambda item: _keep(item, ("uuid", "displayName", "displayIcon", "displayIcon2")),
 }
 
 
