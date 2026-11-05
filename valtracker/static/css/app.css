@@ -2440,6 +2440,11 @@ code {
   font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
+/* A date and time, or a time left, is read as one: a phone moves it to the next line whole ("11月6日 / 9:00" was split) */
+.note time,
+.left {
+  white-space: nowrap;
+}
 .price {
   display: inline-flex;
   align-items: center;
