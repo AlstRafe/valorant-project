@@ -1,0 +1,15 @@
+# Temporary: what HenrikDev answers for the esports schedule and the news languages (removed after reading).
+name: Probe
+on:
+  push:
+    branches: [claude/project-thread-mqrnd2]
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          for path in "v1/esports/schedule" "v1/esports/schedule?region=international" "v1/esports/schedule?league=vct_pacific" "v1/website/zh-tw" "v1/website/en-gb" "v1/website/ja-jp"; do
+            echo "== $path"
+            curl -s -o body.json -m 60 -w "status %{http_code} bytes %{size_download} seconds %{time_total}\n" -H "Accept: application/json" "https://api.henrikdev.xyz/valorant/$path"
+            head -c 400 body.json; echo
+          done
