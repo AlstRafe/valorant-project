@@ -1,11 +1,13 @@
 // Looks for broken layout on the site's pages: anything wider than the screen, text over text, text cut off,
-// header tabs and buttons that wrap, tap targets too small on a phone, pictures that did not load, and script or
-// CSP errors. Every page in every language at the widths the site is designed for (docs/CONVENTIONS.md).
+// header tabs and buttons that wrap, tap targets too small on a phone, pictures that did not load, script or CSP
+// errors, a page that says it could not load, and for screen readers and eyes: links and fields without a name,
+// headings that skip, the same id twice, text too faint for its background (WCAG AA). Every page in every language
+// at the widths the site is designed for (docs/CONVENTIONS.md).
 //
 //   node tests/ui/audit.js <base, e.g. http://127.0.0.1:5077> [--live] [--quick]
 //
-// --live: the real site (fewer pages at once, follows the leaderboard to a real player and match, pictures
-// must load). Exit code 1 when something is found, with one line per problem and where it shows.
+// --live: the real site (fewer pages at once, follows the leaderboard to a real player and match). Exit code 1
+// when something is found, with one line per problem and where it shows.
 "use strict";
 
 const { chromium } = require("playwright");
@@ -39,7 +41,7 @@ const MADE_UP = [
 ];
 
 // Runs in the page: every problem as {kind, where, text}.
-function inspect(isLive) {
+function inspect() {
   const width = document.documentElement.clientWidth;
   const found = [];
   const path = (el) => {
@@ -202,11 +204,96 @@ function inspect(isLive) {
         });
     }
   }
-  if (isLive) {
-    for (const img of document.images) {
-      if (img.complete && img.naturalWidth === 0 && img.getAttribute("src"))
-        found.push({ kind: "picture did not load", where: path(img), text: img.getAttribute("src").slice(-60) });
+  // For screen readers and keyboards: names, labels, headings, ids.
+  const named = (el) =>
+    Boolean(
+      (el.textContent || "").trim() ||
+      el.getAttribute("aria-label") ||
+      el.getAttribute("title") ||
+      el.querySelector("img[alt]:not([alt='']), svg title"),
+    );
+  for (const el of document.querySelectorAll("a[href], button")) {
+    if (!el.closest("[hidden]") && !named(el)) found.push({ kind: "link or button without a name", where: path(el) });
+  }
+  for (const el of document.querySelectorAll("input:not([type=hidden]):not([type=submit]), select, textarea")) {
+    const labelled =
+      el.closest("label") ||
+      el.getAttribute("aria-label") ||
+      el.getAttribute("aria-labelledby") ||
+      (el.id && document.querySelector(`label[for="${el.id}"]`));
+    if (!labelled) found.push({ kind: "field without a label", where: path(el) });
+  }
+  for (const img of document.querySelectorAll("img:not([alt])"))
+    found.push({ kind: "picture without alt", where: path(img) });
+  const ids = new Map();
+  for (const el of document.querySelectorAll("[id]")) ids.set(el.id, (ids.get(el.id) || 0) + 1);
+  for (const [id, count] of ids)
+    if (count > 1) found.push({ kind: "same id twice", where: "#" + id, text: `${count}×` });
+  const headings = [...document.querySelectorAll("main h1, main h2, main h3, main h4")].filter(
+    (el) => !el.closest("[hidden]"),
+  );
+  if (headings.filter((el) => el.tagName === "H1").length !== 1)
+    found.push({
+      kind: "not one h1",
+      where: "main",
+      text: String(headings.filter((el) => el.tagName === "H1").length),
+    });
+  for (let i = 1; i < headings.length; i++) {
+    if (+headings[i].tagName[1] > +headings[i - 1].tagName[1] + 1)
+      found.push({ kind: "heading skips a level", where: path(headings[i]), text: words(headings[i]) });
+  }
+  // Text too faint to read against what is behind it (WCAG AA: 4.5, or 3 for large text).
+  const canvas = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+  const colors = new Map();
+  const rgba = (value) => {
+    if (!colors.has(value)) {
+      canvas.clearRect(0, 0, 1, 1);
+      canvas.fillStyle = "#000";
+      canvas.fillStyle = value;
+      canvas.fillRect(0, 0, 1, 1);
+      const [r, g, b, a] = canvas.getImageData(0, 0, 1, 1).data;
+      colors.set(value, [r, g, b, a / 255]);
     }
+    return colors.get(value);
+  };
+  const over = (top, under) => top.slice(0, 3).map((part, i) => part * top[3] + under[i] * (1 - top[3]));
+  const behind = (el) => {
+    const layers = [];
+    for (let node = el; node; node = node.parentElement) {
+      const style = css(node);
+      if (style.backgroundImage !== "none") return null; // a picture or gradient: cannot tell
+      const color = rgba(style.backgroundColor);
+      if (color[3] > 0) layers.push(color);
+      if (color[3] >= 1) break;
+    }
+    let under = [255, 255, 255];
+    for (const layer of layers.reverse()) under = over(layer, under);
+    return under;
+  };
+  const light = (rgb) => {
+    const [r, g, b] = rgb.map((part) => {
+      const c = part / 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  for (const el of all) {
+    if (!own(el) || el.closest("[aria-disabled=true], :disabled")) continue;
+    const style = css(el);
+    if (+style.opacity < 1) continue;
+    const back = behind(el);
+    if (!back) continue;
+    const ink = over(rgba(style.color), back);
+    const [high, low] = [light(ink), light(back)].sort((a, b) => b - a);
+    const ratio = (high + 0.05) / (low + 0.05);
+    const size = parseFloat(style.fontSize);
+    const large = size >= 24 || (size >= 18.6 && +style.fontWeight >= 700);
+    if (ratio < (large ? 3 : 4.5))
+      found.push({ kind: "text too faint", where: path(el), text: `${ratio.toFixed(2)} ${words(el)}` });
+  }
+  for (const img of document.images) {
+    if (img.complete && img.naturalWidth === 0 && img.getAttribute("src"))
+      found.push({ kind: "picture did not load", where: path(img), text: img.getAttribute("src").slice(-60) });
   }
   return found;
 }
@@ -252,8 +339,14 @@ async function main() {
             .goto(base + where, { waitUntil: "networkidle", timeout: 60000 })
             .catch((error) => errors.push(String(error).slice(0, 120)));
           await page.waitForTimeout(live ? 400 : 200);
-          for (const item of await page.evaluate(inspect, live))
+          for (const item of await page.evaluate(inspect))
             add(item.kind, where, item.where, item.text, `${lang} ${width} ${theme}`);
+          // a page that should work but says it could not (only the made-up nobody's page is meant to)
+          const failed = await page
+            .$eval(".problem, main [role=alert]", (el) => el.innerText.trim().slice(0, 60))
+            .catch(() => "");
+          if (failed && !where.startsWith("/p/nobody-here/"))
+            add("page shows an error", where, "", failed, `${lang} ${width} ${theme}`);
           for (const error of errors) add("error", where, error, "", `${lang} ${width} ${theme}`);
         }
         await context.close();

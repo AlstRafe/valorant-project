@@ -14,7 +14,7 @@ from flask import Flask, current_app, g, make_response, render_template, request
 from valtracker import crosshair as crosshairs
 from valtracker import i18n, queues, security
 from valtracker import shop as store
-from valtracker.activity import BANDS, FEW
+from valtracker.activity import BANDS, ENOUGH, FEW
 from valtracker.henrik import BOARD_PAGE, HenrikError
 from valtracker.riot import RiotError
 from valtracker.stats import JST
@@ -241,12 +241,22 @@ def _servers_page(region: str) -> dict:
             band = low if low == high else f"{low} – {high}"
         queue = _t(QUEUES[item["queue"]]) if item["queue"] in QUEUES else item["queue"]
         waits.append(item | {"queue_name": queue, "band_name": band, "text": _clock_text(item["seconds"])})
+    lengths = [
+        item
+        | {
+            "queue_name": _t(QUEUES[item["queue"]]) if item["queue"] in QUEUES else item["queue"],
+            "text": _clock_text(item["seconds"]),
+        }
+        for item in found.get("lengths", [])
+    ]
     queues_seen = [item["queue"] for item in waits]
     waits.sort(key=lambda item: (queues_seen.index(item["queue"]), order.get(item["band"], 0)))
     return {
         "servers": servers,
         "waits": waits,
+        "lengths": lengths,
         "matches": found["matches"],
+        "enough": ENOUGH,
         "hour_now": found["hour_now"],
         "clock_name": _t(clock_name),
         "few": FEW,

@@ -85,6 +85,8 @@ a {
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
 summary:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
@@ -1537,10 +1539,27 @@ meter {
   text-decoration: none;
   font-weight: 700;
 }
+/* Pictures in a table keep their size: img's max-width: 100% lets the table measure a cell without them, and then a
+   long name with its badges ran over the next column. */
+.board img {
+  flex: none;
+  max-width: none;
+}
 .board th[scope="row"] img {
   width: 2rem;
   height: 2rem;
   border-radius: 6px;
+}
+/* A long name (up to 16 wide letters) would push a team's numbers off a phone's screen: cut short, whole in its title */
+.board th[scope="row"] .pn {
+  overflow: hidden;
+  max-width: 12em;
+  text-overflow: ellipsis;
+}
+@media (max-width: 34rem) {
+  .board th[scope="row"] .pn {
+    max-width: 8.5em;
+  }
 }
 .board th[scope="row"] img.tier {
   width: 1.5rem;
@@ -1629,7 +1648,7 @@ meter {
   outline-offset: -2px;
 }
 .timeline .rn {
-  color: var(--soft);
+  color: var(--ink); /* --soft is too faint on the coloured squares in the dark */
   font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
 }
@@ -1690,16 +1709,16 @@ meter {
   font-weight: 800;
 }
 .party.p1 {
-  background: #2f7dd1;
+  background: #2a6fbf;
 }
 .party.p2 {
   background: #9a46c9;
 }
 .party.p3 {
-  background: #c9741f;
+  background: #a85d14;
 }
 .party.p4 {
-  background: #138a7d;
+  background: #0f7a6e;
 }
 .party.p5 {
   background: #6f6b63;

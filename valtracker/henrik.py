@@ -36,6 +36,12 @@ BOARD_PAGE = 50
 #: A Riot ID: the name (3-16 characters, spaces allowed) and the tag (3-5 letters or digits).
 NAME = re.compile(r"^[^#/\\?<>\x00-\x1f]{1,16}$")
 TAG = re.compile(r"^[^\W_]{2,5}$")
+#: Full-width ０-９, Ａ-Ｚ and ａ-ｚ -> half-width.
+HALF_WIDTH = {
+    code: code - 0xFEE0
+    for start, end in ((0xFF10, 0xFF19), (0xFF21, 0xFF3A), (0xFF41, 0xFF5A))
+    for code in range(start, end + 1)
+}
 MATCH_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 REGIONS = ("ap", "br", "eu", "kr", "latam", "na")
 #: How many matches a player's page lists: as many as the game's own career page shows.
@@ -80,9 +86,10 @@ class HenrikError(Exception):
 
 
 def split_riot_id(text: str) -> tuple[str, str] | None:
-    """``Name#TAG`` (a full-width ＃ too, spaces around it allowed) -> (name, tag), or None."""
+    """``Name#TAG`` (a full-width ＃ too, spaces around it allowed) -> (name, tag), or None. A tag typed with the
+    Japanese keyboard's full-width letters (ＪＰ１) is the same tag: Riot's tags are half-width."""
     name, mark, tag = text.strip().replace("＃", "#").rpartition("#")
-    name, tag = name.strip(), tag.strip()
+    name, tag = name.strip(), tag.strip().translate(HALF_WIDTH)
     if not mark or not NAME.match(name) or not TAG.match(tag):
         return None
     return name, tag

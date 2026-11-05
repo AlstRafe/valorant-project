@@ -597,6 +597,26 @@ TEXTS = {
         "en-GB": "Usually average at this hour",
         "zh-TW": "這個時段通常普通",
     },
+    "まだ試合が少ない": {
+        "ko": "아직 경기가 적음",
+        "en-GB": "Too few matches yet",
+        "zh-TW": "對戰還太少",
+    },
+    "{count} 試合集まったら、混む時間と空いている時間を出します。": {
+        "ko": "{count}경기가 모이면 붐비는 시간과 한가한 시간을 보여 줍니다.",
+        "en-GB": "Busy and quiet hours show once {count} matches are in.",
+        "zh-TW": "收集到 {count} 場後，會顯示熱門與冷門時段。",
+    },
+    "1 試合の長さ": {
+        "ko": "한 경기의 길이",
+        "en-GB": "How long a match lasts",
+        "zh-TW": "一場對戰的長度",
+    },
+    "試合が始まってから終わるまで（分:秒）。予定を立てるときの目安に。": {
+        "ko": "경기 시작부터 끝까지(분:초). 일정을 짤 때 참고하세요.",
+        "en-GB": "From the start of a match to its end (min:sec), for planning your evening.",
+        "zh-TW": "從對戰開始到結束（分:秒），安排時間時可參考。",
+    },
     "{server} の時間ごとの試合の割合（{clock}）": {
         "ko": "{server}의 시간대별 경기 비율 ({clock})",
         "en-GB": "Share of {server}'s matches by hour ({clock})",

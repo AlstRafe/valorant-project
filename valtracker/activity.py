@@ -44,6 +44,8 @@ BANDS = (
 )
 #: A number from fewer samples than this is not shown.
 FEW = 6
+#: Matches a server needs before the page says when it is busy: with fewer, one evening of one player is a "peak".
+ENOUGH = 48
 #: The collector: seconds between two players (0: off), and how many recent players it can pick from.
 COLLECT_SECONDS = 240
 CANDIDATES = 600
@@ -206,9 +208,11 @@ class Activity:
     # -- what the pages show -----------------------------------------------------------------------------
 
     def servers(self, region: str, offset_hours: float = 9) -> dict:
-        """``{"servers": [{"name", "matches", "hours": [24 shares], "now": share, "level", "tier"}], "waits":
-        [{"queue", "band", "seconds", "samples"}], "matches", "since"}`` for a region over the last WINDOW_DAYS,
-        the hours in the visitor's time (``offset_hours`` from UTC). Kept a few minutes."""
+        """``{"servers": [{"name", "matches", "hours": [24 shares], "now": share, "level", "peak", "quiet",
+        "tier"}], "waits": [{"queue", "band", "seconds", "samples"}], "lengths": [{"queue", "seconds", "samples"}],
+        "matches", "hour_now"}`` for a region over the last WINDOW_DAYS, the hours in the visitor's time
+        (``offset_hours`` from UTC). A server with fewer than ENOUGH matches has the level "few" and no peak or
+        quiet hours. Kept a few minutes."""
         key = (region, offset_hours)
         now = self.clock()
         kept = self._summary.get(key)
@@ -222,11 +226,15 @@ class Activity:
                     "SELECT cluster, started, tier FROM matches WHERE region = ? AND started >= ? AND cluster != ''",
                     (region, since),
                 ).fetchall()
+                lengths = db.execute(
+                    "SELECT queue, length FROM matches WHERE region = ? AND started >= ? AND length > 0",
+                    (region, since),
+                ).fetchall()
                 waits = db.execute(
                     "SELECT queue, tier, seconds, at FROM gaps WHERE region = ? AND at >= ?", (region, since)
                 ).fetchall()
         except sqlite3.Error:
-            matches, waits = [], []
+            matches, waits, lengths = [], [], []
         hour_now = int(((now / 3600) + offset_hours) % 24)
         by_server: dict[str, list] = {}
         for cluster, started, tier in matches:
@@ -240,15 +248,16 @@ class Activity:
             tiers = [tier for _, tier in items if tier]
             # this hour beside the server's average hour (100/24 % of its matches)
             level = shares[hour_now] / (100 / 24)
+            enough = len(items) >= ENOUGH
             servers.append(
                 {
                     "name": name,
                     "matches": len(items),
                     "hours": shares,
                     "now": shares[hour_now],
-                    "level": "busy" if level >= 1.3 else "quiet" if level <= 0.7 else "usual",
-                    "peak": shares.index(max(shares)),
-                    "quiet": quiet_hours(shares),
+                    "level": ("busy" if level >= 1.3 else "quiet" if level <= 0.7 else "usual") if enough else "few",
+                    "peak": shares.index(max(shares)) if enough else None,
+                    "quiet": quiet_hours(shares) if enough else None,
                     "tier": round(sum(tiers) / len(tiers)) if tiers else 0,
                 }
             )
@@ -263,8 +272,19 @@ class Activity:
             for (queue, name), values in grouped.items()
             if len(values) >= FEW
         ]
+        by_queue: dict[str, list[int]] = {}
+        for queue, length in lengths:
+            by_queue.setdefault(queue, []).append(length)
         found = {
             "servers": servers,
+            "lengths": sorted(
+                (
+                    {"queue": queue, "seconds": round(statistics.median(values)), "samples": len(values)}
+                    for queue, values in by_queue.items()
+                    if len(values) >= FEW
+                ),
+                key=lambda item: -item["samples"],
+            ),
             "waits": sorted(
                 listed,
                 key=lambda item: (-sum(i["samples"] for i in listed if i["queue"] == item["queue"]), item["band"]),

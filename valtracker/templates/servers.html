@@ -20,14 +20,16 @@
 <li class="server level-{{ server.level }}">
 <div class="server-head">
 <h2>{{ server.shown }}</h2>
-<p class="level"><span class="dot" aria-hidden="true"></span>{% if server.level == 'busy' %}{{ t('いつもこの時間は混んでいる') }}{% elif server.level == 'quiet' %}{{ t('いつもこの時間は空いている') }}{% else %}{{ t('いつもこの時間はふつう') }}{% endif %}</p>
+<p class="level"><span class="dot" aria-hidden="true"></span>{% if server.level == 'busy' %}{{ t('いつもこの時間は混んでいる') }}{% elif server.level == 'quiet' %}{{ t('いつもこの時間は空いている') }}{% elif server.level == 'few' %}{{ t('まだ試合が少ない') }}{% else %}{{ t('いつもこの時間はふつう') }}{% endif %}</p>
 </div>
 <svg class="hours" viewBox="0 0 240 56" role="img" aria-label="{{ t('{server} の時間ごとの試合の割合（{clock}）', server=server.shown, clock=clock_name) }}">
 {% for bar in server.bars %}<rect class="{{ 'now' if bar.hour == hour_now else 'bar' }}" x="{{ bar.x }}" y="{{ 46 - bar.h }}" width="8" height="{{ [bar.h, 0.6]|max }}" rx="1"><title>{{ '%d:00' % bar.hour }} · {{ bar.share }}%</title></rect>
 {% endfor %}<path class="axis" d="M0 46.5H240"/>
 {% for hour in (0, 6, 12, 18) %}<text x="{{ hour * 10 + 1 }}" y="55">{{ hour }}</text>
 {% endfor %}</svg>
-<p class="sub when">{{ t('いちばん混む: {hour} 時台', hour=server.peak) }}{% if server.quiet %} · {{ t('空いている: {start}〜{end} 時', start=server.quiet[0], end=server.quiet[1]) }}{% endif %}</p>
+{% if server.peak is not none %}<p class="sub when">{{ t('いちばん混む: {hour} 時台', hour=server.peak) }}{% if server.quiet %} · {{ t('空いている: {start}〜{end} 時', start=server.quiet[0], end=server.quiet[1]) }}{% endif %}</p>
+{% else %}<p class="sub when">{{ t('{count} 試合集まったら、混む時間と空いている時間を出します。', count=enough) }}</p>
+{% endif %}
 <p class="sub">{{ t('{count} 試合', count='{:,}'.format(server.matches)) }}{% if server.rank %} · {{ t('平均ランク') }} {{ server.rank.name }}{% endif %} · {{ t('いまの時間: {share}%', share=server.now) }}</p>
 </li>
 {% endfor %}</ul>
@@ -48,4 +50,16 @@
 <p class="note">{{ t('まだ数が足りません（{few} 件から出します）。', few=few) }}</p>
 {% endif %}
 </section>
+{% if lengths %}
+<section aria-labelledby="lengths-title">
+<h2 id="lengths-title">{{ t('1 試合の長さ') }}</h2>
+<div class="table-wrap"><table class="board plain waits">
+<thead><tr><th scope="col">{{ t('モード') }}</th><th scope="col">{{ t('中央値') }}</th></tr></thead>
+<tbody>
+{% for item in lengths %}<tr><td>{{ item.queue_name }}</td><td><strong>{{ item.text }}</strong><small>{{ t('{count} 件', count='{:,}'.format(item.samples)) }}</small></td></tr>
+{% endfor %}</tbody>
+</table></div>
+<p class="note">{{ t('試合が始まってから終わるまで（分:秒）。予定を立てるときの目安に。') }}</p>
+</section>
+{% endif %}
 {% endblock %}

@@ -1,6 +1,7 @@
 """The app with the tests' made-up answers of the outside APIs (tests/helpers.py), for looking at the pages and for
 tests/ui/audit.js: the owner signed in to Riot (so /queues and the owner's store show), made-up matches on the servers
-page, and a ``visitor=1`` cookie that shows a page as a visitor sees it.
+page, pictures a browser can show, one player with the longest name there can be, and a ``visitor=1`` cookie that
+shows a page as a visitor sees it.
 
     python tests/ui/serve.py [port, default 5077]
 """
@@ -8,8 +9,10 @@ page, and a ``visitor=1`` cookie that shows a page as a visitor sees it.
 import math
 import os
 import random
+import struct
 import sys
 import time
+import zlib
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -17,10 +20,36 @@ TESTS = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(TESTS), str(TESTS.parent)]
 os.environ["VAL_HENRIK_KEY"] = ""
 
+import helpers  # noqa: E402
 from helpers import make_app  # noqa: E402
 
-#: The made-up servers and how many matches each had in 14 days.
-SERVERS = {"Tokyo": 900, "Hong Kong": 420, "Singapore": 380, "Sydney": 260, "Mumbai": 120}
+#: The made-up servers and how many matches each had in 14 days (Mumbai: too few to tell its busy hours).
+SERVERS = {"Tokyo": 900, "Hong Kong": 420, "Singapore": 380, "Sydney": 260, "Mumbai": 30}
+
+
+#: The longest Riot ID there can be, in wide letters (16 + 5): one made-up player has it, for long names in tables.
+LONGEST = ("長い名前のプレイヤーです一二三四", "WWWWW")
+
+
+def _fixture(name: str, original=helpers.fixture) -> bytes:
+    data = original(name)
+    if name == "henrik_matches.json":
+        longest, tag = LONGEST
+        data = data.replace(b'"name": "Other"', f'"name": "{longest}"'.encode())
+        data = data.replace(b'"tag": "EUW"', f'"tag": "{tag}"'.encode())
+    return data
+
+
+def _png(size: int = 64) -> bytes:
+    """A grey square that a browser can show (the tests' PNG is only its first bytes): a picture takes its room on
+    the pages as the real ones do, so the layout check sees what a visitor sees."""
+
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+
+    rows = b"".join(b"\x00" + b"\x88\x88\x88" * size for _ in range(size))
+    header = struct.pack(">IIBBBBB", size, size, 8, 2, 0, 0, 0)
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(rows)) + chunk(b"IEND", b"")
 
 
 def _match(match_id: str, started: float, cluster: str, queue: str, tier: int) -> dict:
@@ -63,6 +92,8 @@ def seed(activity, now: float) -> None:
 
 def main() -> None:
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5077
+    helpers.PNG = _png()
+    helpers.fixture = _fixture
     app, _, _ = make_app()
     app.config["VAL_RIOT"].sign_in("ssid-1")
     seed(app.config["VAL_ACTIVITY"], time.time())

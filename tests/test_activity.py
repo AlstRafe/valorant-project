@@ -13,7 +13,7 @@ from unittest import mock
 from helpers import fixture, make_app
 
 from valtracker import queues
-from valtracker.activity import FEW, Activity, Collector
+from valtracker.activity import ENOUGH, FEW, Activity, Collector
 
 VISITOR = {"homepage.visitor": True}
 #: 2026-11-04 12:00 UTC (21:00 in Japan)
@@ -63,22 +63,32 @@ class ActivityTest(unittest.TestCase):
         self.assertEqual(self.activity._connect().execute("SELECT COUNT(*) FROM gaps").fetchone()[0], 1)
 
     def test_servers_by_hour_in_the_visitors_time(self):
-        listed = [match(i, NOON + i * 60) for i in range(8)] + [match(100, NOON - 6 * 3600, cluster="Hong Kong")]
+        listed = [match(i, NOON + i * 60) for i in range(ENOUGH)] + [match(100, NOON - 6 * 3600, cluster="Hong Kong")]
         self.activity.seen(listed)
         found = self.activity.servers("ap", 9)
         self.assertEqual([server["name"] for server in found["servers"]], ["Tokyo", "Hong Kong"])
-        tokyo = found["servers"][0]
-        self.assertEqual(tokyo["matches"], 8)
+        tokyo, hong_kong = found["servers"]
+        self.assertEqual(tokyo["matches"], ENOUGH)
         self.assertEqual(tokyo["hours"][21], 100.0, "12:00 UTC is 21:00 in Japan")
         self.assertEqual(found["hour_now"], 22)
         self.assertEqual(tokyo["level"], "quiet", "none at 22:00")
+        self.assertEqual(tokyo["peak"], 21)
         self.assertEqual(self.activity.servers("ap", 0)["servers"][0]["hours"][12], 100.0)
         self.assertEqual(self.activity.servers("eu", 0)["servers"], [])
+        # one match is no pattern: no busy or quiet hours claimed
+        self.assertEqual((hong_kong["level"], hong_kong["peak"], hong_kong["quiet"]), ("few", None, None))
 
     def test_busy_at_its_usual_hour(self):
         self.now = NOON + 600
-        self.activity.seen([match(i, NOON - 86400 * (i % 3) + i) for i in range(9)])
+        self.activity.seen([match(i, NOON - 86400 * (i % 3) + i) for i in range(ENOUGH)])
         self.assertEqual(self.activity.servers("ap", 9)["servers"][0]["level"], "busy")
+
+    def test_how_long_a_match_lasts(self):
+        listed = [match(i, NOON - i * 3600, length=1800 + i * 60) for i in range(FEW)]
+        listed += [match(100 + i, NOON - i * 3600, "deathmatch", length=540) for i in range(FEW - 1)]
+        self.activity.seen(listed)
+        lengths = self.activity.servers("ap", 9)["lengths"]
+        self.assertEqual(lengths, [{"queue": "competitive", "seconds": 1950, "samples": FEW}], "too few deathmatches")
 
     def test_waits_need_a_few_samples(self):
         listed = []
@@ -246,6 +256,8 @@ class PagesTest(unittest.TestCase):
         self.assertIn("東京", text)
         self.assertIn('class="hours"', text)
         self.assertIn("日本時間", text)
+        self.assertIn("まだ試合が少ない", text, "a few matches: no busy hours yet")
+        self.assertNotIn("いちばん混む", text)
         self.client.set_cookie("lang", "en-GB")
         self.assertIn("Tokyo", self.page("/servers?region=ap"))
         self.assertIn("UTC", self.page("/servers?region=ap"))
