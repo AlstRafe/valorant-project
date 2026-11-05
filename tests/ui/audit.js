@@ -216,7 +216,11 @@ async function main() {
   const problems = new Map(); // "kind | page | where" -> {text, seen: Set of "lang width theme"}
   const add = (kind, page, where, text, at) => {
     const key = `${kind} | ${page} | ${where}`;
-    if (!problems.has(key)) problems.set(key, { text, seen: new Set() });
+    if (!problems.has(key)) {
+      problems.set(key, { text, seen: new Set() });
+      // at once too, so a run that is cut short (a time limit) still tells what it found
+      console.log(`found: ${key}${text ? "  “" + text + "”" : ""}  (${at})`);
+    }
     problems.get(key).seen.add(at);
   };
   let pages = live ? PAGES : PAGES.concat(MADE_UP);
@@ -247,7 +251,7 @@ async function main() {
           await page
             .goto(base + where, { waitUntil: "networkidle", timeout: 60000 })
             .catch((error) => errors.push(String(error).slice(0, 120)));
-          await page.waitForTimeout(live ? 800 : 200);
+          await page.waitForTimeout(live ? 400 : 200);
           for (const item of await page.evaluate(inspect, live))
             add(item.kind, where, item.where, item.text, `${lang} ${width} ${theme}`);
           for (const error of errors) add("error", where, error, "", `${lang} ${width} ${theme}`);
@@ -257,6 +261,7 @@ async function main() {
     }
   }
   await browser.close();
+  console.log("\n--- all problems, and everywhere they show ---");
   for (const [key, { text, seen }] of [...problems].sort()) {
     const at = [...seen];
     console.log(
