@@ -214,8 +214,23 @@ def _family(name: str) -> str:
     return re.sub(r"\s*\d+$", "", name) or name
 
 
+def _zone() -> tuple[float, str]:
+    """The clock the servers page counts hours in: the visitor's own (the ``tz`` cookie, minutes from UTC, which the
+    page's script sets), or their language's (Japan's for ja) when there is none or it is the same."""
+    offset, name = CLOCKS.get(g.lang, CLOCKS["ja"])
+    try:
+        minutes = int(request.cookies.get("tz", ""))
+    except ValueError:
+        return offset, _t(name)
+    if minutes % 15 or not -720 <= minutes <= 840 or minutes == offset * 60:
+        return offset, _t(name)
+    hours, rest = divmod(abs(minutes), 60)
+    zone = f"UTC{'+' if minutes >= 0 else '−'}{hours}" + (f":{rest:02d}" if rest else "")
+    return minutes / 60, _t("あなたの時間（{zone}）", zone=zone)
+
+
 def _servers_page(region: str) -> dict:
-    offset, clock_name = CLOCKS.get(g.lang, CLOCKS["ja"])
+    offset, clock_name = _zone()
     found = current_app.config["VAL_ACTIVITY"].servers(region, offset)
     servers = []
     for server in found["servers"]:
@@ -258,7 +273,8 @@ def _servers_page(region: str) -> dict:
         "matches": found["matches"],
         "enough": ENOUGH,
         "hour_now": found["hour_now"],
-        "clock_name": _t(clock_name),
+        "clock_name": clock_name,
+        "offset_minutes": round(offset * 60),
         "few": FEW,
     }
 

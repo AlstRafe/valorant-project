@@ -18,6 +18,8 @@ const quick = flags.includes("--quick");
 const WIDTHS = [360, 760, 1000, 1440];
 const LANGS = quick ? ["ja", "en-GB"] : ["ja", "ko", "en-GB", "zh-TW"];
 const THEMES = live || quick ? ["light"] : ["light", "dark"];
+// Each language's visitor in its usual clock (the servers page counts hours in the visitor's own).
+const ZONES = { "ja": "Asia/Tokyo", "ko": "Asia/Seoul", "en-GB": "Europe/London", "zh-TW": "Asia/Taipei" };
 const PAGES = [
   "/",
   "/leaderboard?full=1",
@@ -318,6 +320,7 @@ async function main() {
           viewport: { width, height: 800 },
           colorScheme: theme,
           locale: lang,
+          timezoneId: ZONES[lang],
         });
         await context.addCookies([{ name: "lang", value: lang, url: base }]);
         const page = await context.newPage();

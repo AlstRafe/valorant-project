@@ -33,7 +33,7 @@
 <p class="sub">{{ t('{count} 試合', count='{:,}'.format(server.matches)) }}{% if server.rank %} · {{ t('平均ランク') }} {{ server.rank.name }}{% endif %} · {{ t('いまの時間: {share}%', share=server.now) }}</p>
 </li>
 {% endfor %}</ul>
-<p class="note">{{ t('時刻は{clock}です。濃い棒がいまの時間。', clock=clock_name) }}</p>
+<p class="note" data-offset="{{ offset_minutes }}">{{ t('時刻は{clock}です。濃い棒がいまの時間。', clock=clock_name) }}</p>
 {% endif %}
 
 <section aria-labelledby="waits-title">

@@ -438,6 +438,19 @@
     });
   }
 
+  // The servers page counts the hours in the visitor's own clock: their offset from UTC in a cookie (minutes), and
+  // the page once more when it was counted in another clock. Only when the cookie changed, so never in a loop.
+  function zone() {
+    var minutes = -new Date().getTimezoneOffset();
+    if (!isFinite(minutes)) return;
+    var had = (document.cookie.match(/(?:^|; )tz=(-?\d+)/) || [])[1];
+    if (had === String(minutes)) return;
+    document.cookie =
+      "tz=" + minutes + "; path=/; max-age=31536000; SameSite=Lax" + (location.protocol === "https:" ? "; Secure" : "");
+    var page = document.querySelector("[data-offset]");
+    if (page && page.getAttribute("data-offset") !== String(minutes)) location.reload();
+  }
+
   // The owner's collection lists every item of a tab at once: the names are narrowed as they are typed.
   function finder() {
     var input = document.getElementById("find");
@@ -488,6 +501,7 @@
     parts();
     copies();
     countdowns();
+    zone();
   });
   addEventListener("storage", function (e) {
     if (e.key === FAVORITES || e.key === RECENT || e.key === null) lists();

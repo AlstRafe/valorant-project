@@ -261,6 +261,19 @@ class PagesTest(unittest.TestCase):
         self.client.set_cookie("lang", "en-GB")
         self.assertIn("Tokyo", self.page("/servers?region=ap"))
         self.assertIn("UTC", self.page("/servers?region=ap"))
+        # the visitor's own clock, which the page's script puts in a cookie (minutes from UTC)
+        self.client.set_cookie("tz", "-300")
+        text = self.page("/servers?region=ap")
+        self.assertIn("your time (UTC−5)", text)
+        self.assertIn('data-offset="-300"', text)
+        self.client.set_cookie("tz", "330")
+        self.assertIn("your time (UTC+5:30)", self.page("/servers?region=ap"))
+        for wrong in ("abc", "7", "9999"):
+            self.client.set_cookie("tz", wrong)
+            self.assertIn('data-offset="0"', self.page("/servers?region=ap"), wrong)
+        self.client.set_cookie("lang", "ja")
+        self.client.set_cookie("tz", "540")
+        self.assertIn("時刻は日本時間です", self.page("/servers?region=ap"), "the same as the language's: its name")
 
     def test_player_rows_show_their_server_and_today(self):
         text = self.page("/p/Player/JP1?full=1")

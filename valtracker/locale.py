@@ -597,6 +597,11 @@ TEXTS = {
         "en-GB": "Usually average at this hour",
         "zh-TW": "這個時段通常普通",
     },
+    "あなたの時間（{zone}）": {
+        "ko": "내 시간({zone})",
+        "en-GB": "your time ({zone})",
+        "zh-TW": "你的時間（{zone}）",
+    },
     "まだ試合が少ない": {
         "ko": "아직 경기가 적음",
         "en-GB": "Too few matches yet",
