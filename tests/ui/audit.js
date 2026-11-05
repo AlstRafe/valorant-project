@@ -98,15 +98,16 @@ function inspect() {
     return kept.get(el);
   };
   // The part of an element that can be seen (what its ancestors clip is not).
+  // An inline element that runs over two lines is one box per line: its whole box would cover the next words.
   const seen = (el) => {
-    const box = el.getBoundingClientRect();
     const room = up(el.parentElement).box;
-    return {
+    const parts = css(el).display === "inline" ? [...el.getClientRects()] : [el.getBoundingClientRect()];
+    return parts.map((box) => ({
       left: Math.max(box.left, room.left),
       top: Math.max(box.top, room.top),
       right: Math.min(box.right, room.right),
       bottom: Math.min(box.bottom, room.bottom),
-    };
+    }));
   };
   const clipped = (el) => up(el.parentElement).clips;
   const fixed = (el) => up(el).fixed;
@@ -147,7 +148,7 @@ function inspect() {
   // Text over text (not the fixed tab bar over the page, which is meant).
   const texts = all
     .filter((el) => own(el) && !fixed(el))
-    .map((el) => ({ el, box: seen(el) }))
+    .flatMap((el) => seen(el).map((box) => ({ el, box })))
     .filter(({ box }) => box.right - box.left > 1 && box.bottom - box.top > 1)
     .sort((a, b) => a.box.top - b.box.top);
   for (let i = 0; i < texts.length; i++) {
@@ -330,9 +331,7 @@ async function main() {
         page.on(
           "response",
           (answer) =>
-            answer.status() >= 400 &&
-            !answer.url().includes("/p/nobody-here/") &&
-            errors.push(`${answer.status()} ${answer.url().replace(base, "").slice(0, 90)}`),
+            answer.status() >= 400 && errors.push(`${answer.status()} ${answer.url().replace(base, "").slice(0, 90)}`),
         );
         if (live && pages === PAGES) pages = PAGES.concat(await follow(page));
         process.stderr.write(`${theme} ${lang} ${width}px\n`);
@@ -350,7 +349,11 @@ async function main() {
             .catch(() => "");
           if (failed && !where.startsWith("/p/nobody-here/"))
             add("page shows an error", where, "", failed, `${lang} ${width} ${theme}`);
-          for (const error of errors) add("error", where, error, "", `${lang} ${width} ${theme}`);
+          for (const error of errors) {
+            // the nobody's page answers 404 on purpose (and the browser says so in the console)
+            if (where.startsWith("/p/nobody-here/") && error.includes("404")) continue;
+            add("error", where, error, "", `${lang} ${width} ${theme}`);
+          }
         }
         await context.close();
       }
