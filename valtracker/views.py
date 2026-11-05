@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from flask import Flask, abort, current_app, g, make_response, redirect, render_template, request, send_file, url_for
 
 from valtracker import i18n, security, stats
-from valtracker.henrik import REGIONS, HenrikError, split_riot_id
+from valtracker.henrik import MODES, REGIONS, HenrikError, split_riot_id
 
 #: HenrikDev's queue ids -> what the game calls them (translated in locale.py).
 QUEUES = {
@@ -27,6 +27,18 @@ QUEUES = {
     "skirmish_1v1": "スカーミッシュ",
     "skirmish_2v2": "スカーミッシュ",
 }
+#: The filter above a player's matches, in the game's order ("" is every mode; the names are QUEUES').
+MODE_FILTER = (
+    "",
+    "competitive",
+    "unrated",
+    "swiftplay",
+    "spikerush",
+    "deathmatch",
+    "teamdeathmatch",
+    "escalation",
+    "premier",
+)
 #: Why a player or match could not be shown -> (HTTP status, the visitor's words, the owner's words).
 FAILURES = {
     "nokey": (
@@ -119,7 +131,20 @@ def _row(match: dict, player: dict) -> dict:
     }
 
 
-def _player(name: str, tag: str) -> tuple[dict, int]:
+def _mode() -> str:
+    """The mode the visitor narrowed a player's matches to (``?mode=``), or "" for all of them."""
+    mode = request.args.get("mode", "")
+    return mode if mode in MODES else ""
+
+
+def _modes(mode: str) -> list[dict]:
+    return [
+        {"key": key, "name": _t(QUEUES[MODES[key]]) if key else _t("すべて"), "current": key == mode}
+        for key in MODE_FILTER
+    ]
+
+
+def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
     """What the player page shows, and its HTTP status. The account comes first (its region is needed); then
     the rank and the matches are asked for at the same time."""
     henrik = current_app.config["VAL_HENRIK"]
@@ -132,7 +157,7 @@ def _player(name: str, tag: str) -> tuple[dict, int]:
     name, tag = str(account.get("name") or name), str(account.get("tag") or tag)
     with ThreadPoolExecutor(2, thread_name_prefix="henrik") as pool:
         asked_mmr = pool.submit(henrik.mmr, region, name, tag)
-        asked_matches = pool.submit(henrik.matches, region, name, tag)
+        asked_matches = pool.submit(henrik.matches, region, name, tag, mode)
     try:
         mmr = asked_mmr.result()
     except HenrikError:
@@ -160,6 +185,8 @@ def _player(name: str, tag: str) -> tuple[dict, int]:
         "rows": rows,
         "summary": stats.summary(rows),
         "matches_problem": matches_problem,
+        "mode": mode,
+        "modes": _modes(mode),
         "problem": "",
         "settings_link": False,
     }, 200
@@ -186,12 +213,12 @@ def register(app: Flask) -> None:
         ``?full=1`` waits for them (the link for a browser without JavaScript)."""
         if not split_riot_id(f"{name}#{tag}"):
             abort(404)
-        henrik = current_app.config["VAL_HENRIK"]
-        if request.args.get("full") or not henrik.key() or henrik.has_player(name, tag):  # an answer at once
-            values, status = _player(name, tag)
+        henrik, mode = current_app.config["VAL_HENRIK"], _mode()
+        if request.args.get("full") or not henrik.key() or henrik.has_player(name, tag, mode):  # an answer at once
+            values, status = _player(name, tag, mode)
             return render_template("player.html", **values), status
         return render_template(
-            "player.html", name=name, tag=tag, loading=True, account=None, problem="", settings_link=False
+            "player.html", name=name, tag=tag, mode=mode, loading=True, account=None, problem="", settings_link=False
         )
 
     @app.get("/p/<name>/<tag>/part")
@@ -200,7 +227,7 @@ def register(app: Flask) -> None:
         if not split_riot_id(f"{name}#{tag}"):
             abort(404)
         start = time.monotonic()
-        values, status = _player(name, tag)
+        values, status = _player(name, tag, _mode())
         response = make_response(render_template("_player.html", **values), status)
         response.headers["Cache-Control"] = "no-store"
         # how long HenrikDev took, for the browser's developer tools (Network -> Timing)

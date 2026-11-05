@@ -141,6 +141,13 @@ TEXTS = {
         "en-GB": "No recent matches were found.",
         "zh-TW": "找不到近期對戰。",
     },
+    "このモードの最近の試合はありません。": {
+        "ko": "이 모드의 최근 경기가 없습니다.",
+        "en-GB": "No recent matches in this mode.",
+        "zh-TW": "這個模式沒有近期對戰。",
+    },
+    "モード": {"ko": "모드", "en-GB": "Mode", "zh-TW": "模式"},
+    "すべて": {"ko": "전체", "en-GB": "All", "zh-TW": "全部"},
     "勝ち": {"ko": "승리", "en-GB": "Win", "zh-TW": "勝"},
     "負け": {"ko": "패배", "en-GB": "Loss", "zh-TW": "敗"},
     "引き分け": {"ko": "무승부", "en-GB": "Draw", "zh-TW": "平手"},

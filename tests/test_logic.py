@@ -1,6 +1,7 @@
 import json
 import unittest
 from datetime import datetime
+from urllib.parse import parse_qs, urlsplit
 
 from helpers import FakeFetch, fixture
 
@@ -59,9 +60,52 @@ class HenrikTest(unittest.TestCase):
         self.assertNotIn("ability_casts", matches[0]["players"][0])
         self.assertEqual(set(self.henrik.mmr("ap", "Tester", "JP1")), {"current", "peak"})
 
+    def test_the_latest_15_matches_in_two_parts(self):
+        # HenrikDev gives at most 10 matches an answer: the newest 10, then 5 more from the 10th
+        base = json.loads(fixture("henrik_matches.json"))["data"][0]
+        asked = []
+
+        def fetch(url, headers):
+            asked.append(url)
+            start = int(parse_qs(urlsplit(url).query).get("start", ["0"])[0])
+            size = int(parse_qs(urlsplit(url).query)["size"][0])
+            data = [_numbered(base, start + n) for n in range(size)]
+            return 200, json.dumps({"data": data}).encode()
+
+        matches = Henrik(lambda: "key", fetch).matches("ap", "Tester", "JP1")
+        self.assertEqual([m["metadata"]["match_id"][-2:] for m in matches], [f"{n:02}" for n in range(15)])
+        self.assertEqual(sorted(urlsplit(url).query for url in asked), ["size=10", "size=5&start=10"])
+
+    def test_the_older_part_is_not_needed(self):
+        def fetch(url, headers):
+            if "start=" in url:
+                return 500, b""
+            return 200, fixture("henrik_matches.json")
+
+        self.assertEqual(len(Henrik(lambda: "key", fetch).matches("ap", "Tester", "JP1")), 2)
+
+    def test_a_part_given_twice_is_shown_once(self):
+        # an answer that left out the start would give the newest matches again
+        self.assertEqual(len(self.henrik.matches("ap", "Tester", "JP1")), 2)
+
+    def test_one_mode(self):
+        matches = self.henrik.matches("ap", "Tester", "JP1", "competitive")
+        self.assertEqual(len(matches), 2)
+        self.assertTrue(all("mode=competitive" in url for url in self.fetch.henrik_calls()))
+        # a match of another mode in the answer is left out
+        self.assertEqual(self.henrik.matches("ap", "Tester", "JP1", "unrated"), [])
+        self.henrik.matches("ap", "Tester", "JP1", "bogus")
+        self.assertNotIn("mode=", self.fetch.henrik_calls()[-1])
+
     def test_unknown_region(self):
         self.henrik.mmr("zz", "A", "B")
         self.assertIn("/v3/mmr/ap/pc/A/B", self.fetch.asked[0][0])
+
+
+def _numbered(match: dict, number: int) -> dict:
+    copy = json.loads(json.dumps(match))
+    copy["metadata"]["match_id"] = f"aaaaaaaa-0000-4000-8000-0000000000{number:02}"
+    return copy
 
 
 class CacheTest(unittest.TestCase):

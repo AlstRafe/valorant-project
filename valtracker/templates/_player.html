@@ -37,6 +37,11 @@
 </div>
 </section>
 
+<div id="games">
+<nav class="modes" aria-label="{{ t('モード') }}">
+{% for item in modes %}<a href="{{ url_for('player', name=name, tag=tag, mode=item.key or None) }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
+{% endfor %}</nav>
+
 {% if summary %}
 <section class="summary" aria-labelledby="sum-title">
 <h2 id="sum-title">{{ t('直近 {count} 試合', count=summary.games) }}</h2>
@@ -59,7 +64,7 @@
 <section class="matches" aria-labelledby="m-title">
 <h2 id="m-title">{{ t('最近の試合') }}</h2>
 {% if matches_problem %}<p class="problem" role="alert">{{ matches_problem }}</p>
-{% elif not rows %}<p class="note">{{ t('最近の試合が見つかりませんでした。') }}</p>
+{% elif not rows %}<p class="note">{{ t('このモードの最近の試合はありません。') if mode else t('最近の試合が見つかりませんでした。') }}</p>
 {% else %}
 <ol class="match-list">
 {% for row in rows %}
@@ -76,4 +81,5 @@
 </ol>
 {% endif %}
 </section>
+</div>
 {% endif %}

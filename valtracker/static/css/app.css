@@ -593,6 +593,43 @@ button.quiet {
 .down {
   color: var(--loss);
 }
+/* The mode filter above a player's matches: one row that scrolls sideways on a phone, like the game's own. */
+.modes {
+  display: flex;
+  gap: 0.4rem;
+  margin: 1.5rem 0 0;
+  padding: 0.1rem 0.1rem 0.3rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.modes::-webkit-scrollbar {
+  display: none;
+}
+.modes a {
+  flex: none;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--soft);
+  font-size: 0.9rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.modes a:hover {
+  color: var(--ink);
+}
+.modes a[aria-current] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-a);
+  font-weight: 700;
+}
+#games[aria-busy="true"] .summary,
+#games[aria-busy="true"] .matches {
+  opacity: 0.45;
+  transition: opacity 0.2s 0.1s;
+}
 .numbers {
   display: grid;
   grid-template-columns: repeat(4, 1fr);

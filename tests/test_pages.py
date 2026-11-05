@@ -111,7 +111,7 @@ class PagesTest(unittest.TestCase):
         text = shell.get_data(as_text=True)
         self.assertIn('data-part="/p/Tester/JP1/part"', text)
         self.assertIn("ランクと最近の試合を読み込んでいます", text)
-        self.assertIn('href="?full=1"', text)  # without JavaScript
+        self.assertIn('href="/p/Tester/JP1?full=1"', text)  # without JavaScript
         self.assertEqual(self.fetch.henrik_calls(), [])
 
         part = self.get("/p/Tester/JP1/part")
@@ -122,7 +122,29 @@ class PagesTest(unittest.TestCase):
         self.assertNotIn("<html", text)
         self.assertEqual(part.headers["Cache-Control"], "no-store")
         self.assertRegex(part.headers["Server-Timing"], r"^henrik;dur=\d+$")
-        self.assertEqual(len(self.fetch.henrik_calls()), 3)  # account, then rank and matches side by side
+        # the account, then side by side the rank and the matches (15: in two parts, as an answer gives 10 at most)
+        self.assertEqual(len(self.fetch.henrik_calls()), 4)
+
+    def test_matches_of_one_mode(self):
+        text = self.get("/p/Tester/JP1?mode=competitive").get_data(as_text=True)
+        self.assertIn('data-part="/p/Tester/JP1/part?mode=competitive"', text)
+        self.assertIn('href="/p/Tester/JP1?mode=competitive&amp;full=1"', text)
+
+        text = self.get("/p/Tester/JP1/part?mode=competitive").get_data(as_text=True)
+        self.assertIn('<a href="/p/Tester/JP1?mode=competitive" aria-current="true">コンペティティブ</a>', text)
+        self.assertIn('<a href="/p/Tester/JP1">すべて</a>', text)
+        self.assertIn('<a href="/p/Tester/JP1?mode=teamdeathmatch">チームデスマッチ</a>', text)
+        self.assertIn("13–9", text)
+        self.assertTrue(all("mode=competitive" in url for url in self.fetch.henrik_calls() if "/v4/matches/" in url))
+
+        kept = self.get("/p/Tester/JP1?mode=competitive").get_data(as_text=True)
+        self.assertNotIn("data-part", kept, "kept: the whole page at once")
+        self.assertIn("data-part", self.get("/p/Tester/JP1").get_data(as_text=True), "every mode is another list")
+
+        none = self.get("/p/Tester/JP1/part?mode=unrated").get_data(as_text=True)  # the fixture has only competitive
+        self.assertIn("このモードの最近の試合はありません。", none)
+        bogus = self.get("/p/Tester/JP1/part?mode=bogus").get_data(as_text=True)
+        self.assertIn('<a href="/p/Tester/JP1" aria-current="true">すべて</a>', bogus)
 
     def test_player_is_kept_a_while(self):
         self.get("/p/Tester/JP1/part")
