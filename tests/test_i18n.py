@@ -7,8 +7,8 @@ from pathlib import Path
 
 from valtracker import crosshair, i18n
 from valtracker.locale import OWNER_ONLY, TEXTS
-from valtracker.tools import REGION_NAMES
-from valtracker.views import BUYS, ENDINGS, FAILURES, LOBBY_LABELS, QUEUES
+from valtracker.tools import CLOCKS, PARTY_WORDS, REGION_NAMES
+from valtracker.views import BUYS, CLUSTERS, ENDINGS, FAILURES, LOBBY_LABELS, QUEUES
 
 PACKAGE = Path(__file__).resolve().parent.parent / "valtracker"
 #: The owner's pages: Japanese only.
@@ -34,6 +34,9 @@ def used_texts() -> set[str]:
     found.update(ENDINGS.values())
     found.update(BUYS.values())
     found.update(REGION_NAMES.values())
+    found.update(CLUSTERS.values())
+    found.update(PARTY_WORDS.values())
+    found.update(name for _, name in CLOCKS.values())
     found.update(crosshair.COLOUR_NAMES)
     found.update(crosshair.PRESETS)
     found.update(label for label, _ in LOBBY_LABELS.values() if re.search(r"[ぁ-んァ-ヶ一-龯]", label))

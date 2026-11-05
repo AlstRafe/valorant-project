@@ -1,7 +1,8 @@
 # VAL Tracker
 
 VALORANT のトラッカー。Riot ID でプレイヤーのランクと最近の試合（KAST・ラウンドの流れなど）を調べ、お気に入りに登録できる。
-地域のランキング、ストアのバンドル、クロスヘアのコード表示、サーバー状況、エージェントの能力も見られる。
+地域のランキング、ストアのバンドル、クロスヘアのコード表示、サーバー状況、エージェントの能力、サーバーごとの混む時間帯と待ち時間の目安、
+いま出るマップとパーティーのランク差、感度の換算も見られる。
 4 言語（日本語・韓国語・英語・繁体字中国語）、ダーク / ライト、スマホ対応。サイト一覧（Home Page）に Python のサイトとして `/val` に載る。
 
 設計と今後の段階（Riot ログインでショップ・所持品・エージェント進捗、対戦中の相手）は [docs/DESIGN.md](docs/DESIGN.md)。
@@ -42,6 +43,15 @@ npm run format             # JS・CSS・Markdown・JSON・YAML の整形
 npm run lint               # 整形済みかの確認と ESLint（警告 0 件まで）
 ```
 
-GitHub に push すると Actions（`.github/workflows/ci.yml`）がテスト（Ubuntu と Windows）・Ruff・Taplo・Prettier・ESLint を通す。テンプレート（`valtracker/templates/*.html`）は整形しない（`.prettierignore`）。
+GitHub に push すると Actions（`.github/workflows/ci.yml`）がテスト（Ubuntu と Windows）・Ruff・Taplo・Prettier・ESLint と、
+画面の崩れの検査を通す。
+
+```bash
+python tests/ui/serve.py                         # テストの作り物の答えで http://127.0.0.1:5077/ を開く
+node tests/ui/audit.js http://127.0.0.1:5077     # 全ページ × 4 言語 × 360/760/1000/1440px（--quick で ja と en-GB だけ）
+```
+
+はみ出し・文字の重なり・切れ・1 行のはずの物の折り返し・小さすぎるボタン・エラーを探し、見つかれば 1 で終わる。
+Actions の「CI → Run workflow」で手で回すと、本番（実際のプレイヤーと試合）も同じように調べる。テンプレート（`valtracker/templates/*.html`）は整形しない（`.prettierignore`）。
 
 VAL Tracker は Riot Games の承認を受けたものではなく、Riot Games や VALORANT の制作・運営に関わる人の見解を示すものではありません。VALORANT と Riot Games は Riot Games, Inc. の商標または登録商標です。

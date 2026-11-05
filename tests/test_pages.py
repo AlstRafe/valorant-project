@@ -360,6 +360,21 @@ class PagesTest(unittest.TestCase):
             with self.subTest(path=bad):
                 self.assertEqual(self.get(bad).status_code, 404)
 
+    def test_media_of_every_shape_the_pages_use(self):
+        """valorant-api.com's pictures nest differently: a role's icon and an ability's were refused before."""
+        agent = "11111111-1111-4111-8111-111111111111"
+        for path in (
+            "agents/roles/dbe8757e-9e92-4ed4-b39f-9dfc589691d4/displayicon.png",
+            f"agents/{agent}/abilities/ability1/displayicon.png",
+            f"agents/{agent}/abilities/ultimate/displayicon.png",
+            f"competitivetiers/{agent}/21/smallicon.png",
+            f"bundles/{agent}/displayicon2.png",
+        ):
+            with self.subTest(path=path):
+                answer = self.get("/media/" + path)
+                self.assertEqual(answer.status_code, 200)
+                answer.close()
+
     def test_not_found_page(self):
         answer = self.get("/nowhere", lang="en-GB", environ_base={"homepage.home": "/"})
         self.assertEqual(answer.status_code, 404)

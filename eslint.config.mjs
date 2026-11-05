@@ -28,4 +28,12 @@ export default [
       globals: { ...globals.browser, VT: "readonly" },
     },
   },
+  {
+    // The layout check: Node, with one function (inspect) that runs in the page.
+    files: ["tests/ui/**/*.js"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: { ...globals.node, ...globals.browser },
+    },
+  },
 ];

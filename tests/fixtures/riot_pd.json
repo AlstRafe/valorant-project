@@ -211,5 +211,126 @@
    "AccessoryStoreRemainingDurationInSeconds": 200000,
    "StorefrontID": "s"
   }
+ },
+ "customgameconfigs": {
+  "Enabled": true,
+  "EnabledMaps": [
+   "/Game/Maps/Ascent/Ascent"
+  ],
+  "EnabledModes": [],
+  "Queues": [
+   {
+    "QueueID": "unrated",
+    "Enabled": true,
+    "TeamSize": 5,
+    "NumTeams": 2,
+    "MaxPartySize": 5,
+    "MinPartySize": 1,
+    "InvalidPartySizes": [],
+    "MaxPartySizeHighSkill": 5,
+    "HighSkillTier": 24,
+    "MaxSkillTier": 0,
+    "AllowFullPartyBypassSkillRestrictions": false,
+    "Mode": "/Game/GameModes/Bomb/BombGameMode.BombGameMode_C",
+    "IsRanked": false,
+    "IsTournament": false,
+    "RequireRoster": false,
+    "Priority": 0,
+    "PartyMaxCompetitiveTierRange": 0,
+    "PartyMaxCompetitiveTierRangePlacementBuffer": 0,
+    "FullPartyMaxCompetitiveTierRange": 0,
+    "PartySkillDisparityCompetitiveTiersCeilings": {},
+    "UseAccountLevelRequirement": false,
+    "MinimumAccountLevelRequired": 0,
+    "GameRules": {},
+    "SupportedPlatformTypes": [
+     "PC"
+    ],
+    "DisabledContent": [],
+    "queueFieldA": [],
+    "NextScheduleChangeSeconds": 0,
+    "TimeUntilNextScheduleChangeSeconds": 0,
+    "MapWeights": [
+     "Ascent:1",
+     "Bonsai:1"
+    ]
+   },
+   {
+    "QueueID": "competitive",
+    "Enabled": true,
+    "TeamSize": 5,
+    "NumTeams": 2,
+    "MaxPartySize": 5,
+    "MinPartySize": 1,
+    "InvalidPartySizes": [
+     4
+    ],
+    "MaxPartySizeHighSkill": 3,
+    "HighSkillTier": 24,
+    "MaxSkillTier": 0,
+    "AllowFullPartyBypassSkillRestrictions": true,
+    "Mode": "/Game/GameModes/Bomb/BombGameMode.BombGameMode_C",
+    "IsRanked": true,
+    "IsTournament": false,
+    "RequireRoster": false,
+    "Priority": 0,
+    "PartyMaxCompetitiveTierRange": 6,
+    "PartyMaxCompetitiveTierRangePlacementBuffer": 0,
+    "FullPartyMaxCompetitiveTierRange": 0,
+    "PartySkillDisparityCompetitiveTiersCeilings": {
+     "0": 27,
+     "3": 14,
+     "4": 14,
+     "5": 14,
+     "6": 14,
+     "7": 14,
+     "8": 14,
+     "9": 14,
+     "10": 14,
+     "11": 14,
+     "12": 14,
+     "13": 15,
+     "14": 16,
+     "15": 17,
+     "16": 18,
+     "17": 19,
+     "18": 20,
+     "19": 21,
+     "20": 22,
+     "21": 23,
+     "22": 24,
+     "23": 25,
+     "24": 26,
+     "25": 27,
+     "26": 27,
+     "27": 27
+    },
+    "UseAccountLevelRequirement": true,
+    "MinimumAccountLevelRequired": 20,
+    "GameRules": {},
+    "SupportedPlatformTypes": [
+     "PC"
+    ],
+    "DisabledContent": [],
+    "queueFieldA": [],
+    "NextScheduleChangeSeconds": 0,
+    "TimeUntilNextScheduleChangeSeconds": 0,
+    "MapWeights": [
+     "Ascent:1",
+     "Bonsai:0",
+     "Duality:1"
+    ]
+   },
+   {
+    "QueueID": "deathmatch",
+    "Enabled": false,
+    "MaxPartySize": 1,
+    "MinPartySize": 1,
+    "MapWeights": [
+     "Ascent:1"
+    ]
+   }
+  ],
+  "GamePodPingServiceInfo": {}
  }
 }

@@ -15,6 +15,7 @@ class RiotIdTest(unittest.TestCase):
     def test_forms(self):
         self.assertEqual(split_riot_id("Tester#JP1"), ("Tester", "JP1"))
         self.assertEqual(split_riot_id(" 名前 ＃ 日本 "), ("名前", "日本"))
+        self.assertEqual(split_riot_id("Ｔｅｓｔｅｒ＃ＪＰ１"), ("Ｔｅｓｔｅｒ", "JP1"))  # only the tag is half-width
         self.assertIsNone(split_riot_id("a#b#KR1"))
         self.assertIsNone(split_riot_id("Tester"))
         self.assertIsNone(split_riot_id("#JP1"))

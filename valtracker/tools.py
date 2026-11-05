@@ -1,21 +1,24 @@
 """The pages around the tracker: a region's leaderboard, Riot's notices (maintenance, incidents), crosshair codes
-drawn before they are pasted into the game, the store (featured bundles; the owner's own daily offers), and the
-tools page that leads to them."""
+drawn before they are pasted into the game, the store (featured bundles; the owner's own daily offers), how busy
+each server usually is and the wait for a match (activity.py), the maps in rotation and who may queue together
+(queues.py), a sensitivity converter, and the tools page that leads to them."""
 
 from __future__ import annotations
 
+import re
 import time
 from datetime import datetime
 
 from flask import Flask, current_app, g, make_response, render_template, request, url_for
 
 from valtracker import crosshair as crosshairs
-from valtracker import i18n, security
+from valtracker import i18n, queues, security
 from valtracker import shop as store
+from valtracker.activity import BANDS, ENOUGH, FEW
 from valtracker.henrik import BOARD_PAGE, HenrikError
 from valtracker.riot import RiotError
 from valtracker.stats import JST
-from valtracker.views import RIOT_FAILURES, _failure, _rank, _t
+from valtracker.views import QUEUES, RIOT_FAILURES, _failure, _rank, _t, act_left, cluster
 
 #: The leaderboard's and the notices' regions, in the order of the tabs -> their names (translated).
 REGION_NAMES = {
@@ -32,6 +35,26 @@ HOME_REGION = {"ja": "ap", "ko": "kr", "en-GB": "eu", "zh-TW": "ap"}
 NOTICE_LOCALES = {"ja": "ja_jp", "ko": "ko_kr", "en-GB": "en_gb", "zh-TW": "zh_tw"}
 #: Pages of the leaderboard that can be asked for (HenrikDev lists about the top 10,000 of a region).
 BOARD_PAGES = 200
+#: The servers page counts hours in the visitor's own clock: hours from UTC, and its name (translated).
+CLOCKS = {"ja": (9, "日本時間"), "ko": (9, "韓国時間"), "zh-TW": (8, "台湾時間"), "en-GB": (0, "協定世界時（UTC）")}
+#: The sensitivity converter's games: (name, degrees a count of the mouse turns at sensitivity 1).
+GAMES = {
+    "valorant": ("VALORANT", 0.07),
+    "cs2": ("Counter-Strike 2", 0.022),
+    "apex": ("Apex Legends", 0.022),
+    "overwatch": ("Overwatch 2", 0.0066),
+}
+#: Why a party may or may not queue together (queues.check) -> the words (translated).
+PARTY_WORDS = {
+    "size": "{size} 人のパーティーではコンペティティブに行けません。",
+    "high": "{rank} 以上の人がいるパーティーは {size} 人まで（5 人なら行けます）。",
+    "high_strict": "{rank} 以上の人がいるパーティーは {size} 人までです。",
+    "full": "5 人ならランクの差に関係なく行けます。",
+    "unranked": "ランクの付いていない人は、ここでは確かめられません。",
+    "gap_ok": "行けます。{low} がいるパーティーは {top} まで一緒に行けます。",
+    "gap": "行けません。{low} がいるパーティーは {top} まで（{high} は離れすぎています）。",
+    "unknown": "このランクの決まりが Riot の設定にありませんでした。",
+}
 #: A notice for these platforms only is not about the PC game, which this site tracks.
 CONSOLES = {"playstation", "xbox", "ps5", "xbsx", "console"}
 
@@ -182,6 +205,168 @@ def _left(until: float) -> dict | None:
     return {"until": int(until), "text": words}
 
 
+def _clock_text(seconds: int) -> str:
+    return f"{seconds // 60}:{seconds % 60:02d}"
+
+
+def _family(name: str) -> str:
+    """A rank's name without its division ("Gold 3" -> "Gold")."""
+    return re.sub(r"\s*\d+$", "", name) or name
+
+
+def _zone() -> tuple[float, str]:
+    """The clock the servers page counts hours in: the visitor's own (the ``tz`` cookie, minutes from UTC, which the
+    page's script sets), or their language's (Japan's for ja) when there is none or it is the same."""
+    offset, name = CLOCKS.get(g.lang, CLOCKS["ja"])
+    try:
+        minutes = int(request.cookies.get("tz", ""))
+    except ValueError:
+        return offset, _t(name)
+    if minutes % 15 or not -720 <= minutes <= 840 or minutes == offset * 60:
+        return offset, _t(name)
+    hours, rest = divmod(abs(minutes), 60)
+    zone = f"UTC{'+' if minutes >= 0 else '−'}{hours}" + (f":{rest:02d}" if rest else "")
+    return minutes / 60, _t("あなたの時間（{zone}）", zone=zone)
+
+
+def _servers_page(region: str) -> dict:
+    offset, clock_name = _zone()
+    found = current_app.config["VAL_ACTIVITY"].servers(region, offset)
+    servers = []
+    for server in found["servers"]:
+        top = max(server["hours"]) or 1
+        servers.append(
+            server
+            | {
+                "shown": cluster(server["name"]),
+                "rank": _rank({"id": server["tier"]}) if server["tier"] else None,
+                "bars": [
+                    {"x": hour * 10 + 1, "h": round(44 * share / top, 1), "share": share, "hour": hour}
+                    for hour, share in enumerate(server["hours"])
+                ],
+            }
+        )
+    order = {name: index for index, (name, _, _) in enumerate(BANDS, 1)}
+    labels = {name: (low, high) for name, low, high in BANDS}
+    waits = []
+    for item in found["waits"]:
+        band = ""
+        if item["band"]:
+            low, high = (_family(_rank({"id": tier})["name"]) for tier in labels[item["band"]])
+            band = low if low == high else f"{low} – {high}"
+        queue = _t(QUEUES[item["queue"]]) if item["queue"] in QUEUES else item["queue"]
+        waits.append(item | {"queue_name": queue, "band_name": band, "text": _clock_text(item["seconds"])})
+    lengths = [
+        item
+        | {
+            "queue_name": _t(QUEUES[item["queue"]]) if item["queue"] in QUEUES else item["queue"],
+            "text": _clock_text(item["seconds"]),
+        }
+        for item in found.get("lengths", [])
+    ]
+    queues_seen = [item["queue"] for item in waits]
+    waits.sort(key=lambda item: (queues_seen.index(item["queue"]), order.get(item["band"], 0)))
+    return {
+        "servers": servers,
+        "waits": waits,
+        "lengths": lengths,
+        "matches": found["matches"],
+        "enough": ENOUGH,
+        "hour_now": found["hour_now"],
+        "clock_name": clock_name,
+        "offset_minutes": round(offset * 60),
+        "few": FEW,
+    }
+
+
+def _sensitivity(args) -> dict:
+    game = args.get("game", "valorant")
+    game = game if game in GAMES else "valorant"
+    values: dict = {"game": game, "games": GAMES, "problem": "", "results": None}
+    try:
+        sens = float(args.get("sens", "") or 0)
+        dpi = int(float(args.get("dpi", "") or 0))
+        new_dpi = int(float(args.get("new_dpi", "") or 0))
+    except ValueError:
+        sens, dpi, new_dpi = 0, 0, 0
+        values["problem"] = _t("数を入れてください。")
+    values |= {"sens": args.get("sens", ""), "dpi": args.get("dpi", ""), "new_dpi": args.get("new_dpi", "")}
+    if not sens or not dpi:
+        return values
+    if not (0 < sens <= 1000 and 50 <= dpi <= 64000) or (new_dpi and not 50 <= new_dpi <= 64000):
+        values["problem"] = _t("感度は 0 より大きく、DPI は 50〜64000 で入れてください。")
+        return values
+    turn = sens * GAMES[game][1]  # degrees a count turns
+    rows = []
+    for key, (name, yaw) in GAMES.items():
+        rows.append({"key": key, "name": name, "sens": round(turn / yaw, 4), "edpi": round(dpi * turn / yaw, 1)})
+    valorant = turn / GAMES["valorant"][1]
+    values["results"] = {
+        "rows": rows,
+        "cm": round(360 * 2.54 / (dpi * turn), 1),
+        "inch": round(360 / (dpi * turn), 1),
+        "valorant": round(valorant, 4),
+        "edpi": round(valorant * dpi, 1),
+        "new": round(valorant * dpi / new_dpi, 4) if new_dpi else None,
+    }
+    return values
+
+
+def _queues_page() -> tuple[dict, int]:
+    values: dict = {"problem": "", "settings_link": False, "queues": [], "competitive": None, "verdict": None}
+    try:
+        found = current_app.config["VAL_RIOT"].queues()
+    except RiotError as error:
+        if security.is_owner():
+            values["problem"] = RIOT_FAILURES.get(error.kind, RIOT_FAILURES["down"])
+            values["settings_link"] = error.kind not in ("busy", "down")
+        else:
+            values["problem"] = _t("いまはゲームの設定を読めません。時間をおいてもう一度どうぞ。")
+        return values, 200 if error.kind == "nologin" else 503
+    data = queues.settings(found.get("config") or {}, current_app.config["VAL_CONTENT"].map_index(g.lang))
+    for queue in data["queues"]:
+        queue["name"] = _t(QUEUES[queue["id"]]) if queue["id"] in QUEUES else queue["id"]
+    values["queues"] = data["queues"]
+    values["read_at"] = _when(datetime.fromtimestamp(float(found.get("at") or time.time()), JST).isoformat())
+    competitive = data["competitive"]
+    if competitive and competitive["ceilings"]:
+        values["competitive"] = competitive | {
+            "table": [
+                {"rank": _rank({"id": tier}), "top": _rank({"id": top})}
+                for tier, top in competitive["ceilings"].items()
+            ],
+            "high_rank": _rank({"id": competitive["high_tier"]}) if competitive["high_tier"] else None,
+        }
+        tiers = current_app.config["VAL_CONTENT"].tiers(g.lang)
+        values["choices"] = [{"tier": 0, "name": _t("未ランク")}] + [
+            {"tier": tier, "name": _rank({"id": tier})["name"]} for tier in sorted(tiers) if tier >= queues.IRON
+        ]
+        picked = []
+        for value in request.args.getlist("rank")[:5]:
+            try:
+                picked.append(int(value))
+            except ValueError:
+                continue
+        picked = [tier for tier in picked if tier == 0 or tier in tiers or tier >= queues.IRON]
+        values["picked"] = picked + [None] * (5 - len(picked))
+        if len([tier for tier in picked]) >= 2:
+            verdict = queues.check(picked, competitive)
+            why, said = verdict["why"], dict(verdict["values"])
+            for key in ("low", "high", "top"):
+                if key in said:
+                    said[key] = _rank({"id": said[key]})["name"]
+            if why == "high":
+                said["rank"] = _rank({"id": said.pop("tier")})["name"]
+                why = "high" if competitive["bypass"] else "high_strict"
+            values["verdict"] = {"ok": verdict["ok"], "words": _t(PARTY_WORDS[why], **said)}
+    return values, 200
+
+
+def _next_reset(now: float) -> float:
+    """The daily store's next change: midnight UTC (9:00 in Japan)."""
+    return (int(now) // 86400 + 1) * 86400
+
+
 def register(app: Flask) -> None:
     @app.get("/tools")
     def tools():
@@ -193,7 +378,11 @@ def register(app: Flask) -> None:
         (leaderboard_part), as a player's page does. ``?full=1`` waits for them."""
         region, page = _region(), _page_number()
         henrik = current_app.config["VAL_HENRIK"]
-        common = {"regions": _regions("leaderboard", region), "region_name": _t(REGION_NAMES[region])}
+        common = {
+            "regions": _regions("leaderboard", region),
+            "region_name": _t(REGION_NAMES[region]),
+            "act": act_left(),
+        }
         if request.args.get("full") or not henrik.key() or henrik.has_board(region, (page - 1) * BOARD_PAGE):
             values, status = _board(region, page)
             return render_template("leaderboard.html", **common, **values), status
@@ -239,6 +428,25 @@ def register(app: Flask) -> None:
         values = _crosshair_page(code)
         return render_template("crosshair.html", **values), 400 if values["problem"] else 200
 
+    @app.get("/servers")
+    def servers():
+        region = _region()
+        values = _servers_page(region)
+        values["regions"] = _regions("servers", region)
+        values["region"] = region
+        values["region_name"] = _t(REGION_NAMES[region])
+        return render_template("servers.html", **values)
+
+    @app.get("/queues")
+    def queue_settings():
+        values, status = _queues_page()
+        return render_template("queues.html", **values), status
+
+    @app.get("/sensitivity")
+    def sensitivity():
+        values = _sensitivity(request.args)
+        return render_template("sensitivity.html", **values), 400 if values["problem"] else 200
+
     @app.get("/shop")
     def shop():
         """Everyone: the featured bundles (HenrikDev). The owner: their own store too (riot.py), with what they
@@ -252,6 +460,8 @@ def register(app: Flask) -> None:
         for bundle in values["featured"]:
             bundle["left"] = _left(bundle["until"])
         values["vp_icon"] = (content.index("currencies", g.lang).get(store.VP) or {}).get("displayIcon")
+        reset = _next_reset(time.time())
+        values["reset"] = {"left": _left(reset), "when": _when(datetime.fromtimestamp(reset, JST).isoformat())}
         if security.is_owner():
             riot = current_app.config["VAL_RIOT"]
             try:

@@ -28,6 +28,7 @@
 {% endfor %}
 {%- endmacro %}
 {% block title %}{{ t('ショップ') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('いまストアに並んでいるバンドルと、その値段（VALORANT ポイント）です。') }}{% endblock %}
 {% block main %}
 <section class="hero">
 <h1>{{ t('ショップ') }}</h1>
@@ -83,6 +84,7 @@
 {{ bundles(featured, vp_icon) }}
 {% endif %}
 <p class="note">{{ t('毎日入れ替わる 4 つのスキンとナイトマーケットは人ごとに違うため、ゲームの中でだけ見られます。') }}</p>
+{% if reset %}<p class="note">{{ t('毎日のスキンの次の入れ替わり') }}: <time datetime="{{ reset.when.iso }}">{{ reset.when.text }}</time> {{ left(reset.left) }}</p>{% endif %}
 </section>
 {% endif %}
 {% endblock %}

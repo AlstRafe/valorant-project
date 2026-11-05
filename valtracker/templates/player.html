@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% block title %}{{ name }}#{{ tag }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('{player} のランク・RR・最近の試合・エージェント別の成績。', player=name ~ '#' ~ tag) }}{% endblock %}
 {% block main %}
 <div id="player"{% if loading %} data-part="{{ url_for('player_part', name=name, tag=tag, mode=mode or None) }}" data-failed="{{ t('読み込めませんでした。') }}"{% endif %}>
 {% if loading %}
 <section class="hero">
-<h1>{{ name }}<span class="tag">#{{ tag }}</span></h1>
+<h1>{{ name }}<span class="tagged"><span class="tag">#{{ tag }}</span><button type="button" class="id-copy" data-copy="{{ name }}#{{ tag }}" data-done="{{ t('Riot ID をコピーしました') }}" title="{{ t('Riot ID をコピー（ゲームのフレンド追加に）') }}" aria-label="{{ t('Riot ID をコピー（ゲームのフレンド追加に）') }}" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></svg></button></span></h1>
 <p class="wait" role="status"><span class="spinner" aria-hidden="true"></span><span>{{ t('ランクと最近の試合を読み込んでいます…') }}</span></p>
 {% set full = url_for('player', name=name, tag=tag, mode=mode or None, full=1) %}
 <p class="retry" hidden><a href="{{ full }}">{{ t('もう一度読み込む') }}</a></p>

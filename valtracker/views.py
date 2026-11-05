@@ -3,10 +3,12 @@
 
 from __future__ import annotations
 
+import math
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from urllib.parse import unquote
 
 from flask import Flask, abort, current_app, g, make_response, redirect, render_template, request, send_file, url_for
 
@@ -32,6 +34,35 @@ QUEUES = {
     "snowball": "スノーボールファイト",
     "skirmish_1v1": "スカーミッシュ",
     "skirmish_2v2": "スカーミッシュ",
+}
+#: The servers (HenrikDev's ``cluster``, the game's names in English) -> the city in Japanese (translated); any
+#: other is shown as HenrikDev names it.
+CLUSTERS = {
+    "Tokyo": "東京",
+    "Hong Kong": "香港",
+    "Singapore": "シンガポール",
+    "Sydney": "シドニー",
+    "Mumbai": "ムンバイ",
+    "Seoul": "ソウル",
+    "Frankfurt": "フランクフルト",
+    "London": "ロンドン",
+    "Paris": "パリ",
+    "Stockholm": "ストックホルム",
+    "Madrid": "マドリード",
+    "Warsaw": "ワルシャワ",
+    "Istanbul": "イスタンブール",
+    "Bahrain": "バーレーン",
+    "Tel Aviv": "テルアビブ",
+    "N. Virginia": "バージニア北部",
+    "Oregon": "オレゴン",
+    "N. California": "北カリフォルニア",
+    "Texas": "テキサス",
+    "Illinois": "イリノイ",
+    "Georgia": "ジョージア",
+    "Mexico City": "メキシコシティ",
+    "Miami": "マイアミ",
+    "Santiago": "サンティアゴ",
+    "São Paulo": "サンパウロ",
 }
 #: The filter above a player's matches, in the game's order ("" is every mode; the names are QUEUES').
 MODE_FILTER = (
@@ -82,6 +113,45 @@ def _failure(kind: str) -> tuple[int, str, bool]:
     if owner and security.is_owner():
         return status, _t(owner), kind in ("nokey", "badkey")
     return status, _t(visitor), False
+
+
+def cluster(name) -> str:
+    """A server's name in the visitor's language."""
+    name = str(name or "")
+    return _t(CLUSTERS[name]) if name in CLUSTERS else name
+
+
+#: A profile's address pasted into the search instead of a Riot ID: tracker.gg's, and this site's own.
+PROFILE_LINKS = (
+    re.compile(r"tracker\.gg/valorant/profile/riot/([^/?#\s]+)", re.IGNORECASE),
+    re.compile(r"/p/([^/?#\s]+)/([^/?#\s]+)"),
+)
+
+
+def _from_link(text: str) -> str:
+    """``Name#TAG`` out of a pasted profile address; anything else as it is."""
+    if "/" not in text:
+        return text
+    for pattern in PROFILE_LINKS:
+        found = pattern.search(text)
+        if found:
+            return "#".join(unquote(part) for part in found.groups())
+    return text
+
+
+def act_left() -> dict | None:
+    """The act being played and the time left in it (content.Content.act): ``{"name", "text", "ends"}``."""
+    found = current_app.config["VAL_CONTENT"].act(g.lang)
+    if not found:
+        return None
+    seconds = found["ends"].timestamp() - time.time()
+    if seconds <= 0:
+        return None
+    if seconds >= 2 * 86400:
+        text = _t("{act} の終わりまであと {days} 日", act=found["name"], days=int(seconds // 86400))
+    else:
+        text = _t("{act} の終わりまであと {hours} 時間", act=found["name"], hours=max(1, math.ceil(seconds / 3600)))
+    return {"name": found["name"], "text": text, "ends": found["ends"]}
 
 
 def _queue(metadata: dict) -> str:
@@ -137,6 +207,7 @@ def _row(match: dict, player: dict, rr_changes: dict) -> dict:
         "region": str(metadata.get("region") or ""),
         "map": _map(metadata),
         "queue": _queue(metadata),
+        "server": cluster(metadata.get("cluster")),
         "started": moment,
         "when": i18n.when(g.lang, moment) if moment else "",
         "length": int(metadata.get("game_length_in_ms") or 0),
@@ -240,15 +311,31 @@ def _next_rank(rank: dict | None, rr, rr_changes: dict) -> dict | None:
     """How far the next rank is: the RR it needs and, at the player's average gain, about how many wins."""
     if not rank or not 3 <= rank["tier"] < 24 or rr is None:
         return None
-    gains = [item["change"] for item in rr_changes.values() if item.get("change", 0) > 0]
+    changes = [item.get("change", 0) for item in rr_changes.values()]
+    gains = [change for change in changes if change > 0]
+    losses = [-change for change in changes if change < 0]
     need = max(1, 100 - int(rr))
     gain = round(sum(gains) / len(gains)) if gains else 0
+    # at the player's own win rate and average gain and loss, the RR a match brings on average
+    per_match = (sum(gains) - sum(losses)) / len(changes) if changes else 0
     return {
         "need": need,
         "rank": _rank({"id": rank["tier"] + 1}),
         "gain": gain,
+        "loss": round(sum(losses) / len(losses)) if losses else 0,
         "wins": -(-need // gain) if gain else None,
+        "matches": math.ceil(need / per_match) if per_match > 0 and len(changes) >= 5 else None,
+        "flat": len(changes) >= 5 and per_match <= 0,
     }
+
+
+def _streak(rows: list[dict]) -> dict | None:
+    """The wins or losses in a row up to the latest match (newest first; a draw ends it): two or more, or None."""
+    results = [row["result"]["won"] for row in rows if row["standard"]]
+    if not results or results[0] is None:
+        return None
+    count = next((index for index, won in enumerate(results) if won is not results[0]), len(results))
+    return {"won": results[0], "count": count} if count >= 2 else None
 
 
 def _weapon_said(rows: list[dict], key: str) -> str:
@@ -352,7 +439,9 @@ def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
         rr_changes = {}  # the list only goes without the RR each match gave
     rows, matches_problem = [], ""
     try:
-        for match in asked_matches.result():
+        listed = asked_matches.result()
+        current_app.config["VAL_ACTIVITY"].seen(listed, str(account.get("puuid") or ""))
+        for match in listed:
             found = stats.find_player(match, str(account.get("puuid") or ""), name, tag)
             if found:
                 rows.append(_row(match, found, rr_changes))
@@ -362,7 +451,23 @@ def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
     peak = (mmr or {}).get("peak") or {}
     rank = _rank(current.get("tier")) if current else None
     summary = stats.summary(rows)
+    today = datetime.now(stats.JST).date()
+    played_today = [row for row in rows if row["started"] and row["started"].astimezone(stats.JST).date() == today]
+    if summary and played_today:
+        today_rr = [
+            item["change"]
+            for item in rr_changes.values()
+            if item.get("at") and datetime.fromtimestamp(item["at"], stats.JST).date() == today
+        ]
+        summary["today"] = {
+            "games": len(played_today),
+            "wins": sum(row["result"]["won"] is True for row in played_today),
+            "losses": sum(row["result"]["won"] is False for row in played_today),
+            "rr": sum(today_rr) if today_rr else None,
+            "minutes": round(sum(row["length"] for row in played_today) / 60000),
+        }
     if summary:
+        summary["streak"] = _streak(rows)
         for weapon in summary["weapons"]:
             weapon.update(_weapon(weapon["key"], _weapon_said(rows, weapon["key"])))
         summary["lobby"] = _lobby_rows(summary["lobby"])
@@ -375,6 +480,7 @@ def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
         "rank": rank,
         "rr": current.get("rr"),
         "next_rank": _next_rank(rank, current.get("rr"), rr_changes),
+        "act": act_left() if rank else None,
         "rr_chart": _rr_chart(rr_changes) if shows_rr(mode) else None,
         "last_change": current.get("last_change"),
         "peak": _rank(peak.get("tier")) if peak else None,
@@ -524,6 +630,7 @@ def _match_page(found: dict, me: str) -> dict:
     return {
         "map": _map(metadata),
         "queue": _queue(metadata),
+        "server": cluster(metadata.get("cluster")),
         "started": moment,
         "when": i18n.when(g.lang, moment) if moment else "",
         "minutes": int((metadata.get("game_length_in_ms") or 0) / 60000),
@@ -547,7 +654,7 @@ def register(app: Flask) -> None:
 
     @app.get("/search")
     def search():
-        query = request.args.get("q", "").strip()[:40]
+        query = _from_link(request.args.get("q", "").strip())[:40]
         found = split_riot_id(query)
         if not found:
             problem = _t("「名前#タグ」の形で入れてください（例: Name#JP1）。") if query else ""
@@ -593,13 +700,24 @@ def register(app: Flask) -> None:
             if error.kind == "notfound":
                 abort(404)
             return render_template("match.html", problem=problem, settings_link=settings_link), status
+        current_app.config["VAL_ACTIVITY"].seen([found])
         me = request.args.get("me", "")  # the player whose list the visitor came from: their line stands out
         return render_template("match.html", problem="", **_match_page(found, me))
 
     @app.get("/agents")
     def agents():
+        """Every agent, or the ones of a role (``?role=`` its uuid): the roles as links above the list."""
         listed = current_app.config["VAL_CONTENT"].agents(g.lang)
-        return render_template("agents.html", agents=listed)
+        roles: dict[str, dict] = {}
+        for item in listed:
+            role = item.get("role") or {}
+            if role.get("uuid"):
+                roles.setdefault(str(role["uuid"]).lower(), role)
+        chosen = request.args.get("role", "").lower()
+        chosen = chosen if chosen in roles else ""
+        shown = [item for item in listed if not chosen or str((item.get("role") or {}).get("uuid")).lower() == chosen]
+        ordered = sorted(roles.items(), key=lambda pair: str(pair[1].get("displayName") or ""))
+        return render_template("agents.html", agents=shown, roles=ordered, role=chosen, every=bool(listed))
 
     @app.get("/agents/<uuid>")
     def agent(uuid: str):

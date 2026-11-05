@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ t('マップとパーティー') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('いまどのモードでどのマップが出るかと、誰とならコンペティティブに一緒に行けるかを、ゲームの設定から読んでいます。') }}{% endblock %}
+{% block main %}
+<p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
+<section class="hero">
+<h1>{{ t('マップとパーティー') }}</h1>
+<p class="lead">{{ t('いまどのモードでどのマップが出るかと、誰とならコンペティティブに一緒に行けるかを、ゲームの設定から読んでいます。') }}</p>
+</section>
+{% if problem %}
+<p class="problem" role="alert">{{ problem }}</p>
+{% if settings_link %}<p lang="ja"><a class="button" href="{{ url_for('settings') }}#riot">設定で Riot と連携する</a></p>{% endif %}
+{% else %}
+{% if competitive %}
+<section aria-labelledby="party-title">
+<h2 id="party-title">{{ t('一緒に行けるか確かめる') }}</h2>
+<form class="party-check" action="{{ url_for('queue_settings') }}#party-title" method="get">
+{% for picked_tier in picked %}<label><span>{{ t('{n} 人目', n=loop.index) }}</span>
+<select name="rank">
+<option value=""{% if picked_tier is none %} selected{% endif %}>—</option>
+{% for choice in choices %}<option value="{{ choice.tier }}"{% if picked_tier == choice.tier %} selected{% endif %}>{{ choice.name }}</option>
+{% endfor %}</select></label>
+{% endfor %}<button type="submit">{{ t('確かめる') }}</button>
+</form>
+{% if verdict %}<p class="verdict {{ 'ok' if verdict.ok else 'no' if verdict.ok is sameas false else 'maybe' }}" role="status">{{ verdict.words }}</p>{% endif %}
+<details class="rules">
+<summary>{{ t('ランクごとの決まり') }}</summary>
+<div class="table-wrap"><table class="board plain ceilings">
+<thead><tr><th scope="col">{{ t('いちばん低い人') }}</th><th scope="col">{{ t('一緒に行ける上限') }}</th></tr></thead>
+<tbody>
+{% for row in competitive.table %}<tr><td>{% if row.rank.image %}<img src="{{ media(row.rank.image) }}" alt="" width="20" height="20">{% endif %}{{ row.rank.name }}</td><td>{% if row.top.image %}<img src="{{ media(row.top.image) }}" alt="" width="20" height="20">{% endif %}{{ row.top.name }}</td></tr>
+{% endfor %}</tbody>
+</table></div>
+{% if competitive.high_rank and competitive.high_size %}<p class="note">{{ t('{rank} 以上の人がいるパーティーは {size} 人まで（5 人なら行けます）。', rank=competitive.high_rank.name, size=competitive.high_size) if competitive.bypass else t('{rank} 以上の人がいるパーティーは {size} 人までです。', rank=competitive.high_rank.name, size=competitive.high_size) }}</p>{% endif %}
+</details>
+</section>
+{% endif %}
+
+<section aria-labelledby="maps-title">
+<h2 id="maps-title">{{ t('いま出るマップ') }}</h2>
+{% if not queues %}
+<p class="note">{{ t('いまはありません。') }}</p>
+{% endif %}
+{% for queue in queues %}
+<section class="pool">
+<h3>{{ queue.name }} <small>{{ t('{count} マップ', count=queue.maps|length) }}{% if queue.party[1] %} · {{ t('パーティー {low}〜{high} 人', low=queue.party[0], high=queue.party[1]) }}{% endif %}{% if queue.invalid %} · {{ t('{sizes} 人は不可', sizes=queue.invalid|join('・')) }}{% endif %}</small></h3>
+<ul class="maps">
+{% for map in queue.maps %}<li>{% if map.image %}<img src="{{ media(map.image) }}" alt="" width="200" height="44" loading="lazy">{% endif %}<span>{{ map.name }}</span></li>
+{% endfor %}</ul>
+</section>
+{% endfor %}
+{% if read_at %}<p class="note">{{ t('ゲームの設定を読んだ時刻') }}: <time datetime="{{ read_at.iso }}">{{ read_at.text }}</time></p>{% endif %}
+</section>
+{% endif %}
+{% endblock %}
