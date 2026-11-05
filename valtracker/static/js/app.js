@@ -215,6 +215,7 @@
         acts();
         times();
         days();
+        mapPick();
         share();
         showCopies();
       })
@@ -343,7 +344,11 @@
   // A player's matches by day in the visitor's own time zone, each day with its wins, losses and RR.
   function days() {
     var list = document.querySelector(".match-list[data-day]");
-    if (!list || list.querySelector(".day") || !window.Intl) return;
+    if (!list || !window.Intl) return;
+    // asked again after the map filter: the heads are made anew for the matches shown
+    list.querySelectorAll(".day").forEach(function (head) {
+      head.remove();
+    });
     var format;
     try {
       format = new Intl.DateTimeFormat(document.documentElement.lang, {
@@ -356,6 +361,7 @@
     }
     var groups = [];
     list.querySelectorAll("li.match").forEach(function (item) {
+      if (item.hidden) return;
       var time = item.querySelector("time[datetime]");
       var moment = time ? new Date(time.getAttribute("datetime")) : null;
       if (!moment || isNaN(moment)) return;
@@ -538,6 +544,33 @@
     });
   }
 
+  // A player's matches by map: the maps they were played on, as a choice above the list (the matches stay on the
+  // page, only hidden).
+  function mapPick() {
+    var list = document.querySelector(".match-list");
+    var box = document.getElementById("map-pick");
+    if (!list || !box || box.options.length > 1) return;
+    var names = [];
+    list.querySelectorAll("li.match[data-map]").forEach(function (item) {
+      var name = item.getAttribute("data-map");
+      if (name && names.indexOf(name) < 0) names.push(name);
+    });
+    if (names.length < 2) return;
+    names.sort().forEach(function (name) {
+      var option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      box.appendChild(option);
+    });
+    box.closest(".map-pick").hidden = false;
+    box.addEventListener("change", function () {
+      list.querySelectorAll("li.match").forEach(function (item) {
+        item.hidden = box.value !== "" && item.getAttribute("data-map") !== box.value;
+      });
+      days();
+    });
+  }
+
   // The night market: the cards the game has not shown yet lie face down until turned, one by one or all at once,
   // as in the game. Which ones were turned is remembered for that night market only.
   var NIGHT = "val.night";
@@ -659,6 +692,7 @@
     teams();
     night();
     refresh();
+    mapPick();
   });
   addEventListener("storage", function (e) {
     if (e.key === FAVORITES || e.key === RECENT || e.key === null) lists();

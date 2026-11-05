@@ -165,10 +165,11 @@
 {% if matches_problem %}<p class="problem" role="alert">{{ matches_problem }}</p>
 {% elif not rows %}<p class="note">{{ t('このモードの最近の試合はありません。') if mode else t('最近の試合が見つかりませんでした。') }}</p>
 {% else %}
+<p class="map-pick" hidden><label><span>{{ t('マップ') }}</span> <select id="map-pick"><option value="">{{ t('すべて') }}</option></select></label></p>
 <ol class="match-list" data-day="{{ t('{wins}勝 {losses}敗') }}">
 {% for row in rows %}
 {% set outcome = 'win' if row.result.won is sameas true or (row.result.won is none and not row.result.rounds and row.placing.place == 1) else ('loss' if row.result.won is sameas false else 'draw') %}
-<li class="match {{ outcome }}" data-outcome="{{ outcome }}"{% if row.rr is not none %} data-rr="{{ row.rr }}"{% endif %}>
+<li class="match {{ outcome }}" data-outcome="{{ outcome }}" data-map="{{ row.map.name }}"{% if row.rr is not none %} data-rr="{{ row.rr }}"{% endif %}>
 <a href="{{ url_for('match', region=row.region or region, match_id=row.id, me=name ~ '#' ~ tag) }}">
 <span class="pic">{% if row.agent_icon %}<img class="agent" src="{{ media(row.agent_icon) }}" alt="{{ row.agent_name }}" width="44" height="44">{% else %}<span class="agent">{{ row.agent_name[:2] }}</span>{% endif %}
 {% if row.placing.mvp %}<span class="mvp {{ row.placing.mvp }}" title="{{ t('マッチ MVP') if row.placing.mvp == 'match' else t('チーム MVP') }}">MVP<span class="sr">{{ t('マッチ MVP') if row.placing.mvp == 'match' else t('チーム MVP') }}</span></span>{% endif %}</span>

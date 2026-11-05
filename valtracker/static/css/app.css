@@ -3403,6 +3403,30 @@ code {
   color: var(--soft);
 }
 
+/* A player's matches by map (app.js mapPick). */
+.map-pick {
+  margin: 0 0 0.6rem;
+}
+.map-pick label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--soft);
+  font-size: 0.9rem;
+}
+.map-pick select {
+  min-height: 2.6rem;
+  padding: 0 0.6rem;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+}
+.match-list li[hidden] {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
