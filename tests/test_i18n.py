@@ -10,8 +10,8 @@ from valtracker.locale import OWNER_ONLY, TEXTS
 from valtracker.views import FAILURES, QUEUES
 
 PACKAGE = Path(__file__).resolve().parent.parent / "valtracker"
-#: The owner's page: Japanese only.
-OWNER_PAGES = {"settings.html"}
+#: The owner's pages: Japanese only.
+OWNER_PAGES = {"settings.html", "collection.html"}
 
 
 def used_texts() -> set[str]:

@@ -17,4 +17,24 @@
 <div class="row"><button type="submit" name="do" value="save">保存</button>{% if shown %}<button type="submit" name="do" value="clear" class="quiet">消す</button>{% endif %}</div>
 </form>
 </section>
+<section class="panel" lang="ja" id="riot" aria-labelledby="riot-title">
+<h2 id="riot-title">Riot アカウント（所持品）</h2>
+<p>あなたの Riot アカウントの所持品（スキン・バディー・カードなど）と残高を<a href="{{ url_for('collection') }}">所持品</a>のページに出すのに使います。パスワードは使いません。</p>
+<p>いまの状態: {% if riot.linked %}<strong>{{ riot.name }}#{{ riot.tag }}</strong>（{{ riot.shard|upper }}）と連携中{% if riot.signed_out %} — <span class="down">ログインが切れています。下の手順でもう一度貼ってください。</span>{% elif riot_until %} — {{ riot_until }} まで{% endif %}{% else %}未連携{% endif %}</p>
+{% if riot.problem %}<p class="note">最後に読めなかったもの: <code>{{ riot.problem }}</code></p>{% endif %}
+{% if riot_problem %}<p class="problem" role="alert">{{ riot_problem }}</p>{% endif %}
+<ol class="steps">
+<li>PC の Chrome か Edge で <a href="{{ riot_link }}" rel="noopener noreferrer" target="_blank">Riot のサインイン</a>を開き、「サインインしたままにする」にチェックを入れてログイン（playvalorant.com に移れば成功）</li>
+<li>同じブラウザで <a href="https://auth.riotgames.com/userinfo" rel="noopener noreferrer" target="_blank">auth.riotgames.com/userinfo</a> を開く（中身は空やエラーでよい）</li>
+<li>F12 →「アプリケーション」→「Cookie」→「https://auth.riotgames.com」→ 名前が <code>ssid</code> の行の「値」をコピー</li>
+<li>下に貼って「連携」</li>
+</ol>
+<form method="post" class="stack">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<label for="riot-ssid">ssid</label>
+<input id="riot-ssid" name="riot" type="password" autocomplete="off" spellcheck="false" maxlength="8000">
+<div class="row"><button type="submit" name="do" value="riot">連携</button>{% if riot.linked %}<button type="submit" name="do" value="riot_off" class="quiet">解除</button>{% endif %}</div>
+</form>
+<p class="note">ssid はログインしたままの状態そのものなので、このサーバーの <code>instance/riot.json</code> にだけ保存し、画面には出しません。使うたびに Riot が新しいものに替え、サーバーが保存し直します。Riot でパスワードを変えるかログアウトすると使えなくなるので、そのときはもう一度貼ってください。ログイン後に移ったアドレス（<code>playvalorant.com/opt_in#access_token=…</code>）を貼っても 1 時間だけ使えます。</p>
+</section>
 {% endblock %}

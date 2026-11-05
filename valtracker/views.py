@@ -1,15 +1,18 @@
-"""The pages: the search and favourites (top), a player, a match, the agents, the owner's settings."""
+"""The pages: the search and favourites (top), a player, a match, the agents, the owner's collection and settings."""
 
 from __future__ import annotations
 
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 
 from flask import Flask, abort, current_app, g, make_response, redirect, render_template, request, send_file, url_for
 
+from valtracker import collection as owned_items
 from valtracker import i18n, security, stats
 from valtracker.henrik import MODES, REGIONS, HenrikError, shows_rr, split_riot_id
+from valtracker.riot import AUTHORIZE, RiotError
 
 #: HenrikDev's queue ids -> what the game calls them (translated in locale.py).
 QUEUES = {
@@ -55,6 +58,15 @@ FAILURES = {
     "notfound": (404, "プレイヤーが見つかりませんでした。名前とタグを確かめてください。", None),
     "busy": (503, "混み合っています。少し待ってからもう一度どうぞ。", None),
     "down": (503, "戦績のサービスから答えがありませんでした。時間をおいてもう一度どうぞ。", None),
+}
+
+#: Why the owner's Riot account could not be read (the owner's pages: Japanese only).
+RIOT_FAILURES = {
+    "nologin": "Riot アカウントがまだ連携されていません。設定で ssid を貼ってください。",
+    "badpaste": "貼られたものが ssid ではありませんでした。手順 3 の値（Value）をそのまま貼ってください。",
+    "signedout": "Riot のログインが切れています。もう一度ログインして、新しい ssid を設定で貼ってください。",
+    "busy": "Riot のサーバーが混み合っています。少し待ってからもう一度どうぞ。",
+    "down": "Riot のサーバーから答えがありませんでした。時間をおいてもう一度どうぞ。",
 }
 
 
@@ -375,15 +387,41 @@ def register(app: Flask) -> None:
         response.headers["Cache-Control"] = "public, max-age=2592000"
         return response
 
+    @app.get("/collection")
+    def collection():
+        """The owner's own skins, buddies, cards and the rest, from their Riot account (riot.py)."""
+        security.owner_only()
+        show = request.args.get("show", "skins")
+        show = show if show in owned_items.TABS else "skins"
+        try:
+            found = current_app.config["VAL_RIOT"].collection()
+        except RiotError as error:
+            status = 503 if error.kind in ("busy", "down") else 200
+            values = {"problem": RIOT_FAILURES.get(error.kind, RIOT_FAILURES["down"]), "detail": error.detail}
+            return render_template("collection.html", **values, settings_link=status == 200), status
+        values = owned_items.page(found, current_app.config["VAL_CONTENT"], g.lang, show)
+        return render_template("collection.html", **values)
+
     @app.route("/settings", methods=["GET", "POST"])
     def settings():
         security.owner_only()
-        store = current_app.config["VAL_SETTINGS"]
-        saved = ""
+        store, riot = current_app.config["VAL_SETTINGS"], current_app.config["VAL_RIOT"]
+        saved = riot_problem = ""
         if request.method == "POST":
-            if request.form.get("do") == "clear":
+            do = request.form.get("do")
+            if do == "clear":
                 store.save(henrik_key="")
                 saved = "API キーを消しました。"
+            elif do == "riot":
+                try:
+                    linked = riot.sign_in(request.form.get("riot", ""))
+                    saved = f"Riot アカウント {linked['name']}#{linked['tag']} と連携しました。"
+                except RiotError as error:
+                    riot_problem = RIOT_FAILURES.get(error.kind, RIOT_FAILURES["down"])
+                    riot_problem += f"（{error.detail}）" if error.detail else ""
+            elif do == "riot_off":
+                riot.sign_out()
+                saved = "Riot アカウントとの連携を解除しました。"
             else:
                 key = request.form.get("henrik_key", "").strip()
                 if key:
@@ -391,7 +429,17 @@ def register(app: Flask) -> None:
                     saved = "API キーを保存しました。"
         key = store.henrik_key()
         shown = f"{key[:4]}…{key[-4:]}" if len(key) > 12 else ("●●●●" if key else "")
-        return render_template("settings.html", shown=shown, saved=saved)
+        status = riot.status()
+        until = datetime.fromtimestamp(status["until"], stats.JST).strftime("%H:%M") if status["until"] else ""
+        return render_template(
+            "settings.html",
+            shown=shown,
+            saved=saved,
+            riot=status,
+            riot_until=until,
+            riot_problem=riot_problem,
+            riot_link=AUTHORIZE,
+        )
 
     @app.errorhandler(404)
     def not_found(error):

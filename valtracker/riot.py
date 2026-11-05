@@ -1,0 +1,390 @@
+"""The owner's own Riot account: what VALORANT's store servers (PD) say it owns, which no public API tells.
+
+Signing in: Riot's sign-in page has a captcha, so this server never sees the password. The owner signs in once in
+a browser and pastes on the settings page either
+
+- the ``ssid`` cookie of auth.riotgames.com (or a whole Cookie header): it is traded for an hour's tokens whenever
+  they are needed, and the fresh cookie Riot hands back each time is saved in its place, or
+- the address the browser lands on after signing in (``https://playvalorant.com/opt_in#access_token=...``): an
+  hour's tokens, with nothing long-lived kept.
+
+Kept in instance/riot.json (readable by its owner only, never in Git): the cookies, the account (puuid, Riot ID,
+shard) and the tokens until they run out. These are the game client's own addresses, not a published API: Riot
+can change them without notice, so every field is read as optional, and what failed is kept for the owner to see.
+"""
+
+from __future__ import annotations
+
+import base64
+import json
+import re
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
+
+from valtracker import net
+from valtracker.cache import TTLCache
+from valtracker.settings import Settings
+
+AUTHORIZE = (
+    "https://auth.riotgames.com/authorize?redirect_uri=https%3A%2F%2Fplayvalorant.com%2Fopt_in"
+    "&client_id=play-valorant-web-prod&response_type=token%20id_token&nonce=1&scope=account%20openid"
+)
+ENTITLEMENTS = "https://entitlements.auth.riotgames.com/api/token/v1"
+USERINFO = "https://auth.riotgames.com/userinfo"
+GEO = "https://riot-geo.pas.si.riotgames.com/pas/v1/product/valorant"
+PD = "https://pd.{shard}.a.pvp.net"
+#: The account's region (Riot's geo answer) -> the PD server that keeps its items.
+SHARDS = {"na": "na", "latam": "na", "br": "na", "eu": "eu", "ap": "ap", "kr": "kr", "pbe": "pbe"}
+#: The PC game client, as PD wants to be told.
+PLATFORM = base64.b64encode(
+    json.dumps(
+        {
+            "platformType": "PC",
+            "platformOS": "Windows",
+            "platformOSVersion": "10.0.19042.1.256.64bit",
+            "platformChipset": "Unknown",
+        }
+    ).encode()
+).decode()
+#: The collection's kinds -> PD's item types.
+ITEM_TYPES = {
+    "skins": "e7c63390-eda7-46e0-bb7a-a6abdacd2433",  # skin levels
+    "chromas": "3ad1b2b2-acdb-4524-852f-954a76ddae0a",
+    "buddies": "dd3bf334-87f3-40bd-b043-682a57a8dc3a",  # buddy levels, one entitlement per copy
+    "cards": "3f296c07-64c3-494c-923b-fe692a4fa1bd",
+    "sprays": "d5f120f8-ff8c-4aac-92ea-f2b5acbe9475",
+    "titles": "de7caa6b-adf7-4588-bbd1-143831e786c6",
+    "flex": "03a572de-4234-31ed-d344-ababa488f981",
+    "agents": "01bb38e1-da47-4e6a-9b3d-945fe4655707",
+}
+#: How long the collection is kept (seconds): a skin bought in the game shows here after this.
+KEEP = 90
+#: A token is traded for a new one this long before it runs out.
+EARLY = 300
+#: At most this much of what is pasted (a whole Cookie header is a few kB).
+MAX_PASTE = 8000
+_COOKIE_NAME = re.compile(r"^[A-Za-z0-9_.\-]{1,64}$")
+_COOKIE_VALUE = re.compile(r"^[\x21-\x7e]{1,4096}$")
+_TOKEN = re.compile(r"^[A-Za-z0-9._\-]{20,8192}$")
+
+
+class RiotError(Exception):
+    """Why there is no answer: ``kind`` is one of nologin (no account linked), badpaste (what was pasted is
+    neither a cookie nor a signed-in address), signedout (Riot no longer takes the cookie, or the hour is over),
+    busy, down (no answer, or one that cannot be read). ``detail``: what Riot said, for the owner."""
+
+    def __init__(self, kind: str, detail: str = ""):
+        super().__init__(kind)
+        self.kind, self.detail = kind, detail
+
+
+class Riot:
+    def __init__(self, folder: Path, send: net.Send = net.send, version=dict, clock=time.time):
+        """``version``: () -> valorant-api.com's /version (content.Content.client_version), which PD wants."""
+        self.store = Settings(folder, "riot.json")
+        self.send, self.version, self.clock = send, version, clock
+        self.cache = TTLCache(4)
+        self._lock = threading.Lock()
+
+    # -- what the pages use ---------------------------------------------------------------------------
+
+    def status(self) -> dict:
+        """For the settings page: the linked account, whether it lasts (a cookie) or ends at ``until`` (an
+        hour's address), and whether Riot refused it last time (``signed_out``)."""
+        saved = self.store.load()
+        token = saved.get("token") if isinstance(saved.get("token"), dict) else {}
+        lasting = bool(saved.get("cookies"))
+        return {
+            "linked": bool(saved.get("puuid")),
+            "name": str(saved.get("name") or ""),
+            "tag": str(saved.get("tag") or ""),
+            "shard": str(saved.get("shard") or ""),
+            "lasting": lasting,
+            "until": 0.0 if lasting else _number(token.get("until")) + EARLY,
+            "signed_out": bool(saved.get("signed_out")) or (not lasting and _number(token.get("until")) < self.clock()),
+            "problem": str(saved.get("problem") or ""),
+        }
+
+    def sign_in(self, pasted: str) -> dict:
+        """Link the account from what the owner pasted (see the module's words); RiotError when it does not work."""
+        pasted = pasted.strip()[:MAX_PASTE]
+        with self._lock:
+            if "access_token=" in pasted:
+                tokens, cookies = _tokens_in(pasted, self.clock()), {}
+                if not tokens:
+                    raise RiotError("badpaste")
+            else:
+                cookies = _pasted_cookies(pasted)
+                if not cookies.get("ssid"):
+                    raise RiotError("badpaste")
+                tokens, cookies = self._authorize(cookies)
+            tokens["entitlements"] = self._entitlements(tokens["access"])
+            account = self._account(tokens)
+            self.store.save(cookies=cookies or None, token=tokens, signed_out=None, problem=None, **account)
+            self.cache = TTLCache(4)  # another account's collection is not shown
+        return self.status()
+
+    def sign_out(self) -> None:
+        with self._lock:
+            self.store.save(
+                cookies=None, token=None, puuid=None, name=None, tag=None, shard=None, signed_out=None, problem=None
+            )
+            self.cache = TTLCache(4)
+
+    def collection(self) -> dict:
+        """``{"name", "tag", "wallet": {currency uuid: amount} or None, "loadout": PD's playerloadout or None,
+        "owned": {kind: {item uuid: copies}}, "missing": [what could not be read], "problem": why}``.
+        RiotError when nothing could be read."""
+        kept = self.cache.get("collection")
+        if kept is not None:
+            return kept
+        for renew in (False, True):
+            tokens, saved = self._tokens(renew)
+            try:
+                found = self._collect(tokens, saved)
+                break
+            except RiotError as error:
+                if error.kind != "expired":
+                    raise
+                if renew:  # a token just made is refused too: not the cookie's fault
+                    raise RiotError("down", error.detail) from None
+        self.store.save(problem=found["problem"] or None)
+        self.cache.put("collection", found, KEEP)
+        return found
+
+    # -- tokens ---------------------------------------------------------------------------------------
+
+    def _tokens(self, renew: bool = False) -> tuple[dict, dict]:
+        """The hour's tokens (saved, or traded for with the cookies) and what is saved."""
+        with self._lock:
+            saved = self.store.load()
+            if not saved.get("puuid"):
+                raise RiotError("nologin")
+            token = saved.get("token") if isinstance(saved.get("token"), dict) else {}
+            if (
+                not renew
+                and token.get("access")
+                and token.get("entitlements")
+                and _number(token.get("until")) > self.clock()
+            ):
+                return token, saved
+            cookies = saved.get("cookies") if isinstance(saved.get("cookies"), dict) else {}
+            if not cookies:  # an hour's address, now over
+                self.store.save(token=None, signed_out=True)
+                raise RiotError("signedout")
+            try:
+                token, cookies = self._authorize(cookies)
+                token["entitlements"] = self._entitlements(token["access"])
+            except RiotError as error:
+                # the cookies are kept: a refusal may pass (and they are what the owner would paste again anyway)
+                self.store.save(token=None, signed_out=True if error.kind == "signedout" else None)
+                raise
+            self.store.save(cookies=cookies, token=token, signed_out=None)
+            return token, {**saved, "cookies": cookies, "token": token}
+
+    def _authorize(self, cookies: dict) -> tuple[dict, dict]:
+        """The cookies -> (the hour's tokens, the cookies as Riot renewed them)."""
+        header = "; ".join(f"{name}={value}" for name, value in cookies.items())
+        status, headers, _ = self.send("GET", AUTHORIZE, {"Cookie": header, "User-Agent": self._agent()}, None)
+        _check(status, "auth")
+        tokens = _tokens_in(_header(headers, "location"), self.clock())
+        if not tokens:  # sent to the sign-in page instead
+            raise RiotError("signedout", f"auth {status}")
+        return tokens, _renewed(cookies, headers)
+
+    def _entitlements(self, access: str) -> str:
+        status, _, body = self.send(
+            "POST",
+            ENTITLEMENTS,
+            {"Authorization": f"Bearer {access}", "Content-Type": "application/json", "User-Agent": self._agent()},
+            b"{}",
+        )
+        if status in (400, 401, 403):
+            raise RiotError("signedout", f"entitlements {status}")
+        _check(status, "entitlements")
+        token = str(_json(body).get("entitlements_token") or "")
+        if not _TOKEN.match(token):
+            raise RiotError("down", "entitlements: no token")
+        return token
+
+    def _account(self, tokens: dict) -> dict:
+        """``{"puuid", "name", "tag", "shard"}`` of the signed-in account."""
+        bearer = {"Authorization": f"Bearer {tokens['access']}", "User-Agent": self._agent()}
+        status, _, body = self.send("GET", USERINFO, bearer, None)
+        if status in (400, 401, 403):
+            raise RiotError("signedout", f"userinfo {status}")
+        info = _json(body) if status == 200 else {}
+        puuid = str(info.get("sub") or _claims(tokens["access"]).get("sub") or "").lower()
+        if not puuid:
+            raise RiotError("down", f"userinfo {status}")
+        acct = info.get("acct") if isinstance(info.get("acct"), dict) else {}
+        shard = ""
+        if tokens.get("id"):
+            status, _, body = self.send(
+                "PUT",
+                GEO,
+                {**bearer, "Content-Type": "application/json"},
+                json.dumps({"id_token": tokens["id"]}).encode(),
+            )
+            affinities = _json(body).get("affinities") if status == 200 else None
+            live = affinities.get("live") if isinstance(affinities, dict) else ""
+            shard = SHARDS.get(str(live or "").lower(), "")
+        return {
+            "puuid": puuid,
+            "name": str(acct.get("game_name") or ""),
+            "tag": str(acct.get("tag_line") or ""),
+            "shard": shard or "ap",  # the owner plays in Japan: Asia-Pacific when Riot does not say
+        }
+
+    def _agent(self) -> str:
+        build = str((self.version() or {}).get("riotClientBuild") or "99.0.0.0000000.0000000")
+        return f"RiotClient/{build} rso-auth (Windows;10;;Professional, x64)"
+
+    # -- PD ---------------------------------------------------------------------------------------------
+
+    def _collect(self, tokens: dict, saved: dict) -> dict:
+        shard = str(saved.get("shard") or "ap")
+        base = PD.format(shard=shard if shard in SHARDS.values() else "ap")
+        puuid = str(saved["puuid"])
+        headers = {
+            "Authorization": f"Bearer {tokens['access']}",
+            "X-Riot-Entitlements-JWT": str(tokens["entitlements"]),
+            "X-Riot-ClientPlatform": PLATFORM,
+            "X-Riot-ClientVersion": str((self.version() or {}).get("riotClientVersion") or ""),
+            "User-Agent": "ShooterGame/13 Windows/10.0.19043.1.256.64bit",
+            "Accept": "application/json",
+        }
+        asks = {"wallet": f"/store/v1/wallet/{puuid}", "loadout": f"/personalization/v2/players/{puuid}/playerloadout"}
+        asks |= {kind: f"/store/v1/entitlements/{puuid}/{item_type}" for kind, item_type in ITEM_TYPES.items()}
+        with ThreadPoolExecutor(4, thread_name_prefix="riot") as pool:
+            asked = {key: pool.submit(self._pd, key, base + path, headers) for key, path in asks.items()}
+        answers, missing, problems = {}, [], []
+        for key, future in asked.items():
+            try:
+                answers[key] = future.result()
+            except RiotError as error:
+                if error.kind == "expired":
+                    raise
+                missing.append(key)
+                problems.append(error.detail or error.kind)
+        if not answers:
+            raise RiotError("down", problems[0] if problems else "")
+        owned = {}
+        for kind in ITEM_TYPES:
+            if kind not in answers:
+                continue
+            counts: dict[str, int] = {}
+            for item in answers[kind].get("Entitlements") or []:
+                if isinstance(item, dict) and item.get("ItemID"):
+                    key = str(item["ItemID"]).lower()
+                    counts[key] = counts.get(key, 0) + 1
+            owned[kind] = counts
+        balances = (answers.get("wallet") or {}).get("Balances")
+        wallet = None
+        if isinstance(balances, dict):
+            wallet = {str(key).lower(): int(value) for key, value in balances.items() if isinstance(value, int | float)}
+        return {
+            "name": str(saved.get("name") or ""),
+            "tag": str(saved.get("tag") or ""),
+            "wallet": wallet,
+            "loadout": answers.get("loadout"),
+            "owned": owned,
+            "missing": missing,
+            "problem": ", ".join(dict.fromkeys(problems)),
+        }
+
+    def _pd(self, key: str, url: str, headers: dict) -> dict:
+        status, _, body = self.send("GET", url, headers, None)
+        said = _json(body)
+        code = str(said.get("errorCode") or "")
+        if status == 401 or code in ("BAD_CLAIMS", "TOKEN_EXPIRED", "INVALID_TOKEN"):
+            raise RiotError("expired", f"{key} {status} {code}".strip())
+        if status != 200:
+            kind = "busy" if status == 429 else "down"
+            raise RiotError(kind, f"{key} {status or 'no answer'} {code}".strip())
+        return said
+
+
+def _check(status: int, what: str) -> None:
+    if status == 429:
+        raise RiotError("busy", f"{what} 429")
+    if status == 0 or status >= 500:
+        raise RiotError("down", f"{what} {status or 'no answer'}")
+
+
+def _number(value) -> float:
+    try:
+        return float(value or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _json(body: bytes) -> dict:
+    try:
+        value = json.loads(body.decode("utf-8"))
+    except (ValueError, UnicodeDecodeError, AttributeError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def _header(headers: list, name: str) -> str:
+    return next((str(value) for key, value in headers if str(key).lower() == name), "")
+
+
+def _tokens_in(address: str, now: float) -> dict | None:
+    """The address Riot's sign-in sends the browser to -> ``{"access", "id", "until"}`` (None without a token)."""
+    parts = urlsplit(str(address or "").strip())
+    found = parse_qs(parts.fragment) or parse_qs(parts.query)
+    access = (found.get("access_token") or [""])[0]
+    if not _TOKEN.match(access):
+        return None
+    try:
+        seconds = int((found.get("expires_in") or ["3600"])[0])
+    except ValueError:
+        seconds = 3600
+    id_token = (found.get("id_token") or [""])[0]
+    return {"access": access, "id": id_token if _TOKEN.match(id_token) else "", "until": now + seconds - EARLY}
+
+
+def _pasted_cookies(text: str) -> dict:
+    """``ssid`` alone (its value), ``ssid=...``, or a whole Cookie header (``Cookie: a=1; ssid=...``)."""
+    text = re.sub(r"^\s*cookie\s*:\s*", "", text.strip(), flags=re.I).strip().strip("\"'")
+    if "=" not in text:
+        return {"ssid": text} if _COOKIE_VALUE.match(text) else {}
+    found = {}
+    for part in text.split(";"):
+        name, _, value = part.strip().partition("=")
+        value = value.strip().strip('"')
+        if _COOKIE_NAME.match(name) and _COOKIE_VALUE.match(value):
+            found[name] = value
+    return dict(list(found.items())[:30])
+
+
+def _renewed(cookies: dict, headers: list) -> dict:
+    """The cookies with Riot's Set-Cookie answers applied (a new ssid each time; a removed one goes)."""
+    found = dict(cookies)
+    for key, value in headers:
+        if str(key).lower() != "set-cookie":
+            continue
+        first, *rest = str(value).split(";")
+        name, _, content = first.strip().partition("=")
+        if not _COOKIE_NAME.match(name):
+            continue
+        gone = not content or any(item.strip().lower() == "max-age=0" for item in rest)
+        if gone:
+            found.pop(name, None)
+        elif _COOKIE_VALUE.match(content):
+            found[name] = content
+    return dict(list(found.items())[:30])
+
+
+def _claims(token: str) -> dict:
+    """What our own access token says (its puuid), unchecked: Riot checks it, we only read it."""
+    try:
+        middle = token.split(".")[1]
+        return _json(base64.urlsafe_b64decode(middle + "=" * (-len(middle) % 4)))
+    except (IndexError, ValueError):
+        return {}
