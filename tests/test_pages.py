@@ -73,6 +73,13 @@ class PagesTest(unittest.TestCase):
                 outside = [s for s in sources if s.startswith(("http:", "https:", "//"))]
                 self.assertEqual(outside, [], "pictures and files come from this site")
 
+    def test_link_previews_have_full_addresses(self):
+        # LINE, X and Discord show no picture for a relative og:image (Home Page's server marks the public name https)
+        text = self.client.get("/p/Tester/JP1?x=1", base_url="https://example.org/val").get_data(as_text=True)
+        image = re.search(r'<meta property="og:image" content="([^"]+)"', text).group(1)
+        self.assertRegex(image, r"^https://example\.org/val/static/og\.png\?v=\w+$")
+        self.assertIn('<meta property="og:url" content="https://example.org/val/p/Tester/JP1">', text)
+
     def test_search_goes_to_the_player(self):
         answer = self.get("/search?q=Tester%EF%BC%83JP1")  # a full-width ＃ too
         self.assertEqual(answer.status_code, 303)
