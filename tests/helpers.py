@@ -25,11 +25,22 @@ class FakeFetch:
         self.asked: list[tuple[str, dict]] = []
         self.fail = None
         self.henrik_status = None
+        #: Riot's own news list and status files (riotweb.py) answer this status instead, when set.
+        self.riot_web_status = None
 
     def __call__(self, url: str, headers: dict) -> tuple[int, bytes]:
         self.asked.append((url, headers))
         if self.fail is not None:
             return self.fail, b""
+        if url.startswith(("https://content.publishing.riotgames.com/", "https://valorant.secure.dyn.riotcdn.net/")):
+            if self.riot_web_status:
+                return self.riot_web_status, b"<html>busy</html>"
+            if "/channels/public/x/status/" in url:
+                return 200, json.dumps(json.loads(fixture("henrik_status.json"))["data"]).encode()
+            news = json.loads(fixture("riot_news.json"))
+            if "tags=patch_notes" in url:
+                news["data"] = [item for item in news["data"] if isinstance(item, dict) and item.get("tags")]
+            return 200, json.dumps(news).encode()
         if url.startswith("https://api.henrikdev.xyz/"):
             if self.henrik_status:
                 return self.henrik_status, json.dumps({"status": self.henrik_status, "errors": []}).encode()

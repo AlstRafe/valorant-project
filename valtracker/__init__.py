@@ -21,6 +21,7 @@ from valtracker.henrik import Henrik
 from valtracker.media import Media, outside_path
 from valtracker.ratings import Ratings
 from valtracker.riot import Riot
+from valtracker.riotweb import RiotWeb
 from valtracker.settings import Settings
 
 NAME = "VAL Tracker"
@@ -36,6 +37,7 @@ def create_app(
     app = Flask(__name__, instance_path=str(instance), instance_relative_config=False)
     app.config["VAL_SETTINGS"] = settings = Settings(instance)
     app.config["VAL_HENRIK"] = Henrik(settings.henrik_key, fetch)
+    app.config["VAL_RIOT_WEB"] = RiotWeb(fetch)
     app.config["VAL_CONTENT"] = Content(instance, fetch)
     app.config["VAL_MEDIA"] = Media(instance, fetch)
     app.config["VAL_RIOT"] = Riot(instance, send, app.config["VAL_CONTENT"].client_version)

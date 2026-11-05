@@ -1,5 +1,5 @@
-"""Pages about the game around the matches: Riot's news (/news) and the esports schedule and results (/esports)
-from HenrikDev, and how often each agent is picked and wins (/agents/stats) in the matches this site has seen
+"""Pages about the game around the matches: Riot's news (/news, from Riot's own site: riotweb.py, else HenrikDev)
+and the esports schedule and results (/esports, from HenrikDev), and how often each agent is picked and wins (/agents/stats) in the matches this site has seen
 (activity.py). Everyone's, in the visitor's language."""
 
 from __future__ import annotations
@@ -9,6 +9,7 @@ from flask import Flask, current_app, g, render_template, request, url_for
 from valtracker import security
 from valtracker.activity import BANDS, FEW, WINDOW_DAYS
 from valtracker.henrik import HenrikError
+from valtracker.riotweb import RiotWebError
 from valtracker.tools import _family, _when
 from valtracker.views import QUEUES, _failure, _rank, _t
 
@@ -22,6 +23,7 @@ CATEGORIES = {
     "esports": "eスポーツ",
     "announcements": "お知らせ",
     "community": "コミュニティ",
+    "riotstore": "Riot ストア",
 }
 NEWS_SHOWN = 60
 #: The esports page: the matches to come (and those being played), or the results.
@@ -102,8 +104,13 @@ def _news_page() -> tuple[dict, int]:
     henrik = current_app.config["VAL_HENRIK"]
     country = NEWS_LANGS.get(g.lang, "en-gb")
     try:
+        found = current_app.config["VAL_RIOT_WEB"].news(country)
+    except RiotWebError:
+        found = None  # Riot's own list did not come: HenrikDev's copy
+    try:
         try:
-            found = henrik.news(country)
+            if found is None:
+                found = henrik.news(country)
         except HenrikError as error:
             # a language Riot's site (or HenrikDev) has no news in: the English ones, and the page says so
             if error.kind not in ("down", "notfound") or country == "en-gb":

@@ -1,5 +1,6 @@
 """Riot's news (/news), the esports schedule (/esports) and their pictures through /pic/ (media.OUTSIDE)."""
 
+import json
 import os
 import unittest
 from unittest import mock
@@ -36,7 +37,11 @@ class WorldTest(unittest.TestCase):
         self.assertIn('href="https://valorantesports.com/news/champions"', text, "the article's own link first")
         self.assertIn('src="/pic/rgpub/sanity/images/', text)
         self.assertNotIn("example.com", text, "pictures only from the known addresses")
-        self.assertTrue(any("/valorant/v1/website/ja-jp" in url for url, _ in self.fetch.asked))
+        self.assertIn('href="https://playvalorant.com/ja-jp/news/game-updates/valorant-patch-notes-11-10"', text)
+        self.assertIn('href="https://www.youtube.com/watch?v=abcdefghijk"', text, "a video's own page")
+        self.assertNotIn("//example.com/merch", text)
+        self.assertTrue(any("valorant_news_page_list?locale=ja_JP" in url for url, _ in self.fetch.asked))
+        self.assertFalse(any("api.henrikdev.xyz" in url for url, _ in self.fetch.asked), "Riot's own list first")
         text = self.page("/news?category=esports")
         self.assertIn("Champions の結果", text)
         self.assertNotIn("新しいエージェント", text)
@@ -47,11 +52,38 @@ class WorldTest(unittest.TestCase):
         self.assertIn("合うニュースはありませんでした", self.page("/news?q=zzz"))
         self.client.set_cookie("lang", "en-GB")
         self.assertIn("Patch notes", self.page("/news"))
-        self.assertTrue(any("/valorant/v1/website/en-gb" in url for url, _ in self.fetch.asked))
+        self.assertTrue(any("locale=en_GB" in url for url, _ in self.fetch.asked))
 
-    def test_news_without_henrikdev(self):
+    def test_news_from_henrikdev_when_riot_does_not_answer(self):
+        self.fetch.riot_web_status = 503
+        text = self.page("/news")
+        self.assertIn("VALORANT パッチノート 11.10", text)
+        self.assertTrue(any("/valorant/v1/website/ja-jp" in url for url, _ in self.fetch.asked))
+        riot = sum("riotgames.com" in url for url, _ in self.fetch.asked)
+        self.page("/news")
+        self.assertEqual(sum("riotgames.com" in url for url, _ in self.fetch.asked), riot, "a failure is kept a while")
+
+    def test_news_without_riot_or_henrikdev(self):
+        self.fetch.riot_web_status = 503
         self.fetch.henrik_status = 503
         self.assertIn('class="problem"', self.page("/news", 503))
+
+    def test_the_latest_patch_even_when_the_list_has_none(self):
+        original = FakeFetch.__call__
+
+        def answer(fetch, url, headers):
+            status, body = original(fetch, url, headers)
+            if "valorant_news_page_list" in url and "tags=" not in url:
+                news = json.loads(body)
+                news["data"] = [item for item in news["data"] if isinstance(item, dict) and not item.get("tags")]
+                body = json.dumps(news).encode()
+            return status, body
+
+        with mock.patch.object(FakeFetch, "__call__", answer):
+            text = self.page("/news")
+        self.assertIn("いまのパッチ", text)
+        self.assertIn("VALORANT パッチノート 11.10", text)
+        self.assertTrue(any("tags=patch_notes" in url for url, _ in self.fetch.asked))
 
     def failing(self, *parts: str, status: int = 400):
         """HenrikDev answers ``status`` for the addresses that hold any of ``parts``."""
@@ -68,6 +100,7 @@ class WorldTest(unittest.TestCase):
         self.addCleanup(patch.stop)
 
     def test_news_in_english_when_the_language_has_none(self):
+        self.fetch.riot_web_status = 503
         self.failing("/v1/website/zh-tw")
         self.client.set_cookie("lang", "zh-TW")
         text = self.page("/news")
@@ -84,7 +117,9 @@ class WorldTest(unittest.TestCase):
         self.assertIn("eスポーツの日程を読み込めませんでした", text)
         self.assertIn('href="https://valorantesports.com/"', text)
         self.assertNotIn("HTTP 500", text, "what came back is for the owner")
+        asked = len(self.fetch.asked)
         self.assertIn("HTTP 500", self.client.get("/esports").get_data(as_text=True))
+        self.assertEqual(len(self.fetch.asked), asked, "nothing asked again for a while: each visit cost 7 calls")
 
     def test_esports_from_the_leagues(self):
         whole = self.page("/esports")

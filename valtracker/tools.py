@@ -18,6 +18,7 @@ from valtracker.activity import BANDS, ENOUGH, FEW
 from valtracker.diary import store_day
 from valtracker.henrik import BOARD_PAGE, HenrikError
 from valtracker.riot import RiotError
+from valtracker.riotweb import RiotWebError
 from valtracker.stats import JST
 from valtracker.views import QUEUES, RIOT_FAILURES, _failure, _rank, _t, act_left, cluster
 
@@ -125,6 +126,14 @@ def _board(region: str, page: int) -> tuple[dict, int]:
         "earlier": url_for("leaderboard", region=region, page=page - 1 if page > 2 else None) if page > 1 else "",
         "later": url_for("leaderboard", region=region, page=page + 1) if more else "",
     }, 200
+
+
+def _status(region: str) -> dict:
+    """A region's server notices: from Riot's own file, else HenrikDev's copy (HenrikError when neither came)."""
+    try:
+        return current_app.config["VAL_RIOT_WEB"].status(region)
+    except RiotWebError:
+        return current_app.config["VAL_HENRIK"].status(region)
 
 
 def _notices(found: dict) -> list[dict]:
@@ -478,7 +487,7 @@ def register(app: Flask) -> None:
         region = _region()
         values = {"regions": _regions("status", region), "region_name": _t(REGION_NAMES[region]), "notices": []}
         try:
-            found = current_app.config["VAL_HENRIK"].status(region)
+            found = _status(region)
         except HenrikError as error:
             code, problem, settings_link = _failure(error.kind)
             return render_template("status.html", **values, problem=problem, settings_link=settings_link), code
@@ -490,7 +499,7 @@ def register(app: Flask) -> None:
         none, or it could not be asked): its script puts it in place."""
         region = _region()
         try:
-            notices = _notices(current_app.config["VAL_HENRIK"].status(region))
+            notices = _notices(_status(region))
         except HenrikError:
             notices = []
         response = make_response(

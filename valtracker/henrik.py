@@ -236,12 +236,17 @@ class Henrik:
             first = HenrikError("down", "the whole schedule did not come a while ago")
         games, problems = [], []
         for league in ESPORTS_LEAGUES:
+            failed = self.cache.get(("no-esports", league))
+            if failed:  # failed a while ago: not asked again for a while (each visit would cost the budget)
+                problems.append(f"{league}: {failed}")
+                continue
             try:
                 games += self._get(("esports", league), f"{path}?league={league}", KEEP["esports"], _slim_esports)
             except HenrikError as error:
                 if error.kind in ("nokey", "badkey", "busy"):
                     raise
                 problems.append(f"{league}: {error.detail or error.kind}")
+                self.cache.put(("no-esports", league), error.detail or error.kind, KEEP["news"])
         if not games:
             raise HenrikError("down", "; ".join([first.detail or "down", *problems]))
         seen, kept = set(), []

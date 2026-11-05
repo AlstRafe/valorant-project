@@ -1,0 +1,104 @@
+{
+ "data": [
+  {
+   "media": {
+    "type": "image",
+    "provider": "sanity",
+    "url": "https://cmsassets.rgpub.io/sanity/images/dsfx7636/news_live/0123456789abcdef0123456789abcdef01234567-1920x1080.jpg?accountingTag=VAL",
+    "mimeType": "image/jpeg"
+   },
+   "title": "VALORANT パッチノート 11.10",
+   "action": {
+    "type": "weblink",
+    "payload": {
+     "url": "/ja-jp/news/game-updates/valorant-patch-notes-11-10"
+    }
+   },
+   "category": {
+    "machineName": "game_updates",
+    "title": "ゲームアップデート"
+   },
+   "publishedAt": "2026-11-04T17:00:00.000Z",
+   "tags": [
+    {
+     "machineName": "patch_notes",
+     "title": "パッチノート"
+    }
+   ]
+  },
+  {
+   "media": {
+    "type": "image",
+    "provider": "sanity",
+    "url": "https://images.contentstack.io/v3/assets/bltb6530b271fddd0b1/blt0123456789abcdef/banner.jpg",
+    "mimeType": "image/jpeg"
+   },
+   "title": "Champions の結果",
+   "action": {
+    "type": "weblink",
+    "payload": {
+     "url": "https://valorantesports.com/news/champions"
+    }
+   },
+   "category": {
+    "machineName": "esports",
+    "title": "eスポーツ"
+   },
+   "publishedAt": "2026-11-03T10:00:00.000Z"
+  },
+  {
+   "media": {
+    "type": "video",
+    "url": "https://example.com/clip.mp4"
+   },
+   "imageMedia": {
+    "type": "image",
+    "provider": "sanity",
+    "url": "https://example.com/not-ours.jpg",
+    "mimeType": "image/jpeg"
+   },
+   "title": "新しいエージェント",
+   "action": {
+    "type": "youtube_video",
+    "payload": {
+     "url": "https://www.youtube.com/watch?v=abcdefghijk",
+     "youtubeId": "abcdefghijk"
+    }
+   },
+   "category": {
+    "machineName": "game_updates",
+    "title": "ゲームアップデート"
+   },
+   "publishedAt": "2026-11-02T10:00:00.000Z"
+  },
+  {
+   "title": "<b>開発</b>の話",
+   "action": {
+    "type": "weblink",
+    "payload": {
+     "url": "javascript:alert(1)"
+    }
+   },
+   "category": {
+    "machineName": "dev",
+    "title": "開発"
+   },
+   "publishedAt": "2026-10-30T10:00:00.000Z"
+  },
+  {
+   "title": "グッズの話",
+   "action": {
+    "type": "weblink",
+    "payload": {
+     "url": "//example.com/merch"
+    }
+   },
+   "category": null,
+   "publishedAt": "2026-10-29T10:00:00.000Z"
+  },
+  {
+   "title": ""
+  },
+  "not an article"
+ ]
+}
