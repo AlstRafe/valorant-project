@@ -54,14 +54,15 @@ def create_app(mount: str = "", instance: Path | None = None, fetch: net.Fetch =
 
     versions: dict[str, str] = {}
 
-    def asset(name: str) -> str:
-        """A file of static/ at its version: a changed file has a new address, so it can be kept for a year."""
+    def asset(name: str, external: bool = False) -> str:
+        """A file of static/ at its version: a changed file has a new address, so it can be kept for a year.
+        ``external``: the full address (https://name/val/...), which link previews need."""
         if name not in versions:
             try:
                 versions[name] = hashlib.sha256((paths.PACKAGE / "static" / name).read_bytes()).hexdigest()[:10]
             except OSError:
                 versions[name] = "0"
-        return url_for("static", filename=name, v=versions[name])
+        return url_for("static", filename=name, v=versions[name], _external=external)
 
     def media(url) -> str:
         path = content.media_path(url)
