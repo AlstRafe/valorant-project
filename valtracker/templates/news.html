@@ -17,6 +17,7 @@
 <p class="problem" role="alert">{{ problem }}</p>
 {% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}">{{ t('設定を開く') }}</a></p>{% endif %}
 {% else %}
+{% if english %}<p class="note">{{ t('この言語の記事が読めなかったため、英語の記事を出しています。') }}</p>{% endif %}
 {% if categories %}<nav class="modes" aria-label="{{ t('種類') }}">
 <a href="{{ every_url }}"{% if not category %} aria-current="true"{% endif %}>{{ t('すべて') }}</a>
 {% for item in categories %}<a href="{{ item.url }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>

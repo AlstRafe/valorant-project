@@ -4,7 +4,7 @@ import os
 import unittest
 from unittest import mock
 
-from helpers import make_app
+from helpers import FakeFetch, make_app
 
 from valtracker.hosting import DISALLOW
 from valtracker.media import outside_path
@@ -52,6 +52,56 @@ class WorldTest(unittest.TestCase):
     def test_news_without_henrikdev(self):
         self.fetch.henrik_status = 503
         self.assertIn('class="problem"', self.page("/news", 503))
+
+    def failing(self, *parts: str, status: int = 400):
+        """HenrikDev answers ``status`` for the addresses that hold any of ``parts``."""
+        original = FakeFetch.__call__
+
+        def answer(fetch, url, headers):
+            if any(part in url for part in parts):
+                fetch.asked.append((url, headers))
+                return status, b'{"errors": []}'
+            return original(fetch, url, headers)
+
+        patch = mock.patch.object(FakeFetch, "__call__", answer)
+        patch.start()
+        self.addCleanup(patch.stop)
+
+    def test_news_in_english_when_the_language_has_none(self):
+        self.failing("/v1/website/zh-tw")
+        self.client.set_cookie("lang", "zh-TW")
+        text = self.page("/news")
+        self.assertNotIn('class="problem"', text)
+        self.assertIn('class="note"', text)
+        self.assertTrue(any(url.endswith("/v1/website/en-gb") for url, _ in self.fetch.asked))
+        asked = len(self.fetch.asked)
+        self.page("/news")
+        self.assertEqual(len(self.fetch.asked), asked, "neither is asked again for a while")
+
+    def test_esports_league_by_league_when_the_whole_schedule_fails(self):
+        self.failing("/v1/esports/schedule", status=500)
+        text = self.page("/esports", 503)
+        self.assertIn("eスポーツの日程を読み込めませんでした", text)
+        self.assertIn('href="https://valorantesports.com/"', text)
+        self.assertNotIn("HTTP 500", text, "what came back is for the owner")
+        self.assertIn("HTTP 500", self.client.get("/esports").get_data(as_text=True))
+
+    def test_esports_from_the_leagues(self):
+        whole = self.page("/esports")
+        self.app.config["VAL_HENRIK"].cache = type(self.app.config["VAL_HENRIK"].cache)(512)
+        original = FakeFetch.__call__
+
+        def answer(fetch, url, headers):
+            if url.endswith("/v1/esports/schedule"):
+                fetch.asked.append((url, headers))
+                return 0, b""  # no answer in time
+            return original(fetch, url, headers)
+
+        with mock.patch.object(FakeFetch, "__call__", answer):
+            text = self.page("/esports")
+        self.assertIn("Paper Rex", text)
+        self.assertEqual(text.count("Paper Rex"), whole.count("Paper Rex"), "each match once")
+        self.assertTrue(any("league=vct_pacific" in url for url, _ in self.fetch.asked))
 
     def test_esports_schedule_and_results(self):
         text = self.page("/esports")
