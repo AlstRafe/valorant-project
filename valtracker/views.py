@@ -805,10 +805,11 @@ def register(app: Flask) -> None:
             riot_link=AUTHORIZE,
         )
 
-    from valtracker import tools, world
+    from valtracker import skinlib, tools, world
 
     tools.register(app)
     world.register(app)
+    skinlib.register(app)
 
     @app.errorhandler(404)
     def not_found(error):

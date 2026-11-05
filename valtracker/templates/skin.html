@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ name }} · {{ t('スキン図鑑') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('{name} のバリエーション、レベルごとの演出と動画、同じシリーズのスキン。', name=name) }}{% endblock %}
+{% block main %}
+<p class="crumb"><a href="{{ url_for('skins') }}">{{ t('スキン図鑑') }}</a> › <a href="{{ weapon.url }}">{{ weapon.name }}</a></p>
+<section class="hero skin-hero{% if tier.key %} tier-{{ tier.key }}{% endif %}">
+<h1>{{ name }}</h1>
+<p class="meta">{% if tier.icon %}<img class="tier" src="{{ media(tier.icon) }}" alt="" width="20" height="20">{% endif %}{% if tier.name %}{{ tier.name }} · {% endif %}{{ weapon.name }}{% if theme %} · {{ t('シリーズ: {name}', name=theme) }}{% endif %}</p>
+{% if image %}<img class="skin-art" src="{{ media(image) }}" alt="" width="512" height="160">{% endif %}
+</section>
+
+{% if chromas %}
+<section aria-labelledby="chroma-title">
+<h2 id="chroma-title">{{ t('バリエーション') }}</h2>
+<ul class="chromas">
+{% for item in chromas %}<li><a href="{{ item.url }}#chroma-title"{% if item.current %} aria-current="true"{% endif %}>{% if item.swatch %}<img src="{{ media(item.swatch) }}" alt="" width="28" height="28">{% else %}<span class="no-swatch" aria-hidden="true"></span>{% endif %}<span>{{ item.name }}</span></a></li>
+{% endfor %}</ul>
+{% if chroma_video %}<video class="skin-video" controls preload="none" playsinline width="640" height="360"{% if image %} poster="{{ media(image) }}"{% endif %} aria-label="{{ t('{name} の動画', name=name) }}"><source src="{{ chroma_video }}" type="video/mp4"></video>{% endif %}
+</section>
+{% endif %}
+
+{% if levels %}
+<section aria-labelledby="level-title">
+<h2 id="level-title">{{ t('レベル') }}</h2>
+<ol class="levels">
+{% for level in levels %}<li>
+<p class="level-head"><strong>{{ t('レベル {number}', number=level.number) }}</strong>{% if level.item %}<span>{{ level.item }}</span>{% elif level.number == 1 %}<span>{{ t('基本の見た目') }}</span>{% endif %}</p>
+{% if level.about %}<p class="level-about">{{ level.about }}</p>{% endif %}
+{% if level.video %}<details class="level-video"><summary>{{ t('動画を見る') }}</summary><video controls preload="none" playsinline width="640" height="360"{% if level.poster %} poster="{{ media(level.poster) }}"{% endif %} aria-label="{{ t('レベル {number} の動画', number=level.number) }}"><source src="{{ level.video }}" type="video/mp4"></video></details>{% endif %}
+</li>
+{% endfor %}</ol>
+</section>
+{% endif %}
+
+<section aria-labelledby="rate" class="rating">
+<h2 id="rate">{{ t('評価') }}</h2>
+<p class="score">{% if score.average is not none %}<strong>★ {{ score.average }}</strong> <small>{{ t('{count} 人の評価', count=score.count) }}</small>{% elif score.count %}{{ t('{count} 人が評価しました（3 人から平均を出します）', count=score.count) }}{% else %}{{ t('まだ評価はありません。') }}{% endif %}</p>
+{% if rated == '1' %}<p class="verdict ok" role="status">{{ t('評価を受け付けました。') }}</p>{% elif rated == 'busy' %}<p class="verdict no" role="status">{{ t('いまは評価が多すぎます。時間をおいてもう一度どうぞ。') }}</p>{% endif %}
+<form class="stars" method="post" action="{{ url_for('rate_skin', uuid=uuid) }}">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<fieldset>
+<legend>{{ t('あなたの評価') }}</legend>
+{% for number in range(1, 6) %}<label><input type="radio" name="stars" value="{{ number }}" required{% if score.mine == number %} checked{% endif %}><span aria-hidden="true">{{ '★' * number }}</span><span class="sr">{{ t('星 {count}', count=number) }}</span></label>
+{% endfor %}</fieldset>
+<button type="submit">{{ t('評価を送る') if not score.mine else t('評価を変える') }}</button>
+</form>
+<p class="note">{{ t('アカウントは要りません。このブラウザで 1 スキンに 1 つ、あとから変えられます。') }}</p>
+</section>
+
+{% if series %}
+<section aria-labelledby="series-title">
+<h2 id="series-title">{{ t('同じシリーズ') }}</h2>
+<ul class="items skins">
+{% for item in series %}<li class="item{% if item.tier.key %} tier-{{ item.tier.key }}{% endif %}"><a class="skin-link" href="{{ item.url }}">
+<img src="{{ media(item.image) }}" alt="" width="256" height="96" loading="lazy">
+<span class="iname">{{ item.name }}</span>
+<small>{{ item.weapon.name }}</small>
+</a></li>
+{% endfor %}</ul>
+</section>
+{% endif %}
+<p class="note">{{ t('動画は Riot のサーバーから、再生したときだけ読み込みます。') }}</p>
+{% endblock %}

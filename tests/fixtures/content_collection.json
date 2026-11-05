@@ -20,7 +20,7 @@
     {
      "uuid": "aa000000-0000-4000-8000-000000000001",
      "displayName": "プライム ヴァンダル",
-     "themeUuid": "t",
+     "themeUuid": "a1000000-0000-4000-8000-0000000000a1",
      "contentTierUuid": "60bca009-4182-7998-dee7-b8a2558dc369",
      "displayIcon": null,
      "wallpaper": null,
@@ -37,11 +37,11 @@
       },
       {
        "uuid": "aa000000-0000-4000-8000-000000000022",
-       "displayName": "バリエーション 2 ゴールド",
+       "displayName": "プライム ヴァンダル レベル4\r\n(バリエーション 2 ゴールド)",
        "displayIcon": "https://media.valorant-api.com/weaponskinchromas/aa000000-0000-4000-8000-000000000022/displayicon.png",
        "fullRender": "https://media.valorant-api.com/weaponskinchromas/aa000000-0000-4000-8000-000000000022/fullrender.png",
-       "swatch": null,
-       "streamedVideo": null,
+       "swatch": "https://media.valorant-api.com/weaponskinchromas/aa000000-0000-4000-8000-000000000022/swatch.png",
+       "streamedVideo": "https://valorant.dyn.riotcdn.net/x/videos/release-13.09/aa22_default_universal.mp4",
        "assetPath": "ShooterGame/x"
       },
       {
@@ -57,7 +57,7 @@
      "levels": [
       {
        "uuid": "aa000000-0000-4000-8000-000000000011",
-       "displayName": "レベル",
+       "displayName": "プライム ヴァンダル",
        "levelItem": null,
        "displayIcon": "https://media.valorant-api.com/weaponskinlevels/aa000000-0000-4000-8000-000000000011/displayicon.png",
        "streamedVideo": "https://example.org/video.mp4",
@@ -65,10 +65,10 @@
       },
       {
        "uuid": "aa000000-0000-4000-8000-000000000012",
-       "displayName": "レベル",
-       "levelItem": null,
+       "displayName": "プライム ヴァンダル レベル2\nキルするたびに光が強まる",
+       "levelItem": "EEquippableSkinLevelItem::VFX",
        "displayIcon": "https://media.valorant-api.com/weaponskinlevels/aa000000-0000-4000-8000-000000000012/displayicon.png",
-       "streamedVideo": "https://example.org/video.mp4",
+       "streamedVideo": "https://valorant.dyn.riotcdn.net/x/videos/release-13.09/aa12_default_universal.mp4",
        "assetPath": "ShooterGame/x"
       }
      ]
@@ -76,7 +76,7 @@
     {
      "uuid": "aa000000-0000-4000-8000-000000000002",
      "displayName": "レイヴァー ヴァンダル",
-     "themeUuid": "t",
+     "themeUuid": "a1000000-0000-4000-8000-0000000000a2",
      "contentTierUuid": "e046854e-406c-37f4-6607-19a9ba8426fc",
      "displayIcon": "https://media.valorant-api.com/weaponskins/aa000000-0000-4000-8000-000000000002/displayicon.png",
      "wallpaper": null,
@@ -106,7 +106,7 @@
     {
      "uuid": "aa000000-0000-4000-8000-000000000009",
      "displayName": "スタンダード ヴァンダル",
-     "themeUuid": "t",
+     "themeUuid": "5a629df4-4765-0214-bd40-fbb96542941f",
      "contentTierUuid": null,
      "displayIcon": null,
      "wallpaper": null,
@@ -157,7 +157,8 @@
        "streamedVideo": "https://example.org/video.mp4",
        "assetPath": "ShooterGame/x"
       }
-     ]
+     ],
+     "themeUuid": "a1000000-0000-4000-8000-0000000000a2"
     }
    ]
   },
@@ -185,7 +186,8 @@
        "streamedVideo": "https://example.org/video.mp4",
        "assetPath": "ShooterGame/x"
       }
-     ]
+     ],
+     "themeUuid": "a1000000-0000-4000-8000-0000000000a1"
     }
    ]
   }
@@ -365,6 +367,29 @@
    "startTime": "2026-03-01T00:00:00Z",
    "endTime": "2040-01-01T00:00:00Z",
    "parentUuid": "aaaa0000-0000-4000-8000-000000000001"
+  }
+ ],
+ "themes": [
+  {
+   "uuid": "a1000000-0000-4000-8000-0000000000a1",
+   "displayName": "プライム",
+   "displayIcon": null,
+   "storeFeaturedImage": null,
+   "assetPath": "x"
+  },
+  {
+   "uuid": "a1000000-0000-4000-8000-0000000000a2",
+   "displayName": "レイヴァー",
+   "displayIcon": null,
+   "storeFeaturedImage": null,
+   "assetPath": "x"
+  },
+  {
+   "uuid": "5a629df4-4765-0214-bd40-fbb96542941f",
+   "displayName": "Standard",
+   "displayIcon": null,
+   "storeFeaturedImage": null,
+   "assetPath": "x"
   }
  ]
 }

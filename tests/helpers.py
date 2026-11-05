@@ -178,6 +178,7 @@ def make_app(key: str = "HDEV-test-key", mount: str = ""):
 
     def cleanup():
         app.config["VAL_ACTIVITY"].close()
+        app.config["VAL_RATINGS"].close()
         remove()
 
     folder.cleanup = cleanup

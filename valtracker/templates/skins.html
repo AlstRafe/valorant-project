@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ t('スキン図鑑') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('VALORANT の武器スキンを全部。武器・ティア・名前で探して、バリエーションやレベルごとの動画を見られます。') }}{% endblock %}
+{% macro card(item) -%}
+<li class="item{% if item.tier.key %} tier-{{ item.tier.key }}{% endif %}"><a class="skin-link" href="{{ item.url }}">
+<img src="{{ media(item.image) }}" alt="" width="256" height="96" loading="lazy">
+<span class="iname">{{ item.name }}</span>
+<small>{% if item.tier.icon %}<img class="tier" src="{{ media(item.tier.icon) }}" alt="" width="16" height="16">{% endif %}{{ item.tier.name }}{% if item.average is defined %} · <span class="stars-text">★ {{ item.average }}</span>{% elif item.videos %} · {{ t('動画 {count}', count=item.videos) }}{% endif %}</small>
+</a></li>
+{%- endmacro %}
+{% block main %}
+<section class="hero">
+<h1>{{ t('スキン図鑑') }}</h1>
+<p class="lead">{{ t('VALORANT の武器スキンを全部。武器・ティア・名前で探して、バリエーションやレベルごとの動画を見られます。') }}</p>
+</section>
+<nav class="modes" aria-label="{{ t('ページ') }}"><a href="{{ url_for('shop') }}">{{ t('ショップ') }}</a>{% if owner %}<a href="{{ url_for('collection') }}" lang="ja">所持品</a>{% endif %}<a href="{{ url_for('skins') }}" aria-current="true">{{ t('スキン図鑑') }}</a></nav>
+{% if not total %}
+<p class="problem" role="alert">{{ t('スキンの一覧を読み込めませんでした。時間をおいてもう一度どうぞ。') }}</p>
+{% else %}
+<form class="skin-form" action="{{ url_for('skins') }}" method="get" role="search">
+<label><span>{{ t('名前') }}</span><input name="q" type="search" value="{{ q }}" placeholder="{{ t('例: プライム') }}" maxlength="40" autocomplete="off" spellcheck="false" enterkeyhint="search"></label>
+<label><span>{{ t('武器') }}</span>
+<select name="weapon">
+<option value="all"{% if weapon == 'all' %} selected{% endif %}>{{ t('すべての武器') }}</option>
+{% for item in weapons %}<option value="{{ item.uuid }}"{% if item.uuid == weapon %} selected{% endif %}>{{ item.name }}</option>
+{% endfor %}</select></label>
+<label><span>{{ t('ティア') }}</span>
+<select name="tier">
+<option value=""{% if not tier %} selected{% endif %}>{{ t('すべて') }}</option>
+{% for item in tiers %}<option value="{{ item.key }}"{% if item.key == tier %} selected{% endif %}>{{ item.name }}</option>
+{% endfor %}</select></label>
+<button type="submit">{{ t('探す') }}</button>
+</form>
+{% if top %}
+<section aria-labelledby="top-title">
+<h2 id="top-title">{{ t('評価の高いスキン') }}</h2>
+<ul class="items skins">
+{% for item in top %}{{ card(item) }}
+{% endfor %}</ul>
+</section>
+{% endif %}
+<p class="meta" role="status">{{ t('{found} 件（全 {total} 件）', found=found, total=total) }}</p>
+{% if not groups %}
+<p class="note">{{ t('合うスキンはありませんでした。') }}</p>
+{% else %}
+{% for group in groups %}
+<section class="weapon">
+<h2>{{ group.name }} <small>{{ group['items']|length }}</small></h2>
+<ul class="items skins">
+{% for item in group['items'] %}{{ card(item) }}
+{% endfor %}</ul>
+</section>
+{% endfor %}
+{% if more %}<p class="note">{{ t('ほかに {count} 件あります。武器やティアで絞り込んでください。', count=more) }}</p>{% endif %}
+{% endif %}
+<p class="note">{{ t('名前・絵・動画は valorant-api.com と Riot から。') }}</p>
+{% endif %}
+{% endblock %}

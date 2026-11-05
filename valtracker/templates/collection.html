@@ -4,7 +4,7 @@
 {% if problem %}
 <section class="hero" lang="ja">
 <h1>所持品</h1>
-<nav class="modes" aria-label="ページ"><a href="{{ url_for('shop') }}">ショップ</a><a href="{{ url_for('collection') }}" aria-current="true">所持品</a></nav>
+<nav class="modes" aria-label="ページ"><a href="{{ url_for('shop') }}">ショップ</a><a href="{{ url_for('collection') }}" aria-current="true">所持品</a><a href="{{ url_for('skins') }}">スキン図鑑</a></nav>
 <p class="problem" role="alert">{{ problem }}{% if detail %} <code>{{ detail }}</code>{% endif %}</p>
 {% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">設定で Riot と連携する</a></p>{% endif %}
 </section>
@@ -25,7 +25,7 @@
 {% endif %}
 </section>
 
-<nav class="modes" aria-label="ページ" lang="ja"><a href="{{ url_for('shop') }}">ショップ</a><a href="{{ url_for('collection') }}" aria-current="true">所持品</a></nav>
+<nav class="modes" aria-label="ページ" lang="ja"><a href="{{ url_for('shop') }}">ショップ</a><a href="{{ url_for('collection') }}" aria-current="true">所持品</a><a href="{{ url_for('skins') }}">スキン図鑑</a></nav>
 <nav class="modes" aria-label="種類" lang="ja">
 {% for tab in tabs %}<a href="{{ url_for('collection', show=None if tab.key == 'skins' else tab.key) }}"{% if tab.current %} aria-current="true"{% endif %}>{{ tab.name }}{% if tab.count is not none %} <small>{{ tab.count }}</small>{% endif %}</a>
 {% endfor %}</nav>

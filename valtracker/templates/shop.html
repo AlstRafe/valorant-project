@@ -8,9 +8,11 @@
 {% macro things(items, icon) -%}
 <ul class="items offers">
 {% for item in items %}{% set picture = media(item.image) if item.image else '' %}<li class="item{% if item.tier and item.tier.key %} tier-{{ item.tier.key }}{% endif %}{% if item.owned %} have{% endif %}">
+{% if item.skin %}<a class="skin-link" href="{{ url_for('skin', uuid=item.skin) }}">{% endif %}
 {% if picture %}<img src="{{ picture }}" alt="" width="256" height="96" loading="lazy">{% endif %}
 <span class="iname">{{ item.name or '—' }}{% if item.amount and item.amount > 1 %} ×{{ item.amount }}{% endif %}</span>
 {% if item.price %}{{ price(item.price, icon, item.base) }}{% endif %}
+{% if item.skin %}</a>{% endif %}
 {% if item.discount %}<span class="badge">−{{ item.discount }}%</span>{% elif item.owned %}<span class="badge" lang="ja">所持</span>{% endif %}
 </li>
 {% endfor %}</ul>
@@ -34,8 +36,8 @@
 <h1>{{ t('ショップ') }}</h1>
 <p class="lead">{{ t('いまストアに並んでいるバンドルと、その値段（VALORANT ポイント）です。') }}</p>
 </section>
+<nav class="modes" aria-label="{{ t('ページ') }}"><a href="{{ url_for('shop') }}" aria-current="true">{{ t('ショップ') }}</a>{% if owner %}<a href="{{ url_for('collection') }}" lang="ja">所持品</a>{% endif %}<a href="{{ url_for('skins') }}">{{ t('スキン図鑑') }}</a></nav>
 {% if owner %}
-<nav class="modes" aria-label="種類" lang="ja"><a href="{{ url_for('shop') }}" aria-current="true">ショップ</a><a href="{{ url_for('collection') }}">所持品</a></nav>
 <div lang="ja">
 {% if own_problem %}
 <p class="problem" role="alert">{{ own_problem }}{% if own_detail %} <code>{{ own_detail }}</code>{% endif %}</p>

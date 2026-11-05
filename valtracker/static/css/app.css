@@ -2620,7 +2620,8 @@ code {
   font-size: 0.85rem;
 }
 .party-check,
-.sens-form {
+.sens-form,
+.skin-form {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
@@ -2628,7 +2629,8 @@ code {
   margin-top: 0.8rem;
 }
 .party-check label,
-.sens-form label {
+.sens-form label,
+.skin-form label {
   display: grid;
   gap: 0.2rem;
   flex: 1 1 9rem;
@@ -2638,7 +2640,9 @@ code {
 }
 .party-check select,
 .sens-form select,
-.sens-form input {
+.sens-form input,
+.skin-form select,
+.skin-form input {
   width: 100%;
   min-width: 0;
   min-height: 2.9rem;
@@ -2965,6 +2969,174 @@ code {
   align-items: center;
   gap: 0.4rem;
   min-height: 2rem;
+}
+
+/* The skin library (skins.html, skin.html): cards that open a skin, its variants, levels, videos and stars. */
+.item:has(> .skin-link) {
+  padding: 0;
+}
+.skin-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  width: 100%;
+  height: 100%;
+  padding: 0.8rem 0.6rem 0.7rem;
+  border-radius: inherit;
+  color: inherit;
+  text-decoration: none;
+}
+.skin-link:hover .iname {
+  text-decoration: underline;
+}
+.skin-link > img {
+  width: 100%;
+  height: 4.5rem;
+  object-fit: contain;
+}
+.skin-hero .meta .tier {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-right: 0.3rem;
+  vertical-align: -0.3rem;
+}
+.skin-art {
+  display: block;
+  width: 100%;
+  max-width: 40rem;
+  height: auto;
+  max-height: 13rem;
+  margin: 1rem 0 0;
+  object-fit: contain;
+}
+.chromas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.chromas a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.3rem 0.8rem 0.3rem 0.35rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+}
+.chromas a[aria-current] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+  font-weight: 700;
+}
+.chromas img,
+.no-swatch {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+}
+.no-swatch {
+  background: var(--rule);
+}
+.skin-video,
+.level-video video {
+  display: block;
+  width: 100%;
+  max-width: 40rem;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  margin-top: 0.8rem;
+  border-radius: 10px;
+  background: #000;
+}
+.levels {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.levels li {
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.level-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.8rem;
+  margin: 0;
+}
+.level-head span,
+.level-about {
+  color: var(--soft);
+}
+.level-about {
+  margin: 0.3rem 0 0;
+  font-size: 0.9rem;
+}
+.level-video {
+  margin-top: 0.4rem;
+}
+.level-video summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+}
+.score {
+  margin: 0;
+}
+.score strong {
+  font-size: 1.4rem;
+}
+.score small {
+  color: var(--soft);
+}
+.stars fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  border: 0;
+}
+.stars legend {
+  margin-bottom: 0.4rem;
+  padding: 0;
+  font-weight: 700;
+}
+.stars label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  padding: 0 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--card);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.stars label:has(:checked) {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.stars input {
+  accent-color: var(--accent);
+}
+.stars button {
+  margin-top: 0.7rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

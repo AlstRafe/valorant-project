@@ -969,6 +969,246 @@ TEXTS = {
         "en-GB": "Dev",
         "zh-TW": "開發",
     },
+    "VALORANT の武器スキンを全部。武器・ティア・名前で探して、バリエーションやレベルごとの動画を見られます。": {
+        "ko": "VALORANT의 모든 무기 스킨. 무기·등급·이름으로 찾고, 변형과 레벨별 영상을 볼 수 있습니다.",
+        "en-GB": "Every VALORANT weapon skin. Find them by weapon, tier or name, and watch each variant's and level's video.",
+        "zh-TW": "VALORANT 的所有武器造型。可依武器、等級、名稱搜尋，並觀看各款式與等級的影片。",
+    },
+    "{count} 人が評価しました（3 人から平均を出します）": {
+        "ko": "{count}명이 평가했습니다 (3명부터 평균을 냅니다)",
+        "en-GB": "{count} rated so far (the average shows from 3)",
+        "zh-TW": "已有 {count} 人評分（滿 3 人才顯示平均）",
+    },
+    "{count} 人の評価": {
+        "ko": "{count}명의 평가",
+        "en-GB": "from {count} ratings",
+        "zh-TW": "{count} 人評分",
+    },
+    "{found} 件（全 {total} 件）": {
+        "ko": "{found}개 (전체 {total}개)",
+        "en-GB": "{found} of {total}",
+        "zh-TW": "{found} 款（共 {total} 款）",
+    },
+    "{name} のバリエーション、レベルごとの演出と動画、同じシリーズのスキン。": {
+        "ko": "{name}의 변형, 레벨별 효과와 영상, 같은 시리즈의 스킨.",
+        "en-GB": "{name}: its variants, what each level adds with videos, and the rest of its series.",
+        "zh-TW": "{name} 的款式、各等級的效果與影片，以及同系列的造型。",
+    },
+    "{name} の動画": {
+        "ko": "{name} 영상",
+        "en-GB": "{name} video",
+        "zh-TW": "{name} 的影片",
+    },
+    "あなたの評価": {
+        "ko": "내 평가",
+        "en-GB": "Your rating",
+        "zh-TW": "你的評分",
+    },
+    "いまは評価が多すぎます。時間をおいてもう一度どうぞ。": {
+        "ko": "지금은 평가가 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+        "en-GB": "Too many ratings just now. Please try again later.",
+        "zh-TW": "目前評分太多，請稍後再試。",
+    },
+    "すべての武器": {
+        "ko": "모든 무기",
+        "en-GB": "All weapons",
+        "zh-TW": "所有武器",
+    },
+    "ほかに {count} 件あります。武器やティアで絞り込んでください。": {
+        "ko": "{count}개가 더 있습니다. 무기나 등급으로 좁혀 주세요.",
+        "en-GB": "{count} more. Narrow it down by weapon or tier.",
+        "zh-TW": "還有 {count} 款，請用武器或等級縮小範圍。",
+    },
+    "まだ評価はありません。": {
+        "ko": "아직 평가가 없습니다.",
+        "en-GB": "No ratings yet.",
+        "zh-TW": "目前還沒有評分。",
+    },
+    "アカウントは要りません。このブラウザで 1 スキンに 1 つ、あとから変えられます。": {
+        "ko": "계정은 필요 없습니다. 이 브라우저에서 스킨 하나에 하나, 나중에 바꿀 수 있습니다.",
+        "en-GB": "No account needed. One rating per skin from this browser, and you can change it later.",
+        "zh-TW": "不需要帳號。這個瀏覽器每款造型可評一次，之後也能更改。",
+    },
+    "シリーズ: {name}": {
+        "ko": "시리즈: {name}",
+        "en-GB": "Series: {name}",
+        "zh-TW": "系列：{name}",
+    },
+    "スキンの一覧を読み込めませんでした。時間をおいてもう一度どうぞ。": {
+        "ko": "스킨 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        "en-GB": "The list of skins could not be loaded. Please try again later.",
+        "zh-TW": "無法載入造型列表，請稍後再試。",
+    },
+    "スキン図鑑": {
+        "ko": "스킨 도감",
+        "en-GB": "Skin library",
+        "zh-TW": "造型圖鑑",
+    },
+    "ティア": {
+        "ko": "등급",
+        "en-GB": "Tier",
+        "zh-TW": "等級",
+    },
+    "バリエーション": {
+        "ko": "변형",
+        "en-GB": "Variants",
+        "zh-TW": "款式",
+    },
+    "レベル": {
+        "ko": "레벨",
+        "en-GB": "Levels",
+        "zh-TW": "等級",
+    },
+    "レベル {number}": {
+        "ko": "레벨 {number}",
+        "en-GB": "Level {number}",
+        "zh-TW": "等級 {number}",
+    },
+    "レベル {number} の動画": {
+        "ko": "레벨 {number} 영상",
+        "en-GB": "Level {number} video",
+        "zh-TW": "等級 {number} 的影片",
+    },
+    "例: プライム": {
+        "ko": "예: 프라임",
+        "en-GB": "e.g. Prime",
+        "zh-TW": "例：Prime",
+    },
+    "全スキンのバリエーションとレベルの動画、みんなの評価。": {
+        "ko": "모든 스킨의 변형과 레벨 영상, 모두의 평가.",
+        "en-GB": "Every skin's variants and level videos, rated by visitors.",
+        "zh-TW": "所有造型的款式與等級影片，還有大家的評分。",
+    },
+    "動画 {count}": {
+        "ko": "영상 {count}",
+        "en-GB": "{count} videos",
+        "zh-TW": "影片 {count}",
+    },
+    "動画は Riot のサーバーから、再生したときだけ読み込みます。": {
+        "ko": "영상은 Riot 서버에서, 재생할 때만 불러옵니다.",
+        "en-GB": "Videos come from Riot's servers, and load only when you press play.",
+        "zh-TW": "影片來自 Riot 的伺服器，只在播放時才載入。",
+    },
+    "動画を見る": {
+        "ko": "영상 보기",
+        "en-GB": "Watch the video",
+        "zh-TW": "觀看影片",
+    },
+    "合うスキンはありませんでした。": {
+        "ko": "맞는 스킨이 없습니다.",
+        "en-GB": "No skins match.",
+        "zh-TW": "沒有符合的造型。",
+    },
+    "同じシリーズ": {
+        "ko": "같은 시리즈",
+        "en-GB": "Same series",
+        "zh-TW": "同系列",
+    },
+    "名前": {
+        "ko": "이름",
+        "en-GB": "Name",
+        "zh-TW": "名稱",
+    },
+    "名前・絵・動画は valorant-api.com と Riot から。": {
+        "ko": "이름·그림·영상은 valorant-api.com과 Riot에서.",
+        "en-GB": "Names, pictures and videos from valorant-api.com and Riot.",
+        "zh-TW": "名稱、圖片與影片來自 valorant-api.com 與 Riot。",
+    },
+    "基本の見た目": {
+        "ko": "기본 외형",
+        "en-GB": "Base look",
+        "zh-TW": "基本外觀",
+    },
+    "星 {count}": {
+        "ko": "별 {count}개",
+        "en-GB": "{count} stars",
+        "zh-TW": "{count} 顆星",
+    },
+    "標準": {
+        "ko": "기본",
+        "en-GB": "Base",
+        "zh-TW": "基本款",
+    },
+    "評価": {
+        "ko": "평가",
+        "en-GB": "Ratings",
+        "zh-TW": "評分",
+    },
+    "評価の高いスキン": {
+        "ko": "평가가 높은 스킨",
+        "en-GB": "Top-rated skins",
+        "zh-TW": "高評分造型",
+    },
+    "評価を受け付けました。": {
+        "ko": "평가를 받았습니다.",
+        "en-GB": "Thanks, your rating is in.",
+        "zh-TW": "已收到你的評分。",
+    },
+    "評価を変える": {
+        "ko": "평가 바꾸기",
+        "en-GB": "Change rating",
+        "zh-TW": "更改評分",
+    },
+    "評価を送る": {
+        "ko": "평가 보내기",
+        "en-GB": "Send rating",
+        "zh-TW": "送出評分",
+    },
+    "エフェクト": {
+        "ko": "이펙트",
+        "en-GB": "VFX",
+        "zh-TW": "特效",
+    },
+    "アニメーション": {
+        "ko": "애니메이션",
+        "en-GB": "Animation",
+        "zh-TW": "動畫",
+    },
+    "フィニッシャー": {
+        "ko": "피니셔",
+        "en-GB": "Finisher",
+        "zh-TW": "終結特效",
+    },
+    "サウンド": {
+        "ko": "사운드",
+        "en-GB": "Sound effects",
+        "zh-TW": "音效",
+    },
+    "キルカウンター": {
+        "ko": "킬 카운터",
+        "en-GB": "Kill counter",
+        "zh-TW": "擊殺計數器",
+    },
+    "インスペクトとキル演出": {
+        "ko": "검사 및 처치 효과",
+        "en-GB": "Inspect and kill effects",
+        "zh-TW": "檢視與擊殺特效",
+    },
+    "攻守で変わる見た目": {
+        "ko": "공수에 따라 바뀌는 외형",
+        "en-GB": "Changes for attack and defence",
+        "zh-TW": "攻守方不同外觀",
+    },
+    "トップフラグの演出": {
+        "ko": "탑 프래그 효과",
+        "en-GB": "Top-frag effect",
+        "zh-TW": "頭號擊殺特效",
+    },
+    "キルバナー": {
+        "ko": "킬 배너",
+        "en-GB": "Kill banner",
+        "zh-TW": "擊殺橫幅",
+    },
+    "キル演出": {
+        "ko": "처치 효과",
+        "en-GB": "Kill effect",
+        "zh-TW": "擊殺特效",
+    },
+    "変形": {
+        "ko": "변신",
+        "en-GB": "Transformation",
+        "zh-TW": "變形",
+    },
 }
 
 #: Words only the owner sees (the settings, and why the search cannot work yet): Japanese only.

@@ -18,6 +18,7 @@ from valtracker.activity import COLLECT_SECONDS, Activity, Collector
 from valtracker.content import Content
 from valtracker.henrik import Henrik
 from valtracker.media import Media, outside_path
+from valtracker.ratings import Ratings
 from valtracker.riot import Riot
 from valtracker.settings import Settings
 
@@ -42,6 +43,7 @@ def create_app(
     seconds = float(os.environ.get("VAL_COLLECT_SECONDS", COLLECT_SECONDS) or 0)
     app.config["VAL_COLLECTOR"] = collector = Collector(activity, app.config["VAL_HENRIK"], seconds)
     security.init_app(app, instance, mount)
+    app.config["VAL_RATINGS"] = Ratings(instance, app.secret_key)
 
     @app.before_request
     def _collect():
