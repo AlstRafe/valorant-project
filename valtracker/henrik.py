@@ -80,6 +80,17 @@ class Henrik:
                 self.cache.put(("match", str(match_id)), match, KEEP["match"])
         return found
 
+    def has_player(self, name: str, tag: str) -> bool:
+        """Whether the player's account, rank and matches are all kept: their page needs no call."""
+        account = self.cache.get(("account", name.lower(), tag.lower()))
+        if not isinstance(account, dict):
+            return False
+        region = str(account.get("region") or "ap")
+        name, tag = str(account.get("name") or name).lower(), str(account.get("tag") or tag).lower()
+        return all(
+            self.cache.get(key) is not None for key in (("mmr", region, name, tag), ("matches", region, name, tag, 10))
+        )
+
     def match(self, region: str, match_id: str) -> dict:
         """``{"metadata", "players", "teams", "rounds", "kills", ...}``."""
         if not MATCH_ID.match(match_id):

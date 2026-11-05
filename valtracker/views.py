@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from flask import Flask, abort, current_app, g, redirect, render_template, request, send_file, url_for
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+from flask import Flask, abort, current_app, g, make_response, redirect, render_template, request, send_file, url_for
 
 from valtracker import i18n, security, stats
 from valtracker.henrik import REGIONS, HenrikError, split_riot_id
@@ -116,6 +119,52 @@ def _row(match: dict, player: dict) -> dict:
     }
 
 
+def _player(name: str, tag: str) -> tuple[dict, int]:
+    """What the player page shows, and its HTTP status. The account comes first (its region is needed); then
+    the rank and the matches are asked for at the same time."""
+    henrik = current_app.config["VAL_HENRIK"]
+    try:
+        account = henrik.account(name, tag)
+    except HenrikError as error:
+        status, problem, settings_link = _failure(error.kind)
+        return {"name": name, "tag": tag, "problem": problem, "settings_link": settings_link, "account": None}, status
+    region = str(account.get("region") or "ap")
+    name, tag = str(account.get("name") or name), str(account.get("tag") or tag)
+    with ThreadPoolExecutor(2, thread_name_prefix="henrik") as pool:
+        asked_mmr = pool.submit(henrik.mmr, region, name, tag)
+        asked_matches = pool.submit(henrik.matches, region, name, tag)
+    try:
+        mmr = asked_mmr.result()
+    except HenrikError:
+        mmr = None  # unranked, or the rank could not be read: the matches are still worth showing
+    rows, matches_problem = [], ""
+    try:
+        for match in asked_matches.result():
+            found = stats.find_player(match, str(account.get("puuid") or ""), name, tag)
+            if found:
+                rows.append(_row(match, found))
+    except HenrikError as error:
+        matches_problem = _failure(error.kind)[1]
+    current = (mmr or {}).get("current") or {}
+    peak = (mmr or {}).get("peak") or {}
+    return {
+        "name": name,
+        "tag": tag,
+        "account": account,
+        "region": region,
+        "card": str(account.get("card") or ""),
+        "rank": _rank(current.get("tier")) if current else None,
+        "rr": current.get("rr"),
+        "last_change": current.get("last_change"),
+        "peak": _rank(peak.get("tier")) if peak else None,
+        "rows": rows,
+        "summary": stats.summary(rows),
+        "matches_problem": matches_problem,
+        "problem": "",
+        "settings_link": False,
+    }, 200
+
+
 def register(app: Flask) -> None:
     @app.get("/")
     def top():
@@ -132,49 +181,31 @@ def register(app: Flask) -> None:
 
     @app.get("/p/<name>/<tag>")
     def player(name: str, tag: str):
-        henrik = current_app.config["VAL_HENRIK"]
+        """At once: what HenrikDev already told us, or the page without the rank and matches, which the page's
+        script then asks for (player_part). HenrikDev takes seconds, and the browser showed nothing meanwhile.
+        ``?full=1`` waits for them (the link for a browser without JavaScript)."""
         if not split_riot_id(f"{name}#{tag}"):
             abort(404)
-        try:
-            account = henrik.account(name, tag)
-        except HenrikError as error:
-            status, problem, settings_link = _failure(error.kind)
-            return render_template(
-                "player.html", name=name, tag=tag, problem=problem, settings_link=settings_link, account=None
-            ), status
-        region = str(account.get("region") or "ap")
-        name, tag = str(account.get("name") or name), str(account.get("tag") or tag)
-        try:
-            mmr = henrik.mmr(region, name, tag)
-        except HenrikError:
-            mmr = None  # unranked, or the rank could not be read: the matches are still worth showing
-        rows, matches_problem = [], ""
-        try:
-            for match in henrik.matches(region, name, tag):
-                found = stats.find_player(match, str(account.get("puuid") or ""), name, tag)
-                if found:
-                    rows.append(_row(match, found))
-        except HenrikError as error:
-            matches_problem = _failure(error.kind)[1]
-        current = (mmr or {}).get("current") or {}
-        peak = (mmr or {}).get("peak") or {}
+        henrik = current_app.config["VAL_HENRIK"]
+        if request.args.get("full") or not henrik.key() or henrik.has_player(name, tag):  # an answer at once
+            values, status = _player(name, tag)
+            return render_template("player.html", **values), status
         return render_template(
-            "player.html",
-            name=name,
-            tag=tag,
-            account=account,
-            region=region,
-            card=str(account.get("card") or ""),
-            rank=_rank(current.get("tier")) if current else None,
-            rr=current.get("rr"),
-            last_change=current.get("last_change"),
-            peak=_rank(peak.get("tier")) if peak else None,
-            rows=rows,
-            summary=stats.summary(rows),
-            matches_problem=matches_problem,
-            problem="",
-            settings_link=False,
+            "player.html", name=name, tag=tag, loading=True, account=None, problem="", settings_link=False
         )
+
+    @app.get("/p/<name>/<tag>/part")
+    def player_part(name: str, tag: str):
+        """The player's rank and matches, as the part of the page that the script puts in place."""
+        if not split_riot_id(f"{name}#{tag}"):
+            abort(404)
+        start = time.monotonic()
+        values, status = _player(name, tag)
+        response = make_response(render_template("_player.html", **values), status)
+        response.headers["Cache-Control"] = "no-store"
+        # how long HenrikDev took, for the browser's developer tools (Network -> Timing)
+        response.headers["Server-Timing"] = f"henrik;dur={(time.monotonic() - start) * 1000:.0f}"
+        return response
 
     @app.get("/m/<region>/<match_id>")
     def match(region: str, match_id: str):

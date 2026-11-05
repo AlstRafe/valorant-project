@@ -66,7 +66,7 @@ class PagesTest(unittest.TestCase):
         self.assertEqual(scripts[0], theme.THEME_SCRIPT)
 
     def test_no_outside_addresses_in_pages(self):
-        for path in ("/", "/p/Tester/JP1", "/agents", f"/m/ap/{MATCH}"):
+        for path in ("/", "/p/Tester/JP1", "/p/Tester/JP1?full=1", "/agents", f"/m/ap/{MATCH}"):
             with self.subTest(path=path):
                 text = self.get(path).get_data(as_text=True)
                 sources = re.findall(r'(?:src|href)="([^"]+)"', text)
@@ -91,7 +91,7 @@ class PagesTest(unittest.TestCase):
         self.assertIn("名前#タグ", answer.get_data(as_text=True))
 
     def test_player(self):
-        answer = self.get("/p/Tester/JP1")
+        answer = self.get("/p/Tester/JP1?full=1")
         self.assertEqual(answer.status_code, 200)
         text = answer.get_data(as_text=True)
         self.assertIn("Tier 21", text)  # the rank as valorant-api.com names it
@@ -104,17 +104,45 @@ class PagesTest(unittest.TestCase):
         self.assertIn(f"/m/ap/{MATCH}", text)
         self.assertIn("Authorization", self.fetch.asked[0][1])
 
+    def test_player_page_comes_at_once(self):
+        # HenrikDev takes seconds: the page comes first, and its script asks for the rank and matches
+        shell = self.get("/p/Tester/JP1")
+        self.assertEqual(shell.status_code, 200)
+        text = shell.get_data(as_text=True)
+        self.assertIn('data-part="/p/Tester/JP1/part"', text)
+        self.assertIn("ランクと最近の試合を読み込んでいます", text)
+        self.assertIn('href="?full=1"', text)  # without JavaScript
+        self.assertEqual(self.fetch.henrik_calls(), [])
+
+        part = self.get("/p/Tester/JP1/part")
+        self.assertEqual(part.status_code, 200)
+        text = part.get_data(as_text=True)
+        self.assertIn("Tier 21", text)
+        self.assertIn('data-name="Tester"', text)
+        self.assertNotIn("<html", text)
+        self.assertEqual(part.headers["Cache-Control"], "no-store")
+        self.assertRegex(part.headers["Server-Timing"], r"^henrik;dur=\d+$")
+        self.assertEqual(len(self.fetch.henrik_calls()), 3)  # account, then rank and matches side by side
+
     def test_player_is_kept_a_while(self):
-        self.get("/p/Tester/JP1")
+        self.get("/p/Tester/JP1/part")
         calls = len(self.fetch.henrik_calls())
-        self.get("/p/tester/jp1")
+        again = self.get("/p/tester/jp1").get_data(as_text=True)
+        self.assertIn("Tier 21", again, "kept: the whole page at once")
+        self.assertNotIn("data-part", again)
         self.assertEqual(len(self.fetch.henrik_calls()), calls)
 
     def test_player_not_found(self):
         self.fetch.henrik_status = 404
-        answer = self.get("/p/Nobody/0000")
-        self.assertEqual(answer.status_code, 404)
-        self.assertIn("プレイヤーが見つかりませんでした", answer.get_data(as_text=True))
+        self.assertEqual(self.get("/p/Nobody/0000").status_code, 200)  # the page, asking for the rest
+        for path in ("/p/Nobody/0000/part", "/p/Nobody/0000?full=1"):
+            with self.subTest(path=path):
+                answer = self.get(path)
+                self.assertEqual(answer.status_code, 404)
+                self.assertIn("プレイヤーが見つかりませんでした", answer.get_data(as_text=True))
+
+    def test_part_of_a_bad_riot_id(self):
+        self.assertEqual(self.get("/p/a/b/part").status_code, 404)
 
     def test_no_key(self):
         self.app.config["VAL_SETTINGS"].save(henrik_key="")
@@ -132,7 +160,7 @@ class PagesTest(unittest.TestCase):
         self.assertNotIn("<b>Foe</b>", text)
 
     def test_match(self):
-        self.get("/p/Tester/JP1")
+        self.get("/p/Tester/JP1/part")
         calls = len(self.fetch.henrik_calls())
         answer = self.get(f"/m/ap/{MATCH}")
         self.assertEqual(answer.status_code, 200)

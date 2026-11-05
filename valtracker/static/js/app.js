@@ -102,6 +102,34 @@
     });
   }
 
+  // A player's page comes at once without the rank and matches (HenrikDev takes seconds): asked for here and put
+  // in place. A failure leaves the way to the page that waits for them (?full=1).
+  function part() {
+    var box = document.getElementById("player");
+    var address = box && box.getAttribute("data-part");
+    if (!address) return;
+    function failed() {
+      var wait = box.querySelector(".wait");
+      if (wait) wait.textContent = box.getAttribute("data-failed");
+      var retry = box.querySelector(".retry");
+      if (retry) retry.hidden = false;
+    }
+    if (!window.fetch) return failed();
+    fetch(address, { headers: { Accept: "text/html" }, credentials: "same-origin" })
+      .then(function (answer) {
+        // a missing player or a busy HenrikDev is a part of the page too (404, 503), with its words
+        if (answer.status >= 500 && answer.status !== 503) throw new Error(String(answer.status));
+        return answer.text();
+      })
+      .then(function (html) {
+        box.innerHTML = html; // our own server's page, escaped by its templates
+        box.removeAttribute("data-part");
+        profile();
+        times();
+      })
+      .catch(failed);
+  }
+
   // Times are written in Japan's time by the server; shown in the visitor's own zone and language.
   function times() {
     if (!window.Intl || !Intl.DateTimeFormat) return;
@@ -133,6 +161,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
+    part();
     profile();
     lists();
     times();
