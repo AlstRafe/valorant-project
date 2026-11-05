@@ -1399,6 +1399,21 @@ TEXTS = {
         "en-GB": "Matches",
         "zh-TW": "場數",
     },
+    "eスポーツの日程を読み込めませんでした。時間をおいてもう一度どうぞ。": {
+        "ko": "e스포츠 일정을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        "en-GB": "The esports schedule could not be loaded. Please try again later.",
+        "zh-TW": "無法載入電競賽程，請稍後再試。",
+    },
+    "この言語の記事が読めなかったため、英語の記事を出しています。": {
+        "ko": "이 언어의 기사를 불러오지 못해 영어 기사를 표시합니다.",
+        "en-GB": "News in this language could not be loaded, so the English news is shown.",
+        "zh-TW": "無法載入此語言的文章，因此顯示英文文章。",
+    },
+    "公式サイトで日程を見る": {
+        "ko": "공식 사이트에서 일정 보기",
+        "en-GB": "See the schedule on the official site",
+        "zh-TW": "在官方網站查看賽程",
+    },
 }
 
 #: Words only the owner sees (the settings, and why the search cannot work yet): Japanese only.

@@ -82,9 +82,11 @@ class HenrikError(Exception):
     """Why there is no answer: ``kind`` is one of nokey (no API key set), badkey (the key was refused),
     notfound, busy (too many calls just now, ours or theirs), down (no answer, or one we cannot read)."""
 
-    def __init__(self, kind: str):
+    def __init__(self, kind: str, detail: str = ""):
         super().__init__(kind)
         self.kind = kind
+        #: What came back, for the owner's eyes (``HTTP 500``, ``no answer``...).
+        self.detail = detail
 
 
 def split_riot_id(text: str) -> tuple[str, str] | None:
@@ -208,12 +210,47 @@ class Henrik:
     def news(self, country: str) -> list:
         """Riot's VALORANT news in a language (``ja-jp``, ``en-gb``...): ``[{"title", "at", "category", "url",
         "banner"}]``, the latest first."""
-        return self._get(("news", country), f"/valorant/v1/website/{_part(country)}", KEEP["news"], _slim_news)
+        if self.cache.get(("no-news", country)):
+            raise HenrikError("notfound")  # asked a while ago, and there were none: not asked again for a while
+        try:
+            return self._get(("news", country), f"/valorant/v1/website/{_part(country)}", KEEP["news"], _slim_news)
+        except HenrikError as error:
+            if error.kind in ("down", "notfound"):
+                self.cache.put(("no-news", country), True, KEEP["news"])
+            raise
 
     def esports(self) -> list:
         """The esports schedule (every league): ``[{"at", "state", "league": {"name", "region", "icon"},
-        "tournament", "best_of", "vod", "teams": [{"name", "code", "icon", "won", "wins"}]}]``, by time."""
-        return self._get(("esports",), "/valorant/v1/esports/schedule", KEEP["esports"], _slim_esports)
+        "tournament", "best_of", "vod", "teams": [{"name", "code", "icon", "won", "wins"}]}]``, by time.
+        When the whole schedule does not come (it is big: a timeout, an error), the main leagues one by one."""
+        path = "/valorant/v1/esports/schedule"
+        if not self.cache.get(("no-esports",)):
+            try:
+                return self._get(("esports",), path, KEEP["esports"], _slim_esports)
+            except HenrikError as error:
+                if error.kind != "down":
+                    raise
+                first = error
+                self.cache.put(("no-esports",), True, KEEP["news"])
+        else:
+            first = HenrikError("down", "the whole schedule did not come a while ago")
+        games, problems = [], []
+        for league in ESPORTS_LEAGUES:
+            try:
+                games += self._get(("esports", league), f"{path}?league={league}", KEEP["esports"], _slim_esports)
+            except HenrikError as error:
+                if error.kind in ("nokey", "badkey", "busy"):
+                    raise
+                problems.append(f"{league}: {error.detail or error.kind}")
+        if not games:
+            raise HenrikError("down", "; ".join([first.detail or "down", *problems]))
+        seen, kept = set(), []
+        for game in games:  # a match can be in two leagues' lists (a league and its event)
+            key = (game["at"], tuple(team["name"] for team in game["teams"]))
+            if key not in seen:
+                seen.add(key)
+                kept.append(game)
+        return sorted(kept, key=lambda item: item["at"])
 
     def _get(self, cache_key, path: str, seconds: float, shape=None):
         kept = self.cache.get(cache_key)
@@ -228,21 +265,25 @@ class Henrik:
         if status in (401, 403):
             raise HenrikError("badkey")
         if status == 404:
-            raise HenrikError("notfound")
+            raise HenrikError("notfound", "HTTP 404")
         if status == 429:
-            raise HenrikError("busy")
+            raise HenrikError("busy", "HTTP 429")
         if status != 200:
-            raise HenrikError("down")
+            raise HenrikError("down", f"HTTP {status}" if status else "no answer within 10 s")
         try:
             data = json.loads(body.decode("utf-8")).get("data")
         except (ValueError, AttributeError, UnicodeDecodeError):
-            raise HenrikError("down") from None
+            raise HenrikError("down", f"an answer that is not JSON ({len(body):,} bytes)") from None
         if data is None:
             raise HenrikError("notfound")
         if shape is not None:
             data = shape(data)
         self.cache.put(cache_key, data, seconds)
         return data
+
+
+#: The leagues asked for one by one when the whole esports schedule does not come (HenrikDev's league names).
+ESPORTS_LEAGUES = ("vct_pacific", "vct_americas", "vct_emea", "vct_china", "masters", "champions")
 
 
 def shows_rr(mode: str) -> bool:

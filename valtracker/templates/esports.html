@@ -8,8 +8,8 @@
 <p class="lead">{{ t('VCT などの大会の日程と結果、いま行われている試合のスコアです。好きなチームに印をつけられます。') }}</p>
 </section>
 {% if problem %}
-<p class="problem" role="alert">{{ problem }}</p>
-{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}">{{ t('設定を開く') }}</a></p>{% endif %}
+<p class="problem" role="alert">{{ problem }}{% if detail %} <code lang="en">{{ detail }}</code>{% endif %}</p>
+{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}">{{ t('設定を開く') }}</a></p>{% else %}<p><a class="button quiet" href="https://valorantesports.com/" rel="noopener">{{ t('公式サイトで日程を見る') }}</a></p>{% endif %}
 {% else %}
 <nav class="modes" aria-label="{{ t('表示') }}">
 <a href="{{ show_urls.upcoming }}"{% if show == 'upcoming' %} aria-current="true"{% endif %}>{{ t('日程') }}{% if live %} · {{ t('{count} 試合中', count=live) }}{% endif %}</a>

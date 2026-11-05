@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from flask import Flask, current_app, g, render_template, request, url_for
 
+from valtracker import security
 from valtracker.activity import BANDS, FEW, WINDOW_DAYS
 from valtracker.henrik import HenrikError
 from valtracker.tools import _family, _when
@@ -98,8 +99,17 @@ def _news_page() -> tuple[dict, int]:
     chosen = request.args.get("category", "")
     words = request.args.get("q", "").strip()[:60]
     values: dict = {"articles": [], "categories": [], "category": "", "q": words, "patch": None, "problem": ""}
+    henrik = current_app.config["VAL_HENRIK"]
+    country = NEWS_LANGS.get(g.lang, "en-gb")
     try:
-        found = current_app.config["VAL_HENRIK"].news(NEWS_LANGS.get(g.lang, "en-gb"))
+        try:
+            found = henrik.news(country)
+        except HenrikError as error:
+            # a language Riot's site (or HenrikDev) has no news in: the English ones, and the page says so
+            if error.kind not in ("down", "notfound") or country == "en-gb":
+                raise
+            found = henrik.news("en-gb")
+            values["english"] = True
     except HenrikError as error:
         code, values["problem"], values["settings_link"] = _failure(error.kind)
         return values, code
@@ -144,6 +154,9 @@ def _esports_page() -> tuple[dict, int]:
         found = current_app.config["VAL_HENRIK"].esports()
     except HenrikError as error:
         code, values["problem"], values["settings_link"] = _failure(error.kind)
+        if error.kind == "down":
+            values["problem"] = _t("eスポーツの日程を読み込めませんでした。時間をおいてもう一度どうぞ。")
+        values["detail"] = error.detail if security.is_owner() else ""
         return values, code
     counts: dict[str, list] = {}
     for item in found:
