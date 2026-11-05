@@ -541,8 +541,12 @@ def _slim_collected(matches) -> list:
         {
             "metadata": _pick(match["metadata"], METADATA),
             "players": [
-                _pick(player, ("puuid", "tier")) for player in match.get("players") or [] if isinstance(player, dict)
+                _pick(player, ("puuid", "tier", "team_id", "agent"))
+                for player in match.get("players") or []
+                if isinstance(player, dict)
             ],
+            # which team won: the agents' win rates (activity.py)
+            "teams": [_pick(team, ("team_id", "won")) for team in match.get("teams") or [] if isinstance(team, dict)],
         }
         for match in matches
         if isinstance(match, dict) and isinstance(match.get("metadata"), dict)

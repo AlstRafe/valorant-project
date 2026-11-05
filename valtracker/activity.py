@@ -110,6 +110,39 @@ def _facts(match: dict) -> dict | None:
     }
 
 
+def _picks(match: dict) -> list[tuple]:
+    """Each team's agents in a match of two teams, and whether that team won: ``(match, team, agent, won, queue,
+    tier, map, started)``. No player is kept, only the agent and the team."""
+    facts = _facts(match)
+    teams = {
+        str(team.get("team_id") or ""): bool(team.get("won"))
+        for team in match.get("teams") or []
+        if isinstance(team, dict) and team.get("team_id")
+    }
+    if not facts or len(teams) != 2 or not any(teams.values()):
+        return []  # a deathmatch, or a draw: nothing to count
+    place = (match.get("metadata") or {}).get("map")
+    map_id = str((place or {}).get("id") or "").lower() if isinstance(place, dict) else ""
+    found = {}
+    for player in match.get("players") or []:
+        if not isinstance(player, dict):
+            continue
+        agent = player.get("agent") if isinstance(player.get("agent"), dict) else {}
+        team, uuid = str(player.get("team_id") or ""), str(agent.get("id") or "").lower()
+        if team in teams and uuid:
+            found[(team, uuid)] = (
+                facts["id"],
+                team,
+                uuid,
+                int(teams[team]),
+                facts["queue"],
+                facts["tier"],
+                map_id,
+                facts["started"],
+            )
+    return list(found.values())
+
+
 class Activity:
     def __init__(self, folder: Path, clock=time.time):
         self.path = Path(folder) / "activity.sqlite"
@@ -135,6 +168,10 @@ class Activity:
                     before TEXT, after TEXT, region TEXT, queue TEXT, tier INTEGER, at INTEGER, seconds INTEGER,
                     PRIMARY KEY (before, after));
                 CREATE INDEX IF NOT EXISTS gaps_at ON gaps (at);
+                CREATE TABLE IF NOT EXISTS picks (
+                    match TEXT, team TEXT, agent TEXT, won INTEGER, queue TEXT, tier INTEGER, map TEXT,
+                    started INTEGER, PRIMARY KEY (match, team, agent));
+                CREATE INDEX IF NOT EXISTS picks_started ON picks (started);
                 """
             )
         return self._db
@@ -165,6 +202,7 @@ class Activity:
                         )
                     )
         self._remember(matches)
+        picks = [row for match in matches or [] if isinstance(match, dict) for row in _picks(match)]
         rows = [(f["id"], f["region"], f["cluster"], f["queue"], f["started"], f["length"], f["tier"]) for f in facts]
         try:
             with self._lock:
@@ -173,6 +211,7 @@ class Activity:
                 db.executemany("INSERT OR IGNORE INTO matches VALUES (?, ?, ?, ?, ?, ?, ?)", rows)
                 new = db.total_changes - before
                 db.executemany("INSERT OR IGNORE INTO gaps VALUES (?, ?, ?, ?, ?, ?, ?)", gaps)
+                db.executemany("INSERT OR IGNORE INTO picks VALUES (?, ?, ?, ?, ?, ?, ?, ?)", picks)
                 self._prune(db)
                 db.commit()
         except sqlite3.Error:
@@ -204,6 +243,7 @@ class Activity:
         oldest = int(now - KEEP_DAYS * 86400)
         db.execute("DELETE FROM matches WHERE started < ?", (oldest,))
         db.execute("DELETE FROM gaps WHERE at < ?", (oldest,))
+        db.execute("DELETE FROM picks WHERE started < ?", (oldest,))
 
     # -- what the pages show -----------------------------------------------------------------------------
 
@@ -292,6 +332,57 @@ class Activity:
             "matches": len(matches),
             "hour_now": hour_now,
         }
+        self._summary[key] = (now, found)
+        return found
+
+    def agents(self, queue: str = "competitive", band_name: str = "", map_id: str = "") -> dict:
+        """How often each agent is picked and how often its team wins, in the matches seen over WINDOW_DAYS:
+        ``{"matches", "agents": [{"agent", "picks", "wins", "pick" (% of the teams), "win" (%)}], "maps": {map:
+        matches}}`` (most picked first), for a queue, a rank band (BANDS' names) and a map. Kept a few minutes."""
+        key = ("agents", queue, band_name, map_id)
+        now = self.clock()
+        kept = self._summary.get(key)
+        if kept and now - kept[0] < 300:
+            return kept[1]
+        since = int(now - WINDOW_DAYS * 86400)
+        try:
+            with self._lock:
+                rows = (
+                    self._connect()
+                    .execute(
+                        "SELECT match, agent, won, tier, map FROM picks WHERE queue = ? AND started >= ?",
+                        (queue, since),
+                    )
+                    .fetchall()
+                )
+        except sqlite3.Error:
+            rows = []
+        if band_name:
+            rows = [row for row in rows if band(row[3]) == band_name]
+        maps: dict[str, set] = {}
+        for row in rows:
+            if row[4]:
+                maps.setdefault(row[4], set()).add(row[0])
+        if map_id:
+            rows = [row for row in rows if row[4] == map_id]
+        matches = len({row[0] for row in rows})
+        counts: dict[str, list[int]] = {}
+        for _, agent, won, _, _ in rows:
+            counts.setdefault(agent, [0, 0])
+            counts[agent][0] += 1
+            counts[agent][1] += won
+        listed = [
+            {
+                "agent": agent,
+                "picks": picks,
+                "wins": wins,
+                "pick": round(100 * picks / (2 * matches), 1) if matches else 0.0,
+                "win": round(100 * wins / picks, 1) if picks else 0.0,
+            }
+            for agent, (picks, wins) in counts.items()
+        ]
+        listed.sort(key=lambda item: (-item["picks"], item["agent"]))
+        found = {"matches": matches, "agents": listed, "maps": {key: len(seen) for key, seen in maps.items()}}
         self._summary[key] = (now, found)
         return found
 

@@ -5,6 +5,7 @@
 <section class="hero">
 <h1>{{ t('エージェント') }}</h1>
 <p class="lead">{{ t('役割とアビリティの説明です。') }}</p>
+<p class="meta"><a href="{{ url_for('agent_stats') }}">{{ t('使用率と勝率を見る') }}</a></p>
 </section>
 {% if not every %}
 <p class="problem" role="alert">{{ t('エージェントの一覧を取得できませんでした。時間をおいてもう一度どうぞ。') }}</p>

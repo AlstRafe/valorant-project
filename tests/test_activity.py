@@ -42,6 +42,34 @@ class ActivityTest(unittest.TestCase):
         self.activity = Activity(Path(folder.name), clock=lambda: self.now)
         self.addCleanup(self.activity.close)
 
+    def test_agents_picked_and_their_wins(self):
+        jett, sova = "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"
+        games = []
+        for number in range(8):
+            game = match(number, NOON - number * 3600, tier=8 if number < 6 else 22)
+            game["metadata"]["map"] = {"id": "7EAECC1B-4337-BBF6-6AB9-04B8F06B3319", "name": "Ascent"}
+            for place, player in enumerate(game["players"]):
+                player["team_id"] = "Red" if place < 5 else "Blue"
+                player["agent"] = {"id": jett if place in (0, 5) else sova if place == 1 else f"x{place}"}
+            game["teams"] = [{"team_id": "Red", "won": number % 4 != 0}, {"team_id": "Blue", "won": number % 4 == 0}]
+            games.append(game)
+        draw = match(99, NOON)
+        draw["teams"] = [{"team_id": "Red", "won": False}, {"team_id": "Blue", "won": False}]
+        self.activity.seen(games + [draw])
+        found = self.activity.agents()
+        self.assertEqual(found["matches"], 8, "a draw is left out")
+        by = {item["agent"]: item for item in found["agents"]}
+        self.assertEqual(by[jett]["picks"], 16, "both teams' Jett")
+        self.assertEqual(by[jett]["pick"], 100.0)
+        self.assertEqual(by[jett]["win"], 50.0, "a mirror wins once a match")
+        self.assertEqual(by[sova]["picks"], 8)
+        self.assertEqual(by[sova]["pick"], 50.0)
+        self.assertEqual(by[sova]["win"], 75.0)
+        self.assertEqual(found["maps"], {"7eaecc1b-4337-bbf6-6ab9-04b8f06b3319": 8})
+        self.assertEqual(self.activity.agents(band_name="ascendant")["matches"], 2)
+        self.assertEqual(self.activity.agents(map_id="nowhere")["matches"], 0)
+        self.assertEqual(self.activity.agents("unrated")["matches"], 0)
+
     def test_a_match_is_kept_once(self):
         self.assertEqual(self.activity.seen([match(1, NOON)]), 1)
         self.assertEqual(self.activity.seen([match(1, NOON)]), 0)
@@ -239,6 +267,20 @@ class PagesTest(unittest.TestCase):
         page = self.client.get("/settings").get_data(as_text=True)
         token = re.search(r'name="csrf" value="([^"]+)"', page).group(1)
         self.client.post("/settings", data={"csrf": token, "do": "riot", "riot": "ssid-1"})
+
+    def test_agent_stats_page(self):
+        text = self.page("/agents/stats", environ_base=VISITOR)
+        self.assertIn("まだ試合が足りません", text)
+        self.page("/p/Player/JP1?full=1")  # a player's page keeps their matches, and who played what
+        text = self.page("/agents/stats", environ_base=VISITOR)
+        self.assertIn("ジェット", text)
+        self.assertIn("2 試合から", text)
+        self.assertIn("100.0%", text, "Jett on both teams of both matches")
+        self.assertIn("アセント", text, "the maps played")
+        self.assertIn("—", text, "too few for a win rate")
+        self.assertIn("ジェット", self.page("/agents/stats?map=7eaecc1b-4337-bbf6-6ab9-04b8f06b3319&sort=win"))
+        self.assertIn("2 試合から", self.page("/agents/stats?map=nowhere&queue=nonsense&band=nonsense"))
+        self.assertIn('href="/agents/stats"', self.page("/agents", environ_base=VISITOR))
 
     def test_tools_lead_to_the_new_pages(self):
         text = self.page("/tools", environ_base=VISITOR)

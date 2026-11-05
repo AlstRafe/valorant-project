@@ -1229,6 +1229,56 @@ TEXTS = {
         "en-GB": "Add the daily change to your calendar (a reminder every day)",
         "zh-TW": "把更新時間加入行事曆（每天提醒）",
     },
+    "使用率と勝率": {
+        "ko": "픽률과 승률",
+        "en-GB": "Pick and win rates",
+        "zh-TW": "選用率與勝率",
+    },
+    "使用率と勝率を見る": {
+        "ko": "픽률과 승률 보기",
+        "en-GB": "See pick and win rates",
+        "zh-TW": "查看選用率與勝率",
+    },
+    "エージェントがどれくらい選ばれ、選んだチームがどれくらい勝っているか。このサイトが見た試合からの目安です。": {
+        "ko": "요원이 얼마나 선택되고, 선택한 팀이 얼마나 이기는지. 이 사이트가 본 경기에서 낸 추정치입니다.",
+        "en-GB": "How often each agent is picked and how often the team that picked it wins: an estimate from the matches this site has seen.",
+        "zh-TW": "各特務被選用的頻率，以及選用的隊伍勝率。這是從本站看到的對戰得出的估計。",
+    },
+    "直近 {days} 日に見た {count} 試合から": {
+        "ko": "최근 {days}일 동안 본 {count}경기 기준",
+        "en-GB": "From {count} matches seen in the last {days} days",
+        "zh-TW": "取自最近 {days} 天看到的 {count} 場對戰",
+    },
+    "まだ試合が足りません。見られた試合が増えると出ます。": {
+        "ko": "아직 경기가 부족합니다. 본 경기가 늘면 표시됩니다.",
+        "en-GB": "Not enough matches yet. The numbers show as more are seen.",
+        "zh-TW": "對戰數量還不夠，看到的對戰變多後就會顯示。",
+    },
+    "並べ方": {
+        "ko": "정렬",
+        "en-GB": "Sort",
+        "zh-TW": "排序",
+    },
+    "使用率の高い順": {
+        "ko": "픽률 높은 순",
+        "en-GB": "Most picked",
+        "zh-TW": "選用率高到低",
+    },
+    "勝率の高い順": {
+        "ko": "승률 높은 순",
+        "en-GB": "Highest win rate",
+        "zh-TW": "勝率高到低",
+    },
+    "使用率": {
+        "ko": "픽률",
+        "en-GB": "Pick rate",
+        "zh-TW": "選用率",
+    },
+    "使用率はチームのうちそのエージェントを選んだ割合、勝率はそのチームが勝った割合です。{few} 試合より少ないものは勝率を出していません。": {
+        "ko": "픽률은 그 요원을 고른 팀의 비율, 승률은 그 팀이 이긴 비율입니다. {few}경기보다 적으면 승률을 표시하지 않습니다.",
+        "en-GB": "Pick rate is the share of teams that picked the agent; win rate is how often those teams won. Win rates from fewer than {few} matches are not shown.",
+        "zh-TW": "選用率是選了該特務的隊伍比例，勝率是這些隊伍獲勝的比例。少於 {few} 場的不顯示勝率。",
+    },
 }
 
 #: Words only the owner sees (the settings, and why the search cannot work yet): Japanese only.

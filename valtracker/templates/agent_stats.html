@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ t('使用率と勝率') }} · {{ t('エージェント') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('エージェントがどれくらい選ばれ、選んだチームがどれくらい勝っているか。このサイトが見た試合からの目安です。') }}{% endblock %}
+{% block main %}
+<p class="crumb"><a href="{{ url_for('agents') }}">{{ t('エージェント') }}</a></p>
+<section class="hero">
+<h1>{{ t('使用率と勝率') }}</h1>
+<p class="lead">{{ t('エージェントがどれくらい選ばれ、選んだチームがどれくらい勝っているか。このサイトが見た試合からの目安です。') }}</p>
+</section>
+<form class="skin-form" action="{{ url_for('agent_stats') }}" method="get">
+<label><span>{{ t('モード') }}</span>
+<select name="queue">
+{% for item in queues %}<option value="{{ item.key }}"{% if item.key == queue %} selected{% endif %}>{{ item.name }}</option>
+{% endfor %}</select></label>
+{% if queue == 'competitive' %}<label><span>{{ t('ランク') }}</span>
+<select name="band">
+<option value=""{% if not band %} selected{% endif %}>{{ t('すべて') }}</option>
+{% for item in bands %}<option value="{{ item.key }}"{% if item.key == band %} selected{% endif %}>{{ item.name }}</option>
+{% endfor %}</select></label>{% endif %}
+{% if maps %}<label><span>{{ t('マップ') }}</span>
+<select name="map">
+<option value=""{% if not map %} selected{% endif %}>{{ t('すべて') }}</option>
+{% for item in maps %}<option value="{{ item.key }}"{% if item.key == map %} selected{% endif %}>{{ item.name }}</option>
+{% endfor %}</select></label>{% endif %}
+<input type="hidden" name="sort" value="{{ sort }}">
+<button type="submit">{{ t('表示') }}</button>
+</form>
+<p class="meta" role="status">{{ t('直近 {days} 日に見た {count} 試合から', days=days, count=matches) }}</p>
+{% if not rows %}
+<p class="note">{{ t('まだ試合が足りません。見られた試合が増えると出ます。') }}</p>
+{% else %}
+<nav class="modes" aria-label="{{ t('並べ方') }}">
+<a href="{{ url_for('agent_stats', queue=queue if queue != 'competitive' else None, band=band or None, map=map or None) }}"{% if sort == 'pick' %} aria-current="true"{% endif %}>{{ t('使用率の高い順') }}</a>
+<a href="{{ url_for('agent_stats', queue=queue if queue != 'competitive' else None, band=band or None, map=map or None, sort='win') }}"{% if sort == 'win' %} aria-current="true"{% endif %}>{{ t('勝率の高い順') }}</a>
+</nav>
+<div class="table-wrap"><table class="board plain agent-stats">
+<thead><tr><th scope="col">{{ t('エージェント') }}</th><th scope="col">{{ t('使用率') }}</th><th scope="col">{{ t('勝率') }}</th><th scope="col">{{ t('試合') }}</th></tr></thead>
+<tbody>
+{% for row in rows %}<tr{% if row.few %} class="few"{% endif %}>
+<th scope="row"><a class="agent-cell" href="{{ url_for('agent', uuid=row.uuid) }}">{% if row.icon %}<img src="{{ media(row.icon) }}" alt="" width="28" height="28" loading="lazy">{% endif %}<span>{{ row.name }}<small>{{ row.role }}</small></span></a></th>
+<td><svg class="share-bar" viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true"><rect width="100" height="6" rx="3" class="back"/><rect width="{{ (100 * row.pick / top_pick)|round(1) if top_pick else 0 }}" height="6" rx="3"/></svg><strong>{{ row.pick }}%</strong></td>
+<td>{% if row.few %}—{% else %}<strong class="{{ 'win' if row.win >= 50 else 'loss' }}">{{ row.win }}%</strong>{% endif %}</td>
+<td>{{ row.picks }}</td>
+</tr>
+{% endfor %}</tbody>
+</table></div>
+<p class="note">{{ t('使用率はチームのうちそのエージェントを選んだ割合、勝率はそのチームが勝った割合です。{few} 試合より少ないものは勝率を出していません。', few=few) }}</p>
+{% endif %}
+{% endblock %}

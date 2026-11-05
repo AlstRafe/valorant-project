@@ -3357,6 +3357,52 @@ code {
   margin-left: 0.4rem;
 }
 
+/* The agents' pick and win rates (agent_stats.html). */
+.agent-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: inherit;
+  text-decoration: none;
+}
+.agent-cell img {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 6px;
+}
+.agent-cell span {
+  display: grid;
+}
+.agent-cell small {
+  color: var(--soft);
+  font-weight: 400;
+  font-size: 0.78rem;
+}
+.agent-stats td {
+  white-space: nowrap;
+}
+.share-bar {
+  display: inline-block;
+  width: 4rem;
+  height: 0.4rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  fill: var(--accent);
+}
+.share-bar .back {
+  fill: var(--rule);
+}
+.agent-stats strong.win {
+  color: var(--win);
+}
+.agent-stats strong.loss {
+  color: var(--loss);
+}
+.agent-stats tr.few td {
+  color: var(--soft);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;

@@ -1,13 +1,15 @@
-"""Pages about the game around the matches, from HenrikDev: Riot's news (/news) and the esports schedule and
-results (/esports). Everyone's, in the visitor's language."""
+"""Pages about the game around the matches: Riot's news (/news) and the esports schedule and results (/esports)
+from HenrikDev, and how often each agent is picked and wins (/agents/stats) in the matches this site has seen
+(activity.py). Everyone's, in the visitor's language."""
 
 from __future__ import annotations
 
 from flask import Flask, current_app, g, render_template, request, url_for
 
+from valtracker.activity import BANDS, FEW, WINDOW_DAYS
 from valtracker.henrik import HenrikError
-from valtracker.tools import _when
-from valtracker.views import _failure, _t
+from valtracker.tools import _family, _when
+from valtracker.views import QUEUES, _failure, _rank, _t
 
 #: The language of Riot's news site for each of ours.
 NEWS_LANGS = {"ja": "ja-jp", "ko": "ko-kr", "en-GB": "en-gb", "zh-TW": "zh-tw"}
@@ -25,6 +27,67 @@ NEWS_SHOWN = 60
 SHOWS = ("upcoming", "results")
 #: How many results and matches to come are shown at most.
 GAMES_SHOWN = 80
+
+
+#: The queues the agents' numbers are kept for (teams of five that win or lose).
+STAT_QUEUES = ("competitive", "unrated", "swiftplay", "premier")
+
+
+def _agent_stats() -> dict:
+    content = current_app.config["VAL_CONTENT"]
+    queue = request.args.get("queue", "competitive")
+    queue = queue if queue in STAT_QUEUES else "competitive"
+    bands = {name: (low, high) for name, low, high in BANDS}
+    chosen_band = request.args.get("band", "")
+    chosen_band = chosen_band if chosen_band in bands and queue == "competitive" else ""
+    chosen_map = request.args.get("map", "").lower()[:40]
+    found = current_app.config["VAL_ACTIVITY"].agents(queue, chosen_band, chosen_map)
+    known = content.map_index(g.lang)
+    # the maps the matches seen were played on (by valorant-api.com's uuid)
+    maps = {key: known[key] for key in found["maps"] if key in known}
+    if chosen_map not in maps:
+        chosen_map = ""
+        found = current_app.config["VAL_ACTIVITY"].agents(queue, chosen_band, "")
+    agents = content.agent_index(g.lang)
+    rows = []
+    for item in found["agents"]:
+        agent = agents.get(item["agent"])
+        if agent:
+            rows.append(
+                item
+                | {
+                    "name": agent.get("displayName") or "",
+                    "icon": agent.get("displayIcon") or "",
+                    "role": (agent.get("role") or {}).get("displayName") or "",
+                    "uuid": item["agent"],
+                    "few": item["picks"] < FEW,
+                }
+            )
+    sort = request.args.get("sort", "pick")
+    sort = sort if sort in ("pick", "win") else "pick"
+    if sort == "win":
+        rows.sort(key=lambda row: (row["few"], -row["win"], -row["picks"]))
+    band_names = []
+    for name, (low, high) in bands.items():
+        first, last = (_family(_rank({"id": tier})["name"]) for tier in (low, high))
+        band_names.append({"key": name, "name": first if first == last else f"{first} – {last}"})
+    return {
+        "rows": rows,
+        "matches": found["matches"],
+        "queue": queue,
+        "queues": [{"key": key, "name": _t(QUEUES[key])} for key in STAT_QUEUES],
+        "band": chosen_band,
+        "bands": band_names,
+        "map": chosen_map,
+        "maps": sorted(
+            ({"key": key, "name": item.get("displayName") or ""} for key, item in maps.items()),
+            key=lambda item: item["name"],
+        ),
+        "sort": sort,
+        "few": FEW,
+        "days": WINDOW_DAYS,
+        "top_pick": max((row["pick"] for row in rows), default=0),
+    }
 
 
 def _category(key: str) -> str:
@@ -118,6 +181,10 @@ def register(app: Flask) -> None:
     def news():
         values, code = _news_page()
         return render_template("news.html", **values), code
+
+    @app.get("/agents/stats")
+    def agent_stats():
+        return render_template("agent_stats.html", **_agent_stats())
 
     @app.get("/esports")
     def esports():
