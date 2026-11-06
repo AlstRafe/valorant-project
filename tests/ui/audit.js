@@ -1,7 +1,9 @@
 // Looks for broken layout on the site's pages: anything wider than the screen, text over text, text cut off,
 // header tabs and buttons that wrap, tap targets too small on a phone, pictures that did not load, script or CSP
 // errors, a page that says it could not load, and for screen readers and eyes: links and fields without a name,
-// headings that skip, the same id twice, text too faint for its background (WCAG AA). Every page in every language
+// headings that skip, the same id twice, text too faint for its background (WCAG AA, a faded parent counted too),
+// pictures drawn for a dark screen shown on paper (a white sign on white), and the edges of fields and buttons too
+// faint to see where they are (WCAG 1.4.11). Every page in every language
 // at the widths the site is designed for (docs/CONVENTIONS.md).
 //
 //   node tests/ui/audit.js <base, e.g. http://127.0.0.1:5077> [--live] [--quick]
@@ -303,19 +305,85 @@ function inspect() {
     });
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   };
+  // how much of an element shows through its own and its parents' opacity
+  const faded = (el) => {
+    let shown = 1;
+    for (let node = el; node; node = node.parentElement) shown *= +css(node).opacity;
+    return shown;
+  };
   for (const el of all) {
     if (!own(el) || el.closest("[aria-disabled=true], :disabled")) continue;
     const style = css(el);
-    if (+style.opacity < 1) continue;
     const back = behind(el);
     if (!back) continue;
-    const ink = over(rgba(style.color), back);
+    const color = rgba(style.color);
+    const ink = over([color[0], color[1], color[2], color[3] * faded(el)], back);
     const [high, low] = [light(ink), light(back)].sort((a, b) => b - a);
     const ratio = (high + 0.05) / (low + 0.05);
     const size = parseFloat(style.fontSize);
     const large = size >= 24 || (size >= 18.6 && +style.fontWeight >= 700);
     if (ratio < (large ? 3 : 4.5))
       found.push({ kind: "text too faint", where: path(el), text: `${ratio.toFixed(2)} ${words(el)}` });
+  }
+  // A sign or icon (a picture with see-through parts) against what is behind it: the mean colour of its drawn
+  // pixels, through its CSS filter. Photos and cards bring their own background and are not measured.
+  const sample = document.createElement("canvas");
+  sample.width = sample.height = 24;
+  const draw = sample.getContext("2d", { willReadFrequently: true });
+  for (const img of document.images) {
+    if (!img.complete || !img.naturalWidth || !shown(img) || img.closest("[hidden], .sr") || folded(img)) continue;
+    const box = img.getBoundingClientRect();
+    if (box.width < 10 || box.height < 10) continue;
+    const back = behind(img);
+    if (!back) continue;
+    const filter = css(img).filter;
+    draw.clearRect(0, 0, 24, 24);
+    draw.filter = filter && filter !== "none" ? filter : "none";
+    let data;
+    try {
+      draw.drawImage(img, 0, 0, 24, 24);
+      data = draw.getImageData(0, 0, 24, 24).data;
+    } catch {
+      continue; // another site's picture: cannot be read
+    }
+    draw.filter = "none";
+    let solid = 0;
+    const sum = [0, 0, 0];
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] < 128) continue;
+      solid++;
+      for (let c = 0; c < 3; c++) sum[c] += data[i + c];
+    }
+    if (!solid || solid / (data.length / 4) > 0.92) continue;
+    const ink = over([...sum.map((part) => part / solid), faded(img)], back);
+    const [high, low] = [light(ink), light(back)].sort((a, b) => b - a);
+    const ratio = (high + 0.05) / (low + 0.05);
+    if (ratio < 2)
+      found.push({
+        kind: "picture too faint",
+        where: path(img),
+        text: `${ratio.toFixed(2)} ${(img.alt || img.getAttribute("src") || "").slice(-40)}`,
+      });
+  }
+  // Where a field, a select or a bordered button is: its edge or its fill has to stand out from the page.
+  for (const el of document.querySelectorAll(
+    "input:not([type=hidden], [type=radio], [type=checkbox], [type=range], [type=color]), select, textarea, button, .button, nav.modes a",
+  )) {
+    if (!shown(el) || el.closest("[hidden]") || folded(el)) continue;
+    const style = css(el);
+    const field = el.matches("input, select, textarea");
+    const edged = parseFloat(style.borderTopWidth) > 0 && rgba(style.borderTopColor)[3] > 0;
+    if (!field && !edged) continue; // a word or an icon that is pressed: its own colour is measured above
+    const back = behind(el.parentElement);
+    if (!back) continue;
+    const fill = over(rgba(style.backgroundColor), back);
+    const edge = edged ? over(rgba(style.borderTopColor), back) : fill;
+    const stands = (rgb) => {
+      const [high, low] = [light(rgb), light(back)].sort((a, b) => b - a);
+      return (high + 0.05) / (low + 0.05);
+    };
+    const ratio = Math.max(stands(fill), stands(edge));
+    if (ratio < 2) found.push({ kind: "edge too faint", where: path(el), text: `${ratio.toFixed(2)} ${words(el)}` });
   }
   for (const img of document.images) {
     if (img.complete && img.naturalWidth === 0 && img.getAttribute("src"))

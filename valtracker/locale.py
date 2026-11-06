@@ -32,10 +32,15 @@ TEXTS = {
         "en-GB": "VAL Tracker isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing VALORANT. VALORANT and Riot Games are trademarks or registered trademarks of Riot Games, Inc.",
         "zh-TW": "VAL Tracker 未經 Riot Games 認可，亦不代表 Riot Games 或任何正式參與 VALORANT 製作、營運人員的觀點與意見。VALORANT 與 Riot Games 為 Riot Games, Inc. 的商標或註冊商標。",
     },
-    "戦績は HenrikDev API、ゲームの名前と画像は valorant-api.com から取得しています。": {
-        "ko": "전적은 HenrikDev API에서, 게임의 이름과 이미지는 valorant-api.com에서 가져옵니다.",
-        "en-GB": "Match data comes from the HenrikDev API; the game's names and pictures from valorant-api.com.",
-        "zh-TW": "戰績來自 HenrikDev API，遊戲中的名稱與圖片來自 valorant-api.com。",
+    "ニュースとサーバー状況は Riot Games の公式サイト、戦績は HenrikDev API、ゲームの名前と画像は valorant-api.com から取得しています。": {
+        "ko": "뉴스와 서버 상태는 Riot Games 공식 사이트에서, 전적은 HenrikDev API에서, 게임의 이름과 이미지는 valorant-api.com에서 가져옵니다.",
+        "en-GB": "News and server status come from Riot Games' own sites; match data from the HenrikDev API; the game's names and pictures from valorant-api.com.",
+        "zh-TW": "新聞與伺服器狀態來自 Riot Games 官方網站，戰績來自 HenrikDev API，遊戲中的名稱與圖片來自 valorant-api.com。",
+    },
+    "Riot ストア": {
+        "ko": "Riot 스토어",
+        "en-GB": "Riot Store",
+        "zh-TW": "Riot 商店",
     },
     # A player's page while its rank and matches are on the way
     "ランクと最近の試合を読み込んでいます…": {
@@ -1411,7 +1416,7 @@ TEXTS = {
     },
     "公式サイトで日程を見る": {
         "ko": "공식 사이트에서 일정 보기",
-        "en-GB": "See the schedule on the official site",
+        "en-GB": "Official schedule",
         "zh-TW": "在官方網站查看賽程",
     },
 }

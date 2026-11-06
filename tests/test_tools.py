@@ -87,12 +87,21 @@ class ToolsTest(unittest.TestCase):
         self.assertIn("定期メンテナンス", notice)
         app, _, _ = make_app(key="")
         self.addCleanup(app._test_folder.cleanup)
-        quiet = app.test_client().get("/status/notice").get_data(as_text=True)
-        self.assertEqual(quiet.strip(), "", "nothing to say without HenrikDev")
+        notice = app.test_client().get("/status/notice").get_data(as_text=True)
+        self.assertIn("定期メンテナンス", notice, "Riot's own file needs no HenrikDev key")
+        self.assertFalse(any("/valorant/v1/status/" in url for url, _ in self.fetch.asked))
+
+    def test_status_from_henrikdev_when_riot_does_not_answer(self):
+        self.fetch.riot_web_status = 503
+        self.assertIn("定期メンテナンス", self.page("/status"))
+        self.assertTrue(any("/valorant/v1/status/ap" in url for url, _ in self.fetch.asked))
+        self.fetch.henrik_status = 503
+        self.assertIn('class="problem"', self.page("/status?region=eu", 503))
+        self.assertEqual(self.page("/status/notice?region=eu").strip(), "", "nothing to say when neither answers")
 
     def test_no_notices(self):
         found = {"maintenances": [], "incidents": []}
-        with mock.patch.object(self.app.config["VAL_HENRIK"], "status", return_value=found):
+        with mock.patch.object(self.app.config["VAL_RIOT_WEB"], "status", return_value=found):
             self.assertIn("いまメンテナンスも障害もありません", self.page("/status?region=eu"))
             self.assertEqual(self.page("/status/notice").strip(), "")
 
