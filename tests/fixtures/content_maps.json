@@ -33,9 +33,9 @@
      }
     },
     {
-     "regionName": "マーケット",
-     "superRegion": "ECalloutSuperRegion::Mid",
-     "superRegionName": "中央",
+     "regionName": "メインエントランス",
+     "superRegion": "ECalloutSuperRegion::AttackerSide",
+     "superRegionName": "アタック側",
      "location": {
       "x": 2200,
       "y": -4300,

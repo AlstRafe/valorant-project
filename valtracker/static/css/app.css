@@ -4111,3 +4111,12 @@ code {
 .season-agents small {
   color: var(--soft);
 }
+/* The places' table fits a phone: the place's name wraps, the cells are closer. */
+.heat-places .board th,
+.heat-places .board td {
+  padding: 0.45rem 0.4rem;
+}
+.heat-places .board th[scope="row"] {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
