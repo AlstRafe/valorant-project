@@ -1,12 +1,16 @@
 {% extends "base.html" %}
 {% macro person(row) -%}
 <li class="seat{% if row.me %} me{% endif %}{% if row.state %} {{ row.state }}{% endif %}">
-{% if row.agent_icon %}<img src="{{ media(row.agent_icon) }}" alt="" width="40" height="40">{% else %}<span class="no-agent" aria-hidden="true">?</span>{% endif %}
+{% if row.agent_icon %}<img src="{{ media(row.agent_icon) }}" alt="" width="40" height="40">{% elif row.card %}<img src="{{ media(row.card) }}" alt="" width="40" height="40">{% else %}<span class="no-agent" aria-hidden="true">?</span>{% endif %}
 <span class="seat-text">
-<strong>{% if row.name %}<a href="{{ url_for('player', name=row.name, tag=row.tag) }}">{{ row.name }}<span class="tag">#{{ row.tag }}</span></a>{% elif row.me %}あなた{% else %}<span class="hidden-name">名前を隠しています</span>{% endif %}</strong>
-<small>{% if row.agent %}{{ row.agent }}{% if row.state == 'selected' %}（選択中）{% elif row.state == 'locked' %}（確定）{% endif %}{% else %}まだ選んでいません{% endif %}{% if row.level %} · レベル {{ row.level }}{% endif %}</small>
+<strong>{% if row.name %}<a href="{{ url_for('player', name=row.name, tag=row.tag) }}">{{ row.name }}<span class="tag">#{{ row.tag }}</span></a>{% elif row.me %}あなた{% else %}<span class="hidden-name">名前を隠しています</span>{% endif %}{% if row.owner %} <span class="badge">リーダー</span>{% endif %}</strong>
+{%- set parts = [] -%}
+{%- if row.agent %}{% set _ = parts.append(row.agent ~ ('（選択中）' if row.state == 'selected' else '（確定）' if row.state == 'locked' else '')) %}{% elif phase != 'menus' %}{% set _ = parts.append('まだ選んでいません') %}{% endif -%}
+{%- if row.title %}{% set _ = parts.append(row.title) %}{% endif -%}
+{%- if row.level %}{% set _ = parts.append('レベル ' ~ row.level) %}{% endif %}
+{% if parts %}<small>{{ parts|join(' · ') }}</small>{% endif %}
 </span>
-{% if row.rank %}<span class="seat-rank">{% if row.rank.icon %}<img src="{{ media(row.rank.icon) }}" alt="" width="28" height="28">{% endif %}<span class="sr">{{ row.rank.name }}</span></span>{% endif %}
+{% if row.rank %}<span class="seat-rank">{% if row.rank.icon %}<img src="{{ media(row.rank.icon) }}" alt="" width="28" height="28">{% endif %}<span class="rank-words">{{ row.rank.name }}{% if row.rank.rr is not none %} {{ row.rank.rr }} RR{% endif %}</span></span>{% endif %}
 </li>
 {%- endmacro %}
 {% block title %}いまの試合 · {{ site_name }}{% endblock %}
@@ -14,22 +18,67 @@
 <div lang="ja" data-refresh="{{ 5 if phase else 20 }}">
 <section class="hero">
 <h1>いまの試合</h1>
-<p class="lead">エージェント選択では味方の構成と足りない役割、試合中は全員のエージェントとランクです。ページは数秒ごとに新しくなります。</p>
+<p class="lead">VALORANT が開いているかを見て、メニューではキューの開始と取り消し、エージェント選択では味方の構成とピック、試合中は全員のエージェントとランクを出します。ページは数秒ごとに新しくなります。</p>
 </section>
 {% include "_pages.html" %}
+{% if said %}<p class="verdict {{ 'ok' if said_ok else 'no' }}" role="status">{{ said }}</p>{% endif %}
 {% if problem %}
 <p class="problem" role="alert">{{ problem }}{% if detail %} <code>{{ detail }}</code>{% endif %}</p>
 {% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">設定で Riot と連携する</a></p>{% endif %}
-{% elif not phase %}
-<p class="note">いまは試合をしていません。キューに入ってエージェント選択が始まると、ここに出ます。</p>
+{% else %}
+<p class="game-state"><span class="dot {{ 'on' if running else 'off' }}" aria-hidden="true"></span>VALORANT: {% if phase == 'pregame' %}エージェント選択{% elif phase == 'ingame' %}試合中{% elif phase == 'menus' %}{{ 'マッチング中' if party and party.state == 'matchmaking' else 'メニュー' }}{% elif running %}開いています{% elif running is none %}わかりません{% else %}開いていません{% endif %}</p>
+{% if not phase %}
+<p class="note">{% if running is none %}ゲームの状態を読めませんでした。{% else %}VALORANT を開くと、ここからキューを開始できます。エージェント選択が始まると、味方とピックがここに出ます。{% endif %}</p>
+{% elif phase == 'menus' %}
+{% if party %}
+<section aria-labelledby="party-title">
+<h2 id="party-title">パーティー</h2>
+<ul class="seats">{% for row in party.members %}{{ person(row) }}{% endfor %}</ul>
+</section>
+<section aria-labelledby="queue-title">
+<h2 id="queue-title">キュー</h2>
+{% if party.state == 'matchmaking' %}
+<p class="queue-now"><strong>{{ party.queue_name or 'キュー' }}</strong> でマッチング中{% if party.waited is not none %} · {{ party.waited // 60 }} 分 {{ '%02d'|format(party.waited % 60) }} 秒{% endif %}</p>
+{% if party.leader %}<form method="post" action="{{ url_for('live_act') }}" class="live-act"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button type="submit" name="do" value="leave" class="quiet">キューをやめる</button></form>{% endif %}
+{% elif party.state == 'starting' %}
+<p class="queue-now">試合が見つかりました。まもなくエージェント選択です。</p>
+{% elif party.restricted %}
+<p class="problem" role="alert">あと {{ party.restricted }} 秒キューに入れません（ゲームのペナルティー）。</p>
+{% elif party.leader %}
+<form method="post" action="{{ url_for('live_act') }}" class="live-act queue-form"><input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<label><span>モード</span><select name="value">{% for queue in party.queues %}<option value="{{ queue.id }}"{% if queue.id == party.queue %} selected{% endif %}>{{ queue.name }}</option>{% endfor %}</select></label>
+<button type="submit" name="do" value="start">キューを開始</button>
+</form>
+<p class="note">ゲームの中でキューを開始したのと同じです。選べるのは、いまのパーティーで入れるモードだけです。</p>
+{% else %}
+<p class="note">キューを開始できるのはパーティーのリーダーだけです{% if party.queue_name %}（いまのモード: {{ party.queue_name }}）{% endif %}。</p>
+{% endif %}
+</section>
+{% else %}
+<p class="note">パーティーを読み込めませんでした。</p>
+{% endif %}
 {% else %}
 <p class="live-head">{% if map.image %}<img src="{{ media(map.image) }}" alt="" width="160" height="60">{% endif %}<span><strong>{{ map.name or 'マップ' }}</strong>{% if queue %} · {{ queue }}{% endif %} · {{ 'エージェント選択' if phase == 'pregame' else '試合中' }}{% if left %} · 残り {{ left }} 秒{% endif %}</span></p>
 {% if phase == 'pregame' %}
 <section aria-labelledby="ally-title">
 <h2 id="ally-title">味方</h2>
 <ul class="seats">{% for row in players %}{{ person(row) }}{% endfor %}</ul>
-{% if enemy_size %}<p class="note">相手は {{ enemy_locked }} / {{ enemy_size }} 人が確定</p>{% endif %}
+{% if enemy_size %}<p class="note">相手は {{ enemy_locked }} / {{ enemy_size }} 人が確定（相手の名前とエージェントは、ゲームでも試合が始まるまで出ません）</p>{% endif %}
 </section>
+{% if picker %}
+<section aria-labelledby="pick-title">
+<h2 id="pick-title">ピック</h2>
+{% if picker.locked %}
+<p class="queue-now"><strong>{{ picker.current_name }}</strong> で確定しています。</p>
+{% else %}
+{% if picker.current %}<form method="post" action="{{ url_for('live_act') }}" class="live-act lock-row"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="value" value="{{ picker.current }}"><button type="submit" name="do" value="lock">{{ picker.current_name }} で確定</button></form>{% endif %}
+<form method="post" action="{{ url_for('live_act') }}" class="live-act"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="do" value="select">
+<ul class="pick-grid">{% for agent in picker.agents %}<li><button type="submit" name="value" value="{{ agent.id }}" class="pick{% if agent.id == picker.current %} on{% endif %}"{% if agent.taken %} disabled aria-disabled="true"{% endif %} aria-label="{{ agent.name }} を選ぶ{% if agent.taken %}（味方が確定済み）{% endif %}">{% if agent.icon %}<img src="{{ media(agent.icon) }}" alt="" width="48" height="48">{% endif %}<span>{{ agent.name }}</span></button></li>{% endfor %}</ul>
+</form>
+<p class="note">選ぶだけでは決まりません。「確定」を押すと、ゲームで確定したのと同じになります。</p>
+{% endif %}
+</section>
+{% endif %}
 <section aria-labelledby="comp-title">
 <h2 id="comp-title">構成の目安</h2>
 {% if missing_roles %}
@@ -50,8 +99,9 @@
 </section>
 {% endfor %}
 {% endif %}
+{% endif %}
 {% if names_missing %}<p class="note">名前を読み込めませんでした。</p>{% endif %}
-<p class="note">名前を隠しているプレイヤーの名前は出しません。</p>
+{% if phase %}<p class="note">名前を隠しているプレイヤーの名前・カード・称号は出しません（本人が選んだ設定のため）。</p>{% endif %}
 {% endif %}
 </div>
 {% endblock %}

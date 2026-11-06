@@ -1,7 +1,8 @@
 """The owner's pages beyond the store and the collection (Japanese only, refused to visitors):
 
 - /progress: the battle pass, the events' passes, the agents' contracts and the missions (progress.py);
-- /live: the match being played, at agent select or in the match (live.py), asked again every few seconds;
+- /live: the game right now (live.py), asked again every few seconds: the menus (the party, start or stop a
+  queue: POST /live/act), agent select (pick and lock an agent) or the match;
 - POST /collection/equip: wear a skin (one of its variants), a card or a title, as the game's collection does.
 """
 
@@ -9,7 +10,7 @@ from __future__ import annotations
 
 import time
 
-from flask import Flask, current_app, g, redirect, render_template, request, url_for
+from flask import Flask, current_app, g, redirect, render_template, request, session, url_for
 
 from valtracker import live as live_page
 from valtracker import progress as progress_page
@@ -21,6 +22,18 @@ from valtracker.views import QUEUES, RIOT_FAILURES, _t
 
 #: What can be worn from the collection page -> where the loadout keeps it.
 IDENTITY = {"cards": "PlayerCardID", "titles": "PlayerTitleID"}
+#: What /live says after one of its buttons: (words, whether it worked).
+LIVE_SAID = {
+    "ok-start": ("キューを開始しました。", True),
+    "ok-leave": ("キューをやめました。", True),
+    "ok-select": ("選びました。まだ確定していません。", True),
+    "ok-lock": ("確定しました。", True),
+    "notnow": (
+        "いまはできません（ゲームが開いていない、パーティーにいない、またはエージェント選択中ではない）。",
+        False,
+    ),
+    "unknown": ("そのボタンは使えません。", False),
+}
 #: Why wearing something did not work (shown on the collection page).
 EQUIP_FAILURES = {
     "unknown": "持っていないものは装備できません。",
@@ -139,7 +152,27 @@ def register(app: Flask) -> None:
                 owned = None
         me = _id(riot.store.load().get("puuid"))
         values = live_page.page(found, current_app.config["VAL_CONTENT"], g.lang, me, owned, _queue_name)
-        return render_template("live.html", **values, names_missing="names" in (found.get("missing") or []))
+        said = session.pop("live_said", "")  # once: the page is asked again every few seconds
+        words, worked = LIVE_SAID.get(said) or (RIOT_FAILURES.get(said, RIOT_FAILURES["down"]) if said else "", False)
+        return render_template(
+            "live.html",
+            **values,
+            names_missing="names" in (found.get("missing") or []),
+            said=words,
+            said_ok=worked,
+        )
+
+    @app.post("/live/act")
+    def live_act():
+        """The owner's buttons on /live: start or stop a queue, pick or lock an agent (riot.Riot.act)."""
+        security.owner_only()
+        action = request.form.get("do", "")
+        try:
+            current_app.config["VAL_RIOT"].act(action, request.form.get("value", ""))
+            session["live_said"] = f"ok-{action}"
+        except RiotError as error:
+            session["live_said"] = error.kind
+        return redirect(url_for("live"), 303)
 
     @app.post("/collection/equip")
     def equip():

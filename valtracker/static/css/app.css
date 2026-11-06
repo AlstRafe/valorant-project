@@ -3335,10 +3335,119 @@ code {
   color: var(--soft);
   font-weight: 400;
 }
+.seat-rank {
+  display: grid;
+  flex: none;
+  justify-items: center;
+  gap: 0.1rem;
+  max-width: 5.5rem;
+  text-align: center;
+}
 .seat-rank img {
   display: block;
   width: 1.75rem;
   height: 1.75rem;
+}
+.rank-words {
+  color: var(--soft);
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+.seat .badge {
+  margin-left: 0.3rem;
+  vertical-align: 0.1em;
+}
+/* Whether the game is open, and the owner's buttons: the queue, the agent to pick and lock. */
+.game-state {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+}
+.game-state .dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--draw);
+}
+.game-state .dot.on {
+  background: var(--win);
+}
+.queue-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem 0.8rem;
+}
+.queue-form label {
+  display: grid;
+  gap: 0.3rem;
+  flex: 1 1 12rem;
+  font-size: 0.85rem;
+  color: var(--soft);
+}
+.queue-form select {
+  min-height: 2.9rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1rem;
+}
+.queue-now {
+  margin: 0.6rem 0;
+  font-size: 1.05rem;
+}
+.lock-row {
+  margin: 0 0 0.8rem;
+}
+.lock-row button {
+  width: 100%;
+  max-width: 24rem;
+}
+.pick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.2rem, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pick-grid .pick {
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  min-height: 0;
+  padding: 0.45rem 0.3rem;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+.pick-grid .pick img {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 8px;
+}
+.pick-grid .pick span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pick-grid .pick.on {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
+  font-weight: 700;
+}
+.pick-grid .pick:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 .live-head {
   display: flex;

@@ -108,10 +108,18 @@ def main() -> None:
     def wsgi(environ, start):
         if "visitor=1" in environ.get("HTTP_COOKIE", ""):
             environ["homepage.visitor"] = True
-        # /live?phase=pregame or ingame: the made-up match the owner is in (helpers.FakeRiot)
+        # /live?phase=menus, queue (the menus, matchmaking), pregame or ingame: where the owner's made-up game is
+        # (helpers.FakeRiot); none: the game is closed
         if environ.get("PATH_INFO") == "/live":
             phase = environ.get("QUERY_STRING", "").removeprefix("phase=")
-            app.riot.phase = phase if phase in ("pregame", "ingame") else ""
+            app.riot.phase = "menus" if phase == "queue" else phase if phase in ("menus", "pregame", "ingame") else ""
+            party = app.riot.pd["party"]
+            party["State"] = "MATCHMAKING" if phase == "queue" else "DEFAULT"
+            party["QueueEntryTime"] = (
+                time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 95))
+                if phase == "queue"
+                else "0001-01-01T00:00:00Z"
+            )
             app.config["VAL_RIOT"].cache.put("live", None, 0)
         return inner(environ, start)
 

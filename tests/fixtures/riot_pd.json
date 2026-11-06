@@ -470,7 +470,9 @@
     "CharacterID": "11111111-1111-4111-8111-111111111111",
     "PlayerIdentity": {
      "AccountLevel": 50,
-     "Incognito": false
+     "Incognito": false,
+     "PlayerCardID": "cc000000-0000-4000-8000-000000000001",
+     "PlayerTitleID": "ee000000-0000-4000-8000-000000000001"
     },
     "SeasonalBadgeInfo": {
      "Rank": 21
@@ -482,7 +484,9 @@
     "CharacterID": "22222222-2222-4222-8222-222222222222",
     "PlayerIdentity": {
      "AccountLevel": 12,
-     "Incognito": true
+     "Incognito": true,
+     "PlayerCardID": "cc000000-0000-4000-8000-000000000002",
+     "PlayerTitleID": "ee000000-0000-4000-8000-000000000002"
     },
     "SeasonalBadgeInfo": {
      "Rank": 9
@@ -513,5 +517,76 @@
    "GameName": "Secret",
    "TagLine": "9999"
   }
- ]
+ ],
+ "party": {
+  "ID": "9a000000-0000-4000-8000-000000000001",
+  "State": "DEFAULT",
+  "MatchmakingData": {
+   "QueueID": "unrated"
+  },
+  "EligibleQueues": [
+   "unrated",
+   "competitive",
+   "swiftplay",
+   "deathmatch"
+  ],
+  "QueueEntryTime": "0001-01-01T00:00:00Z",
+  "RestrictedSeconds": 0,
+  "Members": [
+   {
+    "Subject": "0c0c0c0c-1111-4222-8333-444444444444",
+    "IsOwner": true,
+    "CompetitiveTier": 18,
+    "PlayerIdentity": {
+     "Subject": "0c0c0c0c-1111-4222-8333-444444444444",
+     "AccountLevel": 187,
+     "PlayerCardID": "cc000000-0000-4000-8000-000000000001",
+     "PlayerTitleID": "ee000000-0000-4000-8000-000000000001",
+     "Incognito": false
+    }
+   },
+   {
+    "Subject": "a1111111-0000-4000-8000-000000000002",
+    "IsOwner": false,
+    "CompetitiveTier": 9,
+    "PlayerIdentity": {
+     "AccountLevel": 12,
+     "PlayerCardID": "cc000000-0000-4000-8000-000000000002",
+     "PlayerTitleID": "ee000000-0000-4000-8000-000000000002",
+     "Incognito": true
+    }
+   }
+  ]
+ },
+ "mmr": {
+  "a1111111-0000-4000-8000-000000000001": {
+   "QueueSkills": {
+    "competitive": {
+     "SeasonalInfoBySeasonID": {
+      "AAAA0000-0000-4000-8000-000000000003": {
+       "CompetitiveTier": 21,
+       "RankedRating": 47
+      }
+     }
+    }
+   },
+   "LatestCompetitiveUpdate": {
+    "SeasonID": "aaaa0000-0000-4000-8000-000000000003",
+    "TierAfterUpdate": 21,
+    "RankedRatingAfterUpdate": 47
+   }
+  },
+  "a1111111-0000-4000-8000-000000000002": {
+   "QueueSkills": {
+    "competitive": {
+     "SeasonalInfoBySeasonID": {}
+    }
+   },
+   "LatestCompetitiveUpdate": {
+    "SeasonID": "aaaa0000-0000-4000-8000-000000000003",
+    "TierAfterUpdate": 12,
+    "RankedRatingAfterUpdate": 5
+   }
+  }
+ }
 }
