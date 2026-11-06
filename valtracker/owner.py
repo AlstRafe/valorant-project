@@ -238,10 +238,19 @@ def register(app: Flask) -> None:
         show = show if show in ("skins", "cards", "titles", "sprays") else "skins"
         uuid = _id(request.form.get("item"))
         riot = current_app.config["VAL_RIOT"]
+        # back to where the button was: the skins of that weapon (the game's collection opens one at a time)
+        known = current_app.config["VAL_CONTENT"].skins(g.lang).get(uuid) if show == "skins" else None
+        weapon = _id(known[0].get("uuid")) if known else None
+
+        def back(why: str):
+            return redirect(
+                url_for("collection", show=None if show == "skins" else show, weapon=weapon, equip=why), 303
+            )
+
         try:
             found = riot.collection()
         except RiotError as error:
-            return redirect(url_for("collection", show=None if show == "skins" else show, equip=error.kind), 303)
+            return back(error.kind)
         if show == "skins":
             change, why = _wear_skin(found, uuid, _id(request.form.get(f"chroma.{uuid}")))
         elif show == "sprays":
@@ -254,7 +263,7 @@ def register(app: Flask) -> None:
                 why = "ok"
             except RiotError as error:
                 why = error.kind
-        return redirect(url_for("collection", show=None if show == "skins" else show, equip=why), 303)
+        return back(why)
 
 
 def equip_said(kind: str) -> tuple[str, bool]:

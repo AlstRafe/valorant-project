@@ -917,7 +917,8 @@ def register(app: Flask) -> None:
             status = 503 if error.kind in ("busy", "down") else 200
             values = {"problem": RIOT_FAILURES.get(error.kind, RIOT_FAILURES["down"]), "detail": error.detail}
             return render_template("collection.html", **values, settings_link=status == 200), status
-        values = owned_items.page(found, current_app.config["VAL_CONTENT"], g.lang, show)
+        weapon = request.args.get("weapon", "")[:36] if show == "skins" else ""
+        values = owned_items.page(found, current_app.config["VAL_CONTENT"], g.lang, show, weapon)
         from valtracker.owner import equip_said
 
         values["equip_said"], values["equip_ok"] = equip_said(request.args.get("equip", "")[:20])
