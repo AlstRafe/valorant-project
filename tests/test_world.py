@@ -141,6 +141,24 @@ class WorldTest(unittest.TestCase):
         text = self.page("/esports", 503)
         self.assertIn('href="https://valorantesports.com/"', text, "the official schedule instead")
 
+    def test_esports_from_the_leagues_when_henrikdev_refuses_the_whole_schedule(self):
+        original = FakeFetch.__call__
+
+        def answer(fetch, url, headers):
+            if url.endswith("/v1/esports/schedule"):
+                fetch.asked.append((url, headers))
+                return 429, b'{"errors": []}'  # it costs more of the key than there is
+            return original(fetch, url, headers)
+
+        with mock.patch.object(FakeFetch, "__call__", answer):
+            text = self.page("/esports")
+            self.assertIn("Paper Rex", text)
+            self.assertTrue(any("league=vct_pacific" in url for url, _ in self.fetch.asked))
+            whole = sum(url.endswith("/v1/esports/schedule") for url, _ in self.fetch.asked)
+            self.app.config["VAL_HENRIK"].cache.put(("esports",), None, -1)
+            self.page("/esports")
+            self.assertEqual(sum(url.endswith("/v1/esports/schedule") for url, _ in self.fetch.asked), whole)
+
     def test_esports_from_the_leagues(self):
         whole = self.page("/esports")
         self.app.config["VAL_HENRIK"].cache = type(self.app.config["VAL_HENRIK"].cache)(512)
