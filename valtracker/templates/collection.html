@@ -53,6 +53,15 @@
 {% if picked %}
 <section class="weapon" id="gun" aria-labelledby="gun-title">
 <div class="gun-head"><a class="button quiet" href="{{ url_for('collection') }}">← 武器一覧</a><h2 id="gun-title">{{ picked.name }} <small>{{ picked['items']|length }}</small></h2></div>
+{% set now = picked.now %}
+<div class="worn-now{% if now.tier.key %} tier-{{ now.tier.key }}{% endif %}">
+{% if now.image %}<img src="{{ media(now.image) }}" alt="" width="512" height="192">{% endif %}
+<div class="worn-text">
+<p class="worn-label">いま装備中</p>
+<p class="worn-name">{{ now.name or picked.name }}{% if now.standard %} <small>（標準）</small>{% endif %}</p>
+<p class="worn-meta">{% if now.tier.name %}<span>{% if now.tier.icon %}<img class="tier" src="{{ media(now.tier.icon) }}" alt="" width="16" height="16">{% endif %}{{ now.tier.name }}</span>{% endif %}{% if now.variant %}<span>{{ now.variant }}</span>{% endif %}{% if now.level %}<span>レベル {{ now.level }}/{{ now.levels }}</span>{% endif %}{% if now.buddy %}<span>{% if now.buddy.icon %}<img class="buddy" src="{{ media(now.buddy.icon) }}" alt="" width="20" height="20">{% endif %}バディー：{{ now.buddy.name }}</span>{% endif %}</p>
+</div>
+</div>
 <ul class="items skins rows">
 {% for item in picked['items'] %}<li class="item{% if item.tier.key %} tier-{{ item.tier.key }}{% endif %}{% if item.equipped %} on{% endif %}" data-name="{{ item.name|lower }}">
 {% if item.image %}<img src="{{ media(item.image) }}" alt="" width="256" height="96" loading="lazy">{% endif %}

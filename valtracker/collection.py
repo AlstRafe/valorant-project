@@ -155,6 +155,8 @@ def _skins(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict
             skins.setdefault(_id(weapon.get("uuid")), [])
             if all(_id(other.get("uuid")) != _id(skin.get("uuid")) for other in skins[_id(weapon.get("uuid"))]):
                 skins[_id(weapon.get("uuid"))].append(skin)
+    worn_on = {_id(gun.get("ID")): gun for gun in guns}
+    buddies = content.index("buddies", lang)
     groups = []
     for weapon in sorted(content.weapons(lang), key=_weapon_order):
         found = skins.get(_id(weapon.get("uuid")))
@@ -213,12 +215,46 @@ def _skins(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict
                 # the weapon's square on the page: what it wears now (the standard look: the weapon's own picture)
                 "image": (worn or {}).get("image") or weapon.get("displayIcon"),
                 "worn": (worn or {}).get("name") or "",
+                # at the top of the weapon's skins: what it wears now, as the game's own screen shows it
+                "now": _now(worn_on.get(_id(weapon.get("uuid"))), weapon, index, tiers, buddies),
                 # typing a skin's name finds its weapon
                 "search": " ".join([weapon.get("displayName") or ""] + [item["name"] for item in items]).lower(),
                 "items": items,
             }
         )
     return groups
+
+
+def _now(gun: dict | None, weapon: dict, index: dict, tiers: dict, buddies: dict) -> dict:
+    """What a weapon wears now (the loadout's ``Guns`` entry): the skin, its variant and level, its picture,
+    tier and buddy. A weapon without a skin of the owner's wears its standard one."""
+    gun = gun or {}
+    known = index.get(_id(gun.get("SkinID")))
+    skin = known[1] if known and _id(known[0].get("uuid")) == _id(weapon.get("uuid")) else {}
+    parts = skin.get("chromas") or []
+    chroma = next((part for part in parts if _id(part.get("uuid")) == _id(gun.get("ChromaID"))), None)
+    levels = [level for level in skin.get("levels") or [] if isinstance(level, dict)]
+    level = next(
+        (number for number, item in enumerate(levels, 1) if _id(item.get("uuid")) == _id(gun.get("SkinLevelID"))), 0
+    )
+    buddy = buddies.get(_id(gun.get("CharmLevelID"))) or buddies.get(_id(gun.get("CharmID"))) or {}
+    tier = _tier(skin, tiers)
+    return {
+        "name": skin.get("displayName") or "",
+        "standard": not tier["key"],
+        "image": (chroma or {}).get("fullRender")
+        or (chroma or {}).get("displayIcon")
+        or skin.get("displayIcon")
+        or weapon.get("displayIcon"),
+        "tier": tier,
+        # the first variant is the skin's own look
+        "variant": variant_name(chroma.get("displayName"), skin.get("displayName") or "")
+        if chroma and parts and chroma is not parts[0]
+        else "",
+        "level": level if len(levels) > 1 else 0,
+        "levels": len(levels),
+        "buddy": {"name": buddy.get("displayName") or "", "icon": buddy.get("displayIcon")} if buddy else None,
+    }
 
 
 def _weapon_order(weapon: dict) -> tuple:
