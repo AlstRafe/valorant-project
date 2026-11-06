@@ -1,0 +1,44 @@
+# Temporary: what Riot's esports site carries in its schedule page (removed before merging).
+name: Probe
+on:
+  push:
+    branches: [claude/project-thread-mqrnd2]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: The schedule in valorantesports.com's page
+        shell: python
+        run: |
+          import json, re, urllib.request
+          def get(url):
+              req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (probe)"})
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      return r.status, r.headers.get("content-type"), r.read()
+              except Exception as e:
+                  return getattr(e, "code", 0), str(e), (e.read() if hasattr(e, "read") else b"")
+          s, ct, b = get("https://haruxera.duckdns.org/val/esports")
+          print("LIVE /esports", s, len(b))
+          for url in ("https://valorantesports.com/ja-JP/schedule", "https://valorantesports.com/en-US/schedule?leagues=vct_pacific"):
+              s, ct, b = get(url)
+              t = b.decode("utf-8", "replace")
+              chunks = re.findall(r'self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)', t)
+              flight = "".join(json.loads('"' + c + '"') for c in chunks)
+              print("\n==", url, s, len(b), "| chunks", len(chunks), "| flight", len(flight), "| startTime", flight.count("startTime"))
+              i = flight.find("startTime")
+              print("  AROUND FIRST:", flight[max(0, i - 1500): i + 2500])
+              # the lines of the flight that hold events: their ids and sizes
+              for line in flight.split("\n"):
+                  if "startTime" in line:
+                      head = line[:60]
+                      print("  LINE", head, "| len", len(line), "| startTime", line.count("startTime"))
+              # keys next to startTime
+              keys = re.findall(r'"([A-Za-z_]+)":', flight[i - 3000: i + 6000])
+              print("  KEYS:", sorted(set(keys)))
+              print("  LEAGUE SLUGS:", sorted(set(re.findall(r'"slug":"([a-z0-9_\-]+)"', flight)))[:80])
+              print("  STATES:", sorted(set(re.findall(r'"state":"([A-Za-z]+)"', flight))))
+              print("  LAST:", flight[flight.rfind("startTime") - 200: flight.rfind("startTime") + 1500])
