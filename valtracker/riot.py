@@ -167,9 +167,20 @@ class Riot:
 
     def collection(self) -> dict:
         """``{"name", "tag", "wallet": {currency uuid: amount} or None, "loadout": PD's playerloadout or None,
-        "owned": {kind: {item uuid: copies}}, "missing": [what could not be read], "problem": why}``.
+        "owned": {kind: {item uuid: copies}}, "instances": {buddy level uuid: [each copy's InstanceID]},
+        "missing": [what could not be read], "problem": why}``.
         RiotError when nothing could be read."""
         return self._kept("collection", self._collect)
+
+    def loadout(self) -> dict:
+        """PD's playerloadout of the owner, read now (not the collection's kept one): what a set saved from the
+        collection page holds. RiotError when it could not be read."""
+
+        def read(tokens: dict, saved: dict) -> dict:
+            base, puuid, headers = self._base(saved), str(saved["puuid"]), self._headers(tokens)
+            return {"loadout": self._loadout(base, puuid, headers)[0], "missing": [], "problem": ""}
+
+        return self._kept("loadout", read, 0)["loadout"]
 
     def shop(self) -> dict:
         """Today's store (shop.py reads it): ``{"name", "tag", "wallet", "storefront": PD's storefront or None,
@@ -331,7 +342,7 @@ class Riot:
             loadout.pop("Subject", None)
             body = json.dumps(loadout).encode()
             answer = self._pd("equip", url, {**headers, "Content-Type": "application/json"}, "PUT", body)
-            if isinstance(answer.get("Guns"), list) and _worn(answer) != _worn(loadout):
+            if isinstance(answer.get("Guns"), list) and wearing(answer) != wearing(loadout):
                 raise RiotError("notsaved", "equip: PD answered 200 with another loadout")
             return {"loadout": answer, "missing": [], "problem": ""}
 
@@ -696,7 +707,7 @@ class Riot:
                 problems.append(error.detail or error.kind)
         if not answers:
             raise RiotError("down", problems[0] if problems else "")
-        owned = {}
+        owned, instances = {}, {}
         for kind in ITEM_TYPES:
             if kind not in answers:
                 continue
@@ -705,6 +716,8 @@ class Riot:
                 if isinstance(item, dict) and item.get("ItemID"):
                     key = str(item["ItemID"]).lower()
                     counts[key] = counts.get(key, 0) + 1
+                    if kind == "buddies" and item.get("InstanceID"):  # each copy is one weapon's (CharmInstanceID)
+                        instances.setdefault(key, []).append(str(item["InstanceID"]).lower())
             owned[kind] = counts
         wallet = _wallet(answers.get("wallet"))
         return {
@@ -713,6 +726,7 @@ class Riot:
             "wallet": wallet,
             "loadout": answers.get("loadout"),
             "owned": owned,
+            "instances": instances,
             "missing": missing,
             "problem": ", ".join(dict.fromkeys(problems)),
         }
@@ -808,9 +822,10 @@ def _number(value) -> float:
         return 0.0
 
 
-def _worn(loadout: dict) -> tuple:
+def wearing(loadout: dict) -> tuple:
     """What a playerloadout wears, to tell whether PD kept a change: each weapon's skin, level, variant and buddy, the
-    wheel (v3's ActiveExpressions or v2's Sprays), the card and the title."""
+    wheel (v3's ActiveExpressions or v2's Sprays), the card and the title (collection.py: whether a saved set is what is
+    worn)."""
 
     def low(value) -> str:
         return str(value or "").lower()

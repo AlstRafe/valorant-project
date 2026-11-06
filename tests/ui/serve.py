@@ -1,8 +1,8 @@
 """The app with the tests' made-up answers of the outside APIs (tests/helpers.py), for looking at the pages and for
 tests/ui/audit.js: the owner signed in to Riot (so /queues and the owner's store show), made-up matches on the servers
 page, pictures a browser can show, one player with the longest name there can be, a lifetime of matches for the
-made-up player (pages of them, long charts), a ``visitor=1`` cookie that shows a page as a visitor sees it, and
-``/collection?loadout=none`` (Riot gives no loadout).
+made-up player (pages of them, long charts), two saved sets of the owner's loadout, a ``visitor=1`` cookie that
+shows a page as a visitor sees it, and ``/collection?loadout=none`` (Riot gives no loadout).
 
     python tests/ui/serve.py [port, default 5077]
 """
@@ -186,6 +186,27 @@ def seed_lifetime(app, now: float) -> None:
     archive.keep_rr("puuid-me", changes)
 
 
+def seed_sets(app) -> None:
+    """Two saved sets on the collection's セット tab: what is worn now (the longest name there can be) and another."""
+    from valtracker.collection import snapshot
+
+    now = snapshot(app.riot.pd["loadout"])
+    other = json.loads(json.dumps(now))
+    other["Guns"][0] |= {"SkinID": "aa000000-0000-4000-8000-000000000002", "ChromaID": ""}
+    for key in ("CharmInstanceID", "CharmID", "CharmLevelID"):
+        other["Guns"][0].pop(key, None)
+    sets = [
+        {
+            "id": "set-1",
+            "name": "ランク用のいちばん気に入っている装備セットそのいち三十字",
+            "at": "2026-11-06T21:05+09:00",
+            **now,
+        },
+        {"id": "set-2", "name": "アンレート", "at": "2026-11-07T01:40+09:00", **other},
+    ]
+    app.config["VAL_SETS"].save(sets=sets)
+
+
 def main() -> None:
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5077
     helpers.PNG = _png()
@@ -201,6 +222,7 @@ def main() -> None:
         day = time.strftime("%Y-%m-%d", time.gmtime(time.time() - back * 86400))
         diary.note(day, [{"uuid": "ac000000-0000-4000-8000-000000000001", "price": 3550}], None)
     diary.want("ac000000-0000-4000-8000-000000000001", True)
+    seed_sets(app)
     inner = app.wsgi_app
 
     def wsgi(environ, start):

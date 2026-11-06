@@ -3,23 +3,29 @@
 - /progress: the battle pass, the events' passes, the agents' contracts and the missions (progress.py);
 - /live: the game right now (live.py), asked again every few seconds: the menus (the party, start or stop a
   queue: POST /live/act), agent select (pick and lock an agent) or the match;
-- POST /collection/equip: wear a skin (one of its variants), a card or a title, as the game's collection does.
+- POST /collection/equip: wear a skin (one of its variants), a buddy on a weapon, a card, a title, or a spray or a
+  flex on the wheel, as the game's collection does;
+- POST /collection/sets: save the whole loadout as a set (instance/loadout_sets.json), wear one again, or delete it.
 """
 
 from __future__ import annotations
 
 import re
+import secrets
 import time
+from datetime import datetime
 
 from flask import Flask, current_app, g, jsonify, redirect, render_template, request, session, url_for
 
+from valtracker import collection as owned_items
 from valtracker import live as live_page
 from valtracker import progress as progress_page
 from valtracker import security
 from valtracker.activity import LINE_QUEUES
-from valtracker.collection import STARTERS, expressions
+from valtracker.collection import CHARM, STARTERS
 from valtracker.henrik import REGIONS
 from valtracker.riot import ITEM_TYPES, RiotError
+from valtracker.stats import JST
 from valtracker.tools import _when
 from valtracker.views import QUEUES, RIOT_FAILURES, _t
 
@@ -45,6 +51,9 @@ EQUIP_FAILURES = {
     "unknown": "持っていないものは装備できません。",
     "noweapon": "その武器がロードアウトにありませんでした。",
     "notsaved": "Riot は受け付けましたが、装備は変わっていませんでした。",
+    "melee": "近接武器にはガンバディーを付けられません。",
+    "full": f"セットは {owned_items.MAX_SETS} 個までです。使わないものを消してから保存してください。",
+    "noset": "そのセットはもうありません。",
 }
 
 
@@ -140,31 +149,102 @@ def _wear_identity(found: dict, kind: str, uuid: str):
     return change, ""
 
 
-def _wear_spray(found: dict, uuid: str, slot: str):
-    """The change that puts an owned spray in one place of the wheel (one the loadout has)."""
-    index = current_app.config["VAL_CONTENT"].index("sprays", g.lang)
-    owned = {_id((index.get(item) or {}).get("uuid")) for item in (found.get("owned") or {}).get("sprays") or {}}
+def _wear_expression(found: dict, kind: str, uuid: str, slot: str):
+    """The change that puts an owned spray or flex (``kind``) in one place of the wheel (one the loadout has). One
+    already elsewhere on the wheel swaps places with what is there, as the game does."""
+    content = current_app.config["VAL_CONTENT"]
+    index = content.index(owned_items.LISTS[kind], g.lang)
+    owned = {_id((index.get(item) or {}).get("uuid")) for item in (found.get("owned") or {}).get(kind) or {}}
     if uuid not in owned:  # PD names a spray's level (its uuid or its level's)
         return None, "unknown"
     loadout = found.get("loadout") if isinstance(found.get("loadout"), dict) else {}
-    spray = ITEM_TYPES["sprays"]
-    if slot not in {item["slot"] for item in expressions(loadout) if item["type"] == spray}:
+    if slot not in {place["slot"] for place in owned_items.wheel(loadout, content, g.lang, kind)}:
         return None, "unknown"
+    wanted = ITEM_TYPES[kind]
 
     def change(loadout: dict) -> None:
         if isinstance(loadout.get("ActiveExpressions"), list):  # playerloadout v3: the place is the position
             places = loadout["ActiveExpressions"]
             at = int(slot) if slot.isdigit() else -1
-            if 0 <= at < len(places) and isinstance(places[at], dict) and _id(places[at].get("TypeID")) == spray:
-                places[at]["AssetID"] = uuid
+            if 0 <= at < len(places) and isinstance(places[at], dict):
+                was = {"TypeID": places[at].get("TypeID"), "AssetID": places[at].get("AssetID")}
+                for other in places:
+                    if other is not places[at] and isinstance(other, dict) and _id(other.get("AssetID")) == uuid:
+                        other.update(was)
+                places[at]["TypeID"], places[at]["AssetID"] = wanted, uuid
                 return
-        for item in loadout.get("Sprays") or []:  # v2
-            if isinstance(item, dict) and str(item.get("EquipSlotID")) == slot:
-                item["SprayID"], item["SprayLevelID"] = uuid, None
+        elif kind == "sprays":
+            places = [item for item in loadout.get("Sprays") or [] if isinstance(item, dict)]  # v2
+            target = next((item for item in places if str(item.get("EquipSlotID")) == slot), None)
+            if target is not None:
+                for other in places:
+                    if other is not target and _id(other.get("SprayID")) == uuid:
+                        other["SprayID"], other["SprayLevelID"] = target.get("SprayID"), target.get("SprayLevelID")
+                target["SprayID"], target["SprayLevelID"] = uuid, None
                 return
-        raise RiotError("down", "equip: no spray slot")
+        raise RiotError("down", "equip: no place on the wheel")
 
     return change, ""
+
+
+def _wear_buddy(found: dict, uuid: str, weapon_uuid: str):
+    """The change that puts an owned buddy on a weapon (``uuid`` "": takes the weapon's off). Each copy of a buddy
+    goes on one weapon: a free copy is used, or the one on another weapon moves, as the game does."""
+    content = current_app.config["VAL_CONTENT"]
+    weapon = next((item for item in content.weapons(g.lang) if _id(item.get("uuid")) == weapon_uuid), None)
+    if weapon is None:
+        return None, "noweapon"
+    if owned_items.melee(weapon):
+        return None, "melee"
+    copies: list[tuple[str, str]] = []
+    if uuid:
+        buddy = content.index("buddies", g.lang).get(uuid)
+        if not buddy or _id(buddy.get("uuid")) != uuid:
+            return None, "unknown"
+        instances = found.get("instances") or {}
+        copies = [
+            (_id(level.get("uuid")), copy)
+            for level in buddy.get("levels") or []
+            for copy in instances.get(_id(level.get("uuid"))) or []
+        ]
+        if not copies:
+            return None, "unknown"
+
+    def change(loadout: dict) -> None:
+        guns = [gun for gun in loadout.get("Guns") or [] if isinstance(gun, dict)]
+        gun = next((gun for gun in guns if _id(gun.get("ID")) == weapon_uuid), None)
+        if gun is None:
+            raise RiotError("noweapon")
+        if not uuid:
+            for key in CHARM:
+                gun.pop(key, None)
+            return
+        if _id(gun.get("CharmID")) == uuid:
+            return
+        used = {_id(other.get("CharmInstanceID")): other for other in guns if other.get("CharmInstanceID")}
+        level, copy = next(((level, copy) for level, copy in copies if copy not in used), copies[0])
+        if copy in used:  # every copy is on a weapon: this one comes off it
+            for key in CHARM:
+                used[copy].pop(key, None)
+        gun["CharmInstanceID"], gun["CharmID"], gun["CharmLevelID"] = copy, uuid, level
+
+    return change, ""
+
+
+def _wear(change) -> str:
+    """Sends ``change`` (riot.Riot.equip; RiotError when it did not work): what the page says, "ok", or "okopen"
+    when the game is open (it draws the loadout it read when it started; a match takes Riot's)."""
+    riot = current_app.config["VAL_RIOT"]
+    riot.equip(change)
+    try:
+        return "okopen" if riot.live().get("running") else "ok"
+    except RiotError:
+        return "ok"
+
+
+def _riot_said(detail: str) -> str | None:
+    """Riot's own words when it refused (shown with the note, so a refusal can be told from a slow server)."""
+    return re.sub(r"[^\w .:/-]", "", detail)[:80] or None
 
 
 def register(app: Flask) -> None:
@@ -242,18 +322,24 @@ def register(app: Flask) -> None:
     def equip():
         security.owner_only()
         show = request.form.get("show", "skins")
-        show = show if show in ("skins", "cards", "titles", "sprays") else "skins"
+        show = show if show in ("skins", "buddies", "cards", "titles", "sprays", "flex") else "skins"
         uuid = _id(request.form.get("item"))
         riot = current_app.config["VAL_RIOT"]
+        # the open weapon's buddy (its own buttons: put the picked one on, or take it off)
+        buddy_on = _id(request.form.get("buddy") or request.form.get("unbuddy"))[:36] if show == "skins" else ""
         # back to where the button was: the skins of that weapon (the game's collection opens one at a time)
         known = current_app.config["VAL_CONTENT"].skins(g.lang).get(uuid) if show == "skins" else None
-        weapon = _id(known[0].get("uuid")) if known else None
+        weapon = buddy_on or (_id(known[0].get("uuid")) if known else None)
 
         def back(why: str, detail: str = ""):
-            # Riot's own words when it refused (shown with the note, so a refusal can be told from a slow server)
-            said = re.sub(r"[^\w .:/-]", "", detail)[:80] or None
             return redirect(
-                url_for("collection", show=None if show == "skins" else show, weapon=weapon, equip=why, riot=said),
+                url_for(
+                    "collection",
+                    show=None if show == "skins" else show,
+                    weapon=weapon,
+                    equip=why,
+                    riot=_riot_said(detail),
+                ),
                 303,
             )
 
@@ -261,23 +347,58 @@ def register(app: Flask) -> None:
             found = riot.collection()
         except RiotError as error:
             return back(error.kind, error.detail)
-        if show == "skins":
+        if buddy_on:
+            put = _id(request.form.get(f"buddy.{buddy_on}")) if request.form.get("buddy") else ""
+            change, why = _wear_buddy(found, put, buddy_on)
+        elif show == "skins":
             change, why = _wear_skin(found, uuid, _id(request.form.get(f"chroma.{uuid}")))
-        elif show == "sprays":
-            change, why = _wear_spray(found, uuid, request.form.get(f"slot.{uuid}", ""))
+        elif show == "buddies":
+            change, why = _wear_buddy(found, uuid, _id(request.form.get(f"weapon.{uuid}")))
+        elif show in ("sprays", "flex"):
+            change, why = _wear_expression(found, show, uuid, request.form.get(f"slot.{uuid}", ""))
         else:
             change, why = _wear_identity(found, show, uuid)
         if change is not None:
             try:
-                riot.equip(change)
+                why = _wear(change)
             except RiotError as error:
                 return back(error.kind, error.detail)
-            # an open game draws the loadout it read when it started (a match takes Riot's): the page says so
-            try:
-                why = "okopen" if riot.live().get("running") else "ok"
-            except RiotError:
-                why = "ok"
         return back(why)
+
+    @app.post("/collection/sets")
+    def loadout_sets():
+        """The owner's sets: ``do`` save (what is worn now, read from Riot this moment, with a name), use (wear a
+        set again) or delete."""
+        security.owner_only()
+        store = current_app.config["VAL_SETS"]
+        sets = [item for item in store.load().get("sets") or [] if isinstance(item, dict)]
+        do, picked = request.form.get("do", ""), request.form.get("set", "")[:32]
+
+        def back(why: str, detail: str = ""):
+            return redirect(url_for("collection", show="sets", equip=why, riot=_riot_said(detail)), 303)
+
+        if do == "save":
+            if len(sets) >= owned_items.MAX_SETS:
+                return back("full")
+            try:
+                loadout = current_app.config["VAL_RIOT"].loadout()
+            except RiotError as error:
+                return back(error.kind, error.detail)
+            name = " ".join(request.form.get("name", "").split())[:30] or f"セット {len(sets) + 1}"
+            when = datetime.now(JST).isoformat(timespec="minutes")
+            sets.append({"id": secrets.token_hex(8), "name": name, "at": when, **owned_items.snapshot(loadout)})
+            store.save(sets=sets)
+            return back("saved")
+        kept = next((item for item in sets if item.get("id") == picked), None)
+        if kept is None:
+            return back("noset")
+        if do == "delete":
+            store.save(sets=[item for item in sets if item is not kept])
+            return back("deleted")
+        try:
+            return back(_wear(owned_items.wear_set(kept)))
+        except RiotError as error:
+            return back(error.kind, error.detail)
 
 
 def equip_said(kind: str) -> tuple[str, bool]:
@@ -286,6 +407,10 @@ def equip_said(kind: str) -> tuple[str, bool]:
         return "", False
     if kind == "ok":
         return "装備しました。Riot に保存されています。", True
+    if kind == "saved":
+        return "いまの装備をセットに保存しました。", True
+    if kind == "deleted":
+        return "セットを消しました。", True
     if kind == "okopen":
         return (
             "装備しました。Riot に保存されています。開いているゲームでは次の試合から使われます"

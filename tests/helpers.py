@@ -271,6 +271,9 @@ class FakeRiot:
         for kind, item_type in ITEM_TYPES.items():
             if url.endswith(f"/store/v1/entitlements/{PUUID}/{item_type}"):
                 items = [{"TypeID": item_type, "ItemID": item} for item in self.pd["entitlements"][kind]]
+                if kind == "buddies":  # each copy has its own instance (a weapon's CharmInstanceID)
+                    for number, item in enumerate(items, 1):
+                        item["InstanceID"] = f"i{number}"
                 return self._answer(kind, {"ItemTypeID": item_type, "Entitlements": items})
         return 404, [], b"{}"
 

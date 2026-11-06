@@ -4883,3 +4883,156 @@ code {
     max-height: 5.5rem;
   }
 }
+
+/* The open weapon's buddy, under what it wears (the game's weapon screen): the buddy to put on, or take it off. */
+.wear.buddy-pick {
+  justify-content: flex-start;
+  align-items: center;
+  margin: -0.3rem 0 0.9rem;
+}
+.buddy-pick label {
+  flex: none;
+  margin-right: 0.3rem;
+  color: var(--soft);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.buddy-pick select {
+  flex: 0 1 18rem;
+}
+
+/* Sets: the whole loadout saved under a name, worn again in one press. */
+.set-save {
+  display: grid;
+  gap: 0.3rem;
+  max-width: 34rem;
+  margin: 1rem 0 0;
+}
+.set-save label {
+  color: var(--soft);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.set-save .wear {
+  justify-content: flex-start;
+  margin: 0;
+}
+.set-save input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  min-height: 2.4rem;
+  padding: 0 0.6rem;
+  border: 1px solid var(--edge);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+}
+.set-save button:disabled,
+.set-save input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.sets {
+  display: grid;
+  gap: 0.6rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.set {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+  gap: 0.4rem 0.9rem;
+  align-items: start;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.set.on {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.set > img {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.set-text {
+  grid-column: 2;
+  min-width: 0;
+}
+.set-text p {
+  margin: 0;
+}
+.set-name {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.set-name .badge {
+  position: static;
+  display: inline-block;
+  margin-left: 0.3rem;
+  vertical-align: 0.1em;
+  white-space: nowrap;
+}
+.set-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.8rem;
+  margin-top: 0.15rem;
+  color: var(--soft);
+  font-size: 0.82rem;
+}
+.set details {
+  font-size: 0.85rem;
+}
+.set summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding-right: 1rem;
+  color: var(--accent);
+  cursor: pointer;
+}
+.set-guns {
+  margin: 0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--soft);
+}
+.set-guns li {
+  overflow-wrap: anywhere;
+}
+.set-guns strong {
+  margin-right: 0.3rem;
+  color: var(--ink);
+}
+.set-do {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  grid-column: 3;
+  grid-row: 1;
+}
+.set-do button {
+  min-height: 2.4rem;
+  padding: 0 0.9rem;
+  font-size: 0.85rem;
+}
+@media (max-width: 34rem) {
+  .set {
+    grid-template-columns: 3rem minmax(0, 1fr);
+  }
+  .set > img {
+    width: 3rem;
+    height: 3rem;
+  }
+  .set-do {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    justify-content: flex-end;
+  }
+}

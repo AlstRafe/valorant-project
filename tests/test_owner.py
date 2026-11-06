@@ -1,5 +1,6 @@
 """The owner's progress (/progress), the match being played (/live) and wearing from the collection."""
 
+import json
 import os
 import re
 import time
@@ -9,9 +10,15 @@ from unittest import mock
 
 from helpers import make_app
 
+from valtracker.riot import ITEM_TYPES
+
 VISITOR = {"homepage.visitor": True}
 PRIME = "aa000000-0000-4000-8000-000000000001"
 REAVER = "aa000000-0000-4000-8000-000000000002"
+VANDAL = "9c82e19d-4575-0200-1a81-3eacf00cf872"
+CLASSIC = "29a0cfab-485b-f5d5-779a-b59f85e204a8"
+CHILI = "bb000000-0000-4000-8000-000000000001"
+HEART = "bb000000-0000-4000-8000-000000000002"
 
 
 class OwnerTest(unittest.TestCase):
@@ -471,6 +478,194 @@ class OwnerTest(unittest.TestCase):
         text = self.page(open_.headers["Location"])
         self.assertIn("開いているゲームでは次の試合から使われます", text)
         self.assertIn('class="verdict ok equip-said" role="status"', text)
+
+    def gun(self, weapon: str, loadout: dict | None = None) -> dict:
+        loadout = loadout if loadout is not None else self.riot.worn[-1]
+        return next(gun for gun in loadout["Guns"] if gun["ID"] == weapon)
+
+    def test_put_a_buddy_on_a_weapon(self):
+        """The open weapon's buddy, as the game's weapon screen changes it: a free copy goes on."""
+        self.link()
+        text = self.page(f"/collection?weapon={CLASSIC}")
+        self.assertIn(f'name="buddy.{CLASSIC}"', text)
+        self.assertIn("チリ バディー（あと 1 個）", text, "two copies, one on the Vandal")
+        self.assertIn("ハート バディー（あと 1 個）", text)
+        self.assertNotIn('name="unbuddy"', text, "nothing to take off")
+        answer = self.client.post(
+            "/collection/equip",
+            data={"csrf": self.token(), "show": "skins", "buddy": CLASSIC, f"buddy.{CLASSIC}": HEART},
+        )
+        self.assertIn("equip=ok", answer.headers["Location"])
+        self.assertIn(f"weapon={CLASSIC}", answer.headers["Location"], "back to the same weapon")
+        classic = self.gun(CLASSIC)
+        self.assertEqual(
+            (classic["CharmInstanceID"], classic["CharmID"], classic["CharmLevelID"]),
+            ("i3", HEART, "bb000000-0000-4000-8000-000000000012"),
+        )
+        self.assertEqual(self.gun(VANDAL)["CharmInstanceID"], "i1", "the Vandal keeps its own")
+        text = self.page(f"/collection?weapon={CLASSIC}")
+        self.assertIn("バディー：ハート バディー", text, "what the weapon wears now")
+        self.assertIn("ハート バディー（付けている）", text)
+        self.assertIn('name="unbuddy"', text)
+        text = self.page(f"/collection?weapon={VANDAL}")
+        self.assertIn("ハート バディー（クラシック から付け替え）", text, "its one copy is on the Classic")
+
+    def test_a_buddy_with_every_copy_on_moves(self):
+        self.link()
+        token = self.token()
+        self.client.post(
+            "/collection/equip", data={"csrf": token, "show": "skins", "buddy": CLASSIC, f"buddy.{CLASSIC}": HEART}
+        )
+        self.client.post(
+            "/collection/equip", data={"csrf": token, "show": "skins", "buddy": VANDAL, f"buddy.{VANDAL}": HEART}
+        )
+        self.assertEqual(self.gun(VANDAL)["CharmInstanceID"], "i3")
+        self.assertNotIn("CharmID", self.gun(CLASSIC), "the one copy came off the Classic")
+        self.assertNotIn("CharmInstanceID", self.gun(CLASSIC))
+
+    def test_take_a_buddy_off(self):
+        self.link()
+        self.assertIn('name="unbuddy"', self.page(f"/collection?weapon={VANDAL}"))
+        answer = self.client.post("/collection/equip", data={"csrf": self.token(), "show": "skins", "unbuddy": VANDAL})
+        self.assertIn("equip=ok", answer.headers["Location"])
+        for key in ("CharmInstanceID", "CharmID", "CharmLevelID"):
+            self.assertNotIn(key, self.gun(VANDAL))
+
+    def test_a_buddy_only_on_a_gun_and_only_one_owned(self):
+        self.link()
+        token = self.token()
+        knife = "2f59173c-4bed-b6c3-2191-dea9b58be9c7"
+        answer = self.client.post(
+            "/collection/equip", data={"csrf": token, "show": "skins", "buddy": knife, f"buddy.{knife}": HEART}
+        )
+        self.assertIn("equip=melee", answer.headers["Location"])
+        self.assertIn("近接武器にはガンバディーを付けられません", self.page(answer.headers["Location"]))
+        answer = self.client.post(
+            "/collection/equip",
+            data={
+                "csrf": token,
+                "show": "skins",
+                "buddy": VANDAL,
+                f"buddy.{VANDAL}": "bb000000-0000-4000-8000-000000000099",
+            },
+        )
+        self.assertIn("equip=unknown", answer.headers["Location"])
+        self.assertEqual(self.riot.worn, [])
+
+    def test_put_a_buddy_on_from_its_tab(self):
+        self.link()
+        text = self.page("/collection?show=buddies")
+        self.assertIn(f'name="weapon.{HEART}"', text)
+        self.assertIn("ヴァンダル（いま チリ バディー）", text)
+        self.assertNotIn(">近接武器<", text, "no buddy on a knife")
+        answer = self.client.post(
+            "/collection/equip",
+            data={"csrf": self.token(), "show": "buddies", "item": HEART, f"weapon.{HEART}": VANDAL},
+        )
+        self.assertIn("show=buddies", answer.headers["Location"])
+        self.assertIn("equip=ok", answer.headers["Location"])
+        self.assertEqual((self.gun(VANDAL)["CharmID"], self.gun(VANDAL)["CharmInstanceID"]), (HEART, "i3"))
+
+    def test_wear_a_flex(self):
+        """playerloadout v3 lets any place of the wheel hold a spray or a flex; one already there swaps places."""
+        self.link()
+        flex = "ff000000-0000-4000-8000-000000000001"
+        text = self.page("/collection?show=flex")
+        self.assertIn(f'name="slot.{flex}"', text)
+        self.assertIn("1（いま GG スプレー）", text)
+        self.assertIn("2（いま ぬいぐるみ）", text)
+        answer = self.client.post(
+            "/collection/equip", data={"csrf": self.token(), "show": "flex", "item": flex, f"slot.{flex}": "0"}
+        )
+        self.assertIn("show=flex", answer.headers["Location"])
+        self.assertIn("equip=ok", answer.headers["Location"])
+        wheel = self.riot.worn[-1]["ActiveExpressions"]
+        self.assertEqual((wheel[0]["TypeID"], wheel[0]["AssetID"]), (ITEM_TYPES["flex"], flex))
+        self.assertEqual(
+            (wheel[1]["TypeID"], wheel[1]["AssetID"]),
+            (ITEM_TYPES["sprays"], "dd000000-0000-4000-8000-000000000001"),
+            "the spray took the flex's place",
+        )
+
+    def test_no_flex_on_the_loadout_v2(self):
+        self.riot.loadout_version = 2
+        self.riot.pd["loadout"].pop("ActiveExpressions")
+        self.riot.pd["loadout"]["Sprays"] = [
+            {"EquipSlotID": "slot-a", "SprayID": "dd000000-0000-4000-8000-000000000001", "SprayLevelID": None}
+        ]
+        self.link()
+        self.assertNotIn('name="slot.', self.page("/collection?show=flex"), "v2's wheel had sprays only")
+
+    def test_save_and_wear_a_set(self):
+        self.link()
+        text = self.page("/collection?show=sets")
+        self.assertIn("いまの装備を保存", text)
+        self.assertIn("まだありません", text)
+        answer = self.client.post(
+            "/collection/sets", data={"csrf": self.token(), "do": "save", "name": "  ランク  用 "}
+        )
+        self.assertIn("show=sets", answer.headers["Location"])
+        self.assertIn("equip=saved", answer.headers["Location"])
+        saved = json.loads((self.folder / "loadout_sets.json").read_text(encoding="utf-8"))["sets"]
+        self.assertEqual(len(saved), 1)
+        self.assertEqual(saved[0]["name"], "ランク 用")
+        self.assertEqual(self.gun(VANDAL, saved[0])["SkinID"], PRIME)
+        self.assertEqual(self.gun(VANDAL, saved[0])["CharmInstanceID"], "i1")
+        self.assertEqual(len(saved[0]["ActiveExpressions"]), 2)
+        self.assertEqual(saved[0]["Identity"]["PlayerCardID"], "cc000000-0000-4000-8000-000000000001")
+        text = self.page(answer.headers["Location"])
+        self.assertIn("いまの装備をセットに保存しました", text)
+        self.assertIn("ランク 用", text)
+        self.assertIn('<span class="badge">いまの装備</span>', text, "it is what is worn")
+        self.assertIn("<strong>ヴァンダル</strong> プライム ヴァンダル · チリ バディー", text)
+        self.assertIn(">セット <small>1</small>", text, "the tab counts the sets")
+        # something else is worn, then the set brings it all back
+        token = self.token()
+        self.client.post("/collection/equip", data={"csrf": token, "show": "skins", "item": REAVER})
+        self.client.post("/collection/equip", data={"csrf": token, "show": "skins", "unbuddy": VANDAL})
+        self.client.post(
+            "/collection/equip", data={"csrf": token, "show": "titles", "item": "ee000000-0000-4000-8000-000000000002"}
+        )
+        self.assertNotIn('<span class="badge">いまの装備</span>', self.page("/collection?show=sets"))
+        answer = self.client.post("/collection/sets", data={"csrf": token, "do": "use", "set": saved[0]["id"]})
+        self.assertIn("equip=ok", answer.headers["Location"])
+        vandal = self.gun(VANDAL)
+        self.assertEqual((vandal["SkinID"], vandal["CharmInstanceID"], vandal["CharmID"]), (PRIME, "i1", CHILI))
+        self.assertEqual(self.riot.worn[-1]["Identity"]["PlayerTitleID"], "ee000000-0000-4000-8000-000000000001")
+        self.assertIn('<span class="badge">いまの装備</span>', self.page("/collection?show=sets"))
+        answer = self.client.post("/collection/sets", data={"csrf": token, "do": "delete", "set": saved[0]["id"]})
+        self.assertIn("equip=deleted", answer.headers["Location"])
+        self.assertEqual(json.loads((self.folder / "loadout_sets.json").read_text(encoding="utf-8"))["sets"], [])
+        answer = self.client.post("/collection/sets", data={"csrf": token, "do": "use", "set": saved[0]["id"]})
+        self.assertIn("equip=noset", answer.headers["Location"])
+
+    def test_a_set_is_read_from_riot_now(self):
+        """A set holds what is worn this moment, not the collection's kept answer (changed in the game since)."""
+        self.link()
+        self.page("/collection")
+        self.riot.pd["loadout"]["Guns"][0]["SkinID"] = REAVER
+        self.client.post("/collection/sets", data={"csrf": self.token(), "do": "save"})
+        saved = json.loads((self.folder / "loadout_sets.json").read_text(encoding="utf-8"))["sets"]
+        self.assertEqual(self.gun(VANDAL, saved[0])["SkinID"], REAVER)
+        self.assertEqual(saved[0]["name"], "セット 1", "a name when none is given")
+
+    def test_sets_have_a_limit(self):
+        self.link()
+        (self.folder / "loadout_sets.json").write_text(
+            json.dumps({"sets": [{"id": f"s{number}", "name": f"s{number}", "Guns": []} for number in range(20)]}),
+            encoding="utf-8",
+        )
+        text = self.page("/collection?show=sets")
+        self.assertIn(
+            'placeholder="例：ランク用" autocomplete="off" spellcheck="false" enterkeyhint="done" disabled', text
+        )
+        answer = self.client.post("/collection/sets", data={"csrf": self.token(), "do": "save"})
+        self.assertIn("equip=full", answer.headers["Location"])
+        self.assertIn("セットは 20 個までです", self.page(answer.headers["Location"]))
+
+    def test_sets_are_the_owners(self):
+        answer = self.client.post("/collection/sets", data={"do": "save"}, environ_base=VISITOR)
+        self.assertIn(answer.status_code, (400, 404))
 
 
 if __name__ == "__main__":
