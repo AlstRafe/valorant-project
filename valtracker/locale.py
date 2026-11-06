@@ -2561,12 +2561,12 @@ TEXTS = {
     },
     "すべてめくる": {
         "ko": "모두 뒤집기",
-        "en-GB": "Turn them all over",
+        "en-GB": "Reveal all",
         "zh-TW": "全部翻開",
     },
     "めくる": {
         "ko": "뒤집기",
-        "en-GB": "Turn over",
+        "en-GB": "Reveal",
         "zh-TW": "翻開",
     },
     "アクセサリー（キングダムクレジット）": {
