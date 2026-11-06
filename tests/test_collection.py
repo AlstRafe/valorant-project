@@ -123,6 +123,14 @@ class CollectionTest(unittest.TestCase):
         self.assertIn('<span class="badge">装備中</span>', rows)
         self.assertNotIn("スタンダード", rows)
         self.assertIn('href="/collection">← 武器一覧</a>', vandal)
+        # at the top, before the list: what the weapon wears now, with its variant, level and buddy
+        now = vandal[vandal.index('class="worn-now') : vandal.index('class="items skins rows"')]
+        self.assertIn('class="worn-now tier-premium"', now)
+        self.assertIn('<p class="worn-name">プライム ヴァンダル</p>', now)
+        self.assertIn("aa000000-0000-4000-8000-000000000022/fullrender.png", now)  # the worn variant's picture
+        self.assertIn("<span>バリエーション 2 ゴールド</span>", now)
+        self.assertRegex(now, r"レベル \d/\d")
+        self.assertIn("バディー：チリ バディー", now)
         self.assertNotIn('class="items skins rows"', self.page("/collection?weapon=nothing"))
 
     def test_the_other_tabs(self):
