@@ -26,6 +26,10 @@ class TTLCache:
             self._items.move_to_end(key)
             return item[1]
 
+    def drop(self, key) -> None:
+        with self._lock:
+            self._items.pop(key, None)
+
     def put(self, key, value, seconds: float) -> None:
         with self._lock:
             self._items[key] = (self.clock() + seconds, value)

@@ -37,6 +37,10 @@ KEEP = {
 }
 #: The modes a player's seasons are counted in (stored matches; Deathmatch has no rounds or teams to count).
 STORED_MODES = ("competitive", "unrated", "swiftplay", "premier")
+#: A player's page can be read again ("最新にする") once this long has passed since it was read (seconds).
+FRESH_AFTER = 60
+#: How long what "最新にする" dropped stays at hand, in case the new call fails (seconds).
+SPARE_KEEP = 120
 #: Players on one page of a leaderboard.
 BOARD_PAGE = 50
 #: A Riot ID: the name (3-16 characters, spaces allowed) and the tag (3-5 letters or digits).
@@ -110,6 +114,10 @@ class Henrik:
         self.fetch = fetch
         self.budget = budget or Budget(25, 60.0)
         self.cache = TTLCache(1024)
+        #: cache key -> when its answer was read (unix seconds), kept as long as the answer is.
+        self.read_times = TTLCache(1024)
+        #: cache key -> (answer, read at) dropped by "最新にする": shown again if HenrikDev cannot answer.
+        self.spares = TTLCache(64)
 
     def account(self, name: str, tag: str) -> dict:
         """``{"puuid", "region", "account_level", "name", "tag", "card", "title"}``."""
@@ -181,6 +189,28 @@ class Henrik:
         if shows_rr(mode):
             keys.append(("rr", region, name.lower(), tag.lower()))
         return all(self.cache.get(key) is not None for key in keys)
+
+    def player_keys(self, region: str, name: str, tag: str, mode: str = "") -> list:
+        """What a player's page keeps that changes with each match: the rank, the RR, the matches."""
+        keys = [("mmr", region, name.lower(), tag.lower()), ("rr", region, name.lower(), tag.lower())]
+        return keys + [_matches_key(region, name, tag, mode, start) for start in (0, PAGE)]
+
+    def read_at(self, region: str, name: str, tag: str, mode: str = "") -> float:
+        """When the player's latest matches were read (0: not kept)."""
+        return float(self.read_times.get(_matches_key(region, name, tag, mode, 0)) or 0)
+
+    def forget_player(self, region: str, name: str, tag: str, mode: str = "") -> bool:
+        """Ask HenrikDev again for the player's rank, RR and matches (the page's "最新にする"), unless they were
+        read less than FRESH_AFTER ago: a press costs up to four calls of the key every visitor shares."""
+        if time.time() - self.read_at(region, name, tag, mode) < FRESH_AFTER:
+            return False
+        for key in self.player_keys(region, name, tag, mode):
+            kept, at = self.cache.get(key), self.read_times.get(key)
+            if kept is not None and at:
+                self.spares.put(key, (kept, at), SPARE_KEEP)
+            self.cache.drop(key)
+            self.read_times.drop(key)
+        return True
 
     def match(self, region: str, match_id: str) -> dict:
         """``{"metadata", "players", "teams", "rounds", "kills", ...}``."""
@@ -303,6 +333,19 @@ class Henrik:
         kept = self.cache.get(cache_key)
         if kept is not None:
             return kept
+        try:
+            return self._ask(cache_key, path, seconds, shape)
+        except HenrikError as error:
+            # "最新にする" was pressed and HenrikDev cannot answer now: the page keeps what it showed before
+            spare = self.spares.get(cache_key) if error.kind in ("busy", "down") else None
+            if spare is None:
+                raise
+            data, at = spare
+            self.cache.put(cache_key, data, FRESH_AFTER)
+            self.read_times.put(cache_key, at, FRESH_AFTER)
+            return data
+
+    def _ask(self, cache_key, path: str, seconds: float, shape):
         key = self.key()
         if not key:
             raise HenrikError("nokey")
@@ -326,6 +369,7 @@ class Henrik:
         if shape is not None:
             data = shape(data)
         self.cache.put(cache_key, data, seconds)
+        self.read_times.put(cache_key, time.time(), seconds)  # when it was read: the player's page says so
         return data
 
 

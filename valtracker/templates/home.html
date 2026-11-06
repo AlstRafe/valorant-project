@@ -6,10 +6,16 @@
 <p class="lead">{{ t('Riot ID（名前#タグ）でランクと最近の試合を調べられます。☆を付けたプレイヤーはこのブラウザに保存され、ここに並びます。') }}</p>
 <form class="search" action="{{ url_for('search') }}" method="get" role="search">
 <label for="q" class="sr">{{ t('Riot ID') }}</label>
-<input id="q" name="q" type="search" value="{{ query }}" placeholder="{{ t('名前#タグ') }}" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" maxlength="40" required{% if problem %} aria-invalid="true" aria-describedby="q-problem"{% endif %}>
+<input id="q" name="q" type="search" value="{{ query }}" placeholder="{{ t('名前#タグ') }}" list="known" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" maxlength="40" required{% if problem %} aria-invalid="true" aria-describedby="q-problem"{% endif %}>
 <button type="submit">{{ t('検索') }}</button>
+<datalist id="known"></datalist>
 </form>
-{% if problem %}<p class="problem" id="q-problem" role="alert">{{ problem }}</p>{% endif %}
+{% if problem %}<p class="problem" id="q-problem" role="alert">{{ problem }}{% if name_only %} <a href="{{ url_for('help_page') }}#riot-id">{{ t('タグの見つけ方') }}</a>{% endif %}</p>{% endif %}
+{% if guess %}<p class="guess"><a class="button quiet" href="{{ url_for('player', name=guess[0], tag=guess[1]) }}">{{ t('「{id}」を探す', id=guess[0] ~ '#' ~ guess[1]) }}</a></p>{% endif %}
+{% if name_only %}<div class="same-name" hidden>
+<p class="note">{{ t('このブラウザで見た「{name}」:', name=name_only) }}</p>
+<ul class="people-list" id="same-name" data-name="{{ name_only }}" data-base="{{ request.script_root }}/p/"></ul>
+</div>{% endif %}
 <nav class="quick" aria-label="{{ t('ほかにできること') }}">
 <a href="{{ url_for('leaderboard') }}">{{ t('ランキング') }}</a>
 <a href="{{ url_for('servers') }}">{{ t('サーバーの混み具合') }}</a>

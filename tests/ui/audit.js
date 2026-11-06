@@ -41,6 +41,9 @@ const PAGES = [
   "/skins?weapon=all&tier=ultra",
   "/agents/stats",
   "/compare",
+  "/help",
+  "/search?q=Tester",
+  "/search?q=Tester%20JP1",
   "/p/nobody-here/0000",
 ];
 // With the tests' made-up answers (tests/ui/serve.py): their player, match and agent.
@@ -441,15 +444,17 @@ async function main() {
           await page.waitForTimeout(live ? 400 : 200);
           for (const item of await page.evaluate(inspect))
             add(item.kind, where, item.where, item.text, `${lang} ${width} ${theme}`);
-          // a page that should work but says it could not (only the made-up nobody's page is meant to)
+          // a page that should work but says it could not (only the made-up nobody's page and the searches
+          // without a tag are meant to)
           const failed = await page
             .$eval(".problem, main [role=alert]", (el) => el.innerText.trim().slice(0, 60))
             .catch(() => "");
-          if (failed && !where.startsWith("/p/nobody-here/"))
+          if (failed && !where.startsWith("/p/nobody-here/") && !where.startsWith("/search?"))
             add("page shows an error", where, "", failed, `${lang} ${width} ${theme}`);
           for (const error of errors) {
             // the nobody's page answers 404 on purpose (and the browser says so in the console)
             if (where.startsWith("/p/nobody-here/") && error.includes("404")) continue;
+            if (where.startsWith("/search?") && error.includes("400")) continue; // a search without a tag, too
             add("error", where, error, "", `${lang} ${width} ${theme}`);
           }
         }

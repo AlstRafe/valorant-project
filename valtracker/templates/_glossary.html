@@ -1,0 +1,26 @@
+{# What the numbers mean, for someone who does not know the words: under the numbers of the player, match and compare
+pages (closed, one tap opens it; a title on a word only shows to a mouse), and open on the help page. ``terms``: the
+words the page shows (every word when it is not given). #}
+{% set terms = terms if terms is defined else none %}
+{% macro term(key, word, words) -%}
+{%- if terms is none or key in terms %}<div><dt>{{ word }}</dt><dd>{{ words }}</dd></div>
+{% endif -%}
+{%- endmacro %}
+<details class="glossary"{% if open %} open{% endif %}>
+<summary>{{ t('数字の見かた') }}</summary>
+<dl>
+{{ term('kda', 'K / D / A · KD', t('倒した数・倒された数・アシストの数。KD は倒した数 ÷ 倒された数で、1.0 より上なら倒された数より多く倒しています。')) }}
+{{ term('diff', '+/−', t('倒した数 − 倒された数。')) }}
+{{ term('acs', 'ACS', t('平均戦闘スコア。ダメージ・キル・アシストなどから出る 1 ラウンドあたりの点数で、ゲームの試合結果と同じ数字です。')) }}
+{{ term('adr', 'ADR', t('1 ラウンドあたりに与えたダメージ。')) }}
+{{ term('hs', t('HS率'), t('当てた弾のうち、頭に当たった割合。')) }}
+{{ term('kast', 'KAST', t('キル・アシスト・生き残り・トレード（倒された直後に味方が倒し返した）のどれかがあったラウンドの割合。')) }}
+{{ term('dd', 'DDΔ', t('1 ラウンドあたりの「与えたダメージ − 受けたダメージ」。プラスなら、受けたより多くのダメージを与えています。')) }}
+{{ term('first', t('ファーストキル / デス'), t('ラウンドで最初に敵を倒した回数と、最初に倒された回数。')) }}
+{{ term('clutch', t('クラッチ'), t('チームで自分だけが残ったラウンドを勝った回数。1v3 なら 3 人を相手に勝っています。')) }}
+{{ term('multi', t('マルチキル'), t('1 ラウンドで 3 人（3K）、4 人（4K）、5 人全員（ACE）を倒した回数。')) }}
+{{ term('rr', 'RR', t('ランクレーティング。コンペティティブで勝つと増え、負けると減り、100 になると次のランクに上がります。')) }}
+{{ term('score', t('VAL スコア'), t('このサイトの 1000 点満点の評価。同じランク帯の人と比べた ACS・KAST・DDΔ と、勝ったかどうかから出します。')) }}
+{{ term('top', t('上位 {share}%', share='X'), t('同じランク帯の試合の中での位置。上位 10% なら、10 人に 1 人の成績です。')) }}
+</dl>
+</details>

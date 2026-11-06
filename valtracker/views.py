@@ -16,7 +16,7 @@ from valtracker import collection as owned_items
 from valtracker import heatmap, i18n, score, security, stats
 from valtracker import rounds as rounds_module
 from valtracker.activity import BANDS, LINE_QUEUES, LINE_STATS, RANKS_ENOUGH
-from valtracker.henrik import MODES, REGIONS, HenrikError, shows_rr, split_riot_id
+from valtracker.henrik import FRESH_AFTER, MODES, NAME, REGIONS, HenrikError, shows_rr, split_riot_id
 from valtracker.media import kind as media_kind
 from valtracker.riot import AUTHORIZE, RiotError
 
@@ -523,9 +523,10 @@ def _acts(seasons: list) -> list[dict]:
     return acts
 
 
-def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
+def _player(name: str, tag: str, mode: str = "", fresh: bool = False) -> tuple[dict, int]:
     """What the player page shows, and its HTTP status. The account comes first (its region is needed); then
-    the rank and the matches are asked for at the same time."""
+    the rank and the matches are asked for at the same time. ``fresh``: the visitor pressed "最新にする", so
+    what is kept of the rank and the matches is asked for again (when it was read over a minute ago)."""
     henrik = current_app.config["VAL_HENRIK"]
     try:
         account = henrik.account(name, tag)
@@ -534,6 +535,8 @@ def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
         return {"name": name, "tag": tag, "problem": problem, "settings_link": settings_link, "account": None}, status
     region = str(account.get("region") or "ap")
     name, tag = str(account.get("name") or name), str(account.get("tag") or tag)
+    if fresh:
+        henrik.forget_player(region, name, tag, mode)
     with ThreadPoolExecutor(3, thread_name_prefix="henrik") as pool:
         asked_mmr = pool.submit(henrik.mmr, region, name, tag)
         asked_matches = pool.submit(henrik.matches, region, name, tag, mode)
@@ -605,9 +608,18 @@ def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
         "matches_problem": matches_problem,
         "mode": mode,
         "modes": _modes(mode),
+        "read": _read(henrik.read_at(region, name, tag, mode)),
         "problem": "",
         "settings_link": False,
     }, 200
+
+
+def _read(at: float) -> dict | None:
+    """When the page's numbers were read from HenrikDev, and whether "最新にする" can ask again yet."""
+    if not at:
+        return None
+    age = max(0, time.time() - at)
+    return {"minutes": int(age // 60), "again": age >= FRESH_AFTER}
 
 
 def _add_spots(spots: dict, match: dict, player: dict) -> None:
@@ -812,8 +824,18 @@ def register(app: Flask) -> None:
         query = _from_link(request.args.get("q", "").strip())[:40]
         found = split_riot_id(query)
         if not found:
-            problem = _t("「名前#タグ」の形で入れてください（例: Name#JP1）。") if query else ""
-            return render_template("home.html", query=query, problem=problem, me=_me()), 400 if query else 200
+            # a name without its tag: say what is missing, with that name for the example; "Name JP1" (a space
+            # where the # goes, likely; a name may hold spaces, so the Riot ID is only offered)
+            name_only = query if query and "#" not in query.replace("＃", "#") and NAME.match(query) else ""
+            head, _, last = name_only.rpartition(" ")
+            guess = split_riot_id(f"{head}#{last}") if head.strip() else None
+            if name_only:
+                example = "#".join(guess) if guess else f"{name_only}#JP1"
+                problem = _t("タグ（# のあと）も入れてください。例: {example}", example=example)
+            else:
+                problem = _t("「名前#タグ」の形で入れてください（例: Name#JP1）。") if query else ""
+            values = {"query": query, "problem": problem, "name_only": name_only, "guess": guess, "me": _me()}
+            return render_template("home.html", **values), 400 if query else 200
         return redirect(url_for("player", name=found[0], tag=found[1]), 303)
 
     @app.get("/p/<name>/<tag>")
@@ -823,12 +845,21 @@ def register(app: Flask) -> None:
         ``?full=1`` waits for them (the link for a browser without JavaScript)."""
         if not split_riot_id(f"{name}#{tag}"):
             abort(404)
-        henrik, mode = current_app.config["VAL_HENRIK"], _mode()
-        if request.args.get("full") or not henrik.key() or henrik.has_player(name, tag, mode):  # an answer at once
-            values, status = _player(name, tag, mode)
+        henrik, mode, fresh = current_app.config["VAL_HENRIK"], _mode(), bool(request.args.get("fresh"))
+        kept = henrik.has_player(name, tag, mode) and not fresh
+        if request.args.get("full") or not henrik.key() or kept:  # an answer at once
+            values, status = _player(name, tag, mode, fresh)
             return render_template("player.html", **values), status
         return render_template(
-            "player.html", name=name, tag=tag, mode=mode, loading=True, account=None, problem="", settings_link=False
+            "player.html",
+            name=name,
+            tag=tag,
+            mode=mode,
+            fresh=fresh,
+            loading=True,
+            account=None,
+            problem="",
+            settings_link=False,
         )
 
     @app.get("/p/<name>/<tag>/part")
@@ -837,7 +868,7 @@ def register(app: Flask) -> None:
         if not split_riot_id(f"{name}#{tag}"):
             abort(404)
         start = time.monotonic()
-        values, status = _player(name, tag, _mode())
+        values, status = _player(name, tag, _mode(), bool(request.args.get("fresh")))
         response = make_response(render_template("_player.html", **values), status)
         response.headers["Cache-Control"] = "no-store"
         # how long HenrikDev took, for the browser's developer tools (Network -> Timing)

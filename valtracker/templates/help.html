@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{{ t('使い方・よくある質問') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('VAL Tracker の使い方：Riot ID の探し方、見つからないとき、データの新しさ、数字の意味。') }}{% endblock %}
+{% block main %}
+<section class="hero">
+<h1>{{ t('使い方・よくある質問') }}</h1>
+<nav class="quick help-index" aria-label="{{ t('目次') }}">
+<a href="#find">{{ t('プレイヤーを探す') }}</a>
+<a href="#riot-id">{{ t('Riot ID の見つけ方') }}</a>
+<a href="#not-found">{{ t('見つからないとき') }}</a>
+<a href="#fresh">{{ t('データの新しさ') }}</a>
+<a href="#hidden">{{ t('名前を隠しているプレイヤー') }}</a>
+<a href="#numbers">{{ t('数字の見かた') }}</a>
+<a href="#sources">{{ t('データの出どころ') }}</a>
+</nav>
+</section>
+
+<section class="help" id="find" aria-labelledby="find-title">
+<h2 id="find-title">{{ t('プレイヤーを探す') }}</h2>
+<p>{{ t('検索に Riot ID（名前#タグ）を入れます。例: Name#JP1。# やタグは全角で打ってもかまいません。') }}</p>
+<p>{{ t('プレイヤーのページで ☆ を押すとお気に入りに入り、検索の画面に並びます。見たプレイヤーは「最近見たプレイヤー」に残ります。どちらもこのブラウザだけに保存されます。') }}</p>
+<p><a class="button" href="{{ url_for('top') }}">{{ t('プレイヤーを探す') }}</a></p>
+</section>
+
+<section class="help" id="riot-id" aria-labelledby="riot-id-title">
+<h2 id="riot-id-title">{{ t('Riot ID の見つけ方') }}</h2>
+<p>{{ t('自分の Riot ID は、VALORANT のメイン画面右のフレンド一覧の一番上に出ています。Riot のアカウント管理ページ（account.riotgames.com）の「Riot ID」でも見られます。') }}</p>
+<p>{{ t('フレンドの Riot ID はフレンド一覧に出ています。試合で一緒になった人は、このサイトの試合のページから開けます。') }}</p>
+</section>
+
+<section class="help" id="not-found" aria-labelledby="not-found-title">
+<h2 id="not-found-title">{{ t('見つからないとき') }}</h2>
+<ul>
+<li>{{ t('タグを入れたか確かめてください。名前だけでは探せません。') }}</li>
+<li>{{ t('打ち間違いがないか確かめてください（0 と O、1 と l と I など）。') }}</li>
+<li>{{ t('名前やタグを変えたばかりなら、新しい Riot ID で探してください。') }}</li>
+<li>{{ t('しばらく遊んでいないアカウントは、最近の試合が出ないことがあります。') }}</li>
+<li>{{ t('中国大陸版（无畏契约）のアカウントは調べられません。') }}</li>
+</ul>
+</section>
+
+<section class="help" id="fresh" aria-labelledby="fresh-title">
+<h2 id="fresh-title">{{ t('データの新しさ') }}</h2>
+<p>{{ t('試合が終わってから、ここに出るまで数分かかることがあります。') }}</p>
+<p>{{ t('ページをすぐ出すために、同じプレイヤーのランクは 5 分、試合は 3 分のあいだ覚えておきます。プレイヤーのページの「最新にする」で読み直せます（1 分に 1 回まで）。') }}</p>
+</section>
+
+<section class="help" id="hidden" aria-labelledby="hidden-title">
+<h2 id="hidden-title">{{ t('名前を隠しているプレイヤー') }}</h2>
+<p>{{ t('ゲームの設定で名前を隠している人は、試合の中で「非公開のプレイヤー」と出ます。このサイトはその人の名前・カード・記録を出さず、ランキングでも名前では探せません。') }}</p>
+</section>
+
+<section class="help" id="numbers" aria-labelledby="numbers-title">
+<h2 id="numbers-title">{{ t('数字の見かた') }}</h2>
+{% with open=true %}{% include "_glossary.html" %}{% endwith %}
+</section>
+
+<section class="help" id="sources" aria-labelledby="sources-title">
+<h2 id="sources-title">{{ t('データの出どころ') }}</h2>
+<ul>
+<li>{{ t('ニュース・パッチノート・サーバー状況：Riot Games の公式サイト') }}</li>
+<li>{{ t('ランキング：読めるときはゲームのデータ（Riot）から、読めないときは HenrikDev API から') }}</li>
+<li>{{ t('プレイヤーのランクと試合：HenrikDev API') }}</li>
+<li>{{ t('エージェント・武器・スキンの名前と画像：valorant-api.com') }}</li>
+</ul>
+</section>
+{% endblock %}
