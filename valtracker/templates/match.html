@@ -49,7 +49,7 @@
 {% endif %}
 <div class="table-wrap">
 <table class="board">
-<thead><tr><th scope="col">{{ t('プレイヤー') }}</th>{% if rounds %}<th scope="col">ACS</th>{% endif %}<th scope="col">K</th><th scope="col">D</th><th scope="col">A</th><th scope="col">+/−</th>{% if rounds %}<th scope="col">ADR</th>{% endif %}<th scope="col">{{ t('HS率') }}</th>{% if rounds and detailed %}<th scope="col"><abbr title="{{ t('キル・アシスト・生存・トレードされたラウンドの割合') }}">KAST</abbr></th><th scope="col"><abbr title="{{ t('ファーストキル') }}">FK</abbr></th><th scope="col"><abbr title="{{ t('ファーストデス') }}">FD</abbr></th><th scope="col"><abbr title="{{ t('3 キル以上のラウンド') }}">MK</abbr></th>{% endif %}{% if rounds %}<th scope="col"><abbr title="{{ t('与えたダメージ − 受けたダメージ（1 ラウンドあたり）') }}">DDΔ</abbr></th>{% endif %}</tr></thead>
+<thead><tr><th scope="col">{{ t('プレイヤー') }}</th>{% if rounds %}<th scope="col">ACS</th>{% endif %}<th scope="col">K</th><th scope="col">D</th><th scope="col">A</th><th scope="col">+/−</th>{% if rounds %}<th scope="col">ADR</th>{% endif %}<th scope="col">{{ t('HS率') }}</th>{% if rounds and detailed %}<th scope="col"><abbr title="{{ t('キル・アシスト・生存・トレードされたラウンドの割合') }}">KAST</abbr></th><th scope="col"><abbr title="{{ t('ファーストキル') }}">FK</abbr></th><th scope="col"><abbr title="{{ t('ファーストデス') }}">FD</abbr></th><th scope="col"><abbr title="{{ t('3 キル以上のラウンド') }}">MK</abbr></th>{% endif %}{% if rounds %}<th scope="col"><abbr title="{{ t('与えたダメージ − 受けたダメージ（1 ラウンドあたり）') }}">DDΔ</abbr></th>{% endif %}{% if scored %}<th scope="col"><abbr title="{{ t('VAL スコア（同じランク帯と比べた 1000 点満点）') }}">{{ t('スコア') }}</abbr></th>{% endif %}</tr></thead>
 <tbody>
 {% for player in team.players %}
 <tr{% if player.me %} class="me"{% endif %}>
@@ -59,6 +59,7 @@
 {% if rounds %}<td>{{ player.line.adr }}</td>{% endif %}<td>{{ player.line.hs }}%</td>
 {% if rounds and detailed %}<td>{{ player.line.kast if player.line.kast is not none else '–' }}{% if player.line.kast is not none %}%{% endif %}</td><td>{{ player.line.fk if player.line.fk is not none else '–' }}</td><td>{{ player.line.fd if player.line.fd is not none else '–' }}</td><td>{{ player.line.mk if player.line.mk is not none else '–' }}</td>{% endif %}
 {% if rounds %}<td class="{{ 'up' if player.line.dd > 0 else ('down' if player.line.dd < 0 else '') }}">{{ '%+d'|format(player.line.dd) }}</td>{% endif %}
+{% if scored %}<td>{% if player.score %}<span class="row-score grade-{{ player.score.grade|lower }}">{{ player.score.value }}</span>{% else %}–{% endif %}</td>{% endif %}
 </tr>
 {% endfor %}
 </tbody>

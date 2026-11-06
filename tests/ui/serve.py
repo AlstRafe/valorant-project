@@ -52,8 +52,9 @@ def _png(size: int = 64) -> bytes:
     return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(rows)) + chunk(b"IEND", b"")
 
 
-def _match(match_id: str, started: float, cluster: str, queue: str, tier: int) -> dict:
-    return {
+def _match(match_id: str, started: float, cluster: str, queue: str, tier: int, pick=None) -> dict:
+    """A made-up match; with ``pick`` (a random.Random) ten players' numbers too, the yardstick of the scores."""
+    found = {
         "metadata": {
             "match_id": match_id,
             "region": "ap",
@@ -64,6 +65,33 @@ def _match(match_id: str, started: float, cluster: str, queue: str, tier: int) -
         },
         "players": [{"puuid": "", "tier": {"id": tier}}],
     }
+    if pick:
+        found["teams"] = [
+            {"team_id": "Red", "won": True, "rounds": {"won": 13, "lost": 9}},
+            {"team_id": "Blue", "won": False, "rounds": {"won": 9, "lost": 13}},
+        ]
+        found["players"] = []
+        for number in range(10):
+            kills, deaths = pick.randint(5, 28), pick.randint(8, 22)
+            heads, bodies = pick.randint(5, 30), pick.randint(30, 80)
+            found["players"].append(
+                {
+                    "puuid": "",
+                    "team_id": "Red" if number < 5 else "Blue",
+                    "tier": {"id": max(3, min(27, tier + pick.randint(-2, 2)))},
+                    "stats": {
+                        "kills": kills,
+                        "deaths": deaths,
+                        "assists": pick.randint(2, 12),
+                        "score": kills * 200 + pick.randint(500, 2500),
+                        "damage": {"dealt": kills * 140 + pick.randint(0, 900), "received": deaths * 140},
+                        "headshots": heads,
+                        "bodyshots": bodies,
+                        "legshots": pick.randint(2, 12),
+                    },
+                }
+            )
+    return found
 
 
 def seed(activity, now: float) -> None:
@@ -78,7 +106,10 @@ def seed(activity, now: float) -> None:
                     break
             started = now // 86400 * 86400 - pick.randint(0, 13) * 86400 + (hour - 9) * 3600
             started = started - 86400 if started > now else started
-            listed.append(_match(f"{cluster}-{number}", started, cluster, "competitive", pick.randint(8, 24)))
+            tier = pick.randint(8, 24)
+            listed.append(
+                _match(f"{cluster}-{number}", started, cluster, "competitive", tier, pick if number < 60 else None)
+            )
     activity.seen(listed)
     for number in range(60):
         start = now - pick.randint(1, 13) * 86400

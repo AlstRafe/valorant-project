@@ -21,7 +21,10 @@
 {% endfor %}</nav>{% endif %}
 {% if since %}<p class="note">{{ t('いまは日程を読み込めないため、{time} に読み込んだものを出しています。スコアや試合中の印は古いかもしれません。', time=since.text) }}</p>{% endif %}
 <p class="fav-only" hidden><label><input type="checkbox" id="fav-only"> {{ t('印をつけたチームだけ') }}</label></p>
-{% if not games %}
+{% if no_results %}
+<p class="note">{{ t('結果はいま読み込めません。Riot の公式サイトで見られます。') }}{% if detail %} <code lang="en">{{ detail }}</code>{% endif %}</p>
+<p><a class="button quiet" href="https://valorantesports.com/" rel="noopener">{{ t('公式サイトで結果を見る') }}</a></p>
+{% elif not games %}
 <p class="note">{{ t('結果はまだありません。') if show == 'results' else t('これからの試合はまだ出ていません。') }}</p>
 {% else %}
 <ul class="schedule" data-mark="{{ t('{team} に印をつける') }}" data-unmark="{{ t('{team} の印を外す') }}">

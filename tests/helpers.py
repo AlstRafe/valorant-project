@@ -27,6 +27,8 @@ class FakeFetch:
         self.henrik_status = None
         #: Riot's own news list and status files (riotweb.py) answer this status instead, when set.
         self.riot_web_status = None
+        #: Riot's esports schedule page answers (from the fixture) only when this is set; else HTTP 404.
+        self.esports_page = False
 
     def __call__(self, url: str, headers: dict) -> tuple[int, bytes]:
         self.asked.append((url, headers))
@@ -41,6 +43,8 @@ class FakeFetch:
             if "tags=patch_notes" in url:
                 news["data"] = [item for item in news["data"] if isinstance(item, dict) and item.get("tags")]
             return 200, json.dumps(news).encode()
+        if url.startswith("https://valorantesports.com/"):
+            return (200, fixture("riot_esports.html")) if self.esports_page else (404, b"")
         if url.startswith("https://api.henrikdev.xyz/"):
             if self.henrik_status:
                 return self.henrik_status, json.dumps({"status": self.henrik_status, "errors": []}).encode()

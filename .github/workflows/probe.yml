@@ -1,4 +1,4 @@
-# Temporary: what Riot's esports site carries in its schedule page (removed before merging).
+# Temporary: riotweb.py's esports schedule against Riot's real page (removed before merging).
 name: Probe
 on:
   push:
@@ -10,46 +10,27 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: The schedule in valorantesports.com's page
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -q -r requirements.txt
+      - name: riotweb.py with Riot's real page
         shell: python
         run: |
-          import json, re, urllib.request
-          def get(url):
-              req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (probe)"})
+          import collections, sys, time
+          sys.path.insert(0, ".")
+          from valtracker.riotweb import RiotWeb
+          from valtracker.media import outside_path
+          web = RiotWeb()
+          for lang in ("ja", "ko", "en-GB", "zh-TW"):
+              start = time.monotonic()
               try:
-                  with urllib.request.urlopen(req, timeout=30) as r:
-                      return r.status, r.headers.get("content-type"), r.read()
-              except Exception as e:
-                  return getattr(e, "code", 0), str(e), (e.read() if hasattr(e, "read") else b"")
-          s, ct, b = get("https://haruxera.duckdns.org/val/esports")
-          print("LIVE /esports", s, len(b))
-          import collections
-          def events(t):
-              t = t.replace(":undefined", ":null")
-              dec, found = json.JSONDecoder(), {}
-              for m in re.finditer(r'\{"__typename":"Event(Match|Show)"', t):
-                  try:
-                      obj, _ = dec.raw_decode(t, m.start())
-                  except ValueError as e:
-                      print("   bad at", m.start(), e); continue
-                  found[obj.get("id")] = obj
-              return list(found.values())
-          s, ct, b = get("https://valorantesports.com/ja-JP/schedule")
-          t = b.decode("utf-8", "replace")
-          print("hrefs:", sorted(set(re.findall(r'href="(/ja-JP/[^"?#]*(?:schedule|result|vod|match|watch|leagues)[^"]*)"', t)))[:40])
-          for m in re.finditer(r'"variables":(\{[^{}]*\})', t):
-              print("VARS", m.group(1)[:400])
-          print("transport:", [t[m.start()-120:m.start()+40] for m in re.finditer(r'ApolloSSR|__APOLLO', t)][:3])
-          for url in ("https://valorantesports.com/ja-JP/schedule", "https://valorantesports.com/ja-JP/schedule?state=completed", "https://valorantesports.com/ja-JP/results", "https://valorantesports.com/ja-JP/vods", "https://valorantesports.com/ja-JP/schedule?leagues=vct_pacific", "https://valorantesports.com/ja-JP"):
-              s, ct, b = get(url)
-              t = b.decode("utf-8", "replace")
-              ev = events(t)
-              states = collections.Counter((e.get("__typename"), e.get("state")) for e in ev)
-              leagues = collections.Counter((e.get("league") or {}).get("slug") for e in ev)
-              times = sorted(e.get("startTime") or "" for e in ev)
-              print("\n==", url, s, len(t), "| events", len(ev), dict(states))
-              print("   leagues", dict(leagues))
-              print("   from", times[:1], "to", times[-1:])
-              done = [e for e in ev if e.get("state") == "completed"][:1] + [e for e in ev if e.get("state") == "inProgress"][:1]
-              for e in done:
-                  print("   SAMPLE", json.dumps(e, ensure_ascii=False)[:1800])
+                  games = web.esports(lang)
+              except Exception as error:
+                  print(lang, "FAILED", repr(error), getattr(error, "detail", "")); continue
+              print(f"\n{lang}: {len(games)} games in {time.monotonic() - start:.2f} s | asked:", sorted(k[1] for k in web.cache._items if isinstance(k, tuple) and k[0] == "esports") if hasattr(web.cache, "_items") else "")
+              print("   states", dict(collections.Counter(g["state"] for g in games)), "| leagues", dict(collections.Counter(g["league"]["name"] for g in games)))
+              print("   pictures not ours", sum(1 for g in games for t in g["teams"] if t["icon"] and not outside_path(t["icon"])), "| league icons not ours", sum(1 for g in games if g["league"]["icon"] and not outside_path(g["league"]["icon"])))
+              for g in games[:2] + games[-1:]:
+                  print("   ", g["at"], g["league"], g["tournament"], "Bo", g["best_of"], [(t["name"], t["code"], t["icon"]) for t in g["teams"]])

@@ -90,18 +90,42 @@
 </nav>
 <section class="summary" aria-labelledby="sum-title">
 <h2 id="sum-title">{{ t('直近 {count} 試合', count=summary.games) }}{% if summary.left_out and not mode %} <small>{{ t('デスマッチなどは除く') }}</small>{% endif %}</h2>
+{% set tops = summary.score.tops if summary.score else {} %}
+{% macro top(key, lead=true) -%}
+{%- if tops.get(key) -%}{{ ' · ' if lead }}<span class="pct{{ ' good' if tops[key] <= 25 else '' }}">{{ t('上位 {share}%', share=tops[key]) if tops[key] <= 50 else t('下位 {share}%', share=[1, 100 - tops[key]]|max) }}</span>{%- endif -%}
+{%- endmacro %}
+{% if summary.score %}
+<div class="val-score grade-{{ summary.score.grade|lower }}">
+<p class="score-big"><strong>{{ summary.score.value }}</strong><span class="grade" aria-label="{{ t('評価 {grade}', grade=summary.score.grade) }}">{{ summary.score.grade }}</span></p>
+<div class="score-text">
+<p><strong>{{ t('VAL スコア') }}</strong> <small>/ 1000</small></p>
+<p class="note">{{ t('{count} 試合の平均。{band}のプレイヤーの {lines} 試合分と比べた位置です。', count=summary.score.games, band=summary.score.band, lines='{:,}'.format(summary.score.lines)) }}</p>
+<details class="score-how"><summary>{{ t('スコアの出し方') }}</summary><p>{{ t('同じランク帯の中での ACS（30%）・KAST（25%）・DDΔ（25%）の位置と、勝ったか（20%）を 1000 点満点にしたものです。真ん中の成績で半分勝つと 500 点ほど。S は 800 点から、A は 650、B は 500、C は 350 から。比べる試合はこのサイトが見た試合（名前は持ちません）です。') }}</p></details>
+</div>
+</div>
+{% endif %}
 <dl class="numbers">
 {% if summary.decided %}<div><dt>{{ t('勝率') }}</dt><dd>{{ summary.win_rate }}%<small>{{ t('{wins}勝 {losses}敗', wins=summary.wins, losses=summary.losses) }}{% if summary.streak %} · <span class="{{ 'up' if summary.streak.won else 'down' }}">{{ t('{count} 連勝中', count=summary.streak.count) if summary.streak.won else t('{count} 連敗中', count=summary.streak.count) }}</span>{% endif %}</small></dd></div>{% endif %}
-<div><dt>K / D / A</dt><dd>{{ summary.kills }}/{{ summary.deaths }}/{{ summary.assists }}<small>KD {{ summary.kd }}</small></dd></div>
-{% if summary.acs is not none %}<div><dt>ACS</dt><dd>{{ summary.acs }}<small>ADR {{ summary.adr }}</small></dd></div>{% endif %}
-<div><dt>{{ t('HS率') }}</dt><dd>{{ summary.hs }}%</dd></div>
-{% if summary.kast is not none %}<div><dt><abbr title="{{ t('キル・アシスト・生存・トレードされたラウンドの割合') }}">KAST</abbr></dt><dd>{{ summary.kast }}%{% if summary.dd is not none %}<small><abbr title="{{ t('与えたダメージ − 受けたダメージ（1 ラウンドあたり）') }}">DDΔ</abbr> {{ '%+d'|format(summary.dd) }}</small>{% endif %}</dd></div>{% endif %}
+<div><dt>K / D / A</dt><dd>{{ summary.kills }}/{{ summary.deaths }}/{{ summary.assists }}<small>KD {{ summary.kd }}{{ top('kd') }}</small></dd></div>
+{% if summary.acs is not none %}<div><dt>ACS</dt><dd>{{ summary.acs }}<small>ADR {{ summary.adr }}{{ top('acs') }}</small></dd></div>{% endif %}
+<div><dt>{{ t('HS率') }}</dt><dd>{{ summary.hs }}%{% if tops.get('hs') %}<small>{{ top('hs', false) }}</small>{% endif %}</dd></div>
+{% if summary.kast is not none %}<div><dt><abbr title="{{ t('キル・アシスト・生存・トレードされたラウンドの割合') }}">KAST</abbr></dt><dd>{{ summary.kast }}%{% if summary.dd is not none %}<small><abbr title="{{ t('与えたダメージ − 受けたダメージ（1 ラウンドあたり）') }}">DDΔ</abbr> {{ '%+d'|format(summary.dd) }}{{ top('kast') }}</small>{% endif %}</dd></div>{% endif %}
 {% if summary.fk is not none %}<div><dt>{{ t('ファーストキル / デス') }}</dt><dd>{{ summary.fk }} / {{ summary.fd }}<small>{{ t('1 試合あたり {fk} / {fd}', fk='%.1f'|format(summary.fk / summary.games), fd='%.1f'|format(summary.fd / summary.games)) }}</small></dd></div>{% endif %}
 {% if summary.clutches is not none %}<div><dt>{{ t('クラッチ') }}</dt><dd>{{ summary.clutches }}{% if summary.clutch_best %}<small>{{ t('最高 1v{count}', count=summary.clutch_best) }}</small>{% endif %}</dd></div>{% endif %}
 {% if summary.multi %}<div><dt>{{ t('マルチキル') }}</dt><dd>{{ summary.multi[1] + summary.multi[2] + summary.multi[3] }}<small>3K {{ summary.multi[1] }} · 4K {{ summary.multi[2] }} · ACE {{ summary.multi[3] }}</small></dd></div>{% endif %}
 {% if summary.today %}<div><dt>{{ t('今日') }}</dt><dd>{{ t('{count} 試合', count=summary.today.games) }}<small>{{ t('{wins}勝 {losses}敗', wins=summary.today.wins, losses=summary.today.losses) }}{% if summary.today.rr is not none %} · <span class="{{ 'up' if summary.today.rr > 0 else ('down' if summary.today.rr < 0 else '') }}">{{ '%+d'|format(summary.today.rr) }} RR</span>{% endif %} · {% if summary.today.minutes >= 60 %}{{ t('{hours}時間{minutes}分', hours=summary.today.minutes // 60, minutes=summary.today.minutes % 60) }}{% else %}{{ t('{minutes}分', minutes=summary.today.minutes) }}{% endif %}</small></dd></div>{% endif %}
 {% if summary.minutes %}<div><dt>{{ t('プレイ時間') }}</dt><dd>{% if summary.minutes >= 60 %}{{ t('{hours}時間{minutes}分', hours=summary.minutes // 60, minutes=summary.minutes % 60) }}{% else %}{{ t('{minutes}分', minutes=summary.minutes) }}{% endif %}{% if summary.plants is not none %}<small>{{ t('設置 {plants} · 解除 {defuses}', plants=summary.plants, defuses=summary.defuses) }}</small>{% endif %}</dd></div>{% endif %}
 </dl>
+{% if summary.score and summary.score.chart %}{% set chart = summary.score.chart %}
+<div class="chart score-chart">
+<p class="chart-title">{{ t('スコアの推移') }} <small>{{ t('古い順') }}</small></p>
+<svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" role="img" aria-label="{{ t('スコアの推移') }}: {{ chart.dots|map(attribute='value')|join(', ') }}">
+{% for line in chart.lines %}<line class="grid" x1="0" x2="{{ chart.width }}" y1="{{ line.y }}" y2="{{ line.y }}"/><text class="grid-name" x="6" y="{{ line.y - 4 }}">{{ line.grade }}</text>
+{% endfor %}<path class="line" d="{{ chart.path }}"/>
+{% for dot in chart.dots %}<circle class="grade-{{ dot.grade|lower }}" cx="{{ dot.x }}" cy="{{ dot.y }}" r="4.5"><title>{{ dot.value }} ({{ dot.grade }})</title></circle>
+{% endfor %}</svg>
+</div>
+{% endif %}
 {% if summary.decided %}
 <ol class="form" aria-label="{{ t('勝敗（新しい順）') }}">
 {% for outcome in summary.form %}<li class="{{ outcome }}">{% if outcome == 'win' %}{{ t('勝') }}{% elif outcome == 'loss' %}{{ t('敗') }}{% else %}{{ t('分') }}{% endif %}</li>{% endfor %}
@@ -195,7 +219,7 @@
 {% else %}<strong>{% if outcome == 'win' %}{{ t('勝利') }}{% else %}{{ t('敗北') }}{% endif %}</strong>{% endif %}
 <small>{% if not row.result.rounds and row.result.won is none %}{{ t('{count}人中', count=row.placing.of) }}{% elif row.result.rounds %}{% if outcome == 'win' %}{{ t('勝利') }}{% elif outcome == 'loss' %}{{ t('敗北') }}{% else %}{{ t('引き分け') }}{% endif %}{% endif %}{% if row.rr is not none %}{% if row.result.rounds %} · {% endif %}<span class="{{ 'up' if row.rr > 0 else ('down' if row.rr < 0 else '') }}">{{ '%+d'|format(row.rr) }} RR</span>{% endif %}</small>
 </span>
-<span class="kda"><strong>{{ row.line.kills }} / {{ row.line.deaths }} / {{ row.line.assists }}</strong><small>{% if row.rounds %}ACS {{ row.line.acs }} · {% endif %}{% if row.rounds and row.line.kast is not none %}KAST {{ row.line.kast }}% · {% endif %}HS {{ row.line.hs }}%</small></span>
+<span class="kda"><strong>{{ row.line.kills }} / {{ row.line.deaths }} / {{ row.line.assists }}{% if row.score %} <span class="row-score grade-{{ row.score.grade|lower }}" title="{{ t('VAL スコア') }}">{{ row.score.value }}<span class="sr"> {{ t('VAL スコア') }}</span></span>{% endif %}</strong><small>{% if row.rounds %}ACS {{ row.line.acs }} · {% endif %}{% if row.rounds and row.line.kast is not none %}KAST {{ row.line.kast }}% · {% endif %}HS {{ row.line.hs }}%</small></span>
 </a>
 </li>
 {% endfor %}
