@@ -44,6 +44,8 @@ def create_app(
     app.config["VAL_MEDIA"] = Media(instance, fetch)
     app.config["VAL_RIOT"] = Riot(instance, send, app.config["VAL_CONTENT"].client_version)
     app.config["VAL_DIARY"] = Diary(instance)
+    # the owner's saved loadouts (owner.py: the collection's sets)
+    app.config["VAL_SETS"] = Settings(instance, "loadout_sets.json")
     app.config["VAL_ACTIVITY"] = activity = Activity(instance)
     # VAL_COLLECT_SECONDS=0 turns the background look at more players off (activity.py)
     seconds = float(os.environ.get("VAL_COLLECT_SECONDS", COLLECT_SECONDS) or 0)

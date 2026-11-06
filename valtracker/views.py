@@ -1110,7 +1110,8 @@ def register(app: Flask) -> None:
             values = {"problem": RIOT_FAILURES.get(error.kind, RIOT_FAILURES["down"]), "detail": error.detail}
             return render_template("collection.html", **values, settings_link=status == 200), status
         weapon = request.args.get("weapon", "")[:36] if show == "skins" else ""
-        values = owned_items.page(found, current_app.config["VAL_CONTENT"], g.lang, show, weapon)
+        sets = [item for item in current_app.config["VAL_SETS"].load().get("sets") or [] if isinstance(item, dict)]
+        values = owned_items.page(found, current_app.config["VAL_CONTENT"], g.lang, show, weapon, sets)
         from valtracker.owner import equip_said
 
         values["equip_said"], values["equip_ok"] = equip_said(request.args.get("equip", "")[:20])

@@ -1,13 +1,16 @@
 """The owner's collection page: riot.py's answer (uuids and counts) with the game's names and pictures (content.py),
-laid out like the game's own collection screen (weapons in its order, then one weapon's skins). The order of the
-items does not follow what is worn: wearing one (in place, without leaving the page) marks it where it is."""
+laid out like the game's own collection screen (weapons in its order, then one weapon's skins and its buddy). The
+order of the items does not follow what is worn: wearing one (in place, without leaving the page) marks it where it
+is. Sets: the whole loadout saved under a name (owner.py keeps them) and worn again in one press."""
 
 from __future__ import annotations
 
 from collections import Counter
+from datetime import datetime
 
+from valtracker import i18n
 from valtracker.content import Content, variant_name
-from valtracker.riot import ITEM_TYPES
+from valtracker.riot import ITEM_TYPES, wearing
 
 #: The tabs: the collection's kind -> its name on the page (the owner's page: Japanese only).
 TABS = {
@@ -18,11 +21,18 @@ TABS = {
     "titles": "タイトル",
     "flex": "フレックス",
     "agents": "エージェント",
+    "sets": "セット",
 }
 #: The tabs' kinds -> valorant-api.com's list of them (content.py).
 LISTS = {"buddies": "buddies", "cards": "playercards", "sprays": "sprays", "titles": "playertitles", "flex": "flex"}
 #: The game's order of weapons: sidearms, SMGs, shotguns, rifles, snipers, machine guns, melee (cheapest first).
 CATEGORIES = ("Sidearm", "SMG", "Shotgun", "Rifle", "Sniper", "Heavy", "Melee")
+#: A gun's buddy in the loadout (the copy, the buddy, its level); melee weapons have none.
+CHARM = ("CharmInstanceID", "CharmID", "CharmLevelID")
+#: A gun's skin in the loadout.
+SKIN = ("SkinID", "SkinLevelID", "ChromaID")
+#: How many sets can be saved.
+MAX_SETS = 20
 #: The tiers of skins, cheapest first (valorant-api.com's devName): each has its colour on the page.
 TIERS = ("Select", "Deluxe", "Premium", "Exclusive", "Ultra")
 #: VALORANT Points, Radianite, Kingdom Credits: the wallet's order (anything else after them).
@@ -64,9 +74,14 @@ def expressions(loadout: dict) -> list[dict]:
     return found
 
 
-def page(found: dict, content: Content, lang: str, show: str, weapon: str = "") -> dict:
+def melee(weapon: dict) -> bool:
+    return str(weapon.get("category") or "").endswith("::Melee")
+
+
+def page(found: dict, content: Content, lang: str, show: str, weapon: str = "", sets: list | None = None) -> dict:
     """What collection.html shows of ``found`` (riot.Riot.collection) with the tab ``show`` open; on the skins'
-    tab, ``weapon`` (a uuid) is the weapon whose skins are open, as the game's collection opens one at a time."""
+    tab, ``weapon`` (a uuid) is the weapon whose skins are open, as the game's collection opens one at a time.
+    ``sets``: the saved sets (owner.py)."""
     owned = found.get("owned") or {}
     loadout = found.get("loadout") if isinstance(found.get("loadout"), dict) else {}
     identity = loadout.get("Identity") if isinstance(loadout.get("Identity"), dict) else {}
@@ -82,9 +97,15 @@ def page(found: dict, content: Content, lang: str, show: str, weapon: str = "") 
         "flex": _flex,
         "agents": _agents,
     }
-    counts = {kind: _count(kind, owned, content, lang) for kind in TABS}
-    items = makers[show](owned, loadout, content, lang) if show in owned else []
+    counts = {kind: _count(kind, owned, content, lang) for kind in TABS if kind != "sets"}
+    counts["sets"] = len(sets or [])
+    if show == "sets":
+        items = _sets(sets or [], loadout if found.get("loadout") is not None else None, content, lang)
+    else:
+        items = makers[show](owned, loadout, content, lang) if show in owned else []
     picked = next((group for group in items if group.get("uuid") == _id(weapon)), None) if show == "skins" else None
+    if picked:
+        picked["buddy"] = _buddy_choices(found, loadout, content, lang, picked)
     return {
         "name": found.get("name") or "",
         "tag": found.get("tag") or "",
@@ -96,26 +117,197 @@ def page(found: dict, content: Content, lang: str, show: str, weapon: str = "") 
             {"key": key, "name": name, "count": counts[key], "current": key == show} for key, name in TABS.items()
         ],
         "show": show,
-        "missing": show in (found.get("missing") or []) or show not in owned,
+        "missing": show != "sets" and (show in (found.get("missing") or []) or show not in owned),
         # what is worn could not be read (PD's playerloadout): nothing is marked worn, and nothing called standard
         "worn_read": isinstance(found.get("loadout"), dict),
         "items": items,
         "picked": picked,
         "problem_detail": found.get("problem") or "",
-        "spray_slots": _spray_slots(loadout, content, lang) if show == "sprays" else [],
+        "wheel": wheel(loadout, content, lang, show) if show in ("sprays", "flex") else [],
+        "guns": _gun_choices(loadout, content, lang) if show == "buddies" else [],
+        "full": len(sets or []) >= MAX_SETS,
+        "max_sets": MAX_SETS,
     }
 
 
-def _spray_slots(loadout: dict, content: Content, lang: str) -> list[dict]:
-    """The wheel's places that hold a spray, in the loadout's order: ``[{"slot", "number", "name": the spray in
-    it}]`` (the owner picks where a spray goes)."""
-    index = content.index("sprays", lang)
-    slots = []
-    for item in expressions(loadout):
-        if item["type"] == ITEM_TYPES["sprays"]:
-            known = index.get(item["id"]) or {}
-            slots.append({"slot": item["slot"], "number": len(slots) + 1, "name": known.get("displayName") or ""})
-    return slots
+def wheel(loadout: dict, content: Content, lang: str, kind: str) -> list[dict]:
+    """The wheel's places an item of ``kind`` (sprays, flex) can go to, in the loadout's order: ``[{"slot",
+    "number", "name": what is in it}]`` (the owner picks where it goes). playerloadout v3 lets any place hold a
+    spray or a flex; v2 had sprays only."""
+    sprays, flex = content.index("sprays", lang), content.index("flex", lang)
+    v3 = isinstance(loadout.get("ActiveExpressions"), list)
+    if not v3 and kind != "sprays":
+        return []
+    places = []
+    for number, item in enumerate(expressions(loadout), 1):
+        if item["type"] not in (ITEM_TYPES["sprays"], ITEM_TYPES["flex"]):
+            continue
+        known = (sprays if item["type"] == ITEM_TYPES["sprays"] else flex).get(item["id"]) or {}
+        places.append({"slot": item["slot"], "number": number, "name": known.get("displayName") or ""})
+    return places
+
+
+def _gun_choices(loadout: dict, content: Content, lang: str) -> list[dict]:
+    """The loadout's weapons a buddy can go on (not melee), in the game's order: ``[{"uuid", "name", "buddy": the
+    one on it}]``."""
+    buddies = content.index("buddies", lang)
+    worn = {_id(gun.get("ID")): gun for gun in loadout.get("Guns") or [] if isinstance(gun, dict)}
+    choices = []
+    for weapon in sorted(content.weapons(lang), key=_weapon_order):
+        gun = worn.get(_id(weapon.get("uuid")))
+        if gun is None or melee(weapon):
+            continue
+        buddy = buddies.get(_id(gun.get("CharmLevelID"))) or buddies.get(_id(gun.get("CharmID"))) or {}
+        choices.append(
+            {
+                "uuid": _id(weapon.get("uuid")),
+                "name": weapon.get("displayName") or "",
+                "buddy": buddy.get("displayName"),
+            }
+        )
+    return choices
+
+
+def _buddy_choices(found: dict, loadout: dict, content: Content, lang: str, weapon: dict) -> dict | None:
+    """The open weapon's buddy, as the game's weapon screen lets it be changed: ``{"items": [{"uuid", "name",
+    "current", "free": copies on no weapon, "from": the weapon it comes off}], "worn": whether one is on}``, or
+    None (a melee weapon, or one the loadout does not have)."""
+    gun = next(
+        (gun for gun in loadout.get("Guns") or [] if isinstance(gun, dict) and _id(gun.get("ID")) == weapon["uuid"]),
+        None,
+    )
+    known = next((item for item in content.weapons(lang) if _id(item.get("uuid")) == weapon["uuid"]), {})
+    if gun is None or melee(known):
+        return None
+    index = content.index("buddies", lang)
+    names = {_id(item.get("uuid")): item.get("displayName") or "" for item in content.weapons(lang)}
+    on: dict[str, list] = {}
+    for other in loadout.get("Guns") or []:
+        if isinstance(other, dict):
+            buddy = index.get(_id(other.get("CharmLevelID"))) or index.get(_id(other.get("CharmID")))
+            if buddy:
+                on.setdefault(_id(buddy.get("uuid")), []).append(_id(other.get("ID")))
+    copies: Counter = Counter()
+    buddies: dict[str, dict] = {}
+    for level, count in ((found.get("owned") or {}).get("buddies") or {}).items():
+        buddy = index.get(level)
+        if buddy:
+            buddies[_id(buddy.get("uuid"))] = buddy
+            copies[_id(buddy.get("uuid"))] += count
+    items = []
+    for uuid, buddy in sorted(buddies.items(), key=lambda pair: pair[1].get("displayName") or ""):
+        wearing_it = on.get(uuid, [])
+        current = weapon["uuid"] in wearing_it
+        free = max(0, copies[uuid] - len(wearing_it))
+        items.append(
+            {
+                "uuid": uuid,
+                "name": buddy.get("displayName") or "",
+                "current": current,
+                "free": free,
+                "from": names.get(wearing_it[0], "") if wearing_it and not free and not current else "",
+            }
+        )
+    return {"items": items, "worn": bool(_id(gun.get("CharmID")))}
+
+
+def snapshot(loadout: dict) -> dict:
+    """What a set keeps of a loadout (PD's playerloadout): each weapon's skin and buddy, the wheel and the card and
+    title, in the loadout's own shape (so riot.wearing reads it as it reads a loadout)."""
+    guns = []
+    for gun in loadout.get("Guns") or []:
+        if isinstance(gun, dict) and gun.get("ID"):
+            guns.append({"ID": _id(gun["ID"]), **{key: gun[key] for key in SKIN + CHARM if key in gun}})
+    kept: dict = {"Guns": guns}
+    if isinstance(loadout.get("ActiveExpressions"), list):
+        kept["ActiveExpressions"] = [
+            {"TypeID": item.get("TypeID"), "AssetID": item.get("AssetID")}
+            for item in loadout["ActiveExpressions"]
+            if isinstance(item, dict)
+        ]
+    elif isinstance(loadout.get("Sprays"), list):
+        kept["Sprays"] = [dict(item) for item in loadout["Sprays"] if isinstance(item, dict)]
+    identity = loadout.get("Identity") if isinstance(loadout.get("Identity"), dict) else {}
+    kept["Identity"] = {key: identity[key] for key in ("PlayerCardID", "PlayerTitleID") if identity.get(key)}
+    return kept
+
+
+def wear_set(kept: dict):
+    """The change to the loadout (riot.Riot.equip) that wears a saved set: its skins and buddies on its weapons,
+    its wheel, card and title. A weapon the set does not know keeps its skin, and gives up a buddy copy the set puts
+    on another weapon."""
+    guns = {_id(gun.get("ID")): gun for gun in kept.get("Guns") or [] if isinstance(gun, dict)}
+    copies = {_id(gun.get("CharmInstanceID")) for gun in guns.values() if gun.get("CharmInstanceID")}
+
+    def change(loadout: dict) -> None:
+        for gun in loadout.get("Guns") or []:
+            if not isinstance(gun, dict):
+                continue
+            wanted = guns.get(_id(gun.get("ID")))
+            if wanted is None:
+                if _id(gun.get("CharmInstanceID")) in copies:
+                    for key in CHARM:
+                        gun.pop(key, None)
+                continue
+            gun.update({key: wanted[key] for key in SKIN if key in wanted})
+            for key in CHARM:
+                if wanted.get("CharmInstanceID"):
+                    gun[key] = wanted.get(key)
+                else:
+                    gun.pop(key, None)
+        if isinstance(kept.get("ActiveExpressions"), list) and isinstance(loadout.get("ActiveExpressions"), list):
+            loadout["ActiveExpressions"] = [dict(item) for item in kept["ActiveExpressions"]]
+        elif isinstance(kept.get("Sprays"), list) and isinstance(loadout.get("Sprays"), list):
+            loadout["Sprays"] = [dict(item) for item in kept["Sprays"]]
+        if isinstance(loadout.get("Identity"), dict):
+            loadout["Identity"].update(kept.get("Identity") or {})
+
+    return change
+
+
+def _sets(sets: list, loadout: dict | None, content: Content, lang: str) -> list[dict]:
+    """The saved sets, newest first: ``[{"id", "name", "at", "card", "title", "guns": [{"weapon", "skin",
+    "buddy"}] (the weapons with a skin of the owner's, in the game's order), "skins", "buddies", "same": whether it
+    is what is worn now}]``."""
+    index, tiers = content.skins(lang), content.index("contenttiers", lang)
+    cards, titles = content.index("playercards", lang), content.index("playertitles", lang)
+    buddies = content.index("buddies", lang)
+    order = {_id(weapon.get("uuid")): _weapon_order(weapon) for weapon in content.weapons(lang)}
+    names = {_id(weapon.get("uuid")): weapon.get("displayName") or "" for weapon in content.weapons(lang)}
+    now = wearing(loadout) if loadout is not None else None
+    listed = []
+    for kept in reversed(sets):
+        guns = []
+        for gun in sorted(kept.get("Guns") or [], key=lambda gun: order.get(_id(gun.get("ID")), (99,))):
+            known = index.get(_id(gun.get("SkinID")))
+            skin = known[1] if known and _tier(known[1], tiers)["key"] else None
+            buddy = buddies.get(_id(gun.get("CharmLevelID"))) or buddies.get(_id(gun.get("CharmID"))) or {}
+            if skin or buddy:
+                guns.append(
+                    {
+                        "weapon": names.get(_id(gun.get("ID")), ""),
+                        "skin": (skin or {}).get("displayName") or "",
+                        "buddy": buddy.get("displayName") or "",
+                    }
+                )
+        identity = kept.get("Identity") or {}
+        card = cards.get(_id(identity.get("PlayerCardID"))) or {}
+        title = titles.get(_id(identity.get("PlayerTitleID"))) or {}
+        listed.append(
+            {
+                "id": kept.get("id") or "",
+                "name": kept.get("name") or "",
+                "when": _saved_at(kept.get("at")),
+                "card": card.get("smallArt"),
+                "title": title.get("titleText") or "",
+                "guns": guns,
+                "skins": sum(bool(gun["skin"]) for gun in guns),
+                "buddies": sum(bool(gun["buddy"]) for gun in guns),
+                "same": now is not None and wearing(kept) == now,
+                "search": str(kept.get("name") or "").lower(),
+            }
+        )
+    return listed
 
 
 def _count(kind: str, owned: dict, content: Content, lang: str):
@@ -347,3 +539,11 @@ def _agents(owned: dict, loadout: dict, content: Content, lang: str) -> list[dic
         }
         for agent in content.agents(lang)
     ]
+
+
+def _saved_at(value) -> str:
+    """When a set was saved (an ISO time in Japan's), short: 11月7日 2:50."""
+    try:
+        return i18n.when("ja", datetime.fromisoformat(str(value or "")))
+    except ValueError:
+        return ""
