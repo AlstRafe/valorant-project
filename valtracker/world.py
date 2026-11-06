@@ -1,6 +1,7 @@
-"""Pages about the game around the matches: Riot's news (/news, from Riot's own site: riotweb.py, else HenrikDev)
-and the esports schedule and results (/esports, from HenrikDev), and how often each agent is picked and wins (/agents/stats) in the matches this site has seen
-(activity.py). Everyone's, in the visitor's language."""
+"""Pages about the game around the matches: Riot's news (/news, from Riot's own site: riotweb.py, else HenrikDev),
+the esports schedule and results (/esports: the matches to come from Riot's esports site, else HenrikDev; the
+results and the matches being played from HenrikDev), and how often each agent is picked and wins (/agents/stats)
+in the matches this site has seen (activity.py). Everyone's, in the visitor's language."""
 
 from __future__ import annotations
 
@@ -159,16 +160,29 @@ def _esports_page() -> tuple[dict, int]:
     show = show if show in SHOWS else "upcoming"
     chosen = request.args.get("league", "").lower()
     values: dict = {"show": show, "games": [], "leagues": [], "league": "", "live": 0, "problem": ""}
-    try:
-        found, since = current_app.config["VAL_HENRIK"].esports()
-    except HenrikError as error:
-        code, values["problem"], values["settings_link"] = _failure(error.kind)
-        if error.kind == "down":
-            values["problem"] = _t("eスポーツの日程を読み込めませんでした。時間をおいてもう一度どうぞ。")
-        values["detail"] = error.detail if security.is_owner() else ""
-        return values, code
-    if since:  # a new schedule did not come: the last one, saying when it came
-        values["since"] = _when(datetime.fromtimestamp(since, UTC).isoformat())
+    found = None
+    if show == "upcoming":  # Riot's own list first: no HenrikDev call (and its allowance) for it
+        try:
+            found = current_app.config["VAL_RIOT_WEB"].esports(g.lang)
+        except RiotWebError:
+            found = None
+    if found is None:
+        try:
+            found, since = current_app.config["VAL_HENRIK"].esports()
+        except HenrikError as error:
+            if show == "results" and error.kind not in ("nokey", "badkey"):
+                # the schedule (Riot's) still works: the page says where the results are, without an error
+                values["no_results"] = True
+                values["detail"] = error.detail if security.is_owner() else ""
+                found, since = [], None
+            else:
+                code, values["problem"], values["settings_link"] = _failure(error.kind)
+                if error.kind == "down":
+                    values["problem"] = _t("eスポーツの日程を読み込めませんでした。時間をおいてもう一度どうぞ。")
+                values["detail"] = error.detail if security.is_owner() else ""
+                return values, code
+        if since:  # a new schedule did not come: the last one, saying when it came
+            values["since"] = _when(datetime.fromtimestamp(since, UTC).isoformat())
     counts: dict[str, list] = {}
     for item in found:
         if item["league"]["id"]:

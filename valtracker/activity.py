@@ -11,6 +11,10 @@ From these, per server: in which hours of the day its matches start (the share o
 hour stands out however many matches were seen), and per queue and rank band the middle of the waits. They are an
 estimate from a sample, and the pages say so, with how many matches it rests on.
 
+Each player's line in a 5-against-5 match is kept too, without who it was: their rank, ACS, ADR, K/D, HS%, KAST,
+DDΔ and whether their team won. These are the yardstick of the score and the "top X%" on a player's page: how a
+line stands among the lines of the same rank band (score.py).
+
 The collector looks at a few more players in the background (one every few minutes, from the players of the
 matches already seen, the rank bands with the fewest samples first), so the numbers do not depend on visitors
 alone. It uses the same HenrikDev key and budget as the pages, and stops when there is no key.
@@ -25,6 +29,8 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
+
+from valtracker import stats
 
 #: The regions the collector goes round (HenrikDev's names).
 REGIONS = ("ap", "kr", "eu", "na", "latam", "br")
@@ -46,6 +52,13 @@ BANDS = (
 FEW = 6
 #: Matches a server needs before the page says when it is busy: with fewer, one evening of one player is a "peak".
 ENOUGH = 48
+#: The queues of five against five whose players' lines are the yardstick (deathmatch and the like are not alike).
+LINE_QUEUES = ("competitive", "unrated", "premier", "swiftplay")
+#: The numbers of a line that are measured against the others.
+LINE_STATS = ("acs", "adr", "kd", "hs", "kast", "dd")
+#: Lines a rank band needs before it is its own yardstick (else every band together); with fewer than this
+#: altogether, nothing is measured.
+LINES_ENOUGH = 200
 #: The collector: seconds between two players (0: off), and how many recent players it can pick from.
 COLLECT_SECONDS = 240
 CANDIDATES = 600
@@ -143,6 +156,40 @@ def _picks(match: dict) -> list[tuple]:
     return list(found.values())
 
 
+def _lines(match: dict) -> list[tuple]:
+    """Each player's line in a match of five against five: ``(match, slot, queue, tier, acs, adr, kd, hs, kast, dd,
+    won, started)``; ``won`` is 1, 0.5 (a draw) or 0. No player is kept: ``slot`` is their place in the list."""
+    facts = _facts(match)
+    if not facts or facts["queue"] not in LINE_QUEUES:
+        return []
+    rounds = stats.rounds_played(match)
+    if rounds < 5:  # left early (a remake): not a match's worth of numbers
+        return []
+    teams = {
+        str(team.get("team_id") or ""): bool(team.get("won"))
+        for team in match.get("teams") or []
+        if isinstance(team, dict) and team.get("team_id")
+    }
+    draw = len(teams) == 2 and not any(teams.values())
+    rows = []
+    for slot, player in enumerate(match.get("players") or []):
+        if not isinstance(player, dict) or not player.get("stats"):
+            continue
+        tier = player.get("tier")
+        number = tier.get("id") if isinstance(tier, dict) else tier
+        try:
+            number = int(number or 0)
+        except (TypeError, ValueError):
+            number = 0
+        found = stats.line(player, rounds, stats.advanced(match, player))
+        won = 0.5 if draw else float(teams.get(str(player.get("team_id") or ""), False))
+        rows.append(
+            (facts["id"], slot, facts["queue"], number, found["acs"], found["adr"], found["kd"], found["hs"])
+            + (found["kast"], found["dd"], won, facts["started"])
+        )
+    return rows
+
+
 class Activity:
     def __init__(self, folder: Path, clock=time.time):
         self.path = Path(folder) / "activity.sqlite"
@@ -150,6 +197,8 @@ class Activity:
         self._lock = threading.Lock()
         self._db: sqlite3.Connection | None = None
         self._summary: dict[tuple, tuple[float, dict]] = {}
+        #: per rank band (and "" for every band): (when read, {stat: sorted values}, how many lines)
+        self._yardsticks: dict[str, tuple[float, dict, int]] = {}
         self._pruned = 0.0
         #: players seen in recent matches, for the collector: (region, puuid, tier); in memory only
         self.candidates: list[tuple[str, str, int]] = []
@@ -172,6 +221,10 @@ class Activity:
                     match TEXT, team TEXT, agent TEXT, won INTEGER, queue TEXT, tier INTEGER, map TEXT,
                     started INTEGER, PRIMARY KEY (match, team, agent));
                 CREATE INDEX IF NOT EXISTS picks_started ON picks (started);
+                CREATE TABLE IF NOT EXISTS lines (
+                    match TEXT, slot INTEGER, queue TEXT, tier INTEGER, acs REAL, adr REAL, kd REAL, hs REAL,
+                    kast REAL, dd REAL, won REAL, started INTEGER, PRIMARY KEY (match, slot));
+                CREATE INDEX IF NOT EXISTS lines_started ON lines (started);
                 """
             )
         return self._db
@@ -203,6 +256,7 @@ class Activity:
                     )
         self._remember(matches)
         picks = [row for match in matches or [] if isinstance(match, dict) for row in _picks(match)]
+        lines = [row for match in matches or [] if isinstance(match, dict) for row in _lines(match)]
         rows = [(f["id"], f["region"], f["cluster"], f["queue"], f["started"], f["length"], f["tier"]) for f in facts]
         try:
             with self._lock:
@@ -212,6 +266,10 @@ class Activity:
                 new = db.total_changes - before
                 db.executemany("INSERT OR IGNORE INTO gaps VALUES (?, ?, ?, ?, ?, ?, ?)", gaps)
                 db.executemany("INSERT OR IGNORE INTO picks VALUES (?, ?, ?, ?, ?, ?, ?, ?)", picks)
+                fresh = db.total_changes
+                db.executemany("INSERT OR IGNORE INTO lines VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", lines)
+                if db.total_changes != fresh:
+                    self._yardsticks.clear()
                 self._prune(db)
                 db.commit()
         except sqlite3.Error:
@@ -244,6 +302,7 @@ class Activity:
         db.execute("DELETE FROM matches WHERE started < ?", (oldest,))
         db.execute("DELETE FROM gaps WHERE at < ?", (oldest,))
         db.execute("DELETE FROM picks WHERE started < ?", (oldest,))
+        db.execute("DELETE FROM lines WHERE started < ?", (oldest,))
 
     # -- what the pages show -----------------------------------------------------------------------------
 
@@ -385,6 +444,38 @@ class Activity:
         found = {"matches": matches, "agents": listed, "maps": {key: len(seen) for key, seen in maps.items()}}
         self._summary[key] = (now, found)
         return found
+
+    def yardstick(self, tier: int) -> tuple[dict, int, str]:
+        """The lines of the rank band of ``tier`` over WINDOW_DAYS, each number sorted (``{stat: [values]}``), how
+        many lines, and the band's name ("" when every band is the yardstick, as when the band has fewer than
+        LINES_ENOUGH). Nothing (``{}, 0, ""``) with fewer than LINES_ENOUGH altogether. Read again every 10 minutes."""
+        name = band(tier)
+        own = self._sticks(name) if name else ({}, 0)
+        if own[1] >= LINES_ENOUGH:
+            return own[0], own[1], name
+        every = self._sticks("")
+        return (every[0], every[1], "") if every[1] >= LINES_ENOUGH else ({}, 0, "")
+
+    def _sticks(self, name: str) -> tuple[dict, int]:
+        now = self.clock()
+        kept = self._yardsticks.get(name)
+        if kept and now - kept[0] < 600:
+            return kept[1], kept[2]
+        since = int(now - WINDOW_DAYS * 86400)
+        query = f"SELECT tier, {', '.join(LINE_STATS)} FROM lines WHERE started >= ?"
+        try:
+            with self._lock:
+                rows = self._connect().execute(query, (since,)).fetchall()
+        except sqlite3.Error:
+            rows = []
+        if name:
+            rows = [row for row in rows if band(row[0]) == name]
+        sorted_stats = {
+            stat: sorted(row[index + 1] for row in rows if row[index + 1] is not None)
+            for index, stat in enumerate(LINE_STATS)
+        }
+        self._yardsticks[name] = (now, sorted_stats, len(rows))
+        return sorted_stats, len(rows)
 
     def close(self) -> None:
         with self._lock:

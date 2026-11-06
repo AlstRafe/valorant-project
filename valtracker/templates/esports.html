@@ -21,12 +21,15 @@
 {% endfor %}</nav>{% endif %}
 {% if since %}<p class="note">{{ t('いまは日程を読み込めないため、{time} に読み込んだものを出しています。スコアや試合中の印は古いかもしれません。', time=since.text) }}</p>{% endif %}
 <p class="fav-only" hidden><label><input type="checkbox" id="fav-only"> {{ t('印をつけたチームだけ') }}</label></p>
-{% if not games %}
+{% if no_results %}
+<p class="note">{{ t('結果はいま読み込めません。Riot の公式サイトで見られます。') }}{% if detail %} <code lang="en">{{ detail }}</code>{% endif %}</p>
+<p><a class="button quiet" href="https://valorantesports.com/" rel="noopener">{{ t('公式サイトで結果を見る') }}</a></p>
+{% elif not games %}
 <p class="note">{{ t('結果はまだありません。') if show == 'results' else t('これからの試合はまだ出ていません。') }}</p>
 {% else %}
 <ul class="schedule" data-mark="{{ t('{team} に印をつける') }}" data-unmark="{{ t('{team} の印を外す') }}">
 {% for game in games %}<li class="game {{ game.state }}">
-<p class="game-head">{% if game.state == 'inProgress' %}<span class="live">{{ t('試合中') }}</span>{% elif game.when %}<time datetime="{{ game.when.iso }}">{{ game.when.text }}</time>{% endif %}<span>{% set icon = picture(game.league.icon) %}{% if icon %}<img src="{{ icon }}" alt="" width="20" height="20" loading="lazy">{% endif %}{{ game.league.name }}{% if game.tournament %} · {{ game.tournament }}{% endif %}{% if game.best_of %} · Bo{{ game.best_of }}{% endif %}</span></p>
+<p class="game-head">{% if game.state == 'inProgress' %}<span class="live">{{ t('試合中') }}</span>{% elif game.when %}<time datetime="{{ game.when.iso }}">{{ game.when.text }}</time>{% endif %}<span>{% set icon = picture(game.league.icon) %}{% if icon %}<img src="{{ icon }}" alt="" width="20" height="20" loading="lazy">{% endif %}{% if game.tournament and game.league.name and game.tournament.startswith(game.league.name) %}{{ game.tournament }}{% else %}{{ game.league.name }}{% if game.tournament %} · {{ game.tournament }}{% endif %}{% endif %}{% if game.best_of %} · Bo{{ game.best_of }}{% endif %}</span></p>
 <div class="teams">
 {% for team in game.teams %}<div class="team-row{% if team.won %} won{% endif %}" data-team="{{ team.name }}">
 {% set logo = picture(team.icon) %}{% if logo %}<img src="{{ logo }}" alt="" width="28" height="28" loading="lazy">{% else %}<span class="no-logo" aria-hidden="true">{{ team.code[:3] }}</span>{% endif %}

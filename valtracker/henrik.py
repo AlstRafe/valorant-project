@@ -224,7 +224,7 @@ class Henrik:
         "tournament", "best_of", "vod", "teams": [{"name", "code", "icon", "won", "wins"}]}]``, by time, and
         ``None``, or the time (``time.time()``) of the last schedule that came when a new one does not: that one is
         shown (for up to a day) rather than nothing. After a failure nothing is asked for a while (each try costs
-        the shared allowance, up to 7 calls)."""
+        the shared allowance, up to 2 calls)."""
         fresh = self.cache.get(("esports",))
         if fresh is not None:
             return fresh, None
@@ -247,7 +247,7 @@ class Henrik:
         return games, None
 
     def _esports(self) -> list:
-        """A new schedule: the whole one, or when it does not come, the main leagues one by one. The whole one is
+        """A new schedule: the whole one, or when it does not come, the main leagues' (one call). The whole one is
         big: a timeout, an error, or HTTP 429 from HenrikDev, which counts each request it makes to Riot for it
         against the key (docs.henrikdev.xyz/general/rate-limiting); on the live site it was refused every time."""
         path = "/valorant/v1/esports/schedule"
@@ -261,32 +261,24 @@ class Henrik:
                 self.cache.put(("no-esports",), True, KEEP["news"])
         else:
             first = HenrikError("down", "the whole schedule did not come a while ago")
-        games, problems, busy = [], [], None
-        for league in ESPORTS_LEAGUES:
-            failed = self.cache.get(("no-esports", league))
-            if failed:  # failed a while ago: not asked again for a while (each visit would cost the budget)
-                problems.append(f"{league}: {failed}")
-                continue
-            try:
-                games += self._get(("esports", league), f"{path}?league={league}", KEEP["esports"], _slim_esports)
-            except HenrikError as error:
-                if error.kind in ("nokey", "badkey"):
-                    raise
-                if error.kind == "busy":  # the allowance is used up for now: the rest another time
-                    busy = error
-                    problems.append(f"{league}: {error.detail or 'busy'}")
-                    break
-                problems.append(f"{league}: {error.detail or error.kind}")
-                self.cache.put(("no-esports", league), error.detail or error.kind, KEEP["news"])
+        failed = self.cache.get(("no-esports", "leagues"))
+        if failed:  # failed a while ago: not asked again for a while (each visit would cost the budget)
+            raise HenrikError("down", f"{first.detail or first.kind}; leagues: {failed}")
+        try:
+            games = self._get(
+                ("esports", "leagues"), f"{path}?league={ESPORTS_LEAGUES}", KEEP["esports"], _slim_esports
+            )
+        except HenrikError as error:
+            if error.kind in ("nokey", "badkey"):
+                raise
+            detail = f"{first.detail or first.kind}; leagues: {error.detail or error.kind}"
+            if error.kind == "busy":  # the allowance is used up for now: another time
+                raise HenrikError("busy", detail) from None
+            self.cache.put(("no-esports", "leagues"), error.detail or error.kind, KEEP["news"])
+            raise HenrikError("down", detail) from None
         if not games:
-            raise HenrikError("busy" if busy else "down", "; ".join([first.detail or first.kind, *problems]))
-        seen, kept = set(), []
-        for game in games:  # a match can be in two leagues' lists (a league and its event)
-            key = (game["at"], tuple(team["name"] for team in game["teams"]))
-            if key not in seen:
-                seen.add(key)
-                kept.append(game)
-        return sorted(kept, key=lambda item: item["at"])
+            raise HenrikError("down", f"{first.detail or first.kind}; leagues: no matches")
+        return games
 
     def _get(self, cache_key, path: str, seconds: float, shape=None):
         kept = self.cache.get(cache_key)
@@ -318,8 +310,9 @@ class Henrik:
         return data
 
 
-#: The leagues asked for one by one when the whole esports schedule does not come (HenrikDev's league names).
-ESPORTS_LEAGUES = ("vct_pacific", "vct_americas", "vct_emea", "vct_china", "masters", "champions")
+#: The leagues asked for (in one call) when the whole esports schedule does not come, as HenrikDev's documentation
+#: names them (comma-separated, docs.henrikdev.xyz/valorant/api-reference/esports).
+ESPORTS_LEAGUES = "vct-international,vct-americas,vct-emea,vct-pacific,vct-china"
 #: How long the last schedule that came is shown when a new one does not (seconds), and how long nothing is asked
 #: after a failure: a short while when the allowance was used up, longer when HenrikDev did not answer.
 ESPORTS_LAST = 24 * 3600

@@ -2,7 +2,9 @@
 
 import os
 import re
+import time
 import unittest
+from datetime import UTC, datetime
 from unittest import mock
 
 from helpers import make_app
@@ -168,6 +170,39 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("<strong>ソーヴァ</strong> で確定しています", text)
         self.assertNotIn('class="pick-grid"', text)
         self.assertNotIn(jett + '" class="pick', text)
+
+    def test_agent_select_names_the_agents_that_win_on_the_map(self):
+        self.link()
+        self.riot.phase = "pregame"
+        jett, sova = "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"
+        self.riot.pd["entitlements"]["agents"].append(sova)
+        started = time.time() - 3600
+        games = []
+        for number in range(8):  # on Ascent, Sova's team wins 6 of 8, Jett's 2 of 8
+            game = {
+                "metadata": {
+                    "match_id": f"asc{number}",
+                    "region": "ap",
+                    "cluster": "Tokyo",
+                    "queue": {"id": "competitive"},
+                    "map": {"id": "7EAECC1B-4337-BBF6-6AB9-04B8F06B3319"},
+                    "started_at": datetime.fromtimestamp(started - number * 60, UTC).isoformat(),
+                    "game_length_in_ms": 1800000,
+                },
+                "teams": [{"team_id": "Red", "won": number < 6}, {"team_id": "Blue", "won": number >= 6}],
+                "players": [
+                    {"puuid": f"x{number}-{i}", "team_id": "Red" if i < 5 else "Blue", "tier": {"id": 12}}
+                    | {"agent": {"id": sova if i == 0 else jett if i == 5 else f"y{i}"}}
+                    for i in range(10)
+                ],
+            }
+            games.append(game)
+        self.app.config["VAL_ACTIVITY"].seen(games)
+        text = self.page("/live")
+        self.assertIn("このマップで勝っている: <strong>ソーヴァ</strong> 75%", text)
+        self.assertIn("このサイトが見た 8 試合", text)
+        self.assertIn('<small class="pick-win">75%</small>', text)
+        self.assertNotIn("<strong>ジェット</strong> 25%", text, "a teammate has locked Jett")
 
     def test_in_the_match(self):
         self.link()

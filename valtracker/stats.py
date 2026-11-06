@@ -223,8 +223,26 @@ def _per_map(played: list[dict]) -> list[dict]:
     for name, rows in maps.items():
         sides = _sides(rows)
         image = (rows[0].get("map") or {}).get("image")
-        table.append({"name": name, "image": image, **_totals(rows), **sides})
+        table.append({"name": name, "image": image, **_totals(rows), **sides, "agent": _best_agent(rows)})
     return sorted(table, key=lambda item: (-item["games"], -item["wins"], item["name"]))
+
+
+def _best_agent(rows: list[dict]) -> dict | None:
+    """The agent the player does best with on a map: of those played there more than once (else the most played),
+    the highest win rate, then the most games and ACS. ``{"name", "icon", "games", "win_rate", "acs"}``."""
+    agents: dict[str, list] = {}
+    for row in rows:
+        if row.get("agent_name"):
+            agents.setdefault(row["agent_id"] or row["agent_name"], []).append(row)
+    if not agents:
+        return None
+    picked = {key: found for key, found in agents.items() if len(found) > 1} or agents
+    ranked = []
+    for found in picked.values():
+        totals = _totals(found)
+        ranked.append((totals["win_rate"], totals["games"], totals["acs"] or 0, found[0], totals))
+    win_rate, games, acs, row, totals = max(ranked, key=lambda item: item[:3])
+    return {"name": row["agent_name"], "icon": row.get("agent_icon"), "games": games, "win_rate": win_rate, "acs": acs}
 
 
 def _sides(rows: list[dict]) -> dict:

@@ -1414,6 +1414,21 @@ TEXTS = {
         "en-GB": "News in this language could not be loaded, so the English news is shown.",
         "zh-TW": "無法載入此語言的文章，因此顯示英文文章。",
     },
+    "結果はいま読み込めません。Riot の公式サイトで見られます。": {
+        "ko": "지금은 결과를 불러올 수 없습니다. Riot 공식 사이트에서 볼 수 있습니다.",
+        "en-GB": "Results can't be loaded right now. They are on Riot's official site.",
+        "zh-TW": "目前無法載入比賽結果，可在 Riot 官方網站查看。",
+    },
+    "公式サイトで結果を見る": {
+        "ko": "공식 사이트에서 결과 보기",
+        "en-GB": "Official results",
+        "zh-TW": "在官方網站查看結果",
+    },
+    "得意: {agent}（{games}試合 {rate}%）": {
+        "ko": "주력: {agent} ({games}경기 {rate}%)",
+        "en-GB": "Best: {agent} ({games} games, {rate}%)",
+        "zh-TW": "拿手：{agent}（{games} 場 {rate}%）",
+    },
     "公式サイトで日程を見る": {
         "ko": "공식 사이트에서 일정 보기",
         "en-GB": "Official schedule",
@@ -1423,6 +1438,66 @@ TEXTS = {
         "ko": "지금은 일정을 불러올 수 없어 {time}에 불러온 일정을 보여 줍니다. 점수와 경기 중 표시는 오래되었을 수 있습니다.",
         "en-GB": "The schedule cannot be loaded right now, so this is the one loaded at {time}. Scores and live marks may be out of date.",
         "zh-TW": "目前無法載入賽程，因此顯示 {time} 載入的賽程。比分與進行中的標示可能已過時。",
+    },
+    "VAL スコア": {
+        "ko": "VAL 스코어",
+        "en-GB": "VAL Score",
+        "zh-TW": "VAL 分數",
+    },
+    "VAL スコア（同じランク帯と比べた 1000 点満点）": {
+        "ko": "VAL 스코어 (같은 랭크대와 비교한 1000점 만점)",
+        "en-GB": "VAL Score (out of 1000, against the same ranks)",
+        "zh-TW": "VAL 分數（與同牌位相比，滿分 1000）",
+    },
+    "{count} 試合の平均。{band}のプレイヤーの {lines} 試合分と比べた位置です。": {
+        "ko": "{count}경기 평균. {band} 플레이어 {lines}경기분과 비교한 위치입니다.",
+        "en-GB": "Average of {count} matches, against {lines} match lines of {band} players.",
+        "zh-TW": "{count} 場比賽的平均。與 {band} 玩家的 {lines} 場數據相比的位置。",
+    },
+    "すべてのランク": {
+        "ko": "모든 랭크",
+        "en-GB": "every rank",
+        "zh-TW": "所有牌位",
+    },
+    "スコア": {
+        "ko": "스코어",
+        "en-GB": "Score",
+        "zh-TW": "分數",
+    },
+    "スコアの出し方": {
+        "ko": "스코어 계산 방법",
+        "en-GB": "How the score is worked out",
+        "zh-TW": "分數的計算方式",
+    },
+    "スコアの推移": {
+        "ko": "스코어 추이",
+        "en-GB": "Score over time",
+        "zh-TW": "分數走勢",
+    },
+    "上位 {share}%": {
+        "ko": "상위 {share}%",
+        "en-GB": "Top {share}%",
+        "zh-TW": "前 {share}%",
+    },
+    "下位 {share}%": {
+        "ko": "하위 {share}%",
+        "en-GB": "Bottom {share}%",
+        "zh-TW": "後 {share}%",
+    },
+    "古い順": {
+        "ko": "오래된 순",
+        "en-GB": "oldest first",
+        "zh-TW": "由舊到新",
+    },
+    "同じランク帯の中での ACS（30%）・KAST（25%）・DDΔ（25%）の位置と、勝ったか（20%）を 1000 点満点にしたものです。真ん中の成績で半分勝つと 500 点ほど。S は 800 点から、A は 650、B は 500、C は 350 から。比べる試合はこのサイトが見た試合（名前は持ちません）です。": {
+        "ko": "같은 랭크대 안에서의 ACS(30%)·KAST(25%)·DDΔ(25%)의 위치와 승리 여부(20%)를 1000점 만점으로 나타낸 것입니다. 중간 성적으로 절반을 이기면 500점 정도. S는 800점부터, A는 650, B는 500, C는 350부터. 비교하는 경기는 이 사이트가 본 경기입니다(이름은 저장하지 않습니다).",
+        "en-GB": "Where your ACS (30%), KAST (25%) and DDΔ (25%) stand among players of the same ranks, and whether you won (20%), out of 1000. Middling numbers and half the games won make about 500. S from 800, A from 650, B from 500, C from 350. The matches compared are the ones this site has seen (no names are kept).",
+        "zh-TW": "在同牌位中的 ACS（30%）、KAST（25%）、DDΔ（25%）位置，加上是否獲勝（20%），換算成滿分 1000。中等成績、贏一半約 500 分。S 從 800 分起，A 從 650，B 從 500，C 從 350。比較的比賽是本網站看過的比賽（不保存名字）。",
+    },
+    "評価 {grade}": {
+        "ko": "등급 {grade}",
+        "en-GB": "Grade {grade}",
+        "zh-TW": "等級 {grade}",
     },
 }
 

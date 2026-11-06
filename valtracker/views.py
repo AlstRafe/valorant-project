@@ -13,8 +13,9 @@ from urllib.parse import unquote
 from flask import Flask, abort, current_app, g, make_response, redirect, render_template, request, send_file, url_for
 
 from valtracker import collection as owned_items
-from valtracker import i18n, security, stats
+from valtracker import i18n, score, security, stats
 from valtracker import rounds as rounds_module
+from valtracker.activity import BANDS, LINE_QUEUES, LINE_STATS
 from valtracker.henrik import MODES, REGIONS, HenrikError, shows_rr, split_riot_id
 from valtracker.media import kind as media_kind
 from valtracker.riot import AUTHORIZE, RiotError
@@ -228,6 +229,92 @@ def _row(match: dict, player: dict, rr_changes: dict) -> dict:
         "mates": stats.mates(match, player),
         # Deathmatch, Skirmish and the like would skew the averages: the summary counts the standard games.
         "standard": str((metadata.get("queue") or {}).get("mode_type") or "Standard") == "Standard",
+        "queue_id": str((metadata.get("queue") or {}).get("id") or "").lower(),
+        "tier": _tier_number(player.get("tier")),
+    }
+
+
+def _tier_number(tier) -> int:
+    number = tier.get("id") if isinstance(tier, dict) else tier
+    try:
+        return int(number or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _band_name(name: str) -> str:
+    """A rank band (activity.BANDS) in the visitor's words: "Platinum – Diamond"; every band for ""."""
+    for key, low, high in BANDS:
+        if key == name:
+            first, last = (_family(_rank({"id": tier})["name"]) for tier in (low, high))
+            return first if first == last else f"{first} – {last}"
+    return _t("すべてのランク")
+
+
+def _family(name: str) -> str:
+    """A rank's name without its number: "Gold 2" -> "Gold"."""
+    return re.sub(r"\s*\d+$", "", name)
+
+
+def _score(line: dict, rounds: int, queue: str, tier: int, won) -> dict | None:
+    """A match's score (score.py) against the lines of the player's rank band: ``{"value", "grade", "standings":
+    {stat: 0..1}, "lines", "band"}``, or None (another mode, a remake, too few lines seen yet)."""
+    if queue not in LINE_QUEUES or rounds < 5:
+        return None
+    stick, lines, band = current_app.config["VAL_ACTIVITY"].yardstick(tier)
+    value = score.match_score(line, 1.0 if won is True else 0.0 if won is False else 0.5, stick)
+    if value is None:
+        return None
+    return {
+        "value": value,
+        "grade": score.grade(value),
+        "standings": {key: score.standing(stick.get(key) or [], line.get(key)) for key in LINE_STATS},
+        "lines": lines,
+        "band": band,
+    }
+
+
+def _scores(rows: list[dict]) -> dict | None:
+    """Each row's score, and over them the average, its grade, "top X%" for each number and the trend (oldest
+    first): ``{"value", "grade", "games", "lines", "band", "tops": {stat: X}, "chart"}``, or None."""
+    for row in rows:
+        row["score"] = _score(row["line"], row["rounds"], row["queue_id"], row["tier"], row["result"]["won"])
+    scored = [row for row in rows if row["score"]]
+    if not scored:
+        return None
+    value = round(sum(row["score"]["value"] for row in scored) / len(scored))
+    widest = max(scored, key=lambda row: row["score"]["lines"])["score"]
+    return {
+        "value": value,
+        "grade": score.grade(value),
+        "games": len(scored),
+        "lines": widest["lines"],
+        "band": _band_name(widest["band"]),
+        "tops": {key: score.top([row["score"]["standings"][key] for row in scored]) for key in LINE_STATS},
+        "chart": _score_chart([row["score"]["value"] for row in reversed(scored)]) if len(scored) > 1 else None,
+    }
+
+
+def _score_chart(values: list[int]) -> dict:
+    """The scores of the matches as a line, oldest first (an SVG drawn here), with a line where each grade
+    begins. Narrower than the RR's (at most 15 matches), so it stays tall enough on a phone."""
+    width, height, pad = 420, 130, 12
+
+    def y(value: float) -> float:
+        return round(pad + (1000 - value) * (height - 2 * pad) / 1000, 1)
+
+    left = 26  # room for the grades' letters
+    step = (width - left - pad) / (len(values) - 1)
+    dots = [
+        {"x": round(left + number * step, 1), "y": y(value), "value": value, "grade": score.grade(value)}
+        for number, value in enumerate(values)
+    ]
+    return {
+        "width": width,
+        "height": height,
+        "path": "M" + " L".join(f"{dot['x']},{dot['y']}" for dot in dots),
+        "dots": dots,
+        "lines": [{"y": y(low), "grade": letter} for low, letter in score.GRADES if low],
     }
 
 
@@ -467,7 +554,9 @@ def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
             "rr": sum(today_rr) if today_rr else None,
             "minutes": round(sum(row["length"] for row in played_today) / 60000),
         }
+    scores = _scores(rows) if rows else None
     if summary:
+        summary["score"] = scores
         summary["streak"] = _streak(rows)
         for weapon in summary["weapons"]:
             weapon.update(_weapon(weapon["key"], _weapon_said(rows, weapon["key"])))
@@ -551,12 +640,18 @@ def _match_page(found: dict, me: str) -> dict:
             "agent": _agent(player.get("agent")),
             "rank": _rank(player.get("tier")),
             "line": stats.line(player, rounds, stats.advanced(found, player)),
+            "tier": _tier_number(player.get("tier")),
+            "won": stats.team_result(found, str(player.get("team_id") or ""))["won"],
             "mvp": stats.placing(found, player)["mvp"],
             "party": parties.get(player.get("party_id"), 0),
             "me": number == mine,
         }
         for number, player in enumerate(everyone)
     ]
+
+    queue_id = str((metadata.get("queue") or {}).get("id") or "").lower()
+    for person in people:
+        person["score"] = _score(person["line"], rounds, queue_id, person["tier"], person["won"])
 
     def lines(team_id: str | None) -> list[dict]:
         listed = [person for person in people if team_id is None or person["team"] == team_id]
@@ -628,7 +723,9 @@ def _match_page(found: dict, me: str) -> dict:
     tiers = [person["rank"]["tier"] for person in people if person["rank"]["tier"] > 2]
     average = _rank({"id": round(sum(tiers) / len(tiers))}) if tiers else None
     moment = stats.started(found)
+    scored = any(person["score"] for person in people)
     return {
+        "scored": scored,
         "map": _map(metadata),
         "queue": _queue(metadata),
         "server": cluster(metadata.get("cluster")),

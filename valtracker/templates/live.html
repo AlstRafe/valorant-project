@@ -73,7 +73,8 @@
 {% else %}
 {% if picker.current %}<form method="post" action="{{ url_for('live_act') }}" class="live-act lock-row"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="value" value="{{ picker.current }}"><button type="submit" name="do" value="lock">{{ picker.current_name }} で確定</button></form>{% endif %}
 <form method="post" action="{{ url_for('live_act') }}" class="live-act"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="do" value="select">
-<ul class="pick-grid">{% for agent in picker.agents %}<li><button type="submit" name="value" value="{{ agent.id }}" class="pick{% if agent.id == picker.current %} on{% endif %}"{% if agent.taken %} disabled aria-disabled="true"{% endif %} aria-label="{{ agent.name }} を選ぶ{% if agent.taken %}（味方が確定済み）{% endif %}">{% if agent.icon %}<img src="{{ media(agent.icon) }}" alt="" width="48" height="48">{% endif %}<span>{{ agent.name }}</span></button></li>{% endfor %}</ul>
+{% if picker.best %}<p class="note pick-best">このマップで勝っている: {% for agent in picker.best %}<strong>{{ agent.name }}</strong> {{ agent.win|round|int }}%{% if not loop.last %}、{% endif %}{% endfor %}（このサイトが見た {{ picker.matches }} 試合）</p>{% endif %}
+<ul class="pick-grid">{% for agent in picker.agents %}<li><button type="submit" name="value" value="{{ agent.id }}" class="pick{% if agent.id == picker.current %} on{% endif %}"{% if agent.taken %} disabled aria-disabled="true"{% endif %} aria-label="{{ agent.name }} を選ぶ{% if agent.taken %}（味方が確定済み）{% endif %}">{% if agent.icon %}<img src="{{ media(agent.icon) }}" alt="" width="48" height="48">{% endif %}<span>{{ agent.name }}</span>{% if agent.win is not none %}<small class="pick-win">{{ agent.win|round|int }}%</small>{% endif %}</button></li>{% endfor %}</ul>
 </form>
 <p class="note">選ぶだけでは決まりません。「確定」を押すと、ゲームで確定したのと同じになります。</p>
 {% endif %}

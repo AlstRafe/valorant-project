@@ -120,7 +120,7 @@ class WorldTest(unittest.TestCase):
         self.assertNotIn("HTTP 500", text, "what came back is for the owner")
         asked = len(self.fetch.asked)
         self.assertIn("HTTP 500", self.client.get("/esports").get_data(as_text=True))
-        self.assertEqual(len(self.fetch.asked), asked, "nothing asked again for a while: each visit cost 7 calls")
+        self.assertEqual(len(self.fetch.asked), asked, "nothing asked again for a while: each visit cost calls")
 
     def test_esports_the_last_schedule_when_a_new_one_does_not_come(self):
         self.assertIn("Paper Rex", self.page("/esports"))
@@ -153,7 +153,7 @@ class WorldTest(unittest.TestCase):
         with mock.patch.object(FakeFetch, "__call__", answer):
             text = self.page("/esports")
             self.assertIn("Paper Rex", text)
-            self.assertTrue(any("league=vct_pacific" in url for url, _ in self.fetch.asked))
+            self.assertTrue(any("league=vct-international," in url for url, _ in self.fetch.asked))
             whole = sum(url.endswith("/v1/esports/schedule") for url, _ in self.fetch.asked)
             self.app.config["VAL_HENRIK"].cache.put(("esports",), None, -1)
             self.page("/esports")
@@ -174,7 +174,7 @@ class WorldTest(unittest.TestCase):
             text = self.page("/esports")
         self.assertIn("Paper Rex", text)
         self.assertEqual(text.count("Paper Rex"), whole.count("Paper Rex"), "each match once")
-        self.assertTrue(any("league=vct_pacific" in url for url, _ in self.fetch.asked))
+        self.assertTrue(any("league=vct-international," in url for url, _ in self.fetch.asked))
 
     def test_esports_schedule_and_results(self):
         text = self.page("/esports")
@@ -195,6 +195,52 @@ class WorldTest(unittest.TestCase):
         self.assertNotIn("Paper Rex", text)
         self.assertIn("Sentinels", self.page("/esports?league=nonsense"), "an unknown league: every one")
         self.assertIn("Sentinels", self.page("/esports?show=nonsense"))
+
+    def test_esports_from_riots_own_site(self):
+        self.fetch.esports_page = True
+        text = self.page("/esports")
+        self.assertIn("Team Heretics", text)
+        self.assertIn("北アメリカ予選プレイオフ · スイス", text)
+        self.assertNotIn("北アメリカ · 北アメリカ予選", text, "the league once when the stage starts with it")
+        self.assertIn("Bo5", text)
+        self.assertIn("&lt;i&gt;Fnatic&lt;/i&gt;", text, "names are text, never HTML")
+        self.assertNotIn("example.com", text, "pictures only from the known addresses")
+        self.assertIn('src="/pic/lolesports/teams/th.png"', text)
+        self.assertIn('src="/pic/lolesports/leagues/1789037825209_valorant-logo.png"', text, "http:// made https")
+        self.assertNotIn("Only one", text)
+        self.assertEqual(text.count('data-team="TBD"'), 2, "each match once")
+        self.assertLess(text.index("北アメリカ"), text.index("Team Heretics"), "by time")
+        self.assertEqual(self.fetch.henrik_calls(), [], "no HenrikDev call for the schedule")
+        self.assertTrue(any(url == "https://valorantesports.com/ja-JP/schedule" for url, _ in self.fetch.asked))
+        self.assertIn("Team Heretics", self.page("/esports?league=europe"))
+        self.assertNotIn("Team Heretics", self.page("/esports?league=north_america"))
+        asked = len(self.fetch.asked)
+        self.page("/esports")
+        self.assertEqual(len(self.fetch.asked), asked, "kept a while")
+
+    def test_esports_in_english_when_the_language_does_not_answer(self):
+        original = FakeFetch.__call__
+
+        def answer(fetch, url, headers):
+            if url.startswith("https://valorantesports.com/zh-TW/"):
+                fetch.asked.append((url, headers))
+                return 404, b""
+            return original(fetch, url, headers)
+
+        self.fetch.esports_page = True
+        self.client.set_cookie("lang", "zh-TW")
+        with mock.patch.object(FakeFetch, "__call__", answer):
+            self.assertIn("Team Heretics", self.page("/esports"))
+        self.assertTrue(any(url == "https://valorantesports.com/en-US/schedule" for url, _ in self.fetch.asked))
+
+    def test_esports_results_say_where_they_are_when_henrikdev_has_none(self):
+        self.fetch.esports_page = True
+        self.failing("/v1/esports/schedule", status=500)
+        text = self.page("/esports?show=results")
+        self.assertNotIn('class="problem"', text, "the schedule still works: no error")
+        self.assertIn("結果はいま読み込めません", text)
+        self.assertIn('href="https://valorantesports.com/"', text)
+        self.assertIn("Team Heretics", self.page("/esports"), "the schedule from Riot")
 
     def test_tools_lead_to_them(self):
         text = self.page("/tools")
