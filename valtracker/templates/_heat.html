@@ -27,7 +27,7 @@
 {% if heat.places %}
 <div class="heat-places">
 <table class="board plain">
-<thead><tr><th scope="col">{{ t('場所') }}</th><th scope="col">{{ t('キル') }}</th><th scope="col">{{ t('デス') }}</th><th scope="col">{{ t('ファーストデス') }}</th></tr></thead>
+<thead><tr><th scope="col">{{ t('場所') }}</th><th scope="col">{{ t('キル') }}</th><th scope="col">{{ t('デス') }}</th><th scope="col"><abbr title="{{ t('ファーストデス') }}">FD</abbr></th></tr></thead>
 <tbody>
 {% for place in heat.places %}<tr><th scope="row">{{ place.name }}</th><td{% if place.diff > 0 %} class="up"{% endif %}>{{ place.kills }}</td><td{% if place.diff < 0 %} class="down"{% endif %}>{{ place.deaths }}</td><td>{{ place.first_deaths }}</td></tr>
 {% endfor %}
