@@ -57,7 +57,7 @@ def grade(score: int | None) -> str:
 
 
 def top(standings: list) -> int | None:
-    """"Top X%" from a number's standings in several matches (their average): 1 at best, 100 at worst."""
+    """ "Top X%" from a number's standings in several matches (their average): 1 at best, 100 at worst."""
     known = [value for value in standings if value is not None]
     if not known:
         return None

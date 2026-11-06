@@ -1372,6 +1372,20 @@ meter {
   color: var(--soft);
   font-size: 0.8rem;
 }
+.map-cards .map-agent {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ink);
+}
+.map-cards .map-agent img {
+  position: static;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  opacity: 1;
+}
 .weapons {
   display: grid;
   gap: 0.4rem;
@@ -3457,6 +3471,14 @@ code {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.pick-grid .pick .pick-win {
+  color: var(--soft);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+.pick-best strong {
+  color: var(--ink);
+}
 .pick-grid .pick.on {
   border-color: var(--accent);
   box-shadow: inset 0 0 0 2px var(--accent);
@@ -3809,6 +3831,7 @@ code {
   font-size: 0.85rem;
 }
 .score-how summary {
+  padding: 0.3rem 0;
   cursor: pointer;
   color: var(--accent);
 }
@@ -3838,6 +3861,11 @@ code {
 }
 .score-chart {
   margin: 0.8rem 0 0;
+}
+.score-chart svg {
+  display: block;
+  max-height: 14rem;
+  margin-inline: auto;
 }
 .chart-title {
   margin: 0 0 0.3rem;

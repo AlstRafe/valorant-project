@@ -303,9 +303,10 @@ def _score_chart(values: list[int]) -> dict:
     def y(value: float) -> float:
         return round(pad + (1000 - value) * (height - 2 * pad) / 1000, 1)
 
-    step = (width - 2 * pad) / (len(values) - 1)
+    left = 26  # room for the grades' letters
+    step = (width - left - pad) / (len(values) - 1)
     dots = [
-        {"x": round(pad + number * step, 1), "y": y(value), "value": value, "grade": score.grade(value)}
+        {"x": round(left + number * step, 1), "y": y(value), "value": value, "grade": score.grade(value)}
         for number, value in enumerate(values)
     ]
     return {

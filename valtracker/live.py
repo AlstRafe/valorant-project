@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from valtracker.activity import FEW
 from valtracker.content import Content
 
 #: valorant-api.com's roles, in the order a team usually fills them: smokes first, then information, a sentinel
@@ -21,6 +22,8 @@ DUELIST = "dbe8757e-9e92-4ed4-b39f-9dfc589691d4"
 ROLES = (CONTROLLER, INITIATOR, SENTINEL, DUELIST)
 #: Agents suggested for a missing role at most.
 SUGGESTED = 4
+#: How many of the owner's agents that win most on the map are named at agent select.
+BEST_SHOWN = 3
 
 
 def _id(value) -> str:
@@ -122,9 +125,12 @@ def _party(party: dict, look: dict, me: str, queue_name, now: float) -> dict:
     }
 
 
-def page(found: dict, content: Content, lang: str, me: str, owned_agents: set | None, queue_name) -> dict:
+def page(
+    found: dict, content: Content, lang: str, me: str, owned_agents: set | None, queue_name, agent_stats=None
+) -> dict:
     """What live.html shows of ``found`` (riot.Riot.live); ``owned_agents``: the owner's agents (uuids) for the
-    suggestions, ``queue_name(id)``: a queue's name in the page's language."""
+    suggestions, ``queue_name(id)``: a queue's name in the page's language, ``agent_stats(map uuid, queue id)``:
+    how each agent does on the map in the matches this site has seen (activity.Activity.agents)."""
     phase = found.get("phase") or ""
     match = found.get("match") if isinstance(found.get("match"), dict) else {}
     agents = content.agent_index(lang)
@@ -185,6 +191,10 @@ def page(found: dict, content: Content, lang: str, me: str, owned_agents: set | 
             # the agents the owner can pick: theirs (all, when that could not be read), but not one a teammate
             # has locked
             locked = {row["agent_id"] for row in rows if row["state"] == "locked" and not row["me"]}
+            seen = {"matches": 0, "agents": []}
+            if agent_stats and known_map.get("uuid"):
+                seen = agent_stats(_id(known_map["uuid"]), _id(match.get("QueueID")))
+            here = {item["agent"]: item for item in seen["agents"] if item["picks"] >= FEW}
             values["picker"] = {
                 "current": mine["agent_id"] if mine["state"] in ("selected", "locked") else "",
                 "current_name": mine["agent"],
@@ -196,11 +206,16 @@ def page(found: dict, content: Content, lang: str, me: str, owned_agents: set | 
                         "icon": agent.get("displayIcon") or "",
                         "role": ((agent.get("role") or {}).get("displayName")) or "",
                         "taken": uuid in locked,
+                        "win": here[uuid]["win"] if uuid in here else None,
                     }
                     for uuid, agent in sorted(agents.items(), key=lambda pair: str(pair[1].get("displayName") or ""))
                     if owned_agents is None or uuid in owned_agents
                 ],
+                "matches": seen["matches"],
             }
+            # the owner's agents that win most on this map (of those picked often enough to say)
+            choices = [item for item in values["picker"]["agents"] if item["win"] is not None and not item["taken"]]
+            values["picker"]["best"] = sorted(choices, key=lambda item: -item["win"])[:BEST_SHOWN]
     elif phase == "ingame":
         rows = [
             _player(item, look, me, "")

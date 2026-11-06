@@ -385,3 +385,23 @@ class HostingTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BestAgentTest(unittest.TestCase):
+    @staticmethod
+    def row(agent: str, won: bool, acs: int = 200) -> dict:
+        line = {"kills": 10, "deaths": 10, "shots": 10, "headshots": 2, "acs": acs, "adr": 120}
+        return {"agent_id": agent, "agent_name": agent.title(), "agent_icon": "", "rounds": 20, "line": line} | {
+            "result": {"won": won}
+        }
+
+    def test_the_best_of_those_played_more_than_once(self):
+        rows = [self.row("jett", True), self.row("jett", False), self.row("sova", True), self.row("sova", True)]
+        rows.append(self.row("neon", True))  # once: not enough to say
+        best = stats._best_agent(rows)
+        self.assertEqual((best["name"], best["games"], best["win_rate"]), ("Sova", 2, 100))
+
+    def test_each_played_once_the_best_of_them(self):
+        best = stats._best_agent([self.row("jett", False), self.row("sova", True, acs=150)])
+        self.assertEqual(best["name"], "Sova")
+        self.assertIsNone(stats._best_agent([]))

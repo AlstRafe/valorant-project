@@ -125,7 +125,8 @@ def main() -> None:
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5077
     helpers.PNG = _png()
     helpers.fixture = _fixture
-    app, _, _ = make_app()
+    app, fetch, _ = make_app()
+    fetch.esports_page = True  # the matches to come from Riot's esports site, the results from HenrikDev
     app.config["VAL_RIOT"].sign_in("ssid-1")
     seed(app.config["VAL_ACTIVITY"], time.time())
     # a few days of the owner's store, and a skin wanted that is in today's (diary.py)

@@ -201,6 +201,7 @@ class WorldTest(unittest.TestCase):
         text = self.page("/esports")
         self.assertIn("Team Heretics", text)
         self.assertIn("北アメリカ予選プレイオフ · スイス", text)
+        self.assertNotIn("北アメリカ · 北アメリカ予選", text, "the league once when the stage starts with it")
         self.assertIn("Bo5", text)
         self.assertIn("&lt;i&gt;Fnatic&lt;/i&gt;", text, "names are text, never HTML")
         self.assertNotIn("example.com", text, "pictures only from the known addresses")

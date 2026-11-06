@@ -265,7 +265,9 @@ class Henrik:
         if failed:  # failed a while ago: not asked again for a while (each visit would cost the budget)
             raise HenrikError("down", f"{first.detail or first.kind}; leagues: {failed}")
         try:
-            games = self._get(("esports", "leagues"), f"{path}?league={ESPORTS_LEAGUES}", KEEP["esports"], _slim_esports)
+            games = self._get(
+                ("esports", "leagues"), f"{path}?league={ESPORTS_LEAGUES}", KEEP["esports"], _slim_esports
+            )
         except HenrikError as error:
             if error.kind in ("nokey", "badkey"):
                 raise

@@ -1424,6 +1424,11 @@ TEXTS = {
         "en-GB": "Official results",
         "zh-TW": "在官方網站查看結果",
     },
+    "得意: {agent}（{games}試合 {rate}%）": {
+        "ko": "주력: {agent} ({games}경기 {rate}%)",
+        "en-GB": "Best: {agent} ({games} games, {rate}%)",
+        "zh-TW": "拿手：{agent}（{games} 場 {rate}%）",
+    },
     "公式サイトで日程を見る": {
         "ko": "공식 사이트에서 일정 보기",
         "en-GB": "Official schedule",

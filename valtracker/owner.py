@@ -15,6 +15,7 @@ from flask import Flask, current_app, g, redirect, render_template, request, ses
 from valtracker import live as live_page
 from valtracker import progress as progress_page
 from valtracker import security
+from valtracker.activity import LINE_QUEUES
 from valtracker.collection import STARTERS
 from valtracker.riot import RiotError
 from valtracker.tools import _when
@@ -48,6 +49,12 @@ def _id(value) -> str:
 def _queue_name(key: str) -> str:
     key = key.lower()
     return _t(QUEUES[key]) if key in QUEUES else key
+
+
+def _agents_on_the_map(map_id: str, queue: str) -> dict:
+    """How each agent does on a map in the matches this site has seen, in the queue (competitive for others)."""
+    queue = queue if queue in LINE_QUEUES else "competitive"
+    return current_app.config["VAL_ACTIVITY"].agents(queue, "", map_id)
 
 
 def _problem(error: RiotError) -> dict:
@@ -151,7 +158,9 @@ def register(app: Flask) -> None:
             except RiotError:
                 owned = None
         me = _id(riot.store.load().get("puuid"))
-        values = live_page.page(found, current_app.config["VAL_CONTENT"], g.lang, me, owned, _queue_name)
+        values = live_page.page(
+            found, current_app.config["VAL_CONTENT"], g.lang, me, owned, _queue_name, _agents_on_the_map
+        )
         said = session.pop("live_said", "")  # once: the page is asked again every few seconds
         words, worked = LIVE_SAID.get(said) or (RIOT_FAILURES.get(said, RIOT_FAILURES["down"]) if said else "", False)
         return render_template(

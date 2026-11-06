@@ -48,7 +48,7 @@
 <h2 id="rr-title">{{ t('RR の推移') }} <small>{{ t('コンペティティブ {count} 試合', count=rr_chart.games) }} · <span class="{{ 'up' if rr_chart.net > 0 else ('down' if rr_chart.net < 0 else '') }}">{{ '%+d'|format(rr_chart.net) }} RR</span></small></h2>
 <div class="chart">
 <svg viewBox="0 0 {{ rr_chart.width }} {{ rr_chart.height }}" role="img" aria-label="{{ t('RR の推移') }}: {{ rr_chart.dots[0].rank.name }} {{ rr_chart.dots[0].rr }} RR → {{ rr_chart.dots[-1].rank.name }} {{ rr_chart.dots[-1].rr }} RR">
-{% for line in rr_chart.lines %}<line class="grid" x1="0" x2="{{ rr_chart.width }}" y1="{{ line.y }}" y2="{{ line.y }}"/><text class="grid-name" x="6" y="{{ line.y - 4 }}">{{ line.rank.name }}</text>
+{% for line in rr_chart.lines %}<line class="grid" x1="0" x2="{{ rr_chart.width }}" y1="{{ line.y }}" y2="{{ line.y }}"/><text class="grid-name" x="4" y="{{ line.y + 4 }}">{{ line.rank.name }}</text>
 {% endfor %}<path class="line" d="{{ rr_chart.path }}"/>
 {% for dot in rr_chart.dots %}<circle class="{{ 'up' if dot.change > 0 else ('down' if dot.change < 0 else 'even') }}" cx="{{ dot.x }}" cy="{{ dot.y }}" r="4.5"><title>{{ dot.rank.name }} {{ dot.rr }} RR ({{ '%+d'|format(dot.change) }})</title></circle>
 {% endfor %}</svg>
@@ -120,7 +120,7 @@
 <div class="chart score-chart">
 <p class="chart-title">{{ t('スコアの推移') }} <small>{{ t('古い順') }}</small></p>
 <svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" role="img" aria-label="{{ t('スコアの推移') }}: {{ chart.dots|map(attribute='value')|join(', ') }}">
-{% for line in chart.lines %}<line class="grid" x1="0" x2="{{ chart.width }}" y1="{{ line.y }}" y2="{{ line.y }}"/><text class="grid-name" x="6" y="{{ line.y - 4 }}">{{ line.grade }}</text>
+{% for line in chart.lines %}<line class="grid" x1="20" x2="{{ chart.width }}" y1="{{ line.y }}" y2="{{ line.y }}"/><text class="grid-name" x="4" y="{{ line.y + 4 }}">{{ line.grade }}</text>
 {% endfor %}<path class="line" d="{{ chart.path }}"/>
 {% for dot in chart.dots %}<circle class="grade-{{ dot.grade|lower }}" cx="{{ dot.x }}" cy="{{ dot.y }}" r="4.5"><title>{{ dot.value }} ({{ dot.grade }})</title></circle>
 {% endfor %}</svg>
@@ -248,7 +248,7 @@
 <h2 id="map-title">{{ t('マップ別') }}</h2>
 <ul class="map-cards">
 {% for item in summary.maps %}
-<li>{% if item.image %}<img src="{{ media(item.image) }}" alt="" width="452" height="128" loading="lazy">{% endif %}<div><strong>{{ item.name }}</strong><span class="{{ 'up' if item.win_rate > 50 else ('down' if item.win_rate < 50 else '') }}">{{ item.win_rate }}%</span><small>{{ t('{wins}勝 {losses}敗', wins=item.wins, losses=item.losses) }}{% if item.atk_rate is not none %} · {{ t('攻撃') }} {{ item.atk_rate }}%{% endif %}{% if item.def_rate is not none %} · {{ t('防衛') }} {{ item.def_rate }}%{% endif %}</small></div></li>
+<li>{% if item.image %}<img src="{{ media(item.image) }}" alt="" width="452" height="128" loading="lazy">{% endif %}<div><strong>{{ item.name }}</strong><span class="{{ 'up' if item.win_rate > 50 else ('down' if item.win_rate < 50 else '') }}">{{ item.win_rate }}%</span><small>{{ t('{wins}勝 {losses}敗', wins=item.wins, losses=item.losses) }}{% if item.atk_rate is not none %} · {{ t('攻撃') }} {{ item.atk_rate }}%{% endif %}{% if item.def_rate is not none %} · {{ t('防衛') }} {{ item.def_rate }}%{% endif %}</small>{% if item.agent %}<small class="map-agent">{% if item.agent.icon %}<img src="{{ media(item.agent.icon) }}" alt="" width="20" height="20" loading="lazy">{% endif %}{{ t('得意: {agent}（{games}試合 {rate}%）', agent=item.agent.name, games=item.agent.games, rate=item.agent.win_rate) }}</small>{% endif %}</div></li>
 {% endfor %}
 </ul>
 </section>
