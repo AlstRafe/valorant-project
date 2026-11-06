@@ -233,3 +233,32 @@ def page(
         making = match.get("MatchmakingData") if isinstance(match.get("MatchmakingData"), dict) else {}
         values["queue"] = queue_name(str(making.get("QueueID") or ""))
     return values
+
+
+def state(found: dict, content: Content, lang: str) -> dict:
+    """Where the owner's game is, in a few words, for the header's ライブ tab on every page (/live/state):
+    ``{"phase": "menus", "queue" (matchmaking), "pregame", "ingame" or "" (closed or not known), "words", "map",
+    "match": the match's id (agent select and the match), "running"}``. The owner's pages are in Japanese only."""
+    phase = found.get("phase") or ""
+    party = found.get("party") if isinstance(found.get("party"), dict) else {}
+    match = found.get("match") if isinstance(found.get("match"), dict) else {}
+    if phase == "menus" and str(party.get("State") or "").upper() == "MATCHMAKING":
+        phase = "queue"
+    place = ""
+    if phase in ("pregame", "ingame"):
+        address = str(match.get("MapID") or "").rsplit("/", 1)[-1].lower()
+        place = (content.map_index(lang).get(address) or {}).get("displayName") or ""
+    running = found.get("running")
+    words = {
+        "menus": "メニュー",
+        "queue": "マッチング中",
+        "pregame": "エージェント選択中",
+        "ingame": "試合中",
+    }.get(phase) or ("ゲームの状態を読めません" if running is None else "VALORANT は開いていません")
+    return {
+        "phase": phase,
+        "words": f"{words}（{place}）" if place else words,
+        "map": place,
+        "match": _id(match.get("ID") or match.get("MatchID")) if phase in ("pregame", "ingame") else "",
+        "running": running,
+    }

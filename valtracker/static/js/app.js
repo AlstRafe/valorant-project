@@ -895,6 +895,103 @@
     });
   }
 
+  // The owner's game on every page: the header's ライブ tab shows where it is (a dot: the menus, matchmaking, agent
+  // select, the match), and agent select starting brings a note with the way to pick. /live itself reloads every
+  // few seconds, so there the page says where the game is and nothing is asked.
+  function liveWatch() {
+    var tab = document.querySelector("[data-live-state]");
+    if (!tab) return;
+    var STOP = { nologin: true, signedout: true, badpaste: true };
+    var TOLD = "val.live.told";
+    var page = document.querySelector("[data-live-phase]");
+    var timer = null;
+    var asking = false;
+
+    function told(match) {
+      try {
+        if (match) sessionStorage.setItem(TOLD, match);
+        return sessionStorage.getItem(TOLD) || "";
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function note(state) {
+      var box = document.getElementById("live-alert");
+      if (state.phase !== "pregame" || page || (state.match && told() === state.match)) {
+        if (box) box.remove();
+        return;
+      }
+      if (box) return;
+      box = document.createElement("div");
+      box.id = "live-alert";
+      box.className = "live-alert";
+      box.lang = "ja";
+      box.setAttribute("role", "status");
+      var words = document.createElement("p");
+      var strong = document.createElement("strong");
+      strong.textContent = "エージェント選択が始まりました";
+      words.appendChild(strong);
+      if (state.map) words.appendChild(document.createTextNode("（" + state.map + "）"));
+      var go = document.createElement("a");
+      go.className = "button";
+      go.href = tab.getAttribute("href");
+      go.textContent = "ライブでピックする";
+      var close = document.createElement("button");
+      close.type = "button";
+      close.className = "quiet";
+      close.textContent = "閉じる";
+      close.addEventListener("click", function () {
+        told(state.match || "seen");
+        box.remove();
+      });
+      box.appendChild(words);
+      box.appendChild(go);
+      box.appendChild(close);
+      document.body.appendChild(box);
+    }
+
+    function show(state) {
+      tab.setAttribute("data-phase", state.phase || "off");
+      tab.setAttribute("aria-label", state.words ? "ライブ（" + state.words + "）" : "ライブ");
+      tab.title = state.words || "";
+      note(state);
+    }
+
+    function ask() {
+      clearTimeout(timer);
+      if (asking || document.visibilityState !== "visible") return;
+      asking = true;
+      fetch(tab.getAttribute("data-live-state"), {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+      })
+        .then(function (answer) {
+          return answer.ok ? answer.json() : null;
+        })
+        .then(function (state) {
+          asking = false;
+          if (state) show(state);
+          if (state && STOP[state.problem]) return;
+          // while the game is open, often (agent select lasts about a minute and a half); closed, now and then
+          timer = setTimeout(ask, state && state.phase ? 8000 : 30000);
+        })
+        .catch(function () {
+          asking = false;
+          timer = setTimeout(ask, 30000);
+        });
+    }
+
+    if (page) {
+      show({ phase: page.getAttribute("data-live-phase"), words: page.getAttribute("data-live-words") });
+      return;
+    }
+    ask();
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") ask();
+    });
+  }
+
   // Phones: the tab bar at the bottom would sit on the keyboard while typing.
   function typing() {
     document.addEventListener("focusin", function (e) {
@@ -933,6 +1030,7 @@
     teams();
     night();
     refresh();
+    liveWatch();
     mapPick();
     statCard();
     crosshairs();

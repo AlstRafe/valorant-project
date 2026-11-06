@@ -13,14 +13,22 @@
 {% if row.rank %}<span class="seat-rank">{% if row.rank.icon %}<img src="{{ media(row.rank.icon) }}" alt="" width="28" height="28">{% endif %}<span class="rank-words">{{ row.rank.name }}{% if row.rank.rr is not none %} {{ row.rank.rr }} RR{% endif %}</span></span>{% endif %}
 </li>
 {%- endmacro %}
-{% block title %}いまの試合 · {{ site_name }}{% endblock %}
+{% macro steps() -%}
+<ol class="live-steps" aria-label="ゲームの画面ごとにできること">
+<li{% if phase == 'menus' %} aria-current="step"{% endif %}><strong>メニュー</strong><span>モードを選んでキューを開始・取り消し</span></li>
+<li{% if phase == 'pregame' %} aria-current="step"{% endif %}><strong>エージェント選択</strong><span>味方の構成と、このマップで勝っているエージェントを見てピック・確定</span></li>
+<li{% if phase == 'ingame' %} aria-current="step"{% endif %}><strong>試合中</strong><span>敵も味方も全員のエージェントとランク</span></li>
+</ol>
+{%- endmacro %}
+{% block title %}ライブ · {{ site_name }}{% endblock %}
 {% block main %}
-<div lang="ja" data-refresh="{{ 5 if phase else 20 }}">
+<div lang="ja" data-refresh="{{ 5 if phase else 20 }}" data-live-phase="{{ live_state.phase if live_state else '' }}" data-live-words="{{ live_state.words if live_state else '' }}">
 <section class="hero">
-<h1>いまの試合</h1>
-<p class="lead">VALORANT が開いているかを見て、メニューではキューの開始と取り消し、エージェント選択では味方の構成とピック、試合中は全員のエージェントとランクを出します。ページは数秒ごとに新しくなります。</p>
+<h1>ライブ</h1>
+<p class="lead">あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。PC で VALORANT を開いていれば、スマホからでも使えます。</p>
 </section>
-{% include "_pages.html" %}
+{% include "_play.html" %}
+{% if not phase %}{{ steps() }}{% endif %}
 {% if said %}<p class="verdict {{ 'ok' if said_ok else 'no' }}" role="status">{{ said }}</p>{% endif %}
 {% if problem %}
 <p class="problem" role="alert">{{ problem }}{% if detail %} <code>{{ detail }}</code>{% endif %}</p>
@@ -103,6 +111,8 @@
 {% endif %}
 {% if names_missing %}<p class="note">名前を読み込めませんでした。</p>{% endif %}
 {% if phase %}<p class="note">名前を隠しているプレイヤーの名前・カード・称号は出しません（本人が選んだ設定のため）。</p>{% endif %}
+{% if phase %}{{ steps() }}{% endif %}
+<p class="note">このページは数秒ごとに新しくなります。ほかのページを見ているときも、上のタブ「ライブ」の点でゲームの状態がわかり、エージェント選択が始まると画面の下に知らせが出ます。</p>
 {% endif %}
 </div>
 {% endblock %}
