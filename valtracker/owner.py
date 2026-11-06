@@ -17,9 +17,9 @@ from valtracker import live as live_page
 from valtracker import progress as progress_page
 from valtracker import security
 from valtracker.activity import LINE_QUEUES
-from valtracker.collection import STARTERS
+from valtracker.collection import STARTERS, expressions
 from valtracker.henrik import REGIONS
-from valtracker.riot import RiotError
+from valtracker.riot import ITEM_TYPES, RiotError
 from valtracker.tools import _when
 from valtracker.views import QUEUES, RIOT_FAILURES, _t
 
@@ -146,14 +146,20 @@ def _wear_spray(found: dict, uuid: str, slot: str):
     if uuid not in owned:  # PD names a spray's level (its uuid or its level's)
         return None, "unknown"
     loadout = found.get("loadout") if isinstance(found.get("loadout"), dict) else {}
-    slots = [str(spray.get("EquipSlotID")) for spray in loadout.get("Sprays") or [] if isinstance(spray, dict)]
-    if slot not in slots:
+    spray = ITEM_TYPES["sprays"]
+    if slot not in {item["slot"] for item in expressions(loadout) if item["type"] == spray}:
         return None, "unknown"
 
     def change(loadout: dict) -> None:
-        for spray in loadout.get("Sprays") or []:
-            if isinstance(spray, dict) and str(spray.get("EquipSlotID")) == slot:
-                spray["SprayID"], spray["SprayLevelID"] = uuid, None
+        if isinstance(loadout.get("ActiveExpressions"), list):  # playerloadout v3: the place is the position
+            places = loadout["ActiveExpressions"]
+            at = int(slot) if slot.isdigit() else -1
+            if 0 <= at < len(places) and isinstance(places[at], dict) and _id(places[at].get("TypeID")) == spray:
+                places[at]["AssetID"] = uuid
+                return
+        for item in loadout.get("Sprays") or []:  # v2
+            if isinstance(item, dict) and str(item.get("EquipSlotID")) == slot:
+                item["SprayID"], item["SprayLevelID"] = uuid, None
                 return
         raise RiotError("down", "equip: no spray slot")
 

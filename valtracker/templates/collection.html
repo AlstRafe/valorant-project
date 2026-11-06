@@ -37,16 +37,17 @@
 {% elif not items %}
 <p class="note" lang="ja">まだありません。</p>
 {% else %}
+{% if not worn_read and show != 'agents' %}<p class="problem worn-unread" role="alert" lang="ja">いま装備しているものを Riot から読めませんでした。装備中の印は出ていません。少し待ってから開き直してください。{% if problem_detail %} <code>{{ problem_detail }}</code>{% endif %}</p>{% endif %}
 {% set wear = show in ('skins', 'cards', 'titles') or (show == 'sprays' and spray_slots) %}
 {% if wear %}<form class="equip-form" method="post" action="{{ url_for('equip') }}" lang="ja"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="show" value="{{ show }}">{% endif %}
 {% if show == 'skins' %}
 {# The game's collection: the weapons first (each with what it wears), then one weapon's skins at a time. #}
 <div class="armory{% if picked %} picked{% endif %}" lang="ja">
 <ul class="guns" aria-label="武器">
-{% for group in items %}<li data-name="{{ group.search }}"><a href="{{ url_for('collection', weapon=group.uuid) }}#gun" title="{{ group.name }}: {{ group.worn or '標準' }}"{% if picked and picked.uuid == group.uuid %} aria-current="true"{% endif %}>
+{% for group in items %}<li data-name="{{ group.search }}"><a href="{{ url_for('collection', weapon=group.uuid) }}#gun" title="{{ group.name }}{% if worn_read %}: {{ group.worn or '標準' }}{% endif %}"{% if picked and picked.uuid == group.uuid %} aria-current="true"{% endif %}>
 {% if group.image %}<img src="{{ media(group.image) }}" alt="" width="256" height="96" loading="lazy">{% endif %}
 <span class="iname">{{ group.name }}</span>
-<small class="worn">{{ group.worn or '標準' }}</small>
+{% if worn_read %}<small class="worn">{{ group.worn or '標準' }}</small>{% endif %}
 <small class="count" aria-label="{{ group['items']|length }} 個">{{ group['items']|length }}</small>
 </a></li>
 {% endfor %}</ul>
@@ -54,6 +55,16 @@
 <section class="weapon" id="gun" aria-labelledby="gun-title">
 <div class="gun-head"><a class="button quiet" href="{{ url_for('collection') }}">← 武器一覧</a><h2 id="gun-title">{{ picked.name }} <small>{{ picked['items']|length }}</small></h2></div>
 {% set now = picked.now %}
+{% if not worn_read %}
+<div class="worn-now">
+{% if picked.icon %}<img src="{{ media(picked.icon) }}" alt="" width="512" height="192">{% endif %}
+<div class="worn-text">
+<p class="worn-label">いま装備中</p>
+<p class="worn-name">読めませんでした</p>
+<p class="worn-meta"><span>Riot から装備を読めなかったので、何を付けているかは出せません。</span></p>
+</div>
+</div>
+{% else %}
 <div class="worn-now{% if now.tier.key %} tier-{{ now.tier.key }}{% endif %}">
 {% if now.image %}<img src="{{ media(now.image) }}" alt="" width="512" height="192">{% endif %}
 <div class="worn-text">
@@ -62,6 +73,7 @@
 <p class="worn-meta">{% if now.tier.name %}<span>{% if now.tier.icon %}<img class="tier" src="{{ media(now.tier.icon) }}" alt="" width="16" height="16">{% endif %}{{ now.tier.name }}</span>{% endif %}{% if now.variant %}<span>{{ now.variant }}</span>{% endif %}{% if now.level %}<span>レベル {{ now.level }}/{{ now.levels }}</span>{% endif %}{% if now.buddy %}<span>{% if now.buddy.icon %}<img class="buddy" src="{{ media(now.buddy.icon) }}" alt="" width="20" height="20">{% endif %}バディー：{{ now.buddy.name }}</span>{% endif %}</p>
 </div>
 </div>
+{% endif %}
 <ul class="items skins rows">
 {% for item in picked['items'] %}<li class="item{% if item.tier.key %} tier-{{ item.tier.key }}{% endif %}{% if item.equipped %} on{% endif %}" data-name="{{ item.name|lower }}">
 {% if item.image %}<img src="{{ media(item.image) }}" alt="" width="256" height="96" loading="lazy">{% endif %}

@@ -70,6 +70,8 @@ const MADE_UP = [
   "/collection?weapon=9c82e19d-4575-0200-1a81-3eacf00cf872&equip=ok",
   "/collection?show=titles",
   "/collection?show=sprays",
+  // what is worn could not be read from Riot (tests/ui/serve.py: the made-up PD has no loadout)
+  "/collection?weapon=9c82e19d-4575-0200-1a81-3eacf00cf872&loadout=none",
   "/compare?a=Tester%23JP1&b=Other%23KR1",
   "/leaderboard?q=RiotTop%23AP1&full=1",
   "/agents/stats?queue=competitive",
@@ -446,13 +448,14 @@ async function main() {
           await page.waitForTimeout(live ? 400 : 200);
           for (const item of await page.evaluate(inspect))
             add(item.kind, where, item.where, item.text, `${lang} ${width} ${theme}`);
-          // a page that should work but says it could not (only the made-up nobody's page and the searches
-          // without a tag are meant to)
+          // a page that should work but says it could not (only the made-up nobody's page, the searches
+          // without a tag and the collection without a loadout are meant to)
           const failed = await page
             .$eval(".problem, main [role=alert]", (el) => el.innerText.trim().slice(0, 60))
             .catch(() => "");
-          if (failed && !where.startsWith("/p/nobody-here/") && !where.startsWith("/search?"))
-            add("page shows an error", where, "", failed, `${lang} ${width} ${theme}`);
+          const meant =
+            where.startsWith("/p/nobody-here/") || where.startsWith("/search?") || where.includes("loadout=none");
+          if (failed && !meant) add("page shows an error", where, "", failed, `${lang} ${width} ${theme}`);
           for (const error of errors) {
             // the nobody's page answers 404 on purpose (and the browser says so in the console)
             if (where.startsWith("/p/nobody-here/") && error.includes("404")) continue;

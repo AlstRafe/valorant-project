@@ -72,6 +72,10 @@ PLATFORM = base64.b64encode(
         }
     ).encode()
 ).decode()
+#: Where the owner's loadout is (PD's playerloadout), newest first: v3 since September 2026 (v2 answers 404
+#: RESOURCE_NOT_FOUND there; v3's sprays are in ``ActiveExpressions``). The next is asked when one answers 404, and
+#: a change goes back where the loadout came from.
+LOADOUTS = ("/personalization/v3/players/{puuid}/playerloadout", "/personalization/v2/players/{puuid}/playerloadout")
 #: The collection's kinds -> PD's item types.
 ITEM_TYPES = {
     "skins": "e7c63390-eda7-46e0-bb7a-a6abdacd2433",  # skin levels
@@ -320,8 +324,7 @@ class Riot:
 
         def send(tokens: dict, saved: dict) -> dict:
             base, puuid, headers = self._base(saved), str(saved["puuid"]), self._headers(tokens)
-            url = f"{base}/personalization/v2/players/{puuid}/playerloadout"
-            loadout = self._pd("loadout", url, headers)
+            loadout, url = self._loadout(base, puuid, headers)
             change(loadout)
             loadout.pop("Version", None)  # PD gives the new one
             body = json.dumps(loadout).encode()
@@ -673,10 +676,11 @@ class Riot:
 
     def _collect(self, tokens: dict, saved: dict) -> dict:
         base, puuid, headers = self._base(saved), str(saved["puuid"]), self._headers(tokens)
-        asks = {"wallet": f"/store/v1/wallet/{puuid}", "loadout": f"/personalization/v2/players/{puuid}/playerloadout"}
+        asks = {"wallet": f"/store/v1/wallet/{puuid}"}
         asks |= {kind: f"/store/v1/entitlements/{puuid}/{item_type}" for kind, item_type in ITEM_TYPES.items()}
         with ThreadPoolExecutor(4, thread_name_prefix="riot") as pool:
-            asked = {key: pool.submit(self._pd, key, base + path, headers) for key, path in asks.items()}
+            asked = {"loadout": pool.submit(lambda: self._loadout(base, puuid, headers)[0])}
+            asked |= {key: pool.submit(self._pd, key, base + path, headers) for key, path in asks.items()}
         answers, missing, problems = {}, [], []
         for key, future in asked.items():
             try:
@@ -708,6 +712,18 @@ class Riot:
             "missing": missing,
             "problem": ", ".join(dict.fromkeys(problems)),
         }
+
+    def _loadout(self, base: str, puuid: str, headers: dict) -> tuple[dict, str]:
+        """PD's playerloadout of the owner and the address it came from (LOADOUTS: the next when one is not there)."""
+        for number, path in enumerate(LOADOUTS):
+            url = base + path.format(puuid=puuid)
+            try:
+                return self._pd("loadout", url, headers), url
+            except RiotError as error:
+                gone = error.kind == "down" and " 404" in f" {error.detail}"
+                if not gone or number == len(LOADOUTS) - 1:
+                    raise
+        raise RiotError("down", "loadout")  # not reached
 
     def _pd(self, key: str, url: str, headers: dict, method: str = "GET", body: bytes | None = None) -> dict:
         status, _, body = self.send(method, url, headers, body)

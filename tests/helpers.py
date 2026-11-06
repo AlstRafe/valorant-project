@@ -137,6 +137,8 @@ class FakeRiot:
         self.pressed: list[tuple[str, str]] = []
         #: The loadouts sent back (PUT playerloadout).
         self.worn: list[dict] = []
+        #: The playerloadout PD gives: 3 (since September 2026; v2 answers 404) or 2 (before: v3 answers 404).
+        self.loadout_version = 3
 
     def address(self, access: str = ACCESS) -> str:
         return f"https://playvalorant.com/opt_in#access_token={access}&scope=account+openid&iss=x&id_token={ID_TOKEN}&token_type=Bearer&expires_in=3600"
@@ -243,7 +245,14 @@ class FakeRiot:
         if url.endswith("/name-service/v2/players") and method == "PUT":
             asked = set(json.loads(body))
             return self._answer("names", [item for item in self.pd["names"] if item["Subject"] in asked])
-        if url.endswith(f"/personalization/v2/players/{PUUID}/playerloadout") and method == "PUT":
+        for version in (2, 3):
+            if (
+                url.endswith(f"/personalization/v{version}/players/{PUUID}/playerloadout")
+                and version != self.loadout_version
+            ):
+                return 404, [], json.dumps({"httpStatus": 404, "errorCode": "RESOURCE_NOT_FOUND"}).encode()
+        loadout = f"/personalization/v{self.loadout_version}/players/{PUUID}/playerloadout"
+        if url.endswith(loadout) and method == "PUT":
             self.worn.append(json.loads(body))
             self.pd["loadout"] = json.loads(body) | {"Version": 8}  # what the game wears from now on
             return self._answer("equip", self.pd["loadout"])
@@ -253,7 +262,7 @@ class FakeRiot:
             return self._answer("queues", self.pd["customgameconfigs"])
         if url.endswith(f"/store/v1/wallet/{PUUID}"):
             return self._answer("wallet", self.pd["wallet"])
-        if url.endswith(f"/personalization/v2/players/{PUUID}/playerloadout"):
+        if url.endswith(loadout):
             return self._answer("loadout", self.pd["loadout"])
         for kind, item_type in ITEM_TYPES.items():
             if url.endswith(f"/store/v1/entitlements/{PUUID}/{item_type}"):

@@ -28,13 +28,17 @@
     "Attachments": []
    }
   ],
-  "Sprays": [
+  "ActiveExpressions": [
    {
-    "EquipSlotID": "x",
-    "SprayID": "dd000000-0000-4000-8000-000000000001",
-    "SprayLevelID": null
+    "TypeID": "d5f120f8-ff8c-4aac-92ea-f2b5acbe9475",
+    "AssetID": "dd000000-0000-4000-8000-000000000001"
+   },
+   {
+    "TypeID": "03a572de-4234-31ed-d344-ababa488f981",
+    "AssetID": "ff000000-0000-4000-8000-000000000001"
    }
   ],
+  "DynamicOptions": {},
   "Identity": {
    "PlayerCardID": "cc000000-0000-4000-8000-000000000001",
    "PlayerTitleID": "ee000000-0000-4000-8000-000000000001",

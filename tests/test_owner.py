@@ -342,7 +342,10 @@ class OwnerTest(unittest.TestCase):
         self.assertEqual(vandal["ChromaID"], "aa000000-0000-4000-8000-000000000021", "the base variant")
         self.assertEqual(vandal["CharmID"], "bb000000-0000-4000-8000-000000000001", "the rest as it was")
         self.assertNotIn("Version", worn)
-        self.assertEqual(len(worn["Sprays"]), 1)
+        self.assertEqual(len(worn["ActiveExpressions"]), 2)
+        self.assertEqual(worn["DynamicOptions"], {})
+        (put,) = [url for method, url, _, _ in self.riot.asked if method == "PUT" and "playerloadout" in url]
+        self.assertIn("/personalization/v3/", put, "back where the loadout came from")
         self.assertIn("装備しました", self.page("/collection?equip=ok"))
 
     def test_wear_only_what_is_owned(self):
@@ -381,12 +384,14 @@ class OwnerTest(unittest.TestCase):
                 "csrf": self.token(),
                 "show": "sprays",
                 "item": "dd000000-0000-4000-8000-000000000001",
-                "slot.dd000000-0000-4000-8000-000000000001": "x",
+                "slot.dd000000-0000-4000-8000-000000000001": "0",
             },
         )
         self.assertIn("show=sprays", answer.headers["Location"])
         self.assertIn("equip=ok", answer.headers["Location"])
-        self.assertEqual(self.riot.worn[0]["Sprays"][0]["SprayID"], "dd000000-0000-4000-8000-000000000001")
+        wheel = self.riot.worn[0]["ActiveExpressions"]
+        self.assertEqual(wheel[0]["AssetID"], "dd000000-0000-4000-8000-000000000001")
+        self.assertEqual(wheel[1]["AssetID"], "ff000000-0000-4000-8000-000000000001", "the flex stays")
         answer = self.client.post(
             "/collection/equip",
             data={
@@ -398,6 +403,34 @@ class OwnerTest(unittest.TestCase):
         )
         self.assertIn("equip=unknown", answer.headers["Location"], "only a place the wheel has")
         self.assertEqual(len(self.riot.worn), 1)
+
+    def test_wear_with_the_loadout_v2(self):
+        """Where PD still has playerloadout v2 only (v3 answers 404), wearing goes back to v2."""
+        self.riot.loadout_version = 2
+        loadout = self.riot.pd["loadout"]
+        del loadout["ActiveExpressions"], loadout["DynamicOptions"]
+        loadout["Sprays"] = [
+            {"EquipSlotID": "x", "SprayID": "dd000000-0000-4000-8000-000000000001", "SprayLevelID": None}
+        ]
+        self.link()
+        spray = "dd000000-0000-4000-8000-000000000001"
+        answer = self.client.post(
+            "/collection/equip",
+            data={"csrf": self.token(), "show": "sprays", "item": spray, f"slot.{spray}": "x"},
+        )
+        self.assertIn("equip=ok", answer.headers["Location"])
+        self.assertEqual(self.riot.worn[0]["Sprays"][0]["SprayID"], spray)
+        (put,) = [url for method, url, _, _ in self.riot.asked if method == "PUT" and "playerloadout" in url]
+        self.assertIn("/personalization/v2/", put)
+
+    def test_wear_when_the_loadout_cannot_be_read(self):
+        self.riot.loadout_version = 1
+        self.link()
+        title = "ee000000-0000-4000-8000-000000000002"
+        answer = self.client.post("/collection/equip", data={"csrf": self.token(), "show": "titles", "item": title})
+        self.assertIn("equip=down", answer.headers["Location"])
+        self.assertEqual(self.riot.worn, [])
+        self.assertIn("Riot のサーバーから答えがありませんでした", self.page("/collection?show=titles&equip=down"))
 
 
 if __name__ == "__main__":
