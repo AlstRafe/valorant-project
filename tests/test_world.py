@@ -7,6 +7,7 @@ from unittest import mock
 
 from helpers import FakeFetch, make_app
 
+from valtracker.cache import Budget
 from valtracker.hosting import DISALLOW
 from valtracker.media import outside_path
 
@@ -120,6 +121,25 @@ class WorldTest(unittest.TestCase):
         asked = len(self.fetch.asked)
         self.assertIn("HTTP 500", self.client.get("/esports").get_data(as_text=True))
         self.assertEqual(len(self.fetch.asked), asked, "nothing asked again for a while: each visit cost 7 calls")
+
+    def test_esports_the_last_schedule_when_a_new_one_does_not_come(self):
+        self.assertIn("Paper Rex", self.page("/esports"))
+        henrik = self.app.config["VAL_HENRIK"]
+        henrik.cache.put(("esports",), None, -1)  # the schedule is old: a new one is asked for
+        henrik.budget = Budget(0, 60)  # and the allowance is used up
+        text = self.page("/esports")
+        self.assertIn("Paper Rex", text, "the last schedule rather than 混み合っています")
+        self.assertIn("に読み込んだものを出しています", text)
+        self.assertNotIn('class="problem"', text)
+        henrik.budget = Budget(25, 60)
+        asked = len(self.fetch.asked)
+        self.page("/esports")
+        self.assertEqual(len(self.fetch.asked), asked, "not asked again for a while after a failure")
+
+    def test_esports_busy_without_a_last_schedule(self):
+        self.app.config["VAL_HENRIK"].budget = Budget(0, 60)
+        text = self.page("/esports", 503)
+        self.assertIn('href="https://valorantesports.com/"', text, "the official schedule instead")
 
     def test_esports_from_the_leagues(self):
         whole = self.page("/esports")
