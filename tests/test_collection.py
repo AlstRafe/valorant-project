@@ -11,6 +11,7 @@ from helpers import make_app
 from valtracker import riot
 
 VISITOR = {"homepage.visitor": True}
+VANDAL = "9c82e19d-4575-0200-1a81-3eacf00cf872"
 
 
 class CollectionTest(unittest.TestCase):
@@ -95,18 +96,34 @@ class CollectionTest(unittest.TestCase):
         self.assertIn("レベル 187", text)
         self.assertIn("1,250", text)
         self.assertIn("4,200", text)
-        # weapons in the game's order (sidearms first), the equipped skin first, its chroma's picture
-        self.assertLess(text.index("クラシック"), text.index("ヴァンダル"))
-        self.assertLess(text.index("プライム ヴァンダル"), text.index("レイヴァー ヴァンダル"))
-        self.assertIn("weaponskinchromas/aa000000-0000-4000-8000-000000000022/displayicon.png", text)
-        self.assertIn("バリエーション</span> 2/3", text)
-        self.assertIn("tier-premium on", text)
-        self.assertIn("装備中", text)
-        self.assertNotIn("スタンダード", text)
+        # first every weapon in the game's order (sidearms first), each with what it wears (the chroma's picture)
+        guns = text[text.index('<ul class="guns"') :]
+        self.assertLess(guns.index("クラシック"), guns.index("ヴァンダル"))
+        self.assertIn("weaponskinchromas/aa000000-0000-4000-8000-000000000022/displayicon.png", guns)
+        self.assertIn('<small class="worn">プライム ヴァンダル</small>', guns)
+        self.assertIn(
+            'data-name="ヴァンダル レイヴァー ヴァンダル プライム ヴァンダル"', guns, "a skin's name finds it"
+        )
+        self.assertNotIn('class="items skins rows"', text, "no weapon open yet")
         self.assertNotIn("近接武器", text, "a weapon without skins of its own is left out")
         self.assertRegex(text, r"スキン <small>3</small>")
         sources = re.findall(r'(?:src|href)="([^"]+)"', text)
         self.assertEqual([s for s in sources if s.startswith(("http:", "https:", "//"))], [])
+        # then one weapon's skins: the dearest first, whatever is worn (it is marked where it is)
+        vandal = self.page(f"/collection?weapon={VANDAL}")
+        self.assertIn(
+            f'href="/collection?weapon={VANDAL}#gun" title="ヴァンダル: プライム ヴァンダル" aria-current="true"',
+            vandal,
+        )
+        rows = vandal[vandal.index('class="items skins rows"') :]
+        self.assertLess(rows.index("レイヴァー ヴァンダル"), rows.index("プライム ヴァンダル"))
+        self.assertNotIn("クラシック", rows)
+        self.assertIn("バリエーション 2/3", rows)
+        self.assertIn("tier-premium on", rows)
+        self.assertIn('<span class="badge">装備中</span>', rows)
+        self.assertNotIn("スタンダード", rows)
+        self.assertIn('href="/collection">← 武器一覧</a>', vandal)
+        self.assertNotIn('class="items skins rows"', self.page("/collection?weapon=nothing"))
 
     def test_the_other_tabs(self):
         self.link()

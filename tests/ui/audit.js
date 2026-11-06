@@ -62,6 +62,7 @@ const MADE_UP = [
   "/live?phase=pregame",
   "/live?phase=ingame",
   "/collection?show=cards",
+  "/collection?weapon=9c82e19d-4575-0200-1a81-3eacf00cf872&equip=ok",
   "/collection?show=titles",
   "/collection?show=sprays",
   "/compare?a=Tester%23JP1&b=Other%23KR1",

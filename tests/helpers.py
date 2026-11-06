@@ -226,7 +226,8 @@ class FakeRiot:
             return self._answer("names", [item for item in self.pd["names"] if item["Subject"] in asked])
         if url.endswith(f"/personalization/v2/players/{PUUID}/playerloadout") and method == "PUT":
             self.worn.append(json.loads(body))
-            return self._answer("equip", json.loads(body) | {"Version": 8})
+            self.pd["loadout"] = json.loads(body) | {"Version": 8}  # what the game wears from now on
+            return self._answer("equip", self.pd["loadout"])
         if url.endswith(f"/store/v3/storefront/{PUUID}"):
             return self._answer("storefront", self.pd["storefront"])
         if url == "https://glz-ap-1.ap.a.pvp.net/parties/v1/parties/customgameconfigs":

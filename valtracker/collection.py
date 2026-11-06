@@ -1,5 +1,6 @@
 """The owner's collection page: riot.py's answer (uuids and counts) with the game's names and pictures (content.py),
-laid out like the game's own collection screen (weapons in its order, what is equipped first)."""
+laid out like the game's own collection screen (weapons in its order, then one weapon's skins). The order of the
+items does not follow what is worn: wearing one (in place, without leaving the page) marks it where it is."""
 
 from __future__ import annotations
 
@@ -44,8 +45,9 @@ def _id(value) -> str:
     return str(value or "").lower()
 
 
-def page(found: dict, content: Content, lang: str, show: str) -> dict:
-    """What collection.html shows of ``found`` (riot.Riot.collection) with the tab ``show`` open."""
+def page(found: dict, content: Content, lang: str, show: str, weapon: str = "") -> dict:
+    """What collection.html shows of ``found`` (riot.Riot.collection) with the tab ``show`` open; on the skins'
+    tab, ``weapon`` (a uuid) is the weapon whose skins are open, as the game's collection opens one at a time."""
     owned = found.get("owned") or {}
     loadout = found.get("loadout") if isinstance(found.get("loadout"), dict) else {}
     identity = loadout.get("Identity") if isinstance(loadout.get("Identity"), dict) else {}
@@ -62,6 +64,8 @@ def page(found: dict, content: Content, lang: str, show: str) -> dict:
         "agents": _agents,
     }
     counts = {kind: _count(kind, owned, content, lang) for kind in TABS}
+    items = makers[show](owned, loadout, content, lang) if show in owned else []
+    picked = next((group for group in items if group.get("uuid") == _id(weapon)), None) if show == "skins" else None
     return {
         "name": found.get("name") or "",
         "tag": found.get("tag") or "",
@@ -74,7 +78,8 @@ def page(found: dict, content: Content, lang: str, show: str) -> dict:
         ],
         "show": show,
         "missing": show in (found.get("missing") or []) or show not in owned,
-        "items": makers[show](owned, loadout, content, lang) if show in owned else [],
+        "items": items,
+        "picked": picked,
         "problem_detail": found.get("problem") or "",
         "spray_slots": _spray_slots(loadout, content, lang) if show == "sprays" else [],
     }
@@ -198,8 +203,21 @@ def _skins(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict
                     "of": len(parts),
                 }
             )
-        items.sort(key=lambda item: (not item["equipped"], -item["tier"]["order"], item["name"]))
-        groups.append({"name": weapon.get("displayName") or "", "icon": weapon.get("displayIcon"), "items": items})
+        items.sort(key=lambda item: (-item["tier"]["order"], item["name"]))
+        worn = next((item for item in items if item["equipped"]), None)
+        groups.append(
+            {
+                "uuid": _id(weapon.get("uuid")),
+                "name": weapon.get("displayName") or "",
+                "icon": weapon.get("displayIcon"),
+                # the weapon's square on the page: what it wears now (the standard look: the weapon's own picture)
+                "image": (worn or {}).get("image") or weapon.get("displayIcon"),
+                "worn": (worn or {}).get("name") or "",
+                # typing a skin's name finds its weapon
+                "search": " ".join([weapon.get("displayName") or ""] + [item["name"] for item in items]).lower(),
+                "items": items,
+            }
+        )
     return groups
 
 
@@ -214,7 +232,7 @@ def _weapon_order(weapon: dict) -> tuple:
 
 def _simple(kind: str, owned, content: Content, lang: str, picture, equipped: Counter, name=None) -> list[dict]:
     """Owned items of a valorant-api.com list (``kind``) whose items, or their levels, are what PD names
-    (``owned``: {uuid: copies}): one entry per item, equipped first."""
+    (``owned``: {uuid: copies}): one entry per item, by name."""
     index = content.index(kind, lang)
     copies: Counter = Counter()
     items: dict[str, dict] = {}
@@ -233,7 +251,7 @@ def _simple(kind: str, owned, content: Content, lang: str, picture, equipped: Co
         }
         for uuid, known in items.items()
     ]
-    listed.sort(key=lambda item: (not item["equipped"], item["name"]))
+    listed.sort(key=lambda item: item["name"])
     return listed
 
 

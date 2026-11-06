@@ -322,7 +322,7 @@ class OwnerTest(unittest.TestCase):
 
     def test_wear_a_skin(self):
         self.link()
-        text = self.page("/collection")
+        text = self.page("/collection?weapon=9c82e19d-4575-0200-1a81-3eacf00cf872")
         self.assertIn('name="item" value="' + REAVER + '"', text, "a skin not worn")
         answer = self.client.post(
             "/collection/equip",
@@ -335,6 +335,7 @@ class OwnerTest(unittest.TestCase):
         )
         self.assertEqual(answer.status_code, 303)
         self.assertIn("equip=ok", answer.headers["Location"])
+        self.assertIn("weapon=9c82e19d-4575-0200-1a81-3eacf00cf872", answer.headers["Location"], "back to that weapon")
         (worn,) = self.riot.worn
         vandal = next(gun for gun in worn["Guns"] if gun["ID"] == "9c82e19d-4575-0200-1a81-3eacf00cf872")
         self.assertEqual(vandal["SkinID"], PRIME)
@@ -359,9 +360,15 @@ class OwnerTest(unittest.TestCase):
         text = self.page("/collection?show=cards")
         found = re.findall(r'name="item" value="([0-9a-f-]{36})"', text)
         self.assertTrue(found, "a card not worn has its button")
+        self.assertIn(f'<button type="submit" class="tile" name="item" value="{found[0]}"', text, "pressing the card")
         answer = self.client.post("/collection/equip", data={"csrf": self.token(), "show": "cards", "item": found[0]})
         self.assertIn("equip=ok", answer.headers["Location"])
+        self.assertNotIn("weapon=", answer.headers["Location"])
         self.assertEqual(self.riot.worn[0]["Identity"]["PlayerCardID"], found[0])
+        # the cards stay where they were: only the mark moves
+        after = self.page("/collection?show=cards&equip=ok")
+        self.assertEqual(re.findall(r'data-name="([^"]+)"', after), re.findall(r'data-name="([^"]+)"', text))
+        self.assertNotIn(f'value="{found[0]}"', after, "now worn")
 
     def test_wear_a_spray(self):
         self.link()

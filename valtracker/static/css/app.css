@@ -3788,6 +3788,281 @@ code {
   margin-left: 0.4rem;
 }
 
+/* The collection's skins as the game shows them: every weapon in one screen (what each wears), then one weapon's
+   skins as short rows. On wide screens the weapons stay beside the open one; on narrow ones the open weapon takes
+   the screen and "← 武器一覧" goes back. */
+.guns {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: 0.5rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.guns [hidden] {
+  display: none;
+}
+.guns a {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  height: 100%;
+  padding: 0.5rem 0.45rem 0.45rem;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--card);
+  color: inherit;
+  text-align: center;
+  text-decoration: none;
+}
+.guns a:hover {
+  border-color: var(--edge);
+}
+.guns a[aria-current] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.guns img {
+  width: 100%;
+  height: 2.6rem;
+  object-fit: contain;
+}
+.guns .iname {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.guns small {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--soft);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.guns .count {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.45rem;
+}
+.armory .weapon {
+  margin-top: 1rem;
+  scroll-margin-top: 4.5rem;
+}
+.gun-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  margin-bottom: 0.6rem;
+}
+.gun-head h2 {
+  margin: 0;
+}
+.gun-head .button {
+  min-height: 2.4rem;
+  padding: 0 0.8rem;
+  font-size: 0.85rem;
+}
+/* Rows: the picture, the name and tier, the button; a skin with variants has its list under them. */
+.items.rows {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+  gap: 0.45rem;
+}
+.rows .item {
+  display: grid;
+  grid-template-columns: 5.4rem minmax(0, 1fr) auto;
+  grid-template-areas:
+    "pic name wear"
+    "pic meta wear";
+  align-items: center;
+  gap: 0.05rem 0.6rem;
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+}
+.rows .item:has(select) {
+  grid-template-columns: 5.4rem minmax(0, 1fr);
+  grid-template-areas:
+    "pic name"
+    "pic meta"
+    "wear wear";
+}
+.rows .item > img {
+  grid-area: pic;
+  width: 100%;
+  height: 2.4rem;
+}
+.rows .iname {
+  grid-area: name;
+  align-self: end;
+  font-size: 0.88rem;
+}
+.rows .item > small {
+  grid-area: meta;
+  align-self: start;
+}
+.rows .wear {
+  grid-area: wear;
+  flex-wrap: nowrap;
+  width: auto;
+  margin: 0;
+}
+.rows .item:has(select) .wear {
+  margin-top: 0.35rem;
+}
+.rows .badge {
+  position: static;
+  margin-left: 0.3rem;
+  vertical-align: 0.1em;
+}
+/* A card is a button: pressing it wears it. */
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.tile:hover .iname {
+  text-decoration: underline;
+}
+/* After wearing something the note shows at the bottom, over the list, which does not move. */
+.verdict.equip-said {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--tabbar) + 0.8rem);
+  z-index: 20;
+  width: min(26rem, calc(100% - 2rem));
+  margin: 0;
+  background: var(--card);
+  background-image: linear-gradient(
+    color-mix(in srgb, var(--win) 9%, transparent),
+    color-mix(in srgb, var(--win) 9%, transparent)
+  );
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  transform: translateX(-50%);
+}
+.verdict.equip-said.no {
+  background-image: linear-gradient(
+    color-mix(in srgb, var(--loss) 9%, transparent),
+    color-mix(in srgb, var(--loss) 9%, transparent)
+  );
+}
+@media (min-width: 1000px) {
+  .armory.picked {
+    display: grid;
+    grid-template-columns: minmax(0, 23rem) minmax(0, 1fr);
+    gap: 1.2rem;
+    align-items: start;
+  }
+  .armory.picked .guns {
+    position: sticky;
+    top: 4.5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+  .armory.picked .guns .worn {
+    display: none;
+  }
+  .armory.picked .guns .iname {
+    font-size: 0.8rem;
+  }
+  /* the weapons are already beside it */
+  .armory.picked .gun-head .button {
+    display: none;
+  }
+  .armory.picked .weapon {
+    margin-top: 0.8rem;
+  }
+}
+@media (max-width: 999px) {
+  .armory.picked .guns {
+    display: none;
+  }
+}
+@media (max-width: 34rem) {
+  /* every weapon in one phone screen: four to a row, the owner's card and wallet smaller above them */
+  .profile.mine .banner {
+    min-height: 0;
+    padding: 0.6rem 0.75rem;
+  }
+  .profile.mine .card {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+  .profile.mine .who h1 {
+    font-size: 1.2rem;
+  }
+  .profile.mine .wallet {
+    gap: 0.35rem;
+    margin-top: 0.45rem;
+  }
+  .profile.mine .wallet li {
+    padding: 0.15rem 0.6rem 0.15rem 0.35rem;
+    font-size: 0.9rem;
+  }
+  .profile.mine .wallet img {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+  .guns {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+  .guns a {
+    padding: 0.35rem 0.2rem 0.3rem;
+  }
+  .guns img {
+    height: 1.9rem;
+  }
+  .guns .iname {
+    font-size: 0.68rem;
+    letter-spacing: -0.02em;
+  }
+  .guns .count {
+    top: 0.1rem;
+    right: 0.3rem;
+    font-size: 0.66rem;
+  }
+  .guns .worn {
+    display: none;
+  }
+  /* cards, buddies, sprays, flex, agents: three to a row */
+  .owned .items:not(.skins, .titles) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+  .owned .items:not(.skins, .titles) .item {
+    padding: 0.5rem 0.3rem 0.45rem;
+  }
+  .owned .items:not(.skins, .titles) .item img {
+    width: 3.6rem;
+    height: 3.6rem;
+  }
+  .owned .items:not(.skins, .titles) .iname {
+    font-size: 0.78rem;
+  }
+  .rows .item {
+    grid-template-columns: 4.6rem minmax(0, 1fr) auto;
+  }
+  .rows .item:has(select) {
+    grid-template-columns: 4.6rem minmax(0, 1fr);
+  }
+}
+
 /* The agents' pick and win rates (agent_stats.html). */
 .agent-cell {
   display: flex;

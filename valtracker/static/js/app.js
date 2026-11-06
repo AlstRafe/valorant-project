@@ -895,6 +895,59 @@
     });
   }
 
+  // Wearing something from the collection leaves the page where it is: the form goes in the background and the
+  // list is replaced with the answer's (the same page, now with the new look marked). Without a script the page
+  // reloads and comes back to the same weapon.
+  function wearInPlace() {
+    if (!window.fetch || !window.DOMParser || !document.querySelector(".equip-form")) return;
+    var busy = false;
+    // the note after wearing: a few seconds, and not again on a reload
+    function fade(said) {
+      if (!said) return;
+      setTimeout(function () {
+        said.remove();
+      }, 4000);
+      var address = new URL(location.href);
+      address.searchParams.delete("equip");
+      history.replaceState(null, "", address.pathname + address.search + address.hash);
+    }
+    fade(document.querySelector(".equip-said"));
+    document.addEventListener("submit", function (event) {
+      var form = event.target;
+      var button = event.submitter;
+      if (!form.matches || !form.matches(".equip-form") || !button || !button.name) return;
+      event.preventDefault();
+      if (busy) return;
+      busy = true;
+      var data = new FormData(form);
+      data.append(button.name, button.value);
+      button.disabled = true;
+      fetch(form.action, { method: "POST", body: data, credentials: "same-origin" })
+        .then(function (answer) {
+          return answer.text().then(function (text) {
+            var now = document.getElementById("owned");
+            var fresh = new DOMParser().parseFromString(text, "text/html").getElementById("owned");
+            if (!answer.ok || !now || !fresh) throw new Error("no list");
+            var left = window.scrollX;
+            var top = window.scrollY;
+            now.replaceWith(fresh);
+            window.scrollTo(left, top);
+            var address = new URL(answer.url);
+            history.replaceState(null, "", address.pathname + address.search + location.hash);
+            var find = document.getElementById("find");
+            if (find && find.value) find.dispatchEvent(new Event("input"));
+            fade(fresh.querySelector(".equip-said"));
+          });
+        })
+        .catch(function () {
+          location.reload();
+        })
+        .then(function () {
+          busy = false;
+        });
+    });
+  }
+
   // The owner's game on every page: the header's ライブ tab shows where it is (a dot: the menus, matchmaking, agent
   // select, the match), and agent select starting brings a note with the way to pick. /live itself reloads every
   // few seconds, so there the page says where the game is and nothing is asked.
@@ -1026,6 +1079,7 @@
     share();
     rounds();
     finder();
+    wearInPlace();
     typing();
     parts();
     copies();
