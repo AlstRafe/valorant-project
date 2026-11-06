@@ -4628,3 +4628,132 @@ code {
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+/* When a player's numbers were read, and "最新にする" (asks HenrikDev again), beside 比べる. */
+.profile-more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+}
+.read-at {
+  color: var(--soft);
+  font-size: 0.85rem;
+}
+.read-at .refresh {
+  color: var(--accent);
+  white-space: nowrap;
+}
+.read-at .refresh:not([href]) {
+  color: var(--soft);
+  cursor: progress;
+}
+
+/* "数字の見かた": the words of the numbers, a tap away under them (a title only shows to a mouse). */
+.glossary {
+  margin: 0.9rem 0 0;
+  font-size: 0.88rem;
+}
+.glossary summary {
+  padding: 0.35rem 0;
+  cursor: pointer;
+  color: var(--accent);
+}
+.glossary dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  gap: 0.5rem 1.2rem;
+  margin: 0.4rem 0 0;
+}
+.glossary dl div {
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--card);
+}
+.glossary dt {
+  font-weight: 700;
+}
+.glossary dd {
+  margin: 0.15rem 0 0;
+  color: var(--soft);
+}
+.help .glossary summary {
+  display: none;
+}
+@media (max-width: 34rem) {
+  .glossary {
+    font-size: 0.84rem;
+  }
+  .glossary dl {
+    gap: 0.35rem;
+  }
+}
+
+/* The help page: short sections, each a heading and a few lines. */
+.help {
+  margin-top: 1.6rem;
+  scroll-margin-top: 4.5rem;
+}
+.help h2 {
+  margin: 0 0 0.4rem;
+}
+.help p,
+.help li {
+  max-width: 44rem;
+  line-height: 1.7;
+}
+.help p {
+  margin: 0.4rem 0;
+}
+.help ul {
+  margin: 0.4rem 0;
+  padding-left: 1.3rem;
+}
+.foot .help-link {
+  font-size: 0.9rem;
+}
+
+/* A search with a name and no tag: the likely Riot ID, and the kept players of that name. */
+.guess {
+  margin: 0.6rem 0 0;
+}
+.same-name {
+  margin-top: 0.8rem;
+}
+.same-name .note {
+  margin: 0 0 0.3rem;
+}
+
+/* Back to the top of a long page (app.js shows it two screens down), above the phone's tab bar. */
+.to-top {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(var(--tabbar) + 1rem);
+  z-index: 15;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+}
+.to-top svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.to-top:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.to-top[hidden] {
+  display: none;
+}

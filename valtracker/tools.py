@@ -533,6 +533,12 @@ def register(app: Flask) -> None:
     def tools():
         return render_template("tools.html")
 
+    @app.get("/help")
+    def help_page():
+        """How to use the site, for someone who opens it for the first time: what to type, why a player is not
+        found, how new the numbers are, the hidden players, what the numbers mean and where they come from."""
+        return render_template("help.html")
+
     @app.get("/leaderboard")
     def leaderboard():
         """At once when the page is kept; else the page without the players, which the script asks for

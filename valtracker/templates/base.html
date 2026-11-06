@@ -44,7 +44,9 @@
 <main id="main">
 {% block main %}{% endblock %}
 </main>
+<a class="to-top" href="#main" title="{{ t('上へ戻る') }}" aria-label="{{ t('上へ戻る') }}" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></a>
 <footer class="foot">
+<p><a class="help-link" href="{{ url_for('help_page') }}">{{ t('使い方・よくある質問') }}</a></p>
 {% if home %}<p><a class="back" href="{{ home }}">← {{ t('サイト一覧へ戻る') }}</a></p>{% endif %}
 <p class="legal">{{ t('VAL Tracker は Riot Games の承認を受けたものではなく、Riot Games や VALORANT の制作・運営に関わる人の見解を示すものではありません。VALORANT と Riot Games は Riot Games, Inc. の商標または登録商標です。') }}</p>
 <p class="legal">{{ t('ニュースとサーバー状況は Riot Games の公式サイト、戦績は HenrikDev API、ゲームの名前と画像は valorant-api.com から取得しています。') }}</p>

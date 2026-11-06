@@ -47,9 +47,8 @@
   }
 
   // The lists on the top page, built from a <template> (text only: names are never read as HTML).
-  function fill(list) {
-    var key = list.id === "favorites" ? FAVORITES : RECENT;
-    var people = read(key);
+  function fill(list, people) {
+    people = people || read(list.id === "favorites" ? FAVORITES : RECENT);
     var template = document.getElementById("person");
     list.textContent = "";
     if (!people.length) {
@@ -81,6 +80,46 @@
       var list = document.getElementById(id);
       if (list) fill(list);
     });
+    known();
+  }
+
+  // Everyone kept in this browser, each once: the favourites first.
+  function kept() {
+    var found = [];
+    read(FAVORITES)
+      .concat(read(RECENT))
+      .forEach(function (p) {
+        if (
+          !found.some(function (q) {
+            return same(p, q);
+          })
+        )
+          found.push(p);
+      });
+    return found;
+  }
+
+  // The search box suggests the players kept here as "Name#TAG" (typing a name shows its tag), and a search with a
+  // name but no tag shows the kept players of that name, whose tag the visitor may have forgotten.
+  function known() {
+    var choices = document.getElementById("known");
+    if (choices) {
+      choices.textContent = "";
+      kept().forEach(function (p) {
+        var option = document.createElement("option");
+        option.value = p.name + "#" + p.tag;
+        choices.appendChild(option);
+      });
+    }
+    var list = document.getElementById("same-name");
+    if (!list) return;
+    var name = (list.getAttribute("data-name") || "").toLowerCase();
+    var people = kept().filter(function (p) {
+      return p.name.toLowerCase() === name;
+    });
+    if (!people.length) return;
+    fill(list, people);
+    list.parentNode.hidden = false;
   }
 
   // A player's page: remember the visit, and the ☆ button.
@@ -186,6 +225,7 @@
   function load(box, address, page) {
     function failed() {
       if (page) return location.assign(page); // the plain page for that mode
+      if (!box.querySelector(".wait")) return location.reload(); // "最新にする" on a page already shown
       var wait = box.querySelector(".wait");
       if (wait) wait.textContent = box.getAttribute("data-failed");
       var retry = box.querySelector(".retry");
@@ -209,7 +249,13 @@
         } else {
           box.innerHTML = html;
           box.removeAttribute("data-part");
+          box.removeAttribute("aria-busy");
           profile();
+          if (/[?&]fresh=/.test(location.search)) {
+            var here = new URL(location.href); // read again once: a reload or a shared link need not
+            here.searchParams.delete("fresh");
+            history.replaceState(null, "", here.href);
+          }
         }
         chosen();
         acts();
@@ -870,6 +916,42 @@
   }
 
   // The owner's match being played: the page is read again every few seconds while it is in view.
+  // A player's "最新にする": the part is asked for again in place (the scroll stays); without JavaScript the link
+  // opens the whole page read again.
+  function readAgain() {
+    var box = document.getElementById("player");
+    if (!box) return;
+    box.addEventListener("click", function (e) {
+      var link = e.target.closest ? e.target.closest("a.refresh") : null;
+      if (!link || !window.fetch || e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      if (!link.getAttribute("href")) return; // already asked
+      link.removeAttribute("href");
+      link.textContent = link.getAttribute("data-busy");
+      box.setAttribute("aria-busy", "true");
+      load(box, link.getAttribute("data-part"), "");
+    });
+  }
+
+  // "上へ戻る" on long pages: shown once the visitor is two screens down.
+  function toTop() {
+    var button = document.querySelector(".to-top");
+    if (!button) return;
+    function check() {
+      var far = window.scrollY > window.innerHeight * 2;
+      if (button.hidden === far) button.hidden = !far;
+    }
+    addEventListener("scroll", check, { passive: true });
+    check();
+    button.addEventListener("click", function (e) {
+      e.preventDefault();
+      var still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top: 0, behavior: still ? "auto" : "smooth" });
+      var skip = document.querySelector(".brand");
+      if (skip) skip.focus({ preventScroll: true });
+    });
+  }
+
   function refresh() {
     var box = document.querySelector("[data-refresh]");
     if (!box) return;
@@ -1088,6 +1170,8 @@
     teams();
     night();
     refresh();
+    readAgain();
+    toTop();
     liveWatch();
     mapPick();
     statCard();

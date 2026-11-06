@@ -68,6 +68,8 @@
 </section>
 {% endfor %}
 {% if parties %}<p class="note">{{ t('番号の印は一緒にパーティを組んだプレイヤーです。') }}</p>{% endif %}
+{% set terms = ['kda', 'diff', 'hs'] + (['acs', 'adr', 'dd'] if rounds else []) + (['kast', 'first', 'multi'] if rounds and detailed else []) + (['score'] if scored else []) %}
+{% include "_glossary.html" %}
 
 {% if duels %}
 <section class="duels" aria-labelledby="duel-title">

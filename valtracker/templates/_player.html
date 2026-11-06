@@ -41,7 +41,8 @@
 </div>
 {% endif %}
 </div>
-<p class="profile-more"><a class="button quiet" href="{{ url_for('compare', a=name ~ '#' ~ tag) }}">{{ t('ほかのプレイヤーと比べる') }}</a></p>
+<p class="profile-more"><a class="button quiet" href="{{ url_for('compare', a=name ~ '#' ~ tag) }}">{{ t('ほかのプレイヤーと比べる') }}</a>
+{% if read %}<span class="read-at" id="read-at">{{ t('{minutes} 分前のデータ', minutes=read.minutes) if read.minutes else t('いま読んだデータ') }}{% if read.again %} · <a class="refresh" href="{{ url_for('player', name=name, tag=tag, mode=mode or None, fresh=1, full=1) }}" data-part="{{ url_for('player_part', name=name, tag=tag, mode=mode or None, fresh=1) }}" data-busy="{{ t('読み直しています…') }}">{{ t('最新にする') }}</a>{% endif %}</span>{% endif %}</p>
 </section>
 
 {% if rr_chart %}
@@ -119,6 +120,8 @@
 {% if summary.today %}<div><dt>{{ t('今日') }}</dt><dd>{{ t('{count} 試合', count=summary.today.games) }}<small>{{ t('{wins}勝 {losses}敗', wins=summary.today.wins, losses=summary.today.losses) }}{% if summary.today.rr is not none %} · <span class="{{ 'up' if summary.today.rr > 0 else ('down' if summary.today.rr < 0 else '') }}">{{ '%+d'|format(summary.today.rr) }} RR</span>{% endif %} · {% if summary.today.minutes >= 60 %}{{ t('{hours}時間{minutes}分', hours=summary.today.minutes // 60, minutes=summary.today.minutes % 60) }}{% else %}{{ t('{minutes}分', minutes=summary.today.minutes) }}{% endif %}</small></dd></div>{% endif %}
 {% if summary.minutes %}<div><dt>{{ t('プレイ時間') }}</dt><dd>{% if summary.minutes >= 60 %}{{ t('{hours}時間{minutes}分', hours=summary.minutes // 60, minutes=summary.minutes % 60) }}{% else %}{{ t('{minutes}分', minutes=summary.minutes) }}{% endif %}{% if summary.plants is not none %}<small>{{ t('設置 {plants} · 解除 {defuses}', plants=summary.plants, defuses=summary.defuses) }}</small>{% endif %}</dd></div>{% endif %}
 </dl>
+{% set terms = ['kda', 'hs'] + (['acs', 'adr'] if summary.acs is not none else []) + (['kast'] if summary.kast is not none else []) + (['dd'] if summary.dd is not none else []) + (['first'] if summary.fk is not none else []) + (['clutch'] if summary.clutches is not none else []) + (['multi'] if summary.multi else []) + (['rr'] if rank and rank.tier > 2 else []) + (['score'] if summary.score else []) + (['top'] if tops else []) %}
+{% include "_glossary.html" %}
 {% if summary.score and summary.score.chart %}{% set chart = summary.score.chart %}
 <div class="chart score-chart">
 <p class="chart-title">{{ t('スコアの推移') }} <small>{{ t('古い順') }}</small></p>

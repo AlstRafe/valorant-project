@@ -88,7 +88,82 @@ class PagesTest(unittest.TestCase):
     def test_search_without_a_tag(self):
         answer = self.get("/search?q=Tester")
         self.assertEqual(answer.status_code, 400)
-        self.assertIn("名前#タグ", answer.get_data(as_text=True))
+        text = answer.get_data(as_text=True)
+        self.assertIn("タグ（# のあと）も入れてください。例: Tester#JP1", text)  # what is missing, with their name
+        self.assertIn('href="/help#riot-id"', text)
+        self.assertIn('id="same-name" data-name="Tester"', text)  # the kept players of that name (app.js)
+        self.assertNotIn('class="guess"', text)
+        # a space where the # goes: the likely Riot ID is offered, not opened (a name may hold spaces)
+        text = self.get("/search?q=Tester+JP1").get_data(as_text=True)
+        self.assertIn('<a class="button quiet" href="/p/Tester/JP1">「Tester#JP1」を探す</a>', text)
+        self.assertIn("例: Tester#JP1", text)
+        # not a name at all: the general words
+        text = self.get("/search?q=%3Cb%3E").get_data(as_text=True)
+        self.assertIn("「名前#タグ」の形で入れてください", text)
+        self.assertNotIn('id="same-name"', text)
+        self.assertIn('list="known"', self.get("/").get_data(as_text=True))  # the kept players suggested
+
+    def test_help_page(self):
+        for lang, words in {"ja": "使い方・よくある質問", "ko": "자주 묻는 질문", "en-GB": "Help and FAQ"}.items():
+            with self.subTest(lang=lang):
+                answer = self.get("/help", lang=lang)
+                self.assertEqual(answer.status_code, 200)
+                text = answer.get_data(as_text=True)
+                self.assertIn(words, text)
+                self.assertIn('id="riot-id"', text)
+                self.assertIn('<details class="glossary" open>', text)
+                self.assertEqual(text.count("<dt>"), 13, "every word of the numbers")
+        self.assertIn('href="/help"', self.get("/agents").get_data(as_text=True))  # from every page's foot
+
+    def test_the_numbers_explained_where_they_are(self):
+        text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
+        glossary = text[text.index('<details class="glossary">') : text.index("</details>", text.index("glossary"))]
+        self.assertIn("<dt>ACS</dt>", glossary)
+        self.assertIn("<dt>RR</dt>", glossary)
+        self.assertNotIn("<dt>+/−</dt>", glossary, "the player page has no +/− column")
+        match = self.get(f"/m/ap/{MATCH}").get_data(as_text=True)
+        self.assertIn("<dt>+/−</dt>", match)
+        self.assertNotIn("<dt>RR</dt>", match)
+
+    def test_when_the_numbers_were_read_and_reading_again(self):
+        os.environ["VAL_HENRIK_KEY"] = "HDEV-test"
+        text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
+        self.assertIn('<span class="read-at" id="read-at">いま読んだデータ</span>', text)  # no press for a minute
+        self.assertNotIn('class="refresh"', text)
+        calls = len(self.fetch.henrik_calls())
+        henrik = self.app.config["VAL_HENRIK"]
+        for key in henrik.player_keys("ap", "Tester", "JP1"):  # read three minutes ago
+            at = henrik.read_times.get(key)
+            if at:
+                henrik.read_times.put(key, at - 180, 60)
+        text = self.get("/p/Tester/JP1").get_data(as_text=True)  # at once: still kept
+        self.assertIn("3 分前のデータ", text)
+        self.assertIn('href="/p/Tester/JP1?fresh=1&amp;full=1"', text)  # without JavaScript, the whole page
+        self.assertIn('data-part="/p/Tester/JP1/part?fresh=1"', text)
+        self.assertEqual(len(self.fetch.henrik_calls()), calls, "nothing asked again yet")
+
+        shell = self.get("/p/Tester/JP1?fresh=1").get_data(as_text=True)  # pressed: the page asks again
+        self.assertIn('data-part="/p/Tester/JP1/part?fresh=1"', shell)
+        part = self.get("/p/Tester/JP1/part?fresh=1").get_data(as_text=True)
+        self.assertIn("いま読んだデータ", part)
+        self.assertEqual(len(self.fetch.henrik_calls()), calls + 4, "the rank, the RR and both parts of the matches")
+        self.get("/p/Tester/JP1/part?fresh=1")  # pressed again at once: a minute must pass
+        self.assertEqual(len(self.fetch.henrik_calls()), calls + 4)
+
+    def test_reading_again_keeps_the_numbers_when_henrikdev_is_busy(self):
+        os.environ["VAL_HENRIK_KEY"] = "HDEV-test"
+        self.get("/p/Tester/JP1?full=1")
+        henrik = self.app.config["VAL_HENRIK"]
+        for key in henrik.player_keys("ap", "Tester", "JP1"):
+            at = henrik.read_times.get(key)
+            if at:
+                henrik.read_times.put(key, at - 120, 60)
+        self.fetch.henrik_status = 429
+        answer = self.get("/p/Tester/JP1/part?fresh=1")
+        self.assertEqual(answer.status_code, 200)
+        text = answer.get_data(as_text=True)
+        self.assertIn("Tier 21", text)  # what it showed before
+        self.assertIn("2 分前のデータ", text)
 
     def test_player(self):
         answer = self.get("/p/Tester/JP1?full=1")

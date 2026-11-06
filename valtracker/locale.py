@@ -1633,6 +1633,241 @@ TEXTS = {
         "en-GB": "How often each agent is picked, and how often it wins.",
         "zh-TW": "各特務的選用率與勝率。",
     },
+    "{minutes} 分前のデータ": {
+        "ko": "{minutes}분 전 데이터",
+        "en-GB": "Data from {minutes} min ago",
+        "zh-TW": "{minutes} 分鐘前的資料",
+    },
+    "いま読んだデータ": {
+        "ko": "방금 읽은 데이터",
+        "en-GB": "Data read just now",
+        "zh-TW": "剛讀取的資料",
+    },
+    "読み直しています…": {
+        "ko": "다시 읽는 중…",
+        "en-GB": "Reading again…",
+        "zh-TW": "重新讀取中…",
+    },
+    "最新にする": {
+        "ko": "최신으로",
+        "en-GB": "Refresh",
+        "zh-TW": "更新",
+    },
+    "上へ戻る": {
+        "ko": "맨 위로",
+        "en-GB": "Back to top",
+        "zh-TW": "回到頂端",
+    },
+    "使い方・よくある質問": {
+        "ko": "사용법·자주 묻는 질문",
+        "en-GB": "Help and FAQ",
+        "zh-TW": "使用說明・常見問題",
+    },
+    "数字の見かた": {
+        "ko": "숫자 보는 법",
+        "en-GB": "What the numbers mean",
+        "zh-TW": "數字的意思",
+    },
+    "倒した数・倒された数・アシストの数。KD は倒した数 ÷ 倒された数で、1.0 より上なら倒された数より多く倒しています。": {
+        "ko": "킬·데스·어시스트 수. KD는 킬 ÷ 데스로, 1.0보다 높으면 죽은 것보다 더 많이 처치한 것입니다.",
+        "en-GB": "Kills, deaths and assists. KD is kills ÷ deaths: above 1.0 means more kills than deaths.",
+        "zh-TW": "擊殺、死亡與助攻數。KD 是擊殺 ÷ 死亡，高於 1.0 代表擊殺比死亡多。",
+    },
+    "平均戦闘スコア。ダメージ・キル・アシストなどから出る 1 ラウンドあたりの点数で、ゲームの試合結果と同じ数字です。": {
+        "ko": "평균 전투 점수. 피해량·킬·어시스트 등으로 계산한 라운드당 점수로, 게임의 경기 결과와 같은 숫자입니다.",
+        "en-GB": "Average combat score: points per round from damage, kills, assists and more, the same number as the game's scoreboard.",
+        "zh-TW": "平均戰鬥分數。由傷害、擊殺、助攻等算出的每回合分數，與遊戲對戰結果的數字相同。",
+    },
+    "1 ラウンドあたりに与えたダメージ。": {
+        "ko": "라운드당 입힌 피해량.",
+        "en-GB": "Damage dealt per round.",
+        "zh-TW": "每回合造成的傷害。",
+    },
+    "当てた弾のうち、頭に当たった割合。": {
+        "ko": "맞힌 탄 중 머리에 맞은 비율.",
+        "en-GB": "Of the shots that hit, the share that hit the head.",
+        "zh-TW": "命中的子彈中，打中頭部的比例。",
+    },
+    "キル・アシスト・生き残り・トレード（倒された直後に味方が倒し返した）のどれかがあったラウンドの割合。": {
+        "ko": "킬·어시스트·생존·트레이드(죽은 직후 아군이 복수) 중 하나가 있었던 라운드의 비율.",
+        "en-GB": "Share of rounds with a kill, an assist, survival or a trade (a team-mate killed your killer straight after).",
+        "zh-TW": "有擊殺、助攻、存活或被換掉（陣亡後隊友立刻擊殺對手）其中之一的回合比例。",
+    },
+    "1 ラウンドあたりの「与えたダメージ − 受けたダメージ」。プラスなら、受けたより多くのダメージを与えています。": {
+        "ko": "라운드당 '입힌 피해 − 받은 피해'. 플러스면 받은 것보다 더 많은 피해를 입힌 것입니다.",
+        "en-GB": "Damage dealt minus damage taken, per round. Above zero means you dealt more than you took.",
+        "zh-TW": "每回合的「造成傷害 − 受到傷害」。正數代表造成的傷害比受到的多。",
+    },
+    "ラウンドで最初に敵を倒した回数と、最初に倒された回数。": {
+        "ko": "라운드에서 가장 먼저 적을 처치한 횟수와 가장 먼저 죽은 횟수.",
+        "en-GB": "How often you got the first kill of a round, and how often you were the first to die.",
+        "zh-TW": "在回合中最先擊殺敵人的次數，與最先陣亡的次數。",
+    },
+    "チームで自分だけが残ったラウンドを勝った回数。1v3 なら 3 人を相手に勝っています。": {
+        "ko": "팀에서 혼자 남은 라운드를 이긴 횟수. 1v3이면 3명을 상대로 이긴 것입니다.",
+        "en-GB": "Rounds won as the last one alive on your team. 1v3 means you beat three.",
+        "zh-TW": "隊上只剩自己時贏下回合的次數。1v3 代表一人對三人獲勝。",
+    },
+    "1 ラウンドで 3 人（3K）、4 人（4K）、5 人全員（ACE）を倒した回数。": {
+        "ko": "한 라운드에 3명(3K), 4명(4K), 5명 전원(ACE)을 처치한 횟수.",
+        "en-GB": "Rounds where you killed three (3K), four (4K) or all five (ACE).",
+        "zh-TW": "一回合擊殺 3 人（3K）、4 人（4K）、全部 5 人（ACE）的次數。",
+    },
+    "ランクレーティング。コンペティティブで勝つと増え、負けると減り、100 になると次のランクに上がります。": {
+        "ko": "랭크 레이팅. 경쟁전에서 이기면 오르고 지면 내려가며, 100이 되면 다음 랭크로 올라갑니다.",
+        "en-GB": "Rank rating. It goes up when you win a competitive match and down when you lose; at 100 you move up a rank.",
+        "zh-TW": "牌位積分。競技模式贏了會增加、輸了會減少，到 100 就升上下一個牌位。",
+    },
+    "このサイトの 1000 点満点の評価。同じランク帯の人と比べた ACS・KAST・DDΔ と、勝ったかどうかから出します。": {
+        "ko": "이 사이트의 1000점 만점 평가. 같은 랭크대와 비교한 ACS·KAST·DDΔ와 승리 여부로 계산합니다.",
+        "en-GB": "This site's rating out of 1000, from ACS, KAST and DDΔ against players of the same rank, and whether you won.",
+        "zh-TW": "本站滿分 1000 的評分，由與同牌位玩家相比的 ACS、KAST、DDΔ 以及是否獲勝算出。",
+    },
+    "同じランク帯の試合の中での位置。上位 10% なら、10 人に 1 人の成績です。": {
+        "ko": "같은 랭크대 경기 중에서의 위치. 상위 10%면 10명 중 1명꼴의 성적입니다.",
+        "en-GB": "Where you stand among matches at the same rank. Top 10% means one player in ten does this well.",
+        "zh-TW": "在同牌位對戰中的位置。前 10% 代表十人中只有一人有這樣的成績。",
+    },
+    "VAL Tracker の使い方：Riot ID の探し方、見つからないとき、データの新しさ、数字の意味。": {
+        "ko": "VAL Tracker 사용법: Riot ID 찾기, 검색되지 않을 때, 데이터의 최신성, 숫자의 의미.",
+        "en-GB": "How to use VAL Tracker: finding a Riot ID, when a player is not found, how new the data is, what the numbers mean.",
+        "zh-TW": "VAL Tracker 使用說明：如何找到 Riot ID、找不到時、資料的新舊、數字的意思。",
+    },
+    "目次": {
+        "ko": "목차",
+        "en-GB": "Contents",
+        "zh-TW": "目錄",
+    },
+    "Riot ID の見つけ方": {
+        "ko": "Riot ID 찾는 법",
+        "en-GB": "Finding a Riot ID",
+        "zh-TW": "如何找到 Riot ID",
+    },
+    "見つからないとき": {
+        "ko": "검색되지 않을 때",
+        "en-GB": "When a player is not found",
+        "zh-TW": "找不到時",
+    },
+    "データの新しさ": {
+        "ko": "데이터의 최신성",
+        "en-GB": "How new the data is",
+        "zh-TW": "資料的新舊",
+    },
+    "名前を隠しているプレイヤー": {
+        "ko": "이름을 숨긴 플레이어",
+        "en-GB": "Players who hide their name",
+        "zh-TW": "隱藏名稱的玩家",
+    },
+    "データの出どころ": {
+        "ko": "데이터 출처",
+        "en-GB": "Where the data comes from",
+        "zh-TW": "資料來源",
+    },
+    "検索に Riot ID（名前#タグ）を入れます。例: Name#JP1。# やタグは全角で打ってもかまいません。": {
+        "ko": "검색에 Riot ID(이름#태그)를 입력합니다. 예: Name#JP1. #나 태그는 전각으로 입력해도 됩니다.",
+        "en-GB": "Type a Riot ID (name#tag) in the search, for example Name#JP1. Full-width # and tag letters work too.",
+        "zh-TW": "在搜尋中輸入 Riot ID（名稱#標籤），例如 Name#JP1。# 和標籤用全形輸入也可以。",
+    },
+    "プレイヤーのページで ☆ を押すとお気に入りに入り、検索の画面に並びます。見たプレイヤーは「最近見たプレイヤー」に残ります。どちらもこのブラウザだけに保存されます。": {
+        "ko": "플레이어 페이지에서 ☆를 누르면 즐겨찾기에 추가되어 검색 화면에 표시됩니다. 본 플레이어는 '최근 본 플레이어'에 남습니다. 둘 다 이 브라우저에만 저장됩니다.",
+        "en-GB": 'Press ☆ on a player\'s page to add them to your favourites on the search page. Players you open stay under "Recently viewed". Both are kept only in this browser.',
+        "zh-TW": "在玩家頁面按 ☆ 就會加入最愛，顯示在搜尋畫面。看過的玩家會留在「最近看過的玩家」。兩者都只存在這個瀏覽器。",
+    },
+    "自分の Riot ID は、VALORANT のメイン画面右のフレンド一覧の一番上に出ています。Riot のアカウント管理ページ（account.riotgames.com）の「Riot ID」でも見られます。": {
+        "ko": "내 Riot ID는 VALORANT 메인 화면 오른쪽 친구 목록 맨 위에 나옵니다. Riot 계정 관리 페이지(account.riotgames.com)의 'Riot ID'에서도 볼 수 있습니다.",
+        "en-GB": "Your own Riot ID is at the top of the friends list on the right of VALORANT's main screen. It is also under \"Riot ID\" on Riot's account page (account.riotgames.com).",
+        "zh-TW": "自己的 Riot ID 顯示在 VALORANT 主畫面右側好友列表的最上方，也可以在 Riot 帳號管理頁面（account.riotgames.com）的「Riot ID」查看。",
+    },
+    "フレンドの Riot ID はフレンド一覧に出ています。試合で一緒になった人は、このサイトの試合のページから開けます。": {
+        "ko": "친구의 Riot ID는 친구 목록에 나옵니다. 경기에서 함께한 사람은 이 사이트의 경기 페이지에서 열 수 있습니다.",
+        "en-GB": "Friends' Riot IDs are in your friends list. Players from your matches can be opened from this site's match pages.",
+        "zh-TW": "好友的 Riot ID 顯示在好友列表。在對戰中遇到的人，可以從本站的對戰頁面打開。",
+    },
+    "タグを入れたか確かめてください。名前だけでは探せません。": {
+        "ko": "태그를 입력했는지 확인하세요. 이름만으로는 찾을 수 없습니다.",
+        "en-GB": "Check that you typed the tag: a name alone cannot be searched.",
+        "zh-TW": "請確認是否輸入了標籤。只有名稱無法搜尋。",
+    },
+    "打ち間違いがないか確かめてください（0 と O、1 と l と I など）。": {
+        "ko": "오타가 없는지 확인하세요(0과 O, 1과 l과 I 등).",
+        "en-GB": "Check for typos (0 and O; 1, l and I).",
+        "zh-TW": "請確認是否打錯字（0 與 O、1 與 l 與 I 等）。",
+    },
+    "名前やタグを変えたばかりなら、新しい Riot ID で探してください。": {
+        "ko": "이름이나 태그를 막 바꿨다면 새 Riot ID로 찾으세요.",
+        "en-GB": "If the name or tag was changed recently, search for the new Riot ID.",
+        "zh-TW": "如果剛改過名稱或標籤，請用新的 Riot ID 搜尋。",
+    },
+    "しばらく遊んでいないアカウントは、最近の試合が出ないことがあります。": {
+        "ko": "한동안 플레이하지 않은 계정은 최근 경기가 나오지 않을 수 있습니다.",
+        "en-GB": "An account that has not played for a while may show no recent matches.",
+        "zh-TW": "一段時間沒玩的帳號，可能不會顯示最近的對戰。",
+    },
+    "中国大陸版（无畏契约）のアカウントは調べられません。": {
+        "ko": "중국 본토판(无畏契约) 계정은 조회할 수 없습니다.",
+        "en-GB": "Accounts on the mainland China version (无畏契约) cannot be looked up.",
+        "zh-TW": "無法查詢中國大陸版（无畏契约）的帳號。",
+    },
+    "試合が終わってから、ここに出るまで数分かかることがあります。": {
+        "ko": "경기가 끝난 뒤 여기에 나오기까지 몇 분 걸릴 수 있습니다.",
+        "en-GB": "A match can take a few minutes to show here after it ends.",
+        "zh-TW": "對戰結束後，可能要幾分鐘才會出現在這裡。",
+    },
+    "ページをすぐ出すために、同じプレイヤーのランクは 5 分、試合は 3 分のあいだ覚えておきます。プレイヤーのページの「最新にする」で読み直せます（1 分に 1 回まで）。": {
+        "ko": "페이지를 빨리 보여 주기 위해 같은 플레이어의 랭크는 5분, 경기는 3분 동안 기억합니다. 플레이어 페이지의 '최신으로'로 다시 읽을 수 있습니다(1분에 1번까지).",
+        "en-GB": "To show pages quickly, a player's rank is kept for 5 minutes and their matches for 3. \"Refresh\" on the player's page reads them again (once a minute at most).",
+        "zh-TW": "為了讓頁面快速顯示，同一位玩家的牌位會保留 5 分鐘、對戰保留 3 分鐘。可以用玩家頁面的「更新」重新讀取（每分鐘最多 1 次）。",
+    },
+    "ゲームの設定で名前を隠している人は、試合の中で「非公開のプレイヤー」と出ます。このサイトはその人の名前・カード・記録を出さず、ランキングでも名前では探せません。": {
+        "ko": "게임 설정에서 이름을 숨긴 사람은 경기 안에서 '비공개 플레이어'로 나옵니다. 이 사이트는 그 사람의 이름·카드·기록을 보여 주지 않으며, 랭킹에서도 이름으로 찾을 수 없습니다.",
+        "en-GB": 'Players who hide their name in the game\'s settings show as "Hidden player" in matches. This site never shows their name, card or records, and they cannot be found by name on the leaderboard.',
+        "zh-TW": "在遊戲設定中隱藏名稱的人，在對戰中會顯示為「未公開的玩家」。本站不會顯示其名稱、卡片或紀錄，在排行榜上也無法用名稱搜尋。",
+    },
+    "ニュース・パッチノート・サーバー状況：Riot Games の公式サイト": {
+        "ko": "뉴스·패치 노트·서버 상태: Riot Games 공식 사이트",
+        "en-GB": "News, patch notes and server status: Riot Games' official sites",
+        "zh-TW": "新聞、更新說明、伺服器狀態：Riot Games 官方網站",
+    },
+    "ランキング：読めるときはゲームのデータ（Riot）から、読めないときは HenrikDev API から": {
+        "ko": "랭킹: 읽을 수 있을 때는 게임 데이터(Riot)에서, 읽을 수 없을 때는 HenrikDev API에서",
+        "en-GB": "Leaderboard: from the game's own data (Riot) when it can be read, otherwise from the HenrikDev API",
+        "zh-TW": "排行榜：能讀取時來自遊戲資料（Riot），無法讀取時來自 HenrikDev API",
+    },
+    "プレイヤーのランクと試合：HenrikDev API": {
+        "ko": "플레이어의 랭크와 경기: HenrikDev API",
+        "en-GB": "Players' ranks and matches: the HenrikDev API",
+        "zh-TW": "玩家的牌位與對戰：HenrikDev API",
+    },
+    "エージェント・武器・スキンの名前と画像：valorant-api.com": {
+        "ko": "요원·무기·스킨의 이름과 이미지: valorant-api.com",
+        "en-GB": "Names and pictures of agents, weapons and skins: valorant-api.com",
+        "zh-TW": "特務、武器、造型的名稱與圖片：valorant-api.com",
+    },
+    "タグ（# のあと）も入れてください。例: {example}": {
+        "ko": "태그(# 뒤)도 입력하세요. 예: {example}",
+        "en-GB": "Add the tag too (after the #), for example {example}",
+        "zh-TW": "請也輸入標籤（# 之後），例如 {example}",
+    },
+    "タグの見つけ方": {
+        "ko": "태그 찾는 법",
+        "en-GB": "Finding the tag",
+        "zh-TW": "如何找到標籤",
+    },
+    "このブラウザで見た「{name}」:": {
+        "ko": "이 브라우저에서 본 '{name}':",
+        "en-GB": '"{name}" seen in this browser:',
+        "zh-TW": "在這個瀏覽器看過的「{name}」：",
+    },
+    "倒した数 − 倒された数。": {
+        "ko": "킬 − 데스.",
+        "en-GB": "Kills minus deaths.",
+        "zh-TW": "擊殺 − 死亡。",
+    },
+    "「{id}」を探す": {
+        "ko": "'{id}' 찾기",
+        "en-GB": "Search for {id}",
+        "zh-TW": "搜尋「{id}」",
+    },
 }
 
 #: Words only the owner sees (the settings, and why the search cannot work yet): Japanese only.

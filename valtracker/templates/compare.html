@@ -40,5 +40,8 @@
 </table></div>
 <p class="compare-more"><a class="button quiet" href="{{ swap_url }}">{{ t('左右を入れ替える') }}</a></p>
 <p class="note">{{ t('それぞれ最近の試合（多くて {count} 試合）の平均です。試合の数が少ないと、たまたまの差が大きく出ます。', count=recent) }}</p>
+{% set names = rows|map(attribute='name')|list %}
+{% set terms = ['kda'] + (['acs'] if 'ACS' in names else []) + (['adr'] if 'ADR' in names else []) + (['hs'] if t('HS率') in names else []) + (['kast'] if 'KAST' in names else []) + (['dd'] if 'DDΔ' in names else []) %}
+{% include "_glossary.html" %}
 {% endif %}
 {% endblock %}
