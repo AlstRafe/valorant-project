@@ -4,25 +4,49 @@
 <section class="hero">
 <h1>{{ t('ツール') }}</h1>
 </section>
+<section class="tool-section" aria-labelledby="tools-1">
+<h2 id="tools-1">{{ t('試合の前に') }}</h2>
 <ul class="tool-grid">
-<li><a href="{{ url_for('skins') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5h13l2-2h3v4h-3l-1.5 1.5H11l-1.5 5h-4l1.5-5H3z"/></svg><strong>{{ t('スキン図鑑') }}</strong><small>{{ t('全スキンのバリエーションとレベルの動画、みんなの評価。') }}</small></a></li>
-<li><a href="{{ url_for('compare') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="8" r="3"/><circle cx="16.5" cy="8" r="3"/><path d="M2.5 20c.6-3.6 2.4-5.5 5-5.5s4.4 1.9 5 5.5M11.5 20c.6-3.6 2.4-5.5 5-5.5s4.4 1.9 5 5.5"/></svg><strong>{{ t('プレイヤーを比べる') }}</strong><small>{{ t('2 人のランクと最近の試合の成績を並べて見られます。') }}</small></a></li>
-<li><a href="{{ url_for('news') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M7 9h10M7 12.5h10M7 16h6"/></svg><strong>{{ t('ニュース') }}</strong><small>{{ t('パッチノートとお知らせ。種類と言葉で探せます。') }}</small></a></li>
-<li><a href="{{ url_for('esports') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M12 13v4M8 20h8M4 6h3M17 6h3"/></svg><strong>{{ t('eスポーツ') }}</strong><small>{{ t('大会の日程・結果・試合中のスコア。好きなチームに印も。') }}</small></a></li>
-<li><a href="{{ url_for('crosshair') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.3"/><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/></svg><strong>{{ t('クロスヘア') }}</strong><small>{{ t('コードを貼ると形と色が見られます。よく使われる型からコピーも。') }}</small></a></li>
-<li><a href="{{ url_for('servers') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V13M9 20V8M14 20v-9M19 20V5"/></svg><strong>{{ t('サーバーの混み具合') }}</strong><small>{{ t('時間ごとの試合の多さと、次の試合までの目安。') }}</small></a></li>
 <li><a href="{{ url_for('queue_settings') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg><strong>{{ t('マップとパーティー') }}</strong><small>{{ t('いま出るマップと、一緒にランクに行けるか。') }}</small></a></li>
-<li><a href="{{ url_for('sensitivity') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="5"/><path d="M12 7v3"/></svg><strong>{{ t('感度の換算') }}</strong><small>{{ t('ほかのゲームの感度と、振り向きの長さ。') }}</small></a></li>
+<li><a href="{{ url_for('servers') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V13M9 20V8M14 20v-9M19 20V5"/></svg><strong>{{ t('サーバーの混み具合') }}</strong><small>{{ t('時間ごとの試合の多さと、次の試合までの目安。') }}</small></a></li>
 <li><a href="{{ url_for('status') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><strong>{{ t('サーバー状況') }}</strong><small>{{ t('メンテナンスと障害のお知らせ。') }}</small></a></li>
+<li><a href="{{ url_for('crosshair') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.3"/><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/></svg><strong>{{ t('クロスヘア') }}</strong><small>{{ t('コードを貼ると形と色が見られます。よく使われる型からコピーも。') }}</small></a></li>
+<li><a href="{{ url_for('sensitivity') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="5"/><path d="M12 7v3"/></svg><strong>{{ t('感度の換算') }}</strong><small>{{ t('ほかのゲームの感度と、振り向きの長さ。') }}</small></a></li>
+</ul>
+</section>
+<section class="tool-section" aria-labelledby="tools-2">
+<h2 id="tools-2">{{ t('プレイヤーとランク') }}</h2>
+<ul class="tool-grid">
 <li><a href="{{ url_for('leaderboard') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg><strong>{{ t('ランキング') }}</strong><small>{{ t('地域ごとの上位プレイヤーと、レディアントに必要な RR。') }}</small></a></li>
 <li><a href="{{ url_for('ranks') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M6 20v-4M10 20v-9M14 20V7M18 20v-6"/></svg><strong>{{ t('ランクの分布') }}</strong><small>{{ t('どのランクがどれくらいいて、上位何 % か。') }}</small></a></li>
-<li><a href="{{ url_for('shop') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h16V20H4z"/><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5"/></svg><strong>{{ t('ショップ') }}</strong><small>{{ t('いまのバンドルと値段。') }}</small></a></li>
-{% if owner %}
-<li lang="ja"><a href="{{ url_for('live') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.2"/><path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.3 5.3a9.5 9.5 0 0 0 0 13.4M18.7 5.3a9.5 9.5 0 0 1 0 13.4"/></svg><strong>ライブ</strong><small>いまの VALORANT からキュー開始、エージェントのピックと確定。</small></a></li>
-<li lang="ja"><a href="{{ url_for('progress') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16M4 18V6M8 18v-5M12 18V9M16 18v-7"/></svg><strong>進み具合</strong><small>バトルパス・契約・ミッション。</small></a></li>
-<li lang="ja"><a href="{{ url_for('collection') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h16V20H4z"/><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5M4 13h16"/></svg><strong>所持品</strong><small>自分のスキン・バディー・カードなど。</small></a></li>
-<li lang="ja"><a href="{{ url_for('settings') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg><strong>設定</strong><small>HenrikDev の API キーと Riot アカウントの連携。</small></a></li>
-{% endif %}
+<li><a href="{{ url_for('compare') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="8" r="3"/><circle cx="16.5" cy="8" r="3"/><path d="M2.5 20c.6-3.6 2.4-5.5 5-5.5s4.4 1.9 5 5.5M11.5 20c.6-3.6 2.4-5.5 5-5.5s4.4 1.9 5 5.5"/></svg><strong>{{ t('プレイヤーを比べる') }}</strong><small>{{ t('2 人のランクと最近の試合の成績を並べて見られます。') }}</small></a></li>
+<li><a href="{{ url_for('agent_stats') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c.7-3.8 3-6 6-6 1.5 0 2.8.5 3.8 1.5"/><path d="M15 20v-4M18 20v-7M21 20v-2"/></svg><strong>{{ t('使用率と勝率') }}</strong><small>{{ t('エージェントごとの選ばれる割合と勝率。') }}</small></a></li>
 </ul>
+</section>
+<section class="tool-section" aria-labelledby="tools-3">
+<h2 id="tools-3">{{ t('ニュースと大会') }}</h2>
+<ul class="tool-grid">
+<li><a href="{{ url_for('news') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M7 9h10M7 12.5h10M7 16h6"/></svg><strong>{{ t('ニュース') }}</strong><small>{{ t('パッチノートとお知らせ。種類と言葉で探せます。') }}</small></a></li>
+<li><a href="{{ url_for('esports') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8 20.5h8M12 16.5v4M10.5 8l4 2.5-4 2.5z"/></svg><strong>{{ t('eスポーツ') }}</strong><small>{{ t('大会の日程・結果・試合中のスコア。好きなチームに印も。') }}</small></a></li>
+</ul>
+</section>
+<section class="tool-section" aria-labelledby="tools-4">
+<h2 id="tools-4">{{ t('スキンとショップ') }}</h2>
+<ul class="tool-grid">
+<li><a href="{{ url_for('shop') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h16V20H4z"/><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5"/></svg><strong>{{ t('ショップ') }}</strong><small>{{ t('いまのバンドルと値段。') }}</small></a></li>
+<li><a href="{{ url_for('skins') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5h13l2-2h3v4h-3l-1.5 1.5H11l-1.5 5h-4l1.5-5H3z"/></svg><strong>{{ t('スキン図鑑') }}</strong><small>{{ t('全スキンのバリエーションとレベルの動画、みんなの評価。') }}</small></a></li>
+</ul>
+</section>
+{% if owner %}
+<section class="tool-section" aria-labelledby="tools-me" lang="ja">
+<h2 id="tools-me">自分のアカウント</h2>
+<ul class="tool-grid">
+<li><a href="{{ url_for('live') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.2"/><path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.3 5.3a9.5 9.5 0 0 0 0 13.4M18.7 5.3a9.5 9.5 0 0 1 0 13.4"/></svg><strong>ライブ</strong><small>いまの VALORANT からキュー開始、エージェントのピックと確定。</small></a></li>
+<li><a href="{{ url_for('progress') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16M4 18V6M8 18v-5M12 18V9M16 18v-7"/></svg><strong>進み具合</strong><small>バトルパス・契約・ミッション。</small></a></li>
+<li><a href="{{ url_for('collection') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h16V20H4z"/><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5M4 13h16"/></svg><strong>所持品</strong><small>自分のスキン・バディー・カードなど。</small></a></li>
+<li><a href="{{ url_for('settings') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg><strong>設定</strong><small>HenrikDev の API キーと Riot アカウントの連携。</small></a></li>
+</ul>
+</section>
+{% endif %}
 <p class="note cn" id="china">{{ t('中国大陸版（无畏契约）は別のサーバーで動いていて、戦績を外から読む方法が公開されていないため、そのアカウントは調べられません。クロスヘア、感度の換算、エージェントの能力はどちらの版でも使えます。') }}</p>
 {% endblock %}

@@ -1,6 +1,7 @@
 """The owner's game right now (/live), from GLZ (riot.Riot.live): whether VALORANT is open; in the menus, the
 party, its queue and buttons to start or stop matchmaking; at agent select, the team's picks, the roles it still
-lacks and the owner's agents to pick and lock; in the match, everyone's agent, card, title, level and rank.
+lacks and the owner's agents to pick and lock; in the match, everyone's agent, card, title, level and rank, with
+each team's average rank and the act's record of the players who show their name.
 
 Names are shown only for players who do not hide theirs in the game (``Incognito``), and a level only when it is
 not hidden (``HideAccountLevel``): this page tells no more than the game's own screens do.
@@ -51,6 +52,40 @@ def _rank(mmr, act: str) -> tuple[int, int]:
     return 0, 0
 
 
+def _record(mmr, act: str) -> dict | None:
+    """The act's competitive record from PD's mmr answer, as the game's career page has it: ``{"wins", "games",
+    "win_rate", "peak": the highest tier won at this act}``, or None (no games)."""
+    if not isinstance(mmr, dict) or not act:
+        return None
+    skills = ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
+    info = (
+        next((info for season, info in skills.items() if _id(season) == act), None)
+        if isinstance(skills, dict)
+        else None
+    )
+    if not isinstance(info, dict):
+        return None
+    games = _number(info.get("NumberOfGames"))
+    if games <= 0:
+        return None
+    wins = _number(info.get("NumberOfWinsWithPlacements") or info.get("NumberOfWins"))
+    won_at = info.get("WinsByTier") if isinstance(info.get("WinsByTier"), dict) else {}
+    peak = max((_number(tier) for tier, count in won_at.items() if _number(count) > 0), default=0)
+    return {"wins": min(wins, games), "games": games, "win_rate": round(100 * min(wins, games) / games), "peak": peak}
+
+
+def _rank_of(tier: int, look: dict) -> dict | None:
+    known = look["tiers"].get(tier) or {}
+    name = str(known.get("tierName") or "")
+    return {"name": name.title() if name.isupper() else name, "icon": known.get("smallIcon")} if tier > 2 else None
+
+
+def average(rows: list[dict], look: dict) -> dict | None:
+    """The team's average rank (of the players with one), as a rank's name: how strong the lobby is."""
+    tiers = [row["tier"] for row in rows if row["tier"] > 2]
+    return _rank_of(round(sum(tiers) / len(tiers)), look) if len(tiers) >= 2 else None
+
+
 def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
     identity = item.get("PlayerIdentity") if isinstance(item.get("PlayerIdentity"), dict) else {}
     agent = look["agents"].get(_id(item.get("CharacterID"))) or {}
@@ -88,9 +123,21 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
         }
         if tier > 2
         else None,
+        "tier": tier if tier > 2 else 0,
+        # the act's record and best rank only for the owner and the players who show their name: as public as
+        # their page on this site, and nothing about the ones who hide who they are
+        "record": _with_peak(_record(look["ranks"].get(subject), look["act"]), look)
+        if (name or subject == me)
+        else None,
         "team": str(item.get("TeamID") or ""),
         "owner": bool(item.get("IsOwner")),
     }
+
+
+def _with_peak(record: dict | None, look: dict) -> dict | None:
+    if record is not None:
+        record["peak_rank"] = _rank_of(record["peak"], look)
+    return record
 
 
 def _seconds_since(value, now: float) -> int | None:
@@ -157,6 +204,7 @@ def page(
         "running": found.get("running"),
         "party": None,
         "picker": None,
+        "average": None,
     }
     if phase == "menus" and isinstance(found.get("party"), dict):
         values["party"] = _party(found["party"], look, me, queue_name, float(found.get("at") or 0))
@@ -166,6 +214,7 @@ def page(
             _player(item, look, me, "CompetitiveTier") for item in team.get("Players") or [] if isinstance(item, dict)
         ]
         values["players"] = rows
+        values["average"] = average(rows, look)
         values["queue"] = queue_name(str(match.get("QueueID") or ""))
         values["left"] = _number(match.get("PhaseTimeRemainingNS")) // 1_000_000_000 or None
         values["enemy_locked"] = _number(match.get("EnemyTeamLockCount"))
@@ -227,7 +276,7 @@ def page(
         for row in rows:
             groups.setdefault(row["team"], []).append(row)
         values["teams"] = [
-            {"ours": team == mine, "players": players}
+            {"ours": team == mine, "players": players, "average": average(players, look)}
             for team, players in sorted(groups.items(), key=lambda pair: pair[0] != mine)
         ]
         making = match.get("MatchmakingData") if isinstance(match.get("MatchmakingData"), dict) else {}

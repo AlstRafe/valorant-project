@@ -1593,6 +1593,15 @@ TEXTS = {
         "en-GB": "Loses most duels at {place} ({kills} kills, {deaths} deaths): a place to try another way in, or abilities first.",
         "zh-TW": "在 {place} 容易輸掉對槍（{kills} 殺 {deaths} 死）。可以換個進點方式或先用技能。",
     },
+    "試合の前に": {"ko": "경기 전에", "en-GB": "Before a match", "zh-TW": "對戰之前"},
+    "プレイヤーとランク": {"ko": "플레이어와 랭크", "en-GB": "Players and ranks", "zh-TW": "玩家與牌位"},
+    "ニュースと大会": {"ko": "뉴스와 대회", "en-GB": "News and tournaments", "zh-TW": "新聞與賽事"},
+    "スキンとショップ": {"ko": "스킨과 상점", "en-GB": "Skins and the store", "zh-TW": "造型與商店"},
+    "エージェントごとの選ばれる割合と勝率。": {
+        "ko": "요원별 픽률과 승률.",
+        "en-GB": "How often each agent is picked, and how often it wins.",
+        "zh-TW": "各特務的選用率與勝率。",
+    },
 }
 
 #: Words only the owner sees (the settings, and why the search cannot work yet): Japanese only.

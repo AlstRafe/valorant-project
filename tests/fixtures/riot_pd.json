@@ -565,7 +565,16 @@
      "SeasonalInfoBySeasonID": {
       "AAAA0000-0000-4000-8000-000000000003": {
        "CompetitiveTier": 21,
-       "RankedRating": 47
+       "RankedRating": 47,
+       "NumberOfWins": 12,
+       "NumberOfWinsWithPlacements": 15,
+       "NumberOfGames": 30,
+       "WinsByTier": {
+        "18": 3,
+        "22": 2,
+        "21": 10,
+        "23": 0
+       }
       }
      }
     }
@@ -579,7 +588,17 @@
   "a1111111-0000-4000-8000-000000000002": {
    "QueueSkills": {
     "competitive": {
-     "SeasonalInfoBySeasonID": {}
+     "SeasonalInfoBySeasonID": {
+      "aaaa0000-0000-4000-8000-000000000003": {
+       "CompetitiveTier": 12,
+       "RankedRating": 5,
+       "NumberOfWinsWithPlacements": 7,
+       "NumberOfGames": 9,
+       "WinsByTier": {
+        "12": 7
+       }
+      }
+     }
     }
    },
    "LatestCompetitiveUpdate": {
