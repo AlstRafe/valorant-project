@@ -81,6 +81,19 @@
 </section>
 {% endif %}
 
+{% if heat %}
+{% from "_heat.html" import filters, figure, places with context %}
+<section class="heat" aria-labelledby="heat-title">
+<h2 id="heat-title">{{ t('{name} のキルとデスの場所', name=me.name) }}</h2>
+<p class="note">{{ t('緑の点はキルを取ったときに立っていた場所、赤の点は倒された場所です。線はそのとき相手がいた場所へ伸びています。') }}</p>
+{{ filters('m', heat.sides) }}
+<div class="heat-body">
+{{ figure(heat, map.name, lines=True) }}
+{{ places(heat) }}
+</div>
+</section>
+{% endif %}
+
 {% if timeline and timeline|selectattr('kills')|list %}
 <section class="feed" aria-labelledby="feed-title">
 <h2 id="feed-title">{{ t('ラウンドごとのキル') }}</h2>

@@ -1528,6 +1528,46 @@ TEXTS = {
         "en-GB": "Grade {grade}",
         "zh-TW": "等級 {grade}",
     },
+    # Where a player's kills and deaths happened (heatmap.py, _heat.html)
+    "キルとデスの場所": {"ko": "킬과 데스 위치", "en-GB": "Kills and deaths on the map", "zh-TW": "擊殺與陣亡位置"},
+    "{name} のキルとデスの場所": {
+        "ko": "{name}의 킬과 데스 위치",
+        "en-GB": "Where {name} got kills and died",
+        "zh-TW": "{name} 的擊殺與陣亡位置",
+    },
+    "緑の点はキルを取ったときに立っていた場所、赤の点は倒された場所です（最近の試合の分）。": {
+        "ko": "초록 점은 킬을 했을 때 서 있던 위치, 빨간 점은 죽은 위치입니다(최근 경기).",
+        "en-GB": "Green dots: where the player stood for a kill. Red dots: where they died (recent matches).",
+        "zh-TW": "綠點是擊殺時所站的位置，紅點是陣亡的位置（最近的比賽）。",
+    },
+    "緑の点はキルを取ったときに立っていた場所、赤の点は倒された場所です。線はそのとき相手がいた場所へ伸びています。": {
+        "ko": "초록 점은 킬을 했을 때 서 있던 위치, 빨간 점은 죽은 위치입니다. 선은 그때 상대가 있던 위치로 이어집니다.",
+        "en-GB": "Green dots: where the player stood for a kill. Red dots: where they died. Each line runs to where the other player was.",
+        "zh-TW": "綠點是擊殺時所站的位置，紅點是陣亡的位置。線條連到當時對手所在的位置。",
+    },
+    "攻撃と防衛": {"ko": "공격과 수비", "en-GB": "Attack and defence", "zh-TW": "進攻與防守"},
+    "キルとデス": {"ko": "킬과 데스", "en-GB": "Kills and deaths", "zh-TW": "擊殺與陣亡"},
+    "キル": {"ko": "킬", "en-GB": "Kills", "zh-TW": "擊殺"},
+    "デス": {"ko": "데스", "en-GB": "Deaths", "zh-TW": "陣亡"},
+    "場所": {"ko": "위치", "en-GB": "Place", "zh-TW": "位置"},
+    "キルした場所": {"ko": "킬한 위치", "en-GB": "Kill", "zh-TW": "擊殺位置"},
+    "倒された場所": {"ko": "죽은 위치", "en-GB": "Death", "zh-TW": "陣亡位置"},
+    "ラウンド最初": {"ko": "라운드 첫 교전", "en-GB": "first of the round", "zh-TW": "回合首次交火"},
+    "{map} のキル {kills}、デス {deaths}": {
+        "ko": "{map} 킬 {kills}, 데스 {deaths}",
+        "en-GB": "{map}: {kills} kills, {deaths} deaths",
+        "zh-TW": "{map}：擊殺 {kills}、陣亡 {deaths}",
+    },
+    "{kills}キル {deaths}デス": {
+        "ko": "{kills}킬 {deaths}데스",
+        "en-GB": "{kills} K, {deaths} D",
+        "zh-TW": "{kills} 殺 {deaths} 死",
+    },
+    "{place} で負けやすい（{kills}キル {deaths}デス）。入り方やスキルの使い方を変えてみる場所です。": {
+        "ko": "{place}에서 자주 집니다({kills}킬 {deaths}데스). 진입 방법이나 스킬 사용을 바꿔 볼 만한 곳입니다.",
+        "en-GB": "Loses most duels at {place} ({kills} kills, {deaths} deaths): a place to try another way in, or abilities first.",
+        "zh-TW": "在 {place} 容易輸掉對槍（{kills} 殺 {deaths} 死）。可以換個進點方式或先用技能。",
+    },
 }
 
 #: Words only the owner sees (the settings, and why the search cannot work yet): Japanese only.

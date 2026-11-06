@@ -13,7 +13,7 @@ from urllib.parse import unquote
 from flask import Flask, abort, current_app, g, make_response, redirect, render_template, request, send_file, url_for
 
 from valtracker import collection as owned_items
-from valtracker import i18n, score, security, stats
+from valtracker import heatmap, i18n, score, security, stats
 from valtracker import rounds as rounds_module
 from valtracker.activity import BANDS, LINE_QUEUES, LINE_STATS, RANKS_ENOUGH
 from valtracker.henrik import MODES, REGIONS, HenrikError, shows_rr, split_riot_id
@@ -184,10 +184,16 @@ def _agent(agent: dict | None) -> dict:
     }
 
 
-def _map(metadata: dict) -> dict:
+def _map_item(metadata: dict) -> dict:
+    """valorant-api.com's map that a match was played on ({} when not known)."""
     found = metadata.get("map") or {}
     index = current_app.config["VAL_CONTENT"].map_index(g.lang)
-    known = index.get(str(found.get("id") or "").lower()) or index.get(str(found.get("name") or "").lower()) or {}
+    return index.get(str(found.get("id") or "").lower()) or index.get(str(found.get("name") or "").lower()) or {}
+
+
+def _map(metadata: dict) -> dict:
+    known = _map_item(metadata)
+    found = metadata.get("map") or {}
     return {
         "name": str(known.get("displayName") or found.get("name") or ""),
         "image": known.get("listViewIcon"),
@@ -540,7 +546,7 @@ def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
         rr_changes = asked_rr.result() if asked_rr else {}
     except HenrikError:
         rr_changes = {}  # the list only goes without the RR each match gave
-    rows, matches_problem = [], ""
+    rows, matches_problem, spots = [], "", {}
     try:
         listed = asked_matches.result()
         current_app.config["VAL_ACTIVITY"].seen(listed, str(account.get("puuid") or ""))
@@ -548,6 +554,7 @@ def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
             found = stats.find_player(match, str(account.get("puuid") or ""), name, tag)
             if found:
                 rows.append(_row(match, found, rr_changes))
+                _add_spots(spots, match, found)
     except HenrikError as error:
         matches_problem = _failure(error.kind)[1]
     current = (mmr or {}).get("current") or {}
@@ -594,12 +601,36 @@ def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
         "acts": _acts((mmr or {}).get("seasons") or []),
         "rows": rows,
         "summary": summary,
+        "heat_maps": _heat_maps(spots),
         "matches_problem": matches_problem,
         "mode": mode,
         "modes": _modes(mode),
         "problem": "",
         "settings_link": False,
     }, 200
+
+
+def _add_spots(spots: dict, match: dict, player: dict) -> None:
+    """The player's kills and deaths in a match (heatmap.points), added to its map's."""
+    everyone = [item for item in match.get("players") or [] if isinstance(item, dict)]
+    mine = next((number for number, item in enumerate(everyone) if item is player), -1)
+    found = heatmap.points(match, mine)
+    if found:
+        known = _map_item(match.get("metadata") or {})
+        if known.get("uuid"):
+            spots.setdefault(str(known["uuid"]).lower(), (known, []))[1].extend(found)
+
+
+def _heat_maps(spots: dict) -> list[dict]:
+    """Each map's drawing of the player's kills and deaths (heatmap.drawing), the busiest map first."""
+    drawn = []
+    for known, found in spots.values():
+        plan = heatmap.plan(known)
+        drawing = heatmap.drawing(plan, found) if plan else None
+        if drawing:
+            drawn.append(dict(drawing, name=str(known.get("displayName") or ""), id=str(known["uuid"]).lower()))
+    drawn.sort(key=lambda item: -len(item["dots"]))
+    return drawn[: heatmap.MAPS_SHOWN]
 
 
 #: How a round ended -> the words of its picture's title.
@@ -740,7 +771,9 @@ def _match_page(found: dict, me: str) -> dict:
     average = _rank({"id": round(sum(tiers) / len(tiers))}) if tiers else None
     moment = stats.started(found)
     scored = any(person["score"] for person in people)
+    plan = heatmap.plan(_map_item(metadata)) if mine >= 0 else None
     return {
+        "heat": heatmap.drawing(plan, heatmap.points(found, mine), lines=True) if plan else None,
         "scored": scored,
         "map": _map(metadata),
         "queue": _queue(metadata),
