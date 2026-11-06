@@ -49,6 +49,8 @@ const PAGES = [
 // With the tests' made-up answers (tests/ui/serve.py): their player, match and agent.
 const MADE_UP = [
   "/p/Tester/JP1?full=1",
+  "/p/Tester/JP1?span=all&full=1",
+  "/p/Tester/JP1?span=all&page=4&full=1",
   "/p/Tester/JP1/seasons",
   "/m/ap/aaaaaaaa-0000-4000-8000-000000000001",
   "/m/ap/aaaaaaaa-0000-4000-8000-000000000001?me=Tester%23JP1",

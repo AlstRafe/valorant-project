@@ -42,12 +42,12 @@
 {% endif %}
 </div>
 <p class="profile-more"><a class="button quiet" href="{{ url_for('compare', a=name ~ '#' ~ tag) }}">{{ t('ほかのプレイヤーと比べる') }}</a>
-{% if read %}<span class="read-at" id="read-at">{{ t('{minutes} 分前のデータ', minutes=read.minutes) if read.minutes else t('いま読んだデータ') }}{% if read.again %} · <a class="refresh" href="{{ url_for('player', name=name, tag=tag, mode=mode or None, fresh=1, full=1) }}" data-part="{{ url_for('player_part', name=name, tag=tag, mode=mode or None, fresh=1) }}" data-busy="{{ t('読み直しています…') }}">{{ t('最新にする') }}</a>{% endif %}</span>{% endif %}</p>
+{% if read %}<span class="read-at" id="read-at">{{ t('{minutes} 分前のデータ', minutes=read.minutes) if read.minutes else t('いま読んだデータ') }}{% if read.again %} · <a class="refresh" href="{{ url_for('player', name=name, tag=tag, mode=mode or None, span=span or None, fresh=1, full=1) }}" data-part="{{ url_for('player_part', name=name, tag=tag, mode=mode or None, span=span or None, fresh=1) }}" data-busy="{{ t('読み直しています…') }}">{{ t('最新にする') }}</a>{% endif %}</span>{% endif %}</p>
 </section>
 
 {% if rr_chart %}
 <section class="trend" aria-labelledby="rr-title">
-<h2 id="rr-title">{{ t('RR の推移') }} <small>{{ t('コンペティティブ {count} 試合', count=rr_chart.games) }} · <span class="{{ 'up' if rr_chart.net > 0 else ('down' if rr_chart.net < 0 else '') }}">{{ '%+d'|format(rr_chart.net) }} RR</span></small></h2>
+<h2 id="rr-title">{{ t('RR の推移') }}{% if span %} · {{ t('通算') }}{% endif %} <small>{{ t('コンペティティブ {count} 試合', count=rr_chart.games) }} · <span class="{{ 'up' if rr_chart.net > 0 else ('down' if rr_chart.net < 0 else '') }}">{{ '%+d'|format(rr_chart.net) }} RR</span></small></h2>
 <div class="chart">
 <svg viewBox="0 0 {{ rr_chart.width }} {{ rr_chart.height }}" role="img" aria-label="{{ t('RR の推移') }}: {{ rr_chart.dots[0].rank.name }} {{ rr_chart.dots[0].rr }} RR → {{ rr_chart.dots[-1].rank.name }} {{ rr_chart.dots[-1].rr }} RR">
 {% for line in rr_chart.lines %}<line class="grid" x1="0" x2="{{ rr_chart.width }}" y1="{{ line.y }}" y2="{{ line.y }}"/><text class="grid-name" x="4" y="{{ line.y + 4 }}">{{ line.rank.name }}</text>
@@ -84,16 +84,26 @@
 {% if account %}<p class="seasons-link"><a href="{{ url_for('seasons_page', name=name, tag=tag) }}">{{ t('シーズン別の成績') }} →</a></p>{% endif %}
 
 <div id="games">
+<nav class="spans" aria-label="{{ t('期間') }}">
+<a href="{{ url_for('player', name=name, tag=tag, mode=mode or None) }}"{% if not span %} aria-current="true"{% endif %}>{{ t('直近 15 試合') }}</a><a href="{{ url_for('player', name=name, tag=tag, mode=mode or None, span='all') }}"{% if span %} aria-current="true"{% endif %}>{{ t('通算') }}</a>
+</nav>
 <nav class="modes" aria-label="{{ t('モード') }}">
-{% for item in modes %}<a href="{{ url_for('player', name=name, tag=tag, mode=item.key or None) }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
+{% for item in modes %}<a href="{{ url_for('player', name=name, tag=tag, mode=item.key or None, span=span or None) }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
 {% endfor %}</nav>
+{% if life %}
+<div class="life-note" id="life-note">
+<p>{% if life.count %}{{ t('{since} からの {count} 試合を数えています。', since=life.since, count='{:,}'.format(life.count)) }}{% else %}{{ t('まだ数えられる試合がありません。') }}{% endif %}</p>
+{% if life.thin %}<p>{{ t('うち {thin} 試合は簡単な記録だけなので、KAST・ファーストキル・武器・キルの場所などは残りの {whole} 試合から出しています。', thin='{:,}'.format(life.thin), whole='{:,}'.format(life.whole)) }}</p>{% endif %}
+{% if life.reading.busy %}<p class="reading" role="status"><span class="spinner" aria-hidden="true"></span><span>{% if life.reading.via == 'riot' and life.reading.left %}{{ t('Riot から残りの試合を読み込んでいます（あと約 {left} 試合・{minutes} 分）。読み込んだ分から数えています。', left='{:,}'.format(life.reading.left), minutes=[life.reading.minutes, 1]|max) }}{% else %}{{ t('残りの試合を読み込んでいます。読み込んだ分から数えています。') }}{% endif %} <a href="{{ url_for('player', name=name, tag=tag, mode=mode or None, span='all') }}">{{ t('数え直す') }}</a></span></p>{% endif %}
+</div>
+{% endif %}
 
 {% if summary %}
 <nav class="jump" aria-label="{{ t('このページの中') }}">
 <a href="#sum-title">{{ t('概要') }}</a><a href="#m-title">{{ t('試合') }}</a>{% if summary.agent_table %}<a href="#ag-title">{{ t('エージェント') }}</a>{% endif %}{% if summary.maps %}<a href="#map-title">{{ t('マップ') }}</a>{% endif %}{% if summary.weapons %}<a href="#wp-title">{{ t('武器') }}</a>{% endif %}{% if summary.mates %}<a href="#mate-title">{{ t('パーティ') }}</a>{% endif %}
 </nav>
 <section class="summary" aria-labelledby="sum-title">
-<h2 id="sum-title">{{ t('直近 {count} 試合', count=summary.games) }}{% if summary.left_out and not mode %} <small>{{ t('デスマッチなどは除く') }}</small>{% endif %}</h2>
+<h2 id="sum-title">{{ t('通算 {count} 試合', count='{:,}'.format(summary.games)) if span else t('直近 {count} 試合', count=summary.games) }}{% if summary.left_out and not mode %} <small>{{ t('デスマッチなどは除く') }}</small>{% endif %}</h2>
 {% set tops = summary.score.tops if summary.score else {} %}
 {% macro top(key, lead=true) -%}
 {%- if tops.get(key) -%}{{ ' · ' if lead }}<span class="pct{{ ' good' if tops[key] <= 25 else '' }}">{{ t('上位 {share}%', share=tops[key]) if tops[key] <= 50 else t('下位 {share}%', share=[1, 100 - tops[key]]|max) }}</span>{%- endif -%}
@@ -103,7 +113,7 @@
 <p class="score-big"><strong>{{ summary.score.value }}</strong><span class="grade" aria-label="{{ t('評価 {grade}', grade=summary.score.grade) }}">{{ summary.score.grade }}</span></p>
 <div class="score-text">
 <p><strong>{{ t('VAL スコア') }}</strong> <small>/ 1000</small></p>
-<p class="note">{{ t('{count} 試合の平均。{band}のプレイヤーの {lines} 試合分と比べた位置です。', count=summary.score.games, band=summary.score.band, lines='{:,}'.format(summary.score.lines)) }}</p>
+<p class="note">{{ t('{count} 試合の平均。{band}のプレイヤーの {lines} 試合分と比べた位置です。', count='{:,}'.format(summary.score.games), band=summary.score.band, lines='{:,}'.format(summary.score.lines)) }}</p>
 <details class="score-how"><summary>{{ t('スコアの出し方') }}</summary><p>{{ t('同じランク帯の中での ACS（30%）・KAST（25%）・DDΔ（25%）の位置と、勝ったか（20%）を 1000 点満点にしたものです。真ん中の成績で半分勝つと 500 点ほど。S は 800 点から、A は 650、B は 500、C は 350 から。比べる試合はこのサイトが見た試合（名前は持ちません）です。') }}</p></details>
 </div>
 </div>
@@ -114,11 +124,11 @@
 {% if summary.acs is not none %}<div><dt>ACS</dt><dd>{{ summary.acs }}<small>ADR {{ summary.adr }}{{ top('acs') }}</small></dd></div>{% endif %}
 <div><dt>{{ t('HS率') }}</dt><dd>{{ summary.hs }}%{% if tops.get('hs') %}<small>{{ top('hs', false) }}</small>{% endif %}</dd></div>
 {% if summary.kast is not none %}<div><dt><abbr title="{{ t('キル・アシスト・生存・トレードされたラウンドの割合') }}">KAST</abbr></dt><dd>{{ summary.kast }}%{% if summary.dd is not none %}<small><abbr title="{{ t('与えたダメージ − 受けたダメージ（1 ラウンドあたり）') }}">DDΔ</abbr> {{ '%+d'|format(summary.dd) }}{{ top('kast') }}</small>{% endif %}</dd></div>{% endif %}
-{% if summary.fk is not none %}<div><dt>{{ t('ファーストキル / デス') }}</dt><dd>{{ summary.fk }} / {{ summary.fd }}<small>{{ t('1 試合あたり {fk} / {fd}', fk='%.1f'|format(summary.fk / summary.games), fd='%.1f'|format(summary.fd / summary.games)) }}</small></dd></div>{% endif %}
+{% if summary.fk is not none %}<div><dt>{{ t('ファーストキル / デス') }}</dt><dd>{{ summary.fk }} / {{ summary.fd }}<small>{{ t('1 試合あたり {fk} / {fd}', fk='%.1f'|format(summary.fk / summary.detailed), fd='%.1f'|format(summary.fd / summary.detailed)) }}</small></dd></div>{% endif %}
 {% if summary.clutches is not none %}<div><dt>{{ t('クラッチ') }}</dt><dd>{{ summary.clutches }}{% if summary.clutch_best %}<small>{{ t('最高 1v{count}', count=summary.clutch_best) }}</small>{% endif %}</dd></div>{% endif %}
 {% if summary.multi %}<div><dt>{{ t('マルチキル') }}</dt><dd>{{ summary.multi[1] + summary.multi[2] + summary.multi[3] }}<small>3K {{ summary.multi[1] }} · 4K {{ summary.multi[2] }} · ACE {{ summary.multi[3] }}</small></dd></div>{% endif %}
 {% if summary.today %}<div><dt>{{ t('今日') }}</dt><dd>{{ t('{count} 試合', count=summary.today.games) }}<small>{{ t('{wins}勝 {losses}敗', wins=summary.today.wins, losses=summary.today.losses) }}{% if summary.today.rr is not none %} · <span class="{{ 'up' if summary.today.rr > 0 else ('down' if summary.today.rr < 0 else '') }}">{{ '%+d'|format(summary.today.rr) }} RR</span>{% endif %} · {% if summary.today.minutes >= 60 %}{{ t('{hours}時間{minutes}分', hours=summary.today.minutes // 60, minutes=summary.today.minutes % 60) }}{% else %}{{ t('{minutes}分', minutes=summary.today.minutes) }}{% endif %}</small></dd></div>{% endif %}
-{% if summary.minutes %}<div><dt>{{ t('プレイ時間') }}</dt><dd>{% if summary.minutes >= 60 %}{{ t('{hours}時間{minutes}分', hours=summary.minutes // 60, minutes=summary.minutes % 60) }}{% else %}{{ t('{minutes}分', minutes=summary.minutes) }}{% endif %}{% if summary.plants is not none %}<small>{{ t('設置 {plants} · 解除 {defuses}', plants=summary.plants, defuses=summary.defuses) }}</small>{% endif %}</dd></div>{% endif %}
+{% if summary.minutes %}<div><dt>{{ t('プレイ時間') }}</dt><dd>{% if summary.minutes >= 60 %}{{ t('{hours}時間{minutes}分', hours='{:,}'.format(summary.minutes // 60), minutes=summary.minutes % 60) }}{% else %}{{ t('{minutes}分', minutes=summary.minutes) }}{% endif %}{% if summary.plants is not none or summary.timed < summary.games %}<small>{% if summary.timed < summary.games %}{{ t('{count} 試合分', count='{:,}'.format(summary.timed)) }}{% if summary.plants is not none %} · {% endif %}{% endif %}{% if summary.plants is not none %}{{ t('設置 {plants} · 解除 {defuses}', plants=summary.plants, defuses=summary.defuses) }}{% endif %}</small>{% endif %}</dd></div>{% endif %}
 </dl>
 {% set terms = ['kda', 'hs'] + (['acs', 'adr'] if summary.acs is not none else []) + (['kast'] if summary.kast is not none else []) + (['dd'] if summary.dd is not none else []) + (['first'] if summary.fk is not none else []) + (['clutch'] if summary.clutches is not none else []) + (['multi'] if summary.multi else []) + (['rr'] if rank and rank.tier > 2 else []) + (['score'] if summary.score else []) + (['top'] if tops else []) %}
 {% include "_glossary.html" %}
@@ -134,7 +144,7 @@
 {% endif %}
 {% if summary.decided %}
 <ol class="form" aria-label="{{ t('勝敗（新しい順）') }}">
-{% for outcome in summary.form %}<li class="{{ outcome }}">{% if outcome == 'win' %}{{ t('勝') }}{% elif outcome == 'loss' %}{{ t('敗') }}{% else %}{{ t('分') }}{% endif %}</li>{% endfor %}
+{% for outcome in summary.form[:20] %}<li class="{{ outcome }}">{% if outcome == 'win' %}{{ t('勝') }}{% elif outcome == 'loss' %}{{ t('敗') }}{% else %}{{ t('分') }}{% endif %}</li>{% endfor %}
 </ol>
 {% endif %}
 {% if summary.agents %}
@@ -152,7 +162,7 @@
   "rankIcon": media(rank.icon) if rank and rank.tier > 2 and rank.icon else "",
   "under": ((rr ~ ' RR') if rank and rank.tier > 2 and rr is not none else '') ~ ((' · ' ~ t('最高ランク') ~ ' ' ~ peak.name) if peak and peak.tier > 2 else ''),
   "wide": wide,
-  "title": mode_name ~ ' · ' ~ t('直近 {count} 試合', count=summary.games),
+  "title": mode_name ~ ' · ' ~ (t('通算 {count} 試合', count='{:,}'.format(summary.games)) if span else t('直近 {count} 試合', count=summary.games)),
   "stats": ([[t('勝率'), summary.win_rate ~ '%']] if summary.decided else []) + [["K/D", summary.kd]] + ([["ACS", summary.acs]] if summary.acs is not none else []) + [[t('HS率'), summary.hs ~ '%']] + ([["KAST", summary.kast ~ '%']] if summary.kast is not none else []) + ([["ADR", summary.adr]] if summary.adr is not none else []),
   "agents": picked.agents,
   "site": site_name,
@@ -206,13 +216,13 @@
 {% endif %}
 
 <section class="matches" aria-labelledby="m-title">
-<h2 id="m-title">{{ t('最近の試合') }}</h2>
+<h2 id="m-title">{{ t('すべての試合') if span else t('最近の試合') }}{% if span and pages.count > 1 %} <small>{{ t('{page} / {pages} ページ', page=pages.page, pages=pages.count) }}</small>{% endif %}</h2>
 {% if matches_problem %}<p class="problem" role="alert">{{ matches_problem }}</p>
-{% elif not rows %}<p class="note">{{ t('このモードの最近の試合はありません。') if mode else t('最近の試合が見つかりませんでした。') }}</p>
+{% elif not listed %}<p class="note">{% if span %}{{ t('このモードの試合はまだありません。') if mode else t('まだ試合がありません。') }}{% else %}{{ t('このモードの最近の試合はありません。') if mode else t('最近の試合が見つかりませんでした。') }}{% endif %}</p>
 {% else %}
 <p class="map-pick" hidden><label><span>{{ t('マップ') }}</span> <select id="map-pick"><option value="">{{ t('すべて') }}</option></select></label></p>
 <ol class="match-list" data-day="{{ t('{wins}勝 {losses}敗') }}">
-{% for row in rows %}
+{% for row in listed %}
 {% set outcome = 'win' if row.result.won is sameas true or (row.result.won is none and not row.result.rounds and row.placing.place == 1) else ('loss' if row.result.won is sameas false else 'draw') %}
 <li class="match {{ outcome }}" data-outcome="{{ outcome }}"{% if row.rr is not none %} data-rr="{{ row.rr }}"{% endif %} data-map="{{ row.map.name }}">
 <a href="{{ url_for('match', region=row.region or region, match_id=row.id, me=name ~ '#' ~ tag) }}">
@@ -221,7 +231,8 @@
 <span class="what"><strong>{{ row.map.name }}</strong><small>{% if not mode %}{{ row.queue }}{% if row.started %} · {% endif %}{% endif %}{% if row.started %}<time datetime="{{ row.started.isoformat() }}">{{ row.when }}</time>{% endif %}{% if row.server %}<span class="srv"> · {{ row.server }}</span>{% endif %}</small></span>
 <span class="score">
 {% if row.result.rounds %}<strong>{{ row.result.us }}–{{ row.result.them }}</strong>
-{% elif row.result.won is none %}<strong>{{ t('{place}位', place=row.placing.place) }}</strong>
+{% elif row.result.won is none and row.placing.place %}<strong>{{ t('{place}位', place=row.placing.place) }}</strong>
+{% elif row.result.won is none %}<strong>–</strong>
 {% else %}<strong>{% if outcome == 'win' %}{{ t('勝利') }}{% else %}{{ t('敗北') }}{% endif %}</strong>{% endif %}
 <small>{% if not row.result.rounds and row.result.won is none %}{{ t('{count}人中', count=row.placing.of) }}{% elif row.result.rounds %}{% if outcome == 'win' %}{{ t('勝利') }}{% elif outcome == 'loss' %}{{ t('敗北') }}{% else %}{{ t('引き分け') }}{% endif %}{% endif %}{% if row.rr is not none %}{% if row.result.rounds %} · {% endif %}<span class="{{ 'up' if row.rr > 0 else ('down' if row.rr < 0 else '') }}">{{ '%+d'|format(row.rr) }} RR</span>{% endif %}</small>
 </span>
@@ -230,6 +241,14 @@
 </li>
 {% endfor %}
 </ol>
+{% if span and pages.count > 1 %}
+{% macro to(number) %}{{ url_for('player', name=name, tag=tag, mode=mode or None, span='all', page=number if number > 1 else None) }}#m-title{% endmacro %}
+<nav class="pages" aria-label="{{ t('ページ') }}">
+{% if pages.page > 1 %}<a class="button quiet" href="{{ to(pages.page - 1) }}" rel="prev">← {{ t('新しい試合') }}</a>{% endif %}
+<span>{{ t('{page} / {pages} ページ', page=pages.page, pages=pages.count) }}</span>
+{% if pages.page < pages.count %}<a class="button quiet" href="{{ to(pages.page + 1) }}" rel="next">{{ t('古い試合') }} →</a>{% endif %}
+</nav>
+{% endif %}
 {% endif %}
 </section>
 
@@ -263,7 +282,7 @@
 {% from "_heat.html" import filters, figure, places with context %}
 <section class="heat" aria-labelledby="heat-title">
 <h2 id="heat-title">{{ t('キルとデスの場所') }}</h2>
-<p class="note">{{ t('緑の点はキルを取ったときに立っていた場所、赤の点は倒された場所です（最近の試合の分）。') }}</p>
+<p class="note">{% if span %}{{ t('緑の点はキルを取ったときに立っていた場所、赤の点は倒された場所です（通算。点は新しいものから最大 {count} 個）。', count=heat_dots) }}{% else %}{{ t('緑の点はキルを取ったときに立っていた場所、赤の点は倒された場所です（最近の試合の分）。') }}{% endif %}</p>
 {{ filters('p', heat_maps|selectattr('sides')|list) }}
 {% for heat in heat_maps %}
 <details class="heat-panel" name="heat-map"{% if loop.first %} open{% endif %}>

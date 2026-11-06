@@ -15,6 +15,8 @@ from flask import Flask, g, request, url_for
 
 from valtracker import content, i18n, net, paths, security, theme
 from valtracker.activity import COLLECT_SECONDS, Activity, Collector
+from valtracker.archive import FILL_SECONDS, Archive, Filler
+from valtracker.cache import TTLCache
 from valtracker.content import Content
 from valtracker.diary import Diary
 from valtracker.henrik import Henrik
@@ -46,6 +48,18 @@ def create_app(
     # VAL_COLLECT_SECONDS=0 turns the background look at more players off (activity.py)
     seconds = float(os.environ.get("VAL_COLLECT_SECONDS", COLLECT_SECONDS) or 0)
     app.config["VAL_COLLECTOR"] = collector = Collector(activity, app.config["VAL_HENRIK"], seconds)
+    app.config["VAL_ARCHIVE"] = archive = Archive(instance)
+    # the background reading of a player's whole history (archive.py); VAL_FILL_SECONDS=0 turns it off
+    game = app.config["VAL_CONTENT"]
+    app.config["VAL_FILLER"] = filler = Filler(
+        archive,
+        app.config["VAL_RIOT"],
+        app.config["VAL_HENRIK"],
+        lambda: game.map_index("en-GB"),
+        float(os.environ.get("VAL_FILL_SECONDS", FILL_SECONDS) or 0),
+    )
+    #: players' lifetimes as their page counts them (views._lifetime)
+    app.config["VAL_LIVES"] = TTLCache(6)
     security.init_app(app, instance, mount)
     app.config["VAL_RATINGS"] = Ratings(instance, app.secret_key)
 
@@ -53,6 +67,7 @@ def create_app(
     def _collect():
         if not app.testing:
             collector.start()  # once; it waits COLLECT_SECONDS before its first look
+            filler.start()  # once; it waits until a player's lifetime is wanted
 
     @app.before_request
     def _language():

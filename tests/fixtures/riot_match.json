@@ -1,0 +1,1189 @@
+{
+ "player": "11111111-2222-4333-8444-555555555555",
+ "history": {
+  "Subject": "11111111-2222-4333-8444-555555555555",
+  "BeginIndex": 0,
+  "EndIndex": 2,
+  "Total": 2,
+  "History": [
+   {
+    "MatchID": "bbbbbbbb-0000-4000-8000-000000000002",
+    "GameStartTime": 1762403600000,
+    "QueueID": "unrated"
+   },
+   {
+    "MatchID": "bbbbbbbb-0000-4000-8000-000000000001",
+    "GameStartTime": 1762400000000,
+    "QueueID": "competitive"
+   }
+  ]
+ },
+ "matches": {
+  "bbbbbbbb-0000-4000-8000-000000000001": {
+   "matchInfo": {
+    "matchId": "bbbbbbbb-0000-4000-8000-000000000001",
+    "mapId": "/Game/Maps/Ascent/Ascent",
+    "gamePodId": "aresriot.aws-rclusterprod-ape1-1.ap-gp-tokyo-1",
+    "gameLoopZone": "",
+    "gameServerAddress": "",
+    "gameVersion": "release-11.10",
+    "gameLengthMillis": 1500000,
+    "gameStartMillis": 1762400000000,
+    "provisioningFlowID": "Matchmaking",
+    "isCompleted": true,
+    "customGameName": "",
+    "queueID": "competitive",
+    "gameMode": "/Game/GameModes/Bomb/BombGameMode.BombGameMode_C",
+    "isRanked": true,
+    "seasonId": "aaaaaaaa-1111-4222-8333-000000000000",
+    "completionState": "Completed"
+   },
+   "players": [
+    {
+     "subject": "11111111-2222-4333-8444-555555555555",
+     "gameName": "Pd Player",
+     "tagLine": "PD1",
+     "teamId": "Red",
+     "partyId": "party-a",
+     "characterId": "11111111-1111-4111-8111-111111111111",
+     "stats": {
+      "score": 900,
+      "roundsPlayed": 3,
+      "kills": 3,
+      "deaths": 1,
+      "assists": 1,
+      "playtimeMillis": 1500000
+     },
+     "competitiveTier": 21,
+     "isObserver": false,
+     "playerCard": "33333333-3333-4333-8333-333333333333",
+     "accountLevel": 100
+    },
+    {
+     "subject": "22222222-3333-4444-8555-666666666666",
+     "gameName": "Secret Mate",
+     "tagLine": "PD1",
+     "teamId": "Red",
+     "partyId": "party-a",
+     "characterId": "22222222-2222-4222-8222-222222222222",
+     "stats": {
+      "score": 500,
+      "roundsPlayed": 3,
+      "kills": 1,
+      "deaths": 1,
+      "assists": 1,
+      "playtimeMillis": 1500000
+     },
+     "competitiveTier": 20,
+     "isObserver": false,
+     "playerCard": "33333333-3333-4333-8333-333333333333",
+     "accountLevel": 100
+    },
+    {
+     "subject": "33333333-4444-4555-8666-777777777777",
+     "gameName": "Foe One",
+     "tagLine": "PD1",
+     "teamId": "Blue",
+     "partyId": "party-b",
+     "characterId": "11111111-1111-4111-8111-111111111111",
+     "stats": {
+      "score": 600,
+      "roundsPlayed": 3,
+      "kills": 2,
+      "deaths": 2,
+      "assists": 0,
+      "playtimeMillis": 1500000
+     },
+     "competitiveTier": 21,
+     "isObserver": false,
+     "playerCard": "33333333-3333-4333-8333-333333333333",
+     "accountLevel": 100
+    },
+    {
+     "subject": "44444444-5555-4666-8777-888888888888",
+     "gameName": "Foe Two",
+     "tagLine": "PD1",
+     "teamId": "Blue",
+     "partyId": "party-c",
+     "characterId": "22222222-2222-4222-8222-222222222222",
+     "stats": {
+      "score": 300,
+      "roundsPlayed": 3,
+      "kills": 0,
+      "deaths": 2,
+      "assists": 0,
+      "playtimeMillis": 1500000
+     },
+     "competitiveTier": 19,
+     "isObserver": false,
+     "playerCard": "33333333-3333-4333-8333-333333333333",
+     "accountLevel": 100
+    },
+    {
+     "subject": "55555555-6666-4777-8888-999999999999",
+     "gameName": "Watcher",
+     "tagLine": "OB",
+     "teamId": "Neutral",
+     "partyId": "party-o",
+     "characterId": "",
+     "stats": null,
+     "competitiveTier": 0,
+     "isObserver": true
+    }
+   ],
+   "teams": [
+    {
+     "teamId": "Red",
+     "won": true,
+     "roundsPlayed": 3,
+     "roundsWon": 2,
+     "numPoints": 2
+    },
+    {
+     "teamId": "Blue",
+     "won": false,
+     "roundsPlayed": 3,
+     "roundsWon": 1,
+     "numPoints": 1
+    }
+   ],
+   "roundResults": [
+    {
+     "roundNum": 0,
+     "roundResult": "Eliminated",
+     "roundCeremony": "CeremonyDefault",
+     "winningTeam": "Red",
+     "bombPlanter": null,
+     "bombDefuser": null,
+     "plantSite": "",
+     "playerStats": [
+      {
+       "subject": "11111111-2222-4333-8444-555555555555",
+       "kills": [],
+       "damage": [
+        {
+         "receiver": "33333333-4444-4555-8666-777777777777",
+         "damage": 150,
+         "headshots": 1,
+         "bodyshots": 1,
+         "legshots": 0
+        },
+        {
+         "receiver": "44444444-5555-4666-8777-888888888888",
+         "damage": 140,
+         "headshots": 0,
+         "bodyshots": 2,
+         "legshots": 1
+        }
+       ],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 3900,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 3900
+       }
+      },
+      {
+       "subject": "22222222-3333-4444-8555-666666666666",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 3000,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 3000
+       }
+      },
+      {
+       "subject": "33333333-4444-4555-8666-777777777777",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 800,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 800
+       }
+      },
+      {
+       "subject": "44444444-5555-4666-8777-888888888888",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 800,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 800
+       }
+      }
+     ]
+    },
+    {
+     "roundNum": 1,
+     "roundResult": "Bomb detonated",
+     "roundCeremony": "CeremonyDefault",
+     "winningTeam": "Blue",
+     "bombPlanter": "33333333-4444-4555-8666-777777777777",
+     "bombDefuser": null,
+     "plantSite": "A",
+     "plantRoundTime": 40000,
+     "playerStats": [
+      {
+       "subject": "11111111-2222-4333-8444-555555555555",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 2900,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 2000
+       }
+      },
+      {
+       "subject": "22222222-3333-4444-8555-666666666666",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 2900,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 2000
+       }
+      },
+      {
+       "subject": "33333333-4444-4555-8666-777777777777",
+       "kills": [],
+       "damage": [
+        {
+         "receiver": "11111111-2222-4333-8444-555555555555",
+         "damage": 150,
+         "headshots": 1,
+         "bodyshots": 1,
+         "legshots": 0
+        }
+       ],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 3900,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 3900
+       }
+      },
+      {
+       "subject": "44444444-5555-4666-8777-888888888888",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 3900,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 3900
+       }
+      }
+     ]
+    },
+    {
+     "roundNum": 2,
+     "roundResult": "Bomb defused",
+     "roundCeremony": "CeremonyClutch",
+     "winningTeam": "Red",
+     "bombPlanter": "44444444-5555-4666-8777-888888888888",
+     "bombDefuser": "22222222-3333-4444-8555-666666666666",
+     "plantSite": "B",
+     "playerStats": [
+      {
+       "subject": "11111111-2222-4333-8444-555555555555",
+       "kills": [],
+       "damage": [
+        {
+         "receiver": "44444444-5555-4666-8777-888888888888",
+         "damage": 150,
+         "headshots": 1,
+         "bodyshots": 1,
+         "legshots": 0
+        }
+       ],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 4700,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 1000
+       }
+      },
+      {
+       "subject": "22222222-3333-4444-8555-666666666666",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 4700,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 1000
+       }
+      },
+      {
+       "subject": "33333333-4444-4555-8666-777777777777",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 2000,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 2000
+       }
+      },
+      {
+       "subject": "44444444-5555-4666-8777-888888888888",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 2000,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 2000
+       }
+      }
+     ]
+    }
+   ],
+   "kills": [
+    {
+     "gameTime": 10000,
+     "roundTime": 10000,
+     "round": 0,
+     "killer": "11111111-2222-4333-8444-555555555555",
+     "victim": "33333333-4444-4555-8666-777777777777",
+     "victimLocation": {
+      "x": 1100,
+      "y": 2000
+     },
+     "assistants": [
+      "22222222-3333-4444-8555-666666666666"
+     ],
+     "playerLocations": [
+      {
+       "subject": "11111111-2222-4333-8444-555555555555",
+       "viewRadians": 0.5,
+       "location": {
+        "x": 1300,
+        "y": 2100
+       }
+      },
+      {
+       "subject": "33333333-4444-4555-8666-777777777777",
+       "viewRadians": 1.0,
+       "location": {
+        "x": 1100,
+        "y": 2000
+       }
+      }
+     ],
+     "finishingDamage": {
+      "damageType": "Weapon",
+      "damageItem": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+      "isSecondaryFireMode": false
+     }
+    },
+    {
+     "gameTime": 15000,
+     "roundTime": 15000,
+     "round": 0,
+     "killer": "11111111-2222-4333-8444-555555555555",
+     "victim": "44444444-5555-4666-8777-888888888888",
+     "victimLocation": {
+      "x": 1150,
+      "y": 2000
+     },
+     "assistants": [],
+     "playerLocations": [
+      {
+       "subject": "11111111-2222-4333-8444-555555555555",
+       "viewRadians": 0.5,
+       "location": {
+        "x": 1350,
+        "y": 2100
+       }
+      },
+      {
+       "subject": "44444444-5555-4666-8777-888888888888",
+       "viewRadians": 1.0,
+       "location": {
+        "x": 1150,
+        "y": 2000
+       }
+      }
+     ],
+     "finishingDamage": {
+      "damageType": "Weapon",
+      "damageItem": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+      "isSecondaryFireMode": false
+     }
+    },
+    {
+     "gameTime": 120000,
+     "roundTime": 20000,
+     "round": 1,
+     "killer": "33333333-4444-4555-8666-777777777777",
+     "victim": "11111111-2222-4333-8444-555555555555",
+     "victimLocation": {
+      "x": 1200,
+      "y": 2000
+     },
+     "assistants": [],
+     "playerLocations": [
+      {
+       "subject": "33333333-4444-4555-8666-777777777777",
+       "viewRadians": 0.5,
+       "location": {
+        "x": 1400,
+        "y": 2100
+       }
+      },
+      {
+       "subject": "11111111-2222-4333-8444-555555555555",
+       "viewRadians": 1.0,
+       "location": {
+        "x": 1200,
+        "y": 2000
+       }
+      }
+     ],
+     "finishingDamage": {
+      "damageType": "Weapon",
+      "damageItem": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+      "isSecondaryFireMode": false
+     }
+    },
+    {
+     "gameTime": 125000,
+     "roundTime": 25000,
+     "round": 1,
+     "killer": "33333333-4444-4555-8666-777777777777",
+     "victim": "22222222-3333-4444-8555-666666666666",
+     "victimLocation": {
+      "x": 1250,
+      "y": 2000
+     },
+     "assistants": [],
+     "playerLocations": [
+      {
+       "subject": "33333333-4444-4555-8666-777777777777",
+       "viewRadians": 0.5,
+       "location": {
+        "x": 1450,
+        "y": 2100
+       }
+      },
+      {
+       "subject": "22222222-3333-4444-8555-666666666666",
+       "viewRadians": 1.0,
+       "location": {
+        "x": 1250,
+        "y": 2000
+       }
+      }
+     ],
+     "finishingDamage": {
+      "damageType": "Weapon",
+      "damageItem": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+      "isSecondaryFireMode": false
+     }
+    },
+    {
+     "gameTime": 205000,
+     "roundTime": 5000,
+     "round": 2,
+     "killer": "11111111-2222-4333-8444-555555555555",
+     "victim": "44444444-5555-4666-8777-888888888888",
+     "victimLocation": {
+      "x": 1050,
+      "y": 2000
+     },
+     "assistants": [],
+     "playerLocations": [
+      {
+       "subject": "11111111-2222-4333-8444-555555555555",
+       "viewRadians": 0.5,
+       "location": {
+        "x": 1250,
+        "y": 2100
+       }
+      },
+      {
+       "subject": "44444444-5555-4666-8777-888888888888",
+       "viewRadians": 1.0,
+       "location": {
+        "x": 1050,
+        "y": 2000
+       }
+      }
+     ],
+     "finishingDamage": {
+      "damageType": "Ability",
+      "damageItem": "Ultimate",
+      "isSecondaryFireMode": false
+     }
+    },
+    {
+     "gameTime": 209000,
+     "roundTime": 9000,
+     "round": 2,
+     "killer": "22222222-3333-4444-8555-666666666666",
+     "victim": "33333333-4444-4555-8666-777777777777",
+     "victimLocation": {
+      "x": 1090,
+      "y": 2000
+     },
+     "assistants": [],
+     "playerLocations": [
+      {
+       "subject": "22222222-3333-4444-8555-666666666666",
+       "viewRadians": 0.5,
+       "location": {
+        "x": 1290,
+        "y": 2100
+       }
+      },
+      {
+       "subject": "33333333-4444-4555-8666-777777777777",
+       "viewRadians": 1.0,
+       "location": {
+        "x": 1090,
+        "y": 2000
+       }
+      }
+     ],
+     "finishingDamage": {
+      "damageType": "Weapon",
+      "damageItem": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+      "isSecondaryFireMode": false
+     }
+    }
+   ]
+  },
+  "bbbbbbbb-0000-4000-8000-000000000002": {
+   "matchInfo": {
+    "matchId": "bbbbbbbb-0000-4000-8000-000000000002",
+    "mapId": "/Game/Maps/Ascent/Ascent",
+    "gamePodId": "aresriot.aws-rclusterprod-ape1-1.ap-gp-tokyo-1",
+    "gameLoopZone": "",
+    "gameServerAddress": "",
+    "gameVersion": "release-11.10",
+    "gameLengthMillis": 1500000,
+    "gameStartMillis": 1762403600000,
+    "provisioningFlowID": "Matchmaking",
+    "isCompleted": true,
+    "customGameName": "",
+    "queueID": "unrated",
+    "gameMode": "/Game/GameModes/Bomb/BombGameMode.BombGameMode_C",
+    "isRanked": false,
+    "seasonId": "aaaaaaaa-1111-4222-8333-000000000000",
+    "completionState": "Completed"
+   },
+   "players": [
+    {
+     "subject": "11111111-2222-4333-8444-555555555555",
+     "gameName": "Pd Player",
+     "tagLine": "PD1",
+     "teamId": "Red",
+     "partyId": "party-a",
+     "characterId": "11111111-1111-4111-8111-111111111111",
+     "stats": {
+      "score": 900,
+      "roundsPlayed": 3,
+      "kills": 3,
+      "deaths": 1,
+      "assists": 1,
+      "playtimeMillis": 1500000
+     },
+     "competitiveTier": 21,
+     "isObserver": false,
+     "playerCard": "33333333-3333-4333-8333-333333333333",
+     "accountLevel": 100
+    },
+    {
+     "subject": "22222222-3333-4444-8555-666666666666",
+     "gameName": "Secret Mate",
+     "tagLine": "PD1",
+     "teamId": "Red",
+     "partyId": "party-a",
+     "characterId": "22222222-2222-4222-8222-222222222222",
+     "stats": {
+      "score": 500,
+      "roundsPlayed": 3,
+      "kills": 1,
+      "deaths": 1,
+      "assists": 1,
+      "playtimeMillis": 1500000
+     },
+     "competitiveTier": 20,
+     "isObserver": false,
+     "playerCard": "33333333-3333-4333-8333-333333333333",
+     "accountLevel": 100
+    },
+    {
+     "subject": "33333333-4444-4555-8666-777777777777",
+     "gameName": "Foe One",
+     "tagLine": "PD1",
+     "teamId": "Blue",
+     "partyId": "party-b",
+     "characterId": "11111111-1111-4111-8111-111111111111",
+     "stats": {
+      "score": 600,
+      "roundsPlayed": 3,
+      "kills": 2,
+      "deaths": 2,
+      "assists": 0,
+      "playtimeMillis": 1500000
+     },
+     "competitiveTier": 21,
+     "isObserver": false,
+     "playerCard": "33333333-3333-4333-8333-333333333333",
+     "accountLevel": 100
+    },
+    {
+     "subject": "44444444-5555-4666-8777-888888888888",
+     "gameName": "Foe Two",
+     "tagLine": "PD1",
+     "teamId": "Blue",
+     "partyId": "party-c",
+     "characterId": "22222222-2222-4222-8222-222222222222",
+     "stats": {
+      "score": 300,
+      "roundsPlayed": 3,
+      "kills": 0,
+      "deaths": 2,
+      "assists": 0,
+      "playtimeMillis": 1500000
+     },
+     "competitiveTier": 19,
+     "isObserver": false,
+     "playerCard": "33333333-3333-4333-8333-333333333333",
+     "accountLevel": 100
+    },
+    {
+     "subject": "55555555-6666-4777-8888-999999999999",
+     "gameName": "Watcher",
+     "tagLine": "OB",
+     "teamId": "Neutral",
+     "partyId": "party-o",
+     "characterId": "",
+     "stats": null,
+     "competitiveTier": 0,
+     "isObserver": true
+    }
+   ],
+   "teams": [
+    {
+     "teamId": "Red",
+     "won": true,
+     "roundsPlayed": 3,
+     "roundsWon": 2,
+     "numPoints": 2
+    },
+    {
+     "teamId": "Blue",
+     "won": false,
+     "roundsPlayed": 3,
+     "roundsWon": 1,
+     "numPoints": 1
+    }
+   ],
+   "roundResults": [
+    {
+     "roundNum": 0,
+     "roundResult": "Eliminated",
+     "roundCeremony": "CeremonyDefault",
+     "winningTeam": "Red",
+     "bombPlanter": null,
+     "bombDefuser": null,
+     "plantSite": "",
+     "playerStats": [
+      {
+       "subject": "11111111-2222-4333-8444-555555555555",
+       "kills": [],
+       "damage": [
+        {
+         "receiver": "33333333-4444-4555-8666-777777777777",
+         "damage": 150,
+         "headshots": 1,
+         "bodyshots": 1,
+         "legshots": 0
+        },
+        {
+         "receiver": "44444444-5555-4666-8777-888888888888",
+         "damage": 140,
+         "headshots": 0,
+         "bodyshots": 2,
+         "legshots": 1
+        }
+       ],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 3900,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 3900
+       }
+      },
+      {
+       "subject": "22222222-3333-4444-8555-666666666666",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 3000,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 3000
+       }
+      },
+      {
+       "subject": "33333333-4444-4555-8666-777777777777",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 800,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 800
+       }
+      },
+      {
+       "subject": "44444444-5555-4666-8777-888888888888",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 800,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 800
+       }
+      }
+     ]
+    },
+    {
+     "roundNum": 1,
+     "roundResult": "Bomb detonated",
+     "roundCeremony": "CeremonyDefault",
+     "winningTeam": "Blue",
+     "bombPlanter": "33333333-4444-4555-8666-777777777777",
+     "bombDefuser": null,
+     "plantSite": "A",
+     "plantRoundTime": 40000,
+     "playerStats": [
+      {
+       "subject": "11111111-2222-4333-8444-555555555555",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 2900,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 2000
+       }
+      },
+      {
+       "subject": "22222222-3333-4444-8555-666666666666",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 2900,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 2000
+       }
+      },
+      {
+       "subject": "33333333-4444-4555-8666-777777777777",
+       "kills": [],
+       "damage": [
+        {
+         "receiver": "11111111-2222-4333-8444-555555555555",
+         "damage": 150,
+         "headshots": 1,
+         "bodyshots": 1,
+         "legshots": 0
+        }
+       ],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 3900,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 3900
+       }
+      },
+      {
+       "subject": "44444444-5555-4666-8777-888888888888",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 3900,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 3900
+       }
+      }
+     ]
+    },
+    {
+     "roundNum": 2,
+     "roundResult": "Bomb defused",
+     "roundCeremony": "CeremonyClutch",
+     "winningTeam": "Red",
+     "bombPlanter": "44444444-5555-4666-8777-888888888888",
+     "bombDefuser": "22222222-3333-4444-8555-666666666666",
+     "plantSite": "B",
+     "playerStats": [
+      {
+       "subject": "11111111-2222-4333-8444-555555555555",
+       "kills": [],
+       "damage": [
+        {
+         "receiver": "44444444-5555-4666-8777-888888888888",
+         "damage": 150,
+         "headshots": 1,
+         "bodyshots": 1,
+         "legshots": 0
+        }
+       ],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 4700,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 1000
+       }
+      },
+      {
+       "subject": "22222222-3333-4444-8555-666666666666",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 4700,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 1000
+       }
+      },
+      {
+       "subject": "33333333-4444-4555-8666-777777777777",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 2000,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 2000
+       }
+      },
+      {
+       "subject": "44444444-5555-4666-8777-888888888888",
+       "kills": [],
+       "damage": [],
+       "score": 0,
+       "economy": {
+        "loadoutValue": 2000,
+        "weapon": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+        "armor": "",
+        "remaining": 100,
+        "spent": 2000
+       }
+      }
+     ]
+    }
+   ],
+   "kills": [
+    {
+     "gameTime": 10000,
+     "roundTime": 10000,
+     "round": 0,
+     "killer": "11111111-2222-4333-8444-555555555555",
+     "victim": "33333333-4444-4555-8666-777777777777",
+     "victimLocation": {
+      "x": 1100,
+      "y": 2000
+     },
+     "assistants": [
+      "22222222-3333-4444-8555-666666666666"
+     ],
+     "playerLocations": [
+      {
+       "subject": "11111111-2222-4333-8444-555555555555",
+       "viewRadians": 0.5,
+       "location": {
+        "x": 1300,
+        "y": 2100
+       }
+      },
+      {
+       "subject": "33333333-4444-4555-8666-777777777777",
+       "viewRadians": 1.0,
+       "location": {
+        "x": 1100,
+        "y": 2000
+       }
+      }
+     ],
+     "finishingDamage": {
+      "damageType": "Weapon",
+      "damageItem": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+      "isSecondaryFireMode": false
+     }
+    },
+    {
+     "gameTime": 15000,
+     "roundTime": 15000,
+     "round": 0,
+     "killer": "11111111-2222-4333-8444-555555555555",
+     "victim": "44444444-5555-4666-8777-888888888888",
+     "victimLocation": {
+      "x": 1150,
+      "y": 2000
+     },
+     "assistants": [],
+     "playerLocations": [
+      {
+       "subject": "11111111-2222-4333-8444-555555555555",
+       "viewRadians": 0.5,
+       "location": {
+        "x": 1350,
+        "y": 2100
+       }
+      },
+      {
+       "subject": "44444444-5555-4666-8777-888888888888",
+       "viewRadians": 1.0,
+       "location": {
+        "x": 1150,
+        "y": 2000
+       }
+      }
+     ],
+     "finishingDamage": {
+      "damageType": "Weapon",
+      "damageItem": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+      "isSecondaryFireMode": false
+     }
+    },
+    {
+     "gameTime": 120000,
+     "roundTime": 20000,
+     "round": 1,
+     "killer": "33333333-4444-4555-8666-777777777777",
+     "victim": "11111111-2222-4333-8444-555555555555",
+     "victimLocation": {
+      "x": 1200,
+      "y": 2000
+     },
+     "assistants": [],
+     "playerLocations": [
+      {
+       "subject": "33333333-4444-4555-8666-777777777777",
+       "viewRadians": 0.5,
+       "location": {
+        "x": 1400,
+        "y": 2100
+       }
+      },
+      {
+       "subject": "11111111-2222-4333-8444-555555555555",
+       "viewRadians": 1.0,
+       "location": {
+        "x": 1200,
+        "y": 2000
+       }
+      }
+     ],
+     "finishingDamage": {
+      "damageType": "Weapon",
+      "damageItem": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+      "isSecondaryFireMode": false
+     }
+    },
+    {
+     "gameTime": 125000,
+     "roundTime": 25000,
+     "round": 1,
+     "killer": "33333333-4444-4555-8666-777777777777",
+     "victim": "22222222-3333-4444-8555-666666666666",
+     "victimLocation": {
+      "x": 1250,
+      "y": 2000
+     },
+     "assistants": [],
+     "playerLocations": [
+      {
+       "subject": "33333333-4444-4555-8666-777777777777",
+       "viewRadians": 0.5,
+       "location": {
+        "x": 1450,
+        "y": 2100
+       }
+      },
+      {
+       "subject": "22222222-3333-4444-8555-666666666666",
+       "viewRadians": 1.0,
+       "location": {
+        "x": 1250,
+        "y": 2000
+       }
+      }
+     ],
+     "finishingDamage": {
+      "damageType": "Weapon",
+      "damageItem": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+      "isSecondaryFireMode": false
+     }
+    },
+    {
+     "gameTime": 205000,
+     "roundTime": 5000,
+     "round": 2,
+     "killer": "11111111-2222-4333-8444-555555555555",
+     "victim": "44444444-5555-4666-8777-888888888888",
+     "victimLocation": {
+      "x": 1050,
+      "y": 2000
+     },
+     "assistants": [],
+     "playerLocations": [
+      {
+       "subject": "11111111-2222-4333-8444-555555555555",
+       "viewRadians": 0.5,
+       "location": {
+        "x": 1250,
+        "y": 2100
+       }
+      },
+      {
+       "subject": "44444444-5555-4666-8777-888888888888",
+       "viewRadians": 1.0,
+       "location": {
+        "x": 1050,
+        "y": 2000
+       }
+      }
+     ],
+     "finishingDamage": {
+      "damageType": "Ability",
+      "damageItem": "Ultimate",
+      "isSecondaryFireMode": false
+     }
+    },
+    {
+     "gameTime": 209000,
+     "roundTime": 9000,
+     "round": 2,
+     "killer": "22222222-3333-4444-8555-666666666666",
+     "victim": "33333333-4444-4555-8666-777777777777",
+     "victimLocation": {
+      "x": 1090,
+      "y": 2000
+     },
+     "assistants": [],
+     "playerLocations": [
+      {
+       "subject": "22222222-3333-4444-8555-666666666666",
+       "viewRadians": 0.5,
+       "location": {
+        "x": 1290,
+        "y": 2100
+       }
+      },
+      {
+       "subject": "33333333-4444-4555-8666-777777777777",
+       "viewRadians": 1.0,
+       "location": {
+        "x": 1090,
+        "y": 2000
+       }
+      }
+     ],
+     "finishingDamage": {
+      "damageType": "Weapon",
+      "damageItem": "9C82E19D-4575-0200-1A81-3EACF00CF872",
+      "isSecondaryFireMode": false
+     }
+    }
+   ]
+  }
+ },
+ "updates": {
+  "Version": 1,
+  "Subject": "11111111-2222-4333-8444-555555555555",
+  "Matches": [
+   {
+    "MatchID": "bbbbbbbb-0000-4000-8000-000000000001",
+    "MapID": "/Game/Maps/Ascent/Ascent",
+    "SeasonID": "aaaaaaaa-1111-4222-8333-000000000000",
+    "MatchStartTime": 1762400000000,
+    "TierAfterUpdate": 21,
+    "TierBeforeUpdate": 21,
+    "RankedRatingAfterUpdate": 58,
+    "RankedRatingBeforeUpdate": 40,
+    "RankedRatingEarned": 18,
+    "RankedRatingPerformanceBonus": 0,
+    "CompetitiveMovement": "MOVEMENT_UNKNOWN",
+    "AFKPenalty": 0
+   },
+   {
+    "MatchID": "bbbbbbbb-0000-4000-8000-000000000000",
+    "MapID": "",
+    "SeasonID": "",
+    "MatchStartTime": 1762396400000,
+    "TierAfterUpdate": 21,
+    "TierBeforeUpdate": 0,
+    "RankedRatingAfterUpdate": 40,
+    "RankedRatingBeforeUpdate": 0,
+    "RankedRatingEarned": 0,
+    "RankedRatingPerformanceBonus": 0,
+    "CompetitiveMovement": "PROMOTED",
+    "AFKPenalty": 0
+   }
+  ]
+ }
+}

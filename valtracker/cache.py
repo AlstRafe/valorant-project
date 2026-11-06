@@ -55,3 +55,10 @@ class Budget:
                 return False
             self._calls.append(now)
             return True
+
+    def room(self) -> int:
+        """How many calls can still be made now."""
+        with self._lock:
+            now = self.clock()
+            self._calls = [at for at in self._calls if at > now - self.seconds]
+            return self.count - len(self._calls)

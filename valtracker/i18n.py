@@ -10,6 +10,7 @@ translation is shown in Japanese. The translations are in locale.py, one text pe
 
 from __future__ import annotations
 
+from datetime import datetime
 from html import escape
 from http.cookies import SimpleCookie
 from urllib.parse import parse_qsl, urlencode
@@ -105,10 +106,22 @@ _EN_MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oc
 
 
 def when(lang: str, moment) -> str:
-    """A match's start, short: 11月4日 21:05 / 4 Nov 21:05 (the time in Japan, as the site's other times)."""
+    """A match's start, short: 11月4日 21:05 / 4 Nov 21:05 (the time in Japan, as the site's other times); with
+    its year when that is not this year (a player's lifetime goes back years)."""
     clock = f"{moment.hour}:{moment.minute:02d}"
+    if moment.year != datetime.now(moment.tzinfo).year:
+        return f"{day(lang, moment)} {clock}"
     if lang == "en-GB":
         return f"{moment.day} {_EN_MONTHS[moment.month - 1]} {clock}"
     if lang == "ko":
         return f"{moment.month}월 {moment.day}일 {clock}"
     return f"{moment.month}月{moment.day}日 {clock}"
+
+
+def day(lang: str, moment) -> str:
+    """A day with its year: 2025年3月4日 / 4 Mar 2025 / 2025년 3월 4일."""
+    if lang == "en-GB":
+        return f"{moment.day} {_EN_MONTHS[moment.month - 1]} {moment.year}"
+    if lang == "ko":
+        return f"{moment.year}년 {moment.month}월 {moment.day}일"
+    return f"{moment.year}年{moment.month}月{moment.day}日"

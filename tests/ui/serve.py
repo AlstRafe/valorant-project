@@ -1,11 +1,12 @@
 """The app with the tests' made-up answers of the outside APIs (tests/helpers.py), for looking at the pages and for
 tests/ui/audit.js: the owner signed in to Riot (so /queues and the owner's store show), made-up matches on the servers
-page, pictures a browser can show, one player with the longest name there can be, and a ``visitor=1`` cookie that
-shows a page as a visitor sees it.
+page, pictures a browser can show, one player with the longest name there can be, a lifetime of matches for the
+made-up player (pages of them, long charts), and a ``visitor=1`` cookie that shows a page as a visitor sees it.
 
     python tests/ui/serve.py [port, default 5077]
 """
 
+import json
 import math
 import os
 import random
@@ -121,6 +122,69 @@ def seed(activity, now: float) -> None:
         activity.seen([first, second], f"player-{number}")
 
 
+def seed_lifetime(app, now: float) -> None:
+    """The made-up player's lifetime (archive.py): 60 more of their matches over two years, 25 stored lines older
+    than those (no rounds) and the RR of 80 competitive matches, so the lifetime page has pages and long charts."""
+    from valtracker import henrik
+
+    pick = random.Random(7)
+    base = henrik._slim_matches(json.loads(helpers.fixture("henrik_matches.json"))["data"])
+    matches, changes, elo = [], {}, 1650
+    for number in range(60):
+        match = json.loads(json.dumps(base[number % len(base)]))
+        started = now - (number + 1) * 11 * 86400 - pick.randint(0, 80000)
+        match["metadata"]["match_id"] = f"dddddddd-0000-4000-8000-{number:012d}"
+        match["metadata"]["started_at"] = datetime.fromtimestamp(started, UTC).isoformat()
+        for player in match["players"]:
+            player["stats"]["kills"] = pick.randint(6, 30)
+            player["stats"]["deaths"] = pick.randint(8, 22)
+        matches.append(match)
+    for number in range(80):
+        change = pick.choice((-1, 1)) * pick.randint(12, 28)
+        elo += change
+        changes[f"dddddddd-0000-4000-8000-{number:012d}"] = {
+            "change": change,
+            "tier": elo // 100 + 3,
+            "rr": elo % 100,
+            "elo": elo,
+            "at": int(now - (number + 1) * 8 * 86400),
+        }
+    lines = []
+    for number in range(25):
+        started = now - (700 + number * 9) * 86400
+        lines.append(
+            {
+                "id": f"eeeeeeee-0000-4000-8000-{number:012d}",
+                "season": "e5a1",
+                "started": datetime.fromtimestamp(started, UTC).isoformat().replace("+00:00", "Z"),
+                "at": int(started),
+                "queue": "competitive",
+                "cluster": "Tokyo",
+                "map": "Ascent",
+                "map_id": "7eaecc1b-4337-bbf6-6ab9-04b8f06b3319",
+                "us": 13,
+                "them": pick.randint(3, 11) if number % 3 else 14,
+                "agent": "11111111-1111-4111-8111-111111111111",
+                "tier": 14,
+                "won": bool(number % 3),
+                "rounds": 24,
+                "kills": pick.randint(10, 25),
+                "deaths": pick.randint(10, 20),
+                "assists": pick.randint(2, 9),
+                "score": pick.randint(3500, 6500),
+                "head": pick.randint(10, 30),
+                "body": pick.randint(40, 70),
+                "leg": pick.randint(2, 10),
+                "made": pick.randint(2500, 4000),
+                "received": pick.randint(2500, 3800),
+            }
+        )
+    archive = app.config["VAL_ARCHIVE"]
+    archive.keep(matches)
+    archive.keep_thin("puuid-me", lines)
+    archive.keep_rr("puuid-me", changes)
+
+
 def main() -> None:
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5077
     helpers.PNG = _png()
@@ -129,6 +193,7 @@ def main() -> None:
     fetch.esports_page = True  # the matches to come from Riot's esports site, the results from HenrikDev
     app.config["VAL_RIOT"].sign_in("ssid-1")
     seed(app.config["VAL_ACTIVITY"], time.time())
+    seed_lifetime(app, time.time())
     # a few days of the owner's store, and a skin wanted that is in today's (diary.py)
     diary = app.config["VAL_DIARY"]
     for back in range(1, 4):
