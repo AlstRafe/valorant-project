@@ -1528,6 +1528,31 @@ TEXTS = {
         "en-GB": "Grade {grade}",
         "zh-TW": "等級 {grade}",
     },
+    # A player's seasons (seasons.py)
+    "シーズン別の成績": {"ko": "시즌별 성적", "en-GB": "Season stats", "zh-TW": "各賽季戰績"},
+    "アクトごとの勝率・K/D・HS率・ADR・ACS と、前のアクトからの変化。": {
+        "ko": "액트별 승률·K/D·헤드샷 비율·ADR·ACS와 이전 액트 대비 변화.",
+        "en-GB": "Each act's win rate, K/D, HS%, ADR and ACS, and the change from the act before.",
+        "zh-TW": "每個賽季階段的勝率、K/D、爆頭率、ADR、ACS，以及與上一個階段相比的變化。",
+    },
+    "Riot は過去のアクトの成績を公開していないので、HenrikDev（非公式の API）が保存している試合から数えています。全部の試合ではありません（ここでは {count} 試合）。": {
+        "ko": "Riot은 지난 액트의 성적을 공개하지 않아, HenrikDev(비공식 API)가 저장한 경기로 셉니다. 모든 경기는 아닙니다(여기서는 {count}경기).",
+        "en-GB": "Riot does not publish past acts' numbers, so these count the matches HenrikDev (an unofficial API) has stored: not every match ({count} here).",
+        "zh-TW": "Riot 沒有公開過去賽季階段的戰績，因此這裡以 HenrikDev（非官方 API）保存的比賽計算，並非全部比賽（這裡共 {count} 場）。",
+    },
+    "このモードの試合はまだ保存されていません。": {
+        "ko": "이 모드의 경기는 아직 저장되지 않았습니다.",
+        "en-GB": "No matches of this mode are stored yet.",
+        "zh-TW": "這個模式的比賽還沒有被保存。",
+    },
+    "前のアクトから": {"ko": "이전 액트 대비", "en-GB": "from the act before", "zh-TW": "與上一個階段相比"},
+    "このアクトの最高ランク": {
+        "ko": "이 액트의 최고 랭크",
+        "en-GB": "Best rank this act",
+        "zh-TW": "這個階段的最高牌位",
+    },
+    "よく使ったエージェント": {"ko": "많이 쓴 요원", "en-GB": "Most played agents", "zh-TW": "常用特務"},
+    "保存されている全部": {"ko": "저장된 전체", "en-GB": "All stored", "zh-TW": "全部已保存"},
     # Where a player's kills and deaths happened (heatmap.py, _heat.html)
     "キルとデスの場所": {"ko": "킬과 데스 위치", "en-GB": "Kills and deaths on the map", "zh-TW": "擊殺與陣亡位置"},
     "{name} のキルとデスの場所": {

@@ -954,9 +954,10 @@ def register(app: Flask) -> None:
             riot_link=AUTHORIZE,
         )
 
-    from valtracker import compare, owner, skinlib, tools, world
+    from valtracker import compare, owner, seasons, skinlib, tools, world
 
     tools.register(app)
+    seasons.register(app)
     world.register(app)
     skinlib.register(app)
     owner.register(app)

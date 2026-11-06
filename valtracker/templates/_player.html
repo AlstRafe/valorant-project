@@ -80,6 +80,8 @@
 </section>
 {% endif %}
 
+{% if account %}<p class="seasons-link"><a href="{{ url_for('seasons_page', name=name, tag=tag) }}">{{ t('シーズン別の成績') }} →</a></p>{% endif %}
+
 <div id="games">
 <nav class="modes" aria-label="{{ t('モード') }}">
 {% for item in modes %}<a href="{{ url_for('player', name=name, tag=tag, mode=item.key or None) }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
