@@ -26,7 +26,9 @@ class PlanTest(unittest.TestCase):
     def test_a_map_with_its_numbers(self):
         drawn = heatmap.plan(ASCENT)
         self.assertEqual(drawn["numbers"], (7e-05, -7e-05, 0.813895, 0.573242))
-        self.assertEqual([name for name, _, _ in drawn["callouts"]], ["A ツリー", "A ロビー", "アタック側 メインエントランス"])
+        self.assertEqual(
+            [name for name, _, _ in drawn["callouts"]], ["A ツリー", "A ロビー", "アタック側 メインエントランス"]
+        )
         # across from the game's y, down from its x
         self.assertEqual(heatmap.onto(drawn, TREE), (39.8, 29.5))
         self.assertIsNone(heatmap.onto(drawn, [99999, 0]), "off the picture")
