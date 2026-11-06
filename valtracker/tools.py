@@ -14,13 +14,13 @@ from flask import Flask, current_app, g, make_response, render_template, request
 from valtracker import crosshair as crosshairs
 from valtracker import i18n, queues, security
 from valtracker import shop as store
-from valtracker.activity import BANDS, ENOUGH, FEW
+from valtracker.activity import BANDS, ENOUGH, FEW, RANKS_ENOUGH, WINDOW_DAYS
 from valtracker.diary import store_day
 from valtracker.henrik import BOARD_PAGE, HenrikError
 from valtracker.riot import RiotError
 from valtracker.riotweb import RiotWebError
 from valtracker.stats import JST
-from valtracker.views import QUEUES, RIOT_FAILURES, _failure, _rank, _t, act_left, cluster
+from valtracker.views import QUEUES, RIOT_FAILURES, _failure, _rank, _t, act_left, cluster, share_text
 
 #: The leaderboard's and the notices' regions, in the order of the tabs -> their names (translated).
 REGION_NAMES = {
@@ -237,6 +237,33 @@ def _zone() -> tuple[float, str]:
     hours, rest = divmod(abs(minutes), 60)
     zone = f"UTC{'+' if minutes >= 0 else '−'}{hours}" + (f":{rest:02d}" if rest else "")
     return minutes / 60, _t("あなたの時間（{zone}）", zone=zone)
+
+
+def _ranks_page(region: str) -> dict:
+    """How the competitive lines seen in a region spread over the ranks, best first: each rank's share and the
+    share at it or above ("top X%")."""
+    found = current_app.config["VAL_ACTIVITY"].ranks(region)
+    total = found["lines"]
+    values = {"lines": total, "enough": total >= RANKS_ENOUGH, "rows": [], "days": WINDOW_DAYS}
+    if not values["enough"]:
+        return values
+    above, widest = 0, max(found["tiers"].values())
+    numbers = sorted(
+        {number for number in current_app.config["VAL_CONTENT"].tiers(g.lang) if number > 2} | set(found["tiers"])
+    )
+    for number in reversed(numbers):
+        count = found["tiers"].get(number, 0)
+        above += count
+        values["rows"].append(
+            {
+                "rank": _rank({"id": number}),
+                "count": count,
+                "share": share_text(100 * count / total),
+                "bar": round(100 * count / widest, 1),
+                "top": share_text(100 * above / total),
+            }
+        )
+    return values
 
 
 def _servers_page(region: str) -> dict:
@@ -522,6 +549,15 @@ def register(app: Flask) -> None:
         values["region"] = region
         values["region_name"] = _t(REGION_NAMES[region])
         return render_template("servers.html", **values)
+
+    @app.get("/ranks")
+    def ranks():
+        region = _region()
+        values = _ranks_page(region)
+        values["regions"] = _regions("ranks", region)
+        values["region"] = region
+        values["region_name"] = _t(REGION_NAMES[region])
+        return render_template("ranks.html", **values)
 
     @app.get("/queues")
     def queue_settings():

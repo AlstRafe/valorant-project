@@ -1429,6 +1429,35 @@ TEXTS = {
         "en-GB": "Best: {agent} ({games} games, {rate}%)",
         "zh-TW": "拿手：{agent}（{games} 場 {rate}%）",
     },
+    "ランクの分布": {"ko": "랭크 분포", "en-GB": "Rank distribution", "zh-TW": "牌位分布"},
+    "コンペティティブでどのランクがどれくらいいるか、各ランクが上位何 % か。このサイトが見た試合からの目安です。": {
+        "ko": "경쟁전에서 각 랭크가 얼마나 있는지, 각 랭크가 상위 몇 %인지. 이 사이트가 본 경기에서 낸 추정치입니다.",
+        "en-GB": "How many players are at each rank in Competitive, and what top % each rank is. An estimate from the matches this site has seen.",
+        "zh-TW": "競技模式中各牌位有多少人、各牌位是前百分之幾。依本站看過的對戰估算。",
+    },
+    "Riot はランクの分布を公開していません。ここ {days} 日にこのサイトが見たコンペティティブの試合の、1 試合 1 人ずつの {count} 人分から数えています（たくさん遊ぶ人ほど多く数えられます）。": {
+        "ko": "Riot은 랭크 분포를 공개하지 않습니다. 최근 {days}일 동안 이 사이트가 본 경쟁전 경기의 경기당 1인씩 {count}명분으로 셉니다(많이 플레이하는 사람일수록 많이 셉니다).",
+        "en-GB": "Riot doesn't publish the rank distribution. This counts {count} player lines (one per player per match) from the Competitive matches this site has seen in the last {days} days, so players who play more count more.",
+        "zh-TW": "Riot 未公開牌位分布。這裡以本站近 {days} 天看過的競技對戰中、每場每人一筆的 {count} 筆資料計算（玩得越多的人算得越多）。",
+    },
+    "割合": {"ko": "비율", "en-GB": "Share", "zh-TW": "比例"},
+    "上位": {"ko": "상위", "en-GB": "Top", "zh-TW": "前"},
+    "この地域のランキング": {"ko": "이 지역의 랭킹", "en-GB": "Leaderboard for this region", "zh-TW": "此地區的排行榜"},
+    "すべてのランクの分布": {
+        "ko": "모든 랭크의 분포",
+        "en-GB": "Distribution of every rank",
+        "zh-TW": "所有牌位的分布",
+    },
+    "どのランクがどれくらいいて、上位何 % か。": {
+        "ko": "각 랭크가 얼마나 있고 상위 몇 %인지.",
+        "en-GB": "How many are at each rank, and what top % it is.",
+        "zh-TW": "各牌位有多少人、是前百分之幾。",
+    },
+    "この地域で上位 {share}%": {
+        "ko": "이 지역 상위 {share}%",
+        "en-GB": "Top {share}% in this region",
+        "zh-TW": "此地區前 {share}%",
+    },
     "公式サイトで日程を見る": {
         "ko": "공식 사이트에서 일정 보기",
         "en-GB": "Official schedule",

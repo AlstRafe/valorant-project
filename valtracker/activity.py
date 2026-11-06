@@ -59,6 +59,8 @@ LINE_STATS = ("acs", "adr", "kd", "hs", "kast", "dd")
 #: Lines a rank band needs before it is its own yardstick (else every band together); with fewer than this
 #: altogether, nothing is measured.
 LINES_ENOUGH = 200
+#: Competitive lines a region needs before its rank distribution is shown (and a player's place in it).
+RANKS_ENOUGH = 100
 #: The collector: seconds between two players (0: off), and how many recent players it can pick from.
 COLLECT_SECONDS = 240
 CANDIDATES = 600
@@ -442,6 +444,29 @@ class Activity:
         ]
         listed.sort(key=lambda item: (-item["picks"], item["agent"]))
         found = {"matches": matches, "agents": listed, "maps": {key: len(seen) for key, seen in maps.items()}}
+        self._summary[key] = (now, found)
+        return found
+
+    def ranks(self, region: str) -> dict:
+        """How many competitive lines (one a player a match) of a region over WINDOW_DAYS are at each rank:
+        ``{"lines", "tiers": {tier: count}}``. Players who play more count more: no player is kept to tell them
+        apart. Read again every 10 minutes."""
+        key = ("ranks", region)
+        now = self.clock()
+        kept = self._summary.get(key)
+        if kept and now - kept[0] < 600:
+            return kept[1]
+        query = (
+            "SELECT lines.tier, COUNT(*) FROM lines JOIN matches ON matches.id = lines.match"
+            " WHERE lines.queue = 'competitive' AND lines.started >= ? AND lines.tier > 2 AND matches.region = ?"
+            " GROUP BY lines.tier"
+        )
+        try:
+            with self._lock:
+                rows = self._connect().execute(query, (int(now - WINDOW_DAYS * 86400), region)).fetchall()
+        except sqlite3.Error:
+            rows = []
+        found = {"lines": sum(count for _, count in rows), "tiers": {int(tier): count for tier, count in rows}}
         self._summary[key] = (now, found)
         return found
 

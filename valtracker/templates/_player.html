@@ -27,6 +27,7 @@
 <p class="sub">{{ rr }} RR{% if last_change %} <span class="{{ 'up' if last_change > 0 else 'down' }}">({{ '%+d'|format(last_change) }})</span>{% endif %}</p>
 {% if rank.tier < 24 %}<progress class="rr-bar" max="100" value="{{ [rr or 0, 100]|min }}" aria-label="RR {{ rr or 0 }} / 100"></progress>{% endif %}
 {% if next_rank %}<p class="sub next">{{ t('{rank} まであと {rr} RR', rank=next_rank.rank.name, rr=next_rank.need) }}{% if next_rank.wins %} · {{ t('平均 +{gain} なら約 {wins} 勝', gain=next_rank.gain, wins=next_rank.wins) }}{% endif %}{% if next_rank.matches %} · {{ t('いまの勝率と増減なら約 {matches} 試合', matches=next_rank.matches) }}{% elif next_rank.flat %} · {{ t('いまの勝率と増減だと横ばい（平均 −{loss}）', loss=next_rank.loss) }}{% endif %}</p>{% endif %}
+{% if rank_top %}<p class="sub"><a href="{{ url_for('ranks', region=region) }}">{{ t('この地域で上位 {share}%', share=rank_top) }}</a></p>{% endif %}
 {% if act %}<p class="sub act-left">{{ act.text }}</p>{% endif %}
 {% else %}
 <p class="value"><span>{{ t('ランクなし') }}</span></p>
