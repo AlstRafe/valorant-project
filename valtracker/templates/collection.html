@@ -31,7 +31,7 @@
 {% endfor %}</nav>
 {% if items and not missing %}<p class="find" hidden><label for="find" class="sr" lang="ja">名前で絞り込む</label><input id="find" type="search" placeholder="{{ 'スキンや武器の名前で絞り込む' if show == 'skins' else '名前で絞り込む' }}" autocomplete="off" spellcheck="false" enterkeyhint="search"></p>{% endif %}
 <div id="owned" class="owned">
-{% if equip_said %}<p class="verdict {{ 'ok' if equip_ok else 'no' }} equip-said" role="status" lang="ja">{{ equip_said }}</p>{% endif %}
+{% if equip_said %}<p class="verdict {{ 'ok' if equip_ok else 'no' }} equip-said" role="{{ 'status' if equip_ok else 'alert' }}" lang="ja">{{ equip_said }}{% if equip_detail %} <code>{{ equip_detail }}</code>{% endif %}</p>{% endif %}
 {% if missing %}
 <p class="problem" role="alert" lang="ja">読み込めませんでした。時間をおいてもう一度どうぞ。{% if problem_detail %} <code>{{ problem_detail }}</code>{% endif %}</p>
 {% elif not items %}

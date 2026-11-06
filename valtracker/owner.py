@@ -44,6 +44,7 @@ LIVE_SAID = {
 EQUIP_FAILURES = {
     "unknown": "持っていないものは装備できません。",
     "noweapon": "その武器がロードアウトにありませんでした。",
+    "notsaved": "Riot は受け付けましたが、装備は変わっていませんでした。",
 }
 
 
@@ -248,15 +249,18 @@ def register(app: Flask) -> None:
         known = current_app.config["VAL_CONTENT"].skins(g.lang).get(uuid) if show == "skins" else None
         weapon = _id(known[0].get("uuid")) if known else None
 
-        def back(why: str):
+        def back(why: str, detail: str = ""):
+            # Riot's own words when it refused (shown with the note, so a refusal can be told from a slow server)
+            said = re.sub(r"[^\w .:/-]", "", detail)[:80] or None
             return redirect(
-                url_for("collection", show=None if show == "skins" else show, weapon=weapon, equip=why), 303
+                url_for("collection", show=None if show == "skins" else show, weapon=weapon, equip=why, riot=said),
+                303,
             )
 
         try:
             found = riot.collection()
         except RiotError as error:
-            return back(error.kind)
+            return back(error.kind, error.detail)
         if show == "skins":
             change, why = _wear_skin(found, uuid, _id(request.form.get(f"chroma.{uuid}")))
         elif show == "sprays":
@@ -266,9 +270,13 @@ def register(app: Flask) -> None:
         if change is not None:
             try:
                 riot.equip(change)
-                why = "ok"
             except RiotError as error:
-                why = error.kind
+                return back(error.kind, error.detail)
+            # an open game draws the loadout it read when it started (a match takes Riot's): the page says so
+            try:
+                why = "okopen" if riot.live().get("running") else "ok"
+            except RiotError:
+                why = "ok"
         return back(why)
 
 
@@ -277,5 +285,11 @@ def equip_said(kind: str) -> tuple[str, bool]:
     if not kind:
         return "", False
     if kind == "ok":
-        return "装備しました。ゲームのコレクションにも出ています。", True
+        return "装備しました。Riot に保存されています。", True
+    if kind == "okopen":
+        return (
+            "装備しました。Riot に保存されています。開いているゲームでは次の試合から使われます"
+            "（ゲームのコレクション画面は、開き直すまで前の装備のままのことがあります）。",
+            True,
+        )
     return EQUIP_FAILURES.get(kind) or RIOT_FAILURES.get(kind) or RIOT_FAILURES["down"], False

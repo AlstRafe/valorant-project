@@ -139,6 +139,8 @@ class FakeRiot:
         self.worn: list[dict] = []
         #: The playerloadout PD gives: 3 (since September 2026; v2 answers 404) or 2 (before: v3 answers 404).
         self.loadout_version = 3
+        #: PD answers a PUT playerloadout with 200 but keeps the loadout it had.
+        self.ignore_put = False
 
     def address(self, access: str = ACCESS) -> str:
         return f"https://playvalorant.com/opt_in#access_token={access}&scope=account+openid&iss=x&id_token={ID_TOKEN}&token_type=Bearer&expires_in=3600"
@@ -254,6 +256,8 @@ class FakeRiot:
         loadout = f"/personalization/v{self.loadout_version}/players/{PUUID}/playerloadout"
         if url.endswith(loadout) and method == "PUT":
             self.worn.append(json.loads(body))
+            if self.ignore_put:
+                return self._answer("equip", self.pd["loadout"])
             self.pd["loadout"] = json.loads(body) | {"Version": 8}  # what the game wears from now on
             return self._answer("equip", self.pd["loadout"])
         if url.endswith(f"/store/v3/storefront/{PUUID}"):
