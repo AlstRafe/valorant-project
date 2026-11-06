@@ -64,6 +64,8 @@ class FakeFetch:
                 return 200, fixture("henrik_news.json")
             if "/v1/esports/schedule" in url:
                 return 200, fixture("henrik_esports.json")
+            if "/v1/stored-matches/" in url:
+                return 200, fixture("henrik_stored.json")
             if "/v4/matches/" in url or "/v4/by-puuid/matches/" in url:
                 return 200, fixture("henrik_matches.json")
             if "/v4/match/" in url:

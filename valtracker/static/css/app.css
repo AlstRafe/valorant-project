@@ -4013,3 +4013,101 @@ code {
   margin: 0.6rem 0 0;
   font-size: 0.92rem;
 }
+
+/* A player's seasons (seasons.html): a card for each act, the change from the act before beside each number. */
+.seasons-link {
+  margin: 1rem 0 0;
+}
+.seasons-link a {
+  display: inline-block;
+  padding: 0.45rem 0;
+  font-weight: 700;
+}
+.season-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  gap: 0.8rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.season-card {
+  min-width: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--card);
+}
+.season-card.all {
+  border-style: dashed;
+}
+.season-card h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.7rem;
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+}
+.season-peak {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--soft);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+.season-record {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  margin: 0 0 0.6rem;
+}
+.season-record strong {
+  font-size: 1.6rem;
+}
+.season-games {
+  color: var(--soft);
+}
+.season-numbers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: 0.5rem 0.8rem;
+  margin: 0;
+}
+.season-numbers div {
+  min-width: 0;
+}
+.season-numbers dt {
+  color: var(--soft);
+  font-size: 0.8rem;
+}
+.season-numbers dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.change {
+  margin-inline-start: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.season-agents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  margin: 0.7rem 0 0;
+  padding: 0.6rem 0 0;
+  border-top: 1px solid var(--rule);
+  list-style: none;
+}
+.season-agents li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.season-agents small {
+  color: var(--soft);
+}

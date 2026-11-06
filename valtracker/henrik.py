@@ -32,7 +32,11 @@ KEEP = {
     "featured": 1800,
     "news": 1800,
     "esports": 300,
+    # every match HenrikDev keeps of a player in a mode (seasons.py): asked for only on that page
+    "stored": 1800,
 }
+#: The modes a player's seasons are counted in (stored matches; Deathmatch has no rounds or teams to count).
+STORED_MODES = ("competitive", "unrated", "swiftplay", "premier")
 #: Players on one page of a leaderboard.
 BOARD_PAGE = 50
 #: A Riot ID: the name (3-16 characters, spaces allowed) and the tag (3-5 letters or digits).
@@ -155,6 +159,15 @@ class Henrik:
         path = f"/valorant/v4/matches/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}?" + urlencode(query)
         key = _matches_key(region, name, tag, mode, start)
         return self._get(key, path, KEEP["matches"], _slim_matches)
+
+    def stored(self, region: str, name: str, tag: str, mode: str = "competitive") -> list:
+        """Every match of a mode that HenrikDev keeps of the player, newest first (v1 stored-matches: only the
+        matches it has read, a growing part of the history, not all of it), each as ``_slim_stored`` keeps it."""
+        mode = mode if mode in STORED_MODES else "competitive"
+        query = urlencode({"mode": mode})
+        path = f"/valorant/v1/stored-matches/{_region(region)}/{_part(name)}/{_part(tag)}?{query}"
+        key = ("stored", _region(region), name.lower(), tag.lower(), mode)
+        return self._get(key, path, KEEP["stored"], _slim_stored)
 
     def has_player(self, name: str, tag: str, mode: str = "") -> bool:
         """Whether the player's account, rank and matches are all kept: their page needs no call."""
@@ -413,6 +426,50 @@ def _number(value, default: int = 0) -> int:
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+def _slim_stored(matches) -> list:
+    """v1's stored matches: per match its act ("e9a3"), start, map, agent, rank, whether the player's team won (None:
+    a draw), its rounds, and the player's kills, deaths, assists, score, shots and damage."""
+    if not isinstance(matches, list):
+        raise HenrikError("down")
+    found = []
+    for match in matches:
+        if not isinstance(match, dict):
+            continue
+        meta, line, teams = (
+            match.get(key) if isinstance(match.get(key), dict) else {} for key in ("meta", "stats", "teams")
+        )
+        side = str(line.get("team") or "").lower()
+        red, blue = _number(teams.get("red")), _number(teams.get("blue"))
+        mine, theirs = (red, blue) if side == "red" else (blue, red)
+        season = meta.get("season") if isinstance(meta.get("season"), dict) else {}
+        shots = line.get("shots") if isinstance(line.get("shots"), dict) else {}
+        damage = line.get("damage") if isinstance(line.get("damage"), dict) else {}
+        agent = line.get("character") if isinstance(line.get("character"), dict) else {}
+        place = meta.get("map") if isinstance(meta.get("map"), dict) else {}
+        found.append(
+            {
+                "id": str(meta.get("id") or ""),
+                "season": str(season.get("short") or "").lower(),
+                "started": str(meta.get("started_at") or ""),
+                "map": str(place.get("name") or ""),
+                "agent": str(agent.get("id") or "").lower(),
+                "tier": _number(line.get("tier")),
+                "won": (mine > theirs) if side in ("red", "blue") and mine != theirs else None,
+                "rounds": red + blue,
+                "kills": _number(line.get("kills")),
+                "deaths": _number(line.get("deaths")),
+                "assists": _number(line.get("assists")),
+                "score": _number(line.get("score")),
+                "head": _number(shots.get("head")),
+                "body": _number(shots.get("body")),
+                "leg": _number(shots.get("leg")),
+                "made": _number(damage.get("made")),
+                "received": _number(damage.get("received")),
+            }
+        )
+    return found
 
 
 def _slim_board(data) -> dict:
