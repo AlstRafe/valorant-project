@@ -607,5 +607,79 @@
     "RankedRatingAfterUpdate": 5
    }
   }
+ },
+ "leaderboard": {
+  "Deployment": "ap-glz-ap-1",
+  "QueueID": "competitive",
+  "SeasonID": "aaaa0000-0000-4000-8000-000000000003",
+  "Players": [
+   {
+    "PlayerCardID": "cc000000-0000-4000-8000-000000000001",
+    "TitleID": "",
+    "IsBanned": false,
+    "IsAnonymized": false,
+    "puuid": "aa000000-0000-4000-8000-0000000000f1",
+    "gameName": "RiotTop",
+    "tagLine": "AP1",
+    "leaderboardRank": 1,
+    "rankedRating": 1301,
+    "numberOfWins": 340,
+    "competitiveTier": 27
+   },
+   {
+    "PlayerCardID": "cc000000-0000-4000-8000-000000000002",
+    "TitleID": "",
+    "IsBanned": false,
+    "IsAnonymized": true,
+    "puuid": "aa000000-0000-4000-8000-0000000000f2",
+    "gameName": "Hidden Name",
+    "tagLine": "XX1",
+    "leaderboardRank": 2,
+    "rankedRating": 1250,
+    "numberOfWins": 290,
+    "competitiveTier": 27
+   },
+   {
+    "PlayerCardID": "",
+    "TitleID": "",
+    "IsBanned": false,
+    "IsAnonymized": false,
+    "puuid": "aa000000-0000-4000-8000-0000000000f3",
+    "gameName": "RiotTopper",
+    "tagLine": "AP2",
+    "leaderboardRank": 3,
+    "rankedRating": 1100,
+    "numberOfWins": 260,
+    "competitiveTier": 26
+   }
+  ],
+  "totalPlayers": 3,
+  "immortalStartingPage": 1,
+  "immortalStartingIndex": 0,
+  "topTierRRThreshold": 650,
+  "tierDetails": {
+   "24": {
+    "rankedRatingThreshold": 0,
+    "startingPage": 0,
+    "startingIndex": 0
+   },
+   "25": {
+    "rankedRatingThreshold": 160,
+    "startingPage": 30,
+    "startingIndex": 1500
+   },
+   "26": {
+    "rankedRatingThreshold": 320,
+    "startingPage": 10,
+    "startingIndex": 500
+   },
+   "27": {
+    "rankedRatingThreshold": 650,
+    "startingPage": 1,
+    "startingIndex": 0
+   }
+  },
+  "startIndex": 0,
+  "query": ""
  }
 }

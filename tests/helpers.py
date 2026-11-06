@@ -6,6 +6,7 @@ import base64
 import json
 import tempfile
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 from valtracker import create_app
 
@@ -208,6 +209,12 @@ class FakeRiot:
             mine = next(item for item in self.pd["pregame"]["AllyTeam"]["Players"] if item["Subject"] == PUUID)
             mine.update({"CharacterID": agent, "CharacterSelectionState": "locked" if what == "lock" else "selected"})
             return self._answer("pregame", self.pd["pregame"])
+        if "/mmr/v1/leaderboards/affinity/" in url:
+            board = json.loads(json.dumps(self.pd["leaderboard"]))
+            query = parse_qs(urlsplit(url).query).get("query", [""])[0]
+            if query:  # Riot looks for names that start so
+                board["Players"] = [p for p in board["Players"] if p["gameName"].lower().startswith(query.lower())]
+            return self._answer("leaderboard", board)
         if "/mmr/v1/players/" in url:
             found = self.pd["mmr"].get(url.rsplit("/", 1)[-1])
             return self._answer("rank", found) if found else missing

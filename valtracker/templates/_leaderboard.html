@@ -2,16 +2,16 @@
 <p class="problem" role="alert">{{ problem }}</p>
 {% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}">{{ t('設定を開く') }}</a></p>{% endif %}
 {% else %}
-{% if thresholds %}
+{% if thresholds and not searched %}
 <ul class="thresholds" aria-label="{{ t('ランクに必要な RR') }}">
 {% for item in thresholds %}<li>{% if item.rank_shown.icon %}<img src="{{ media(item.rank_shown.icon) }}" alt="" width="32" height="32">{% endif %}<span><strong>{{ item.rank_shown.name }}</strong><small>{{ t('{rr} RR から', rr=item.rr) }}{% if item['from'] %} · {{ t('{place} 位から', place='{:,}'.format(item['from'])) }}{% endif %}</small></span></li>
 {% endfor %}</ul>
 {% endif %}
 {% if not players %}
-<p class="note">{{ t('まだ誰もいません。') }}</p>
+<p class="note">{% if searched %}{{ t('「{q}」はこの地域のランキングにいません。名前を隠している人は名前では探せません。', q=q) }}{% else %}{{ t('まだ誰もいません。') }}{% endif %}</p>
 {% else %}
 <div class="table-wrap">
-<table class="board ladder">
+<table class="board ladder" data-source="{{ source }}">
 <caption class="sr">{{ t('ランキング') }}</caption>
 <thead><tr><th scope="col"><abbr title="{{ t('順位') }}">#</abbr></th><th scope="col">{{ t('プレイヤー') }}</th><th scope="col">{{ t('ランク') }}</th><th scope="col">RR</th><th scope="col" class="wins">{{ t('勝利数') }}</th></tr></thead>
 <tbody>
@@ -26,6 +26,7 @@
 </table>
 </div>
 {% endif %}
+{% if searched %}<p><a class="button quiet" href="{{ url_for('leaderboard', region=region) }}">{{ t('ランキング全体に戻る') }}</a></p>{% endif %}
 {% if earlier or later %}
 <nav class="pages" aria-label="{{ t('ページ') }}">
 {% if earlier %}<a class="button quiet" href="{{ earlier }}" rel="prev">← {{ t('前の 50 人') }}</a>{% endif %}
@@ -33,5 +34,5 @@
 {% if later %}<a class="button quiet" href="{{ later }}" rel="next">{{ t('次の 50 人') }} →</a>{% endif %}
 </nav>
 {% endif %}
-{% if updated %}<p class="note">{{ t('更新') }}: <time datetime="{{ updated.iso }}">{{ updated.text }}</time> · {{ t('Riot が数分ごとに更新します。') }}</p>{% endif %}
+{% if updated %}<p class="note">{{ t('更新') }}: <time datetime="{{ updated.iso }}">{{ updated.text }}</time> · {{ t('Riot が数分ごとに更新します。') }}{% if source == 'riot' %} {{ t('ゲームのランキングを Riot から直接読んでいます。') }}{% endif %}</p>{% endif %}
 {% endif %}

@@ -66,6 +66,7 @@ const MADE_UP = [
   "/collection?show=titles",
   "/collection?show=sprays",
   "/compare?a=Tester%23JP1&b=Other%23KR1",
+  "/leaderboard?q=RiotTop%23AP1&full=1",
   "/agents/stats?queue=competitive",
 ];
 // Found before the pages are looked at (the real site's skin video): added to the problems at the end.
@@ -473,12 +474,18 @@ async function main() {
 async function follow(page) {
   const more = [];
   await page.goto(base + "/leaderboard?full=1", { waitUntil: "networkidle", timeout: 60000 });
+  // where the leaderboard came from: Riot's own (the owner's Riot account) or HenrikDev's
+  const source = await page.$eval("table.board", (table) => table.dataset.source).catch(() => "none");
+  console.log("leaderboard from: " + source);
   const player = await page
     .$eval("table.board th[scope=row] a[href*='/p/']", (a) => a.getAttribute("href"))
     .catch(() => null);
   if (player) {
     const at = player.replace(new URL(base).pathname.replace(/\/$/, ""), "");
     more.push(at + "?full=1");
+    // that player looked up on the leaderboard by their Riot ID
+    const id = decodeURIComponent(at.split("/").slice(2, 4).join("#"));
+    more.push("/leaderboard?q=" + encodeURIComponent(id) + "&full=1");
     await page.goto(base + at + "?full=1", { waitUntil: "networkidle", timeout: 90000 });
     const match = await page.$eval("a[href*='/m/']", (a) => a.getAttribute("href")).catch(() => null);
     if (match) more.push(match.replace(new URL(base).pathname.replace(/\/$/, ""), ""));

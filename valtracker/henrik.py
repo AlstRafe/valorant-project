@@ -192,13 +192,18 @@ class Henrik:
         path = f"/valorant/v4/match/{_region(region)}/{match_id}"
         return self._get(("match", match_id), path, KEEP["match"], _slim_match)
 
-    def leaderboard(self, region: str, start: int = 0) -> dict:
+    def leaderboard(self, region: str, start: int = 0, name: str = "", tag: str = "") -> dict:
         """One page of a region's ranked leaderboard: ``{"players": [{"rank", "name", "tag", "puuid", "card",
-        "tier", "rr", "wins", "hidden"}], "thresholds": [{"tier", "rr", "from"}], "total", "updated"}``."""
+        "tier", "rr", "wins", "hidden"}], "thresholds": [{"tier", "rr", "from"}], "total", "updated"}``.
+        ``name`` (and ``tag``): only that player, wherever they are."""
         start = max(0, int(start))
-        query = urlencode({"size": BOARD_PAGE, "start_index": start})
-        path = f"/valorant/v3/leaderboard/{_region(region)}/{PLATFORM}?{query}"
-        return self._get(("leaderboard", _region(region), start), path, KEEP["leaderboard"], _slim_board)
+        # v3's documents name the page (from 1); older answers took start_index: both say the same page
+        asked = {"size": BOARD_PAGE, "start_index": start, "page": start // BOARD_PAGE + 1}
+        if name:
+            asked |= {"name": name} | ({"tag": tag} if tag else {})
+        path = f"/valorant/v3/leaderboard/{_region(region)}/{PLATFORM}?{urlencode(asked)}"
+        key = ("leaderboard", _region(region), start) + ((name.casefold(), tag.casefold()) if name else ())
+        return self._get(key, path, KEEP["leaderboard"], _slim_board)
 
     def matches_by_puuid(self, region: str, puuid: str, size: int = 5) -> list:
         """A player's latest matches by their puuid, only what activity.py keeps of them (the start, server,
@@ -207,9 +212,10 @@ class Henrik:
         path = f"/valorant/v4/by-puuid/matches/{_region(region)}/{PLATFORM}/{_part(puuid)}?{query}"
         return self._get(("by-puuid", puuid), path, KEEP["matches"], _slim_collected)
 
-    def has_board(self, region: str, start: int = 0) -> bool:
-        """Whether that page of the leaderboard is kept: it needs no call."""
-        return self.cache.get(("leaderboard", _region(region), max(0, int(start)))) is not None
+    def has_board(self, region: str, start: int = 0, name: str = "", tag: str = "") -> bool:
+        """Whether that page of the leaderboard (or that player looked for) is kept: it needs no call."""
+        key = ("leaderboard", _region(region), max(0, int(start))) + ((name.casefold(), tag.casefold()) if name else ())
+        return self.cache.get(key) is not None
 
     def status(self, region: str) -> dict:
         """Riot's notices for a region: ``{"maintenances": [...], "incidents": [...]}`` (_slim_status)."""

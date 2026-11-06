@@ -404,6 +404,37 @@ TEXTS = {
     },
     "ほか {count} 件": {"ko": "외 {count}건", "en-GB": "and {count} more", "zh-TW": "另有 {count} 則"},
     "まだ誰もいません。": {"ko": "아직 아무도 없습니다.", "en-GB": "Nobody yet.", "zh-TW": "目前還沒有人。"},
+    # The leaderboard: looking a player up, and Riot's own list
+    "ランキングでプレイヤーを探す": {
+        "ko": "리더보드에서 플레이어 찾기",
+        "en-GB": "Find a player on the leaderboard",
+        "zh-TW": "在排行榜中尋找玩家",
+    },
+    "名前#タグ で順位を探す": {
+        "ko": "이름#태그로 순위 찾기",
+        "en-GB": "Name#Tag to find a place",
+        "zh-TW": "輸入名稱#標籤查名次",
+    },
+    "「名前#タグ」の形で入れてください。": {
+        "ko": "「이름#태그」 형식으로 입력해 주세요.",
+        "en-GB": "Type it as Name#Tag.",
+        "zh-TW": "請以「名稱#標籤」的格式輸入。",
+    },
+    "「{q}」はこの地域のランキングにいません。名前を隠している人は名前では探せません。": {
+        "ko": "「{q}」은(는) 이 지역 리더보드에 없습니다. 이름을 숨긴 사람은 이름으로 찾을 수 없습니다.",
+        "en-GB": "{q} is not on this region's leaderboard. Players who hide their name cannot be found by it.",
+        "zh-TW": "「{q}」不在此地區的排行榜上。隱藏名稱的玩家無法用名稱找到。",
+    },
+    "ランキング全体に戻る": {
+        "ko": "리더보드 전체로 돌아가기",
+        "en-GB": "Back to the whole leaderboard",
+        "zh-TW": "回到完整排行榜",
+    },
+    "ゲームのランキングを Riot から直接読んでいます。": {
+        "ko": "게임의 리더보드를 Riot에서 직접 읽어 옵니다.",
+        "en-GB": "Read straight from the game's own leaderboard at Riot.",
+        "zh-TW": "直接從 Riot 讀取遊戲內的排行榜。",
+    },
     "よく使われる型": {"ko": "자주 쓰이는 형태", "en-GB": "Common styles", "zh-TW": "常見樣式"},
     "アジア太平洋": {"ko": "아시아 태평양", "en-GB": "Asia Pacific", "zh-TW": "亞太地區"},
     "クロスヘア": {"ko": "조준선", "en-GB": "Crosshair", "zh-TW": "準星"},
