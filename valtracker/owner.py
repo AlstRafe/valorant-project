@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import time
 
-from flask import Flask, current_app, g, redirect, render_template, request, session, url_for
+from flask import Flask, current_app, g, jsonify, redirect, render_template, request, session, url_for
 
 from valtracker import live as live_page
 from valtracker import progress as progress_page
@@ -169,7 +169,23 @@ def register(app: Flask) -> None:
             names_missing="names" in (found.get("missing") or []),
             said=words,
             said_ok=worked,
+            live_state=live_page.state(found, current_app.config["VAL_CONTENT"], g.lang),
         )
+
+    @app.get("/live/state")
+    def live_state():
+        """Where the owner's game is (live.state), for the header's ライブ tab: app.js asks every few seconds on
+        every page while it is in view, and tells the owner when agent select starts. ``problem``: why it could not
+        be read (RiotError's kind: nologin and signedout stop the asking)."""
+        security.owner_only()
+        try:
+            found = current_app.config["VAL_RIOT"].live()
+        except RiotError as error:
+            answer = jsonify({"phase": "", "words": "", "problem": error.kind})
+        else:
+            answer = jsonify(live_page.state(found, current_app.config["VAL_CONTENT"], g.lang) | {"problem": ""})
+        answer.headers["Cache-Control"] = "no-store"
+        return answer
 
     @app.post("/live/act")
     def live_act():

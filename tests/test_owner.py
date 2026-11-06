@@ -126,6 +126,59 @@ class OwnerTest(unittest.TestCase):
         self.riot.no_session = True
         self.assertIn("VALORANT: メニュー", self.page("/live"))
 
+    def state(self) -> dict:
+        self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+        answer = self.client.get("/live/state")
+        self.assertEqual(answer.status_code, 200)
+        self.assertEqual(answer.headers["Cache-Control"], "no-store")
+        return answer.get_json()
+
+    def test_the_live_tab_on_every_page(self):
+        text = self.page("/")
+        self.assertIn('class="live-tab" lang="ja" data-live-state="/live/state"', text)
+        self.assertNotIn("live-tab", self.page("/", environ_base=VISITOR), "the owner's only")
+        for path in ("/live", "/progress"):
+            text = self.page(path)
+            self.assertIn('data-live-state="/live/state" aria-current="page"', text, path)
+            self.assertNotIn('href="/shop" aria-current="page"', text, "no longer under the shop")
+            self.assertIn('href="/progress" lang="ja"', text, "the two pages lead to each other")
+        shop = self.page("/shop")
+        self.assertNotIn('href="/live" lang="ja">', shop.split("<main")[1], "the shop's pages are the shop's")
+        self.assertIn('href="/collection"', shop)
+        tools = self.page("/tools")
+        self.assertIn("<strong>ライブ</strong>", tools)
+        self.assertIn("<strong>進み具合</strong>", tools)
+
+    def test_where_the_game_is_for_the_tab(self):
+        self.assertEqual(self.state()["problem"], "nologin")
+        self.assertEqual(self.client.get("/live/state", environ_base=VISITOR).status_code, 404)
+        self.link()
+        self.assertEqual((self.state()["phase"], self.state()["words"]), ("", "VALORANT は開いていません"))
+        self.riot.phase = "menus"
+        self.assertEqual(self.state()["words"], "メニュー")
+        self.riot.pd["party"]["State"] = "MATCHMAKING"
+        self.assertEqual(self.state()["phase"], "queue")
+        self.riot.phase = "pregame"
+        found = self.state()
+        self.assertEqual((found["phase"], found["map"]), ("pregame", "アセント"))
+        self.assertEqual(found["words"], "エージェント選択中（アセント）")
+        self.assertEqual(found["match"], self.riot.pd["pregame"]["ID"].lower(), "told once per match")
+        self.riot.phase = "ingame"
+        self.assertEqual(self.state()["words"], "試合中（アセント）")
+
+    def test_the_live_page_says_what_it_does_on_each_screen(self):
+        self.link()
+        text = self.page("/live")
+        self.assertIn("<h1>ライブ</h1>", text)
+        self.assertIn('class="live-steps"', text)
+        self.assertNotIn('aria-current="step"', text, "the game is closed")
+        self.assertIn('data-live-phase=""', text)
+        self.riot.phase = "pregame"
+        self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+        text = self.page("/live")
+        self.assertIn('<li aria-current="step"><strong>エージェント選択</strong>', text)
+        self.assertIn('data-live-phase="pregame"', text, "the tab's dot without asking again")
+
     def test_agent_select(self):
         self.link()
         self.riot.phase = "pregame"

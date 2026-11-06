@@ -1,0 +1,2 @@
+{# The pages under the owner's ライブ tab: the game being played now and what is left to play for (Japanese only). #}
+{% set here = request.endpoint %}<nav class="modes" aria-label="ページ" lang="ja"><a href="{{ url_for('live') }}" lang="ja"{% if here == 'live' %} aria-current="true"{% endif %}>ライブ</a><a href="{{ url_for('progress') }}" lang="ja"{% if here == 'progress' %} aria-current="true"{% endif %}>進み具合</a></nav>

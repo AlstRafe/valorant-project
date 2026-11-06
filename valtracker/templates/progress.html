@@ -16,7 +16,7 @@
 <h1>進み具合</h1>
 <p class="lead">バトルパス、イベントのパス、エージェントの契約、ミッションの進み具合です。</p>
 </section>
-{% include "_pages.html" %}
+{% include "_play.html" %}
 {% if problem %}
 <p class="problem" role="alert">{{ problem }}{% if detail %} <code>{{ detail }}</code>{% endif %}</p>
 {% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">設定で Riot と連携する</a></p>{% endif %}

@@ -404,6 +404,76 @@ h2 {
   }
 }
 
+/* The owner's sixth tab (ライブ, the game being played): the tabs sit closer and the site's name goes up to 940px,
+   so six fit where five do at every width (measured in all four languages). Its dot says where the owner's game is (app.js liveWatch). */
+@media (min-width: 761px) {
+  .tabs:has(> :nth-child(6)) {
+    gap: 0.1rem;
+  }
+  .tabs:has(> :nth-child(6)) a {
+    padding-inline: 0.35rem;
+  }
+}
+@media (min-width: 761px) and (max-width: 940px) {
+  .bar:has(.tabs > :nth-child(6)) .brand span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+@media (max-width: 760px) {
+  .tabs:has(> :nth-child(6)) {
+    padding-inline: 0.2rem;
+  }
+  .tabs:has(> :nth-child(6)) a {
+    padding-inline: 0.1rem;
+  }
+}
+.live-icon {
+  position: relative;
+  display: inline-flex;
+}
+.live-dot {
+  position: absolute;
+  top: -0.1rem;
+  right: -0.25rem;
+  display: none;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--paper);
+}
+.live-tab[data-phase="menus"] .live-dot {
+  display: block;
+  background: var(--win);
+}
+.live-tab[data-phase="queue"] .live-dot {
+  display: block;
+  background: var(--blue);
+  animation: live-pulse 1.4s ease-in-out infinite;
+}
+.live-tab[data-phase="pregame"] .live-dot,
+.live-tab[data-phase="ingame"] .live-dot {
+  display: block;
+  background: var(--accent);
+}
+.live-tab[data-phase="pregame"] .live-dot {
+  animation: live-pulse 1s ease-in-out infinite;
+}
+@keyframes live-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (max-width: 760px) {
+  .live-dot {
+    box-shadow: 0 0 0 2px var(--card);
+  }
+}
+
 /* Top: the search and the lists of players */
 .hero {
   padding: 1rem 0 0.5rem;
@@ -3403,6 +3473,67 @@ code {
 }
 .game-state .dot.on {
   background: var(--win);
+}
+/* What /live does on each of the game's screens, the one the game is on marked: above everything while the game
+   is closed, below the buttons while it is open (agent select lasts about a minute and a half). */
+.live-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: 0.6rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: live-step;
+}
+.live-steps li {
+  display: grid;
+  align-content: start;
+  gap: 0.2rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--card);
+  counter-increment: live-step;
+}
+.live-steps strong::before {
+  content: counter(live-step) ". ";
+  color: var(--soft);
+}
+.live-steps span {
+  color: var(--soft);
+  font-size: 0.85rem;
+}
+.live-steps li[aria-current] {
+  border-color: var(--accent);
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+.live-steps li[aria-current] strong::after {
+  content: " · いまここ";
+  color: var(--accent);
+  font-size: 0.8rem;
+}
+/* On any other page: agent select has started (app.js liveWatch), above the phone's tab bar. */
+.live-alert {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--tabbar) + 0.8rem);
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.8rem;
+  width: min(30rem, calc(100% - 2rem));
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--accent);
+  border-radius: 10px;
+  background: var(--card);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  transform: translateX(-50%);
+}
+.live-alert p {
+  flex: 1 1 100%;
+  margin: 0;
 }
 .queue-form {
   display: flex;
