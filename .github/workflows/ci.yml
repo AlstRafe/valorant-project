@@ -94,4 +94,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      # Dispatched right after a merge: the VM takes master within a minute, then the server restarts
+      # (about a minute), so the pages are checked once the new code answers.
+      - name: Give the VM time to take the push
+        run: sleep 150
       - run: node tests/ui/audit.js https://haruxera.duckdns.org/val --live
