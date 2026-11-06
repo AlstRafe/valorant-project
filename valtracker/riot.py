@@ -326,9 +326,13 @@ class Riot:
             base, puuid, headers = self._base(saved), str(saved["puuid"]), self._headers(tokens)
             loadout, url = self._loadout(base, puuid, headers)
             change(loadout)
-            loadout.pop("Version", None)  # PD gives the new one
+            # the body is the loadout without Subject and Version (PD gives the new Version)
+            loadout.pop("Version", None)
+            loadout.pop("Subject", None)
             body = json.dumps(loadout).encode()
             answer = self._pd("equip", url, {**headers, "Content-Type": "application/json"}, "PUT", body)
+            if isinstance(answer.get("Guns"), list) and _worn(answer) != _worn(loadout):
+                raise RiotError("notsaved", "equip: PD answered 200 with another loadout")
             return {"loadout": answer, "missing": [], "problem": ""}
 
         self.cache = TTLCache(8)
@@ -802,6 +806,31 @@ def _number(value) -> float:
         return float(value or 0)
     except (TypeError, ValueError):
         return 0.0
+
+
+def _worn(loadout: dict) -> tuple:
+    """What a playerloadout wears, to tell whether PD kept a change: each weapon's skin, level, variant and buddy, the
+    wheel (v3's ActiveExpressions or v2's Sprays), the card and the title."""
+
+    def low(value) -> str:
+        return str(value or "").lower()
+
+    guns = {
+        low(gun.get("ID")): tuple(low(gun.get(key)) for key in ("SkinID", "SkinLevelID", "ChromaID", "CharmID"))
+        for gun in loadout.get("Guns") or []
+        if isinstance(gun, dict)
+    }
+    places = loadout.get("ActiveExpressions") if isinstance(loadout.get("ActiveExpressions"), list) else None
+    if places is None:
+        wheel = [
+            (low(item.get("EquipSlotID")), low(item.get("SprayID")))
+            for item in loadout.get("Sprays") or []
+            if isinstance(item, dict)
+        ]
+    else:
+        wheel = [(low(item.get("TypeID")), low(item.get("AssetID"))) for item in places if isinstance(item, dict)]
+    identity = loadout.get("Identity") if isinstance(loadout.get("Identity"), dict) else {}
+    return guns, wheel, low(identity.get("PlayerCardID")), low(identity.get("PlayerTitleID"))
 
 
 def _json(body: bytes) -> dict:

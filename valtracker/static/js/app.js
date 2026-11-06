@@ -1000,14 +1000,21 @@
   function wearInPlace() {
     if (!window.fetch || !window.DOMParser || !document.querySelector(".equip-form")) return;
     var busy = false;
-    // the note after wearing: a few seconds, and not again on a reload
+    // the note after wearing: long enough to read (a refusal longer; a tap closes it), not again on a reload
     function fade(said) {
       if (!said) return;
-      setTimeout(function () {
+      setTimeout(
+        function () {
+          said.remove();
+        },
+        said.classList.contains("ok") ? Math.max(4000, said.textContent.length * 100) : 15000,
+      );
+      said.addEventListener("click", function () {
         said.remove();
-      }, 4000);
+      });
       var address = new URL(location.href);
       address.searchParams.delete("equip");
+      address.searchParams.delete("riot");
       history.replaceState(null, "", address.pathname + address.search + address.hash);
     }
     fade(document.querySelector(".equip-said"));

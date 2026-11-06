@@ -1114,6 +1114,7 @@ def register(app: Flask) -> None:
         from valtracker.owner import equip_said
 
         values["equip_said"], values["equip_ok"] = equip_said(request.args.get("equip", "")[:20])
+        values["equip_detail"] = "" if values["equip_ok"] else request.args.get("riot", "")[:80]
         return render_template("collection.html", **values)
 
     @app.route("/settings", methods=["GET", "POST"])

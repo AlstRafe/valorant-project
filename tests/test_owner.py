@@ -342,6 +342,7 @@ class OwnerTest(unittest.TestCase):
         self.assertEqual(vandal["ChromaID"], "aa000000-0000-4000-8000-000000000021", "the base variant")
         self.assertEqual(vandal["CharmID"], "bb000000-0000-4000-8000-000000000001", "the rest as it was")
         self.assertNotIn("Version", worn)
+        self.assertNotIn("Subject", worn, "PD's body is the loadout without Subject and Version")
         self.assertEqual(len(worn["ActiveExpressions"]), 2)
         self.assertEqual(worn["DynamicOptions"], {})
         (put,) = [url for method, url, _, _ in self.riot.asked if method == "PUT" and "playerloadout" in url]
@@ -431,6 +432,45 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("equip=down", answer.headers["Location"])
         self.assertEqual(self.riot.worn, [])
         self.assertIn("Riot のサーバーから答えがありませんでした", self.page("/collection?show=titles&equip=down"))
+
+    def test_wear_that_pd_does_not_keep(self):
+        """PD answers 200 but with the loadout it had: the page does not say it was worn."""
+        self.link()
+        self.riot.ignore_put = True
+        title = "ee000000-0000-4000-8000-000000000002"
+        answer = self.client.post("/collection/equip", data={"csrf": self.token(), "show": "titles", "item": title})
+        self.assertIn("equip=notsaved", answer.headers["Location"])
+        text = self.page(answer.headers["Location"])
+        self.assertIn("Riot は受け付けましたが、装備は変わっていませんでした。", text)
+        self.assertIn("<code>equip: PD answered 200 with another loadout</code>", text)
+        self.assertIn('class="verdict no equip-said" role="alert"', text)
+
+    def test_wear_refused_says_what_riot_said(self):
+        self.link()
+        self.riot.broken.add("equip")
+        title = "ee000000-0000-4000-8000-000000000002"
+        answer = self.client.post("/collection/equip", data={"csrf": self.token(), "show": "titles", "item": title})
+        self.assertIn("equip=down", answer.headers["Location"])
+        text = self.page(answer.headers["Location"])
+        self.assertIn("<code>equip 500 SERVER_ERROR</code>", text)
+        # the words are only shown with a failure, and only plain ones
+        ok = self.page("/collection?show=titles&equip=ok&riot=x")
+        self.assertNotIn("<code>x</code>", ok)
+        self.assertIn("装備しました。Riot に保存されています。", ok)
+
+    def test_wear_while_the_game_is_open(self):
+        """The open game draws the loadout it started with: the note says the next match takes the new one."""
+        self.link()
+        title = "ee000000-0000-4000-8000-000000000002"
+        closed = self.client.post("/collection/equip", data={"csrf": self.token(), "show": "titles", "item": title})
+        self.assertIn("equip=ok", closed.headers["Location"])
+        self.riot.phase = "menus"
+        title = "ee000000-0000-4000-8000-000000000001"
+        open_ = self.client.post("/collection/equip", data={"csrf": self.token(), "show": "titles", "item": title})
+        self.assertIn("equip=okopen", open_.headers["Location"])
+        text = self.page(open_.headers["Location"])
+        self.assertIn("開いているゲームでは次の試合から使われます", text)
+        self.assertIn('class="verdict ok equip-said" role="status"', text)
 
 
 if __name__ == "__main__":
