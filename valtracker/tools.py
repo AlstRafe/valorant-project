@@ -94,18 +94,63 @@ def _page_number() -> int:
         return 1
 
 
+def _wanted() -> tuple[str, str, str]:
+    """The player looked for on the leaderboard (``?q=Name#Tag``): (what was typed, name, tag); a problem's
+    words instead of the name when it cannot be a Riot ID."""
+    typed = " ".join(str(request.args.get("q", "")).split())[:40]
+    if not typed:
+        return "", "", ""
+    name, _, tag = typed.partition("#")
+    name, tag = name.strip(), tag.strip()
+    if not 3 <= len(name) <= 16 or len(tag) > 5:
+        return typed, "", ""
+    return typed, name, tag
+
+
+def _riot_board_act() -> str:
+    """The act the game's own leaderboard is asked for, when the owner's Riot account can ask (else "")."""
+    found = current_app.config["VAL_RIOT"].status()
+    if not found["linked"] or found["signed_out"]:
+        return ""
+    return ((current_app.config["VAL_CONTENT"].act(g.lang) or {}).get("uuid")) or ""
+
+
 def _board(region: str, page: int) -> tuple[dict, int]:
-    """What leaderboard.html shows of one page, and the status."""
+    """What leaderboard.html shows of one page (or of the player looked for), and the status. Riot's own
+    leaderboard first (the game's server, through the owner's Riot account); HenrikDev's when that is not there."""
+    typed, name, tag = _wanted()
     values = {"region": region, "page": page, "problem": "", "settings_link": False, "loading": False}
-    try:
-        found = current_app.config["VAL_HENRIK"].leaderboard(region, (page - 1) * BOARD_PAGE)
-    except HenrikError as error:
-        status, values["problem"], values["settings_link"] = _failure(error.kind)
-        if error.kind == "notfound":
-            values["problem"], status = _t("このページにはプレイヤーがいません。"), 404
-        return values | {"players": [], "thresholds": []}, status
+    values |= {"q": typed, "searched": bool(typed)}
+    if typed and not name:
+        values["problem"] = _t("「名前#タグ」の形で入れてください。")
+        return values | {"players": [], "thresholds": []}, 400
+    start = 0 if typed else (page - 1) * BOARD_PAGE
+    found, source = None, ""
+    act = _riot_board_act()
+    if act:
+        try:
+            found = current_app.config["VAL_RIOT"].leaderboard(region, act, start, BOARD_PAGE, name)
+            source = "riot"
+        except RiotError:
+            found = None
+    if found is None:
+        try:
+            found = current_app.config["VAL_HENRIK"].leaderboard(region, start, name, tag)
+            source = "henrik"
+        except HenrikError as error:
+            status, values["problem"], values["settings_link"] = _failure(error.kind)
+            if error.kind == "notfound":
+                values["problem"], status = _t("このページにはプレイヤーがいません。"), 404
+                if typed:
+                    values["problem"], status = "", 200
+                    return values | {"players": [], "thresholds": [], "source": source}, status
+            return values | {"players": [], "thresholds": []}, status
     players = []
     for item in found["players"]:
+        if typed and (item["hidden"] or item["name"].casefold() != name.casefold()):
+            continue  # Riot looks for names that start so; hidden players are never found by their name
+        if typed and tag and item["tag"].casefold() != tag.casefold():
+            continue
         players.append(
             item
             | {
@@ -116,14 +161,17 @@ def _board(region: str, page: int) -> tuple[dict, int]:
             }
         )
     thresholds = [item | {"rank_shown": _rank({"id": item["tier"]})} for item in found["thresholds"] if item["tier"]]
-    more = len(found["players"]) >= BOARD_PAGE and page < BOARD_PAGES
+    more = not typed and len(found["players"]) >= BOARD_PAGE and page < BOARD_PAGES
     if found["total"]:
         more = more and page * BOARD_PAGE < found["total"]
     return values | {
         "players": players,
         "thresholds": thresholds,
+        "source": source,
         "updated": _when(found["updated"]),
-        "earlier": url_for("leaderboard", region=region, page=page - 1 if page > 2 else None) if page > 1 else "",
+        "earlier": url_for("leaderboard", region=region, page=page - 1 if page > 2 else None)
+        if page > 1 and not typed
+        else "",
         "later": url_for("leaderboard", region=region, page=page + 1) if more else "",
     }, 200
 
@@ -490,16 +538,24 @@ def register(app: Flask) -> None:
         """At once when the page is kept; else the page without the players, which the script asks for
         (leaderboard_part), as a player's page does. ``?full=1`` waits for them."""
         region, page = _region(), _page_number()
-        henrik = current_app.config["VAL_HENRIK"]
+        typed, name, tag = _wanted()
+        henrik, act = current_app.config["VAL_HENRIK"], _riot_board_act()
+        start = 0 if typed else (page - 1) * BOARD_PAGE
         common = {
-            "regions": _regions("leaderboard", region),
+            "regions": _regions("leaderboard", region, q=typed or None),
             "region_name": _t(REGION_NAMES[region]),
             "act": act_left(),
         }
-        if request.args.get("full") or not henrik.key() or henrik.has_board(region, (page - 1) * BOARD_PAGE):
+        if act:
+            at_once = current_app.config["VAL_RIOT"].has_board(region, act, start, BOARD_PAGE, name)
+        else:
+            at_once = not henrik.key() or henrik.has_board(region, start, name, tag)
+        if request.args.get("full") or (typed and not name) or at_once:
             values, status = _board(region, page)
             return render_template("leaderboard.html", **common, **values), status
-        return render_template("leaderboard.html", **common, region=region, page=page, loading=True, problem="")
+        return render_template(
+            "leaderboard.html", **common, region=region, page=page, q=typed, loading=True, problem=""
+        )
 
     @app.get("/leaderboard/part")
     def leaderboard_part():

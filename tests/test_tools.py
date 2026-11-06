@@ -72,6 +72,83 @@ class ToolsTest(unittest.TestCase):
         self.assertIn("start_index=9950", self.fetch.henrik_calls()[1], "at most 200 pages")
         self.page("/leaderboard/part?page=x")
 
+    def link_riot(self):
+        page = self.client.get("/settings").get_data(as_text=True)
+        token = re.search(r'name="csrf" value="([^"]+)"', page).group(1)
+        self.client.post("/settings", data={"csrf": token, "do": "riot", "riot": "ssid-1"})
+
+    def pd_boards(self) -> list[str]:
+        return [url for _, url, _, _ in self.app.riot.asked if "/mmr/v1/leaderboards/" in url]
+
+    def test_leaderboard_from_riot_first(self):
+        self.link_riot()
+        part = self.page("/leaderboard/part?region=ap", environ_base=VISITOR)
+        (asked,) = self.pd_boards()
+        self.assertEqual(
+            asked,
+            "https://pd.ap.a.pvp.net/mmr/v1/leaderboards/affinity/ap/queue/competitive/season/"
+            "aaaa0000-0000-4000-8000-000000000003?startIndex=0&size=50",
+            "the act being played, from the game's own server",
+        )
+        self.assertEqual(self.fetch.henrik_calls(), [], "HenrikDev is not asked")
+        self.assertIn('data-source="riot"', part)
+        self.assertIn('href="/p/RiotTop/AP1"', part)
+        self.assertIn("1,301", part)
+        self.assertIn("ゲームのランキングを Riot から直接読んでいます。", part)
+        self.assertIn("650 RR から", part, "Radiant's RR, from Riot's tiers")
+        self.assertIn("501 位から", part, "Immortal 3 from the 501st")
+        self.assertNotIn("<small>0 RR から", part, "Immortal 1 has no place of its own on the list")
+        # a player who hides their name: their place, rank, RR and wins only
+        self.assertIn("1,250", part)
+        self.assertNotIn("Hidden Name", part)
+        self.assertNotIn("XX1", part)
+        self.assertIn("非公開", part)
+        # kept a while: the page at once, and no second call
+        self.assertNotIn("data-load=", self.page("/leaderboard?region=ap", environ_base=VISITOR))
+        self.assertEqual(len(self.pd_boards()), 1)
+        # Korea's leaderboard is on Korea's server
+        self.page("/leaderboard/part?region=kr&page=2", environ_base=VISITOR)
+        self.assertIn("https://pd.kr.a.pvp.net/mmr/v1/leaderboards/affinity/kr/", self.pd_boards()[-1])
+        self.assertIn("startIndex=50&size=50", self.pd_boards()[-1])
+
+    def test_leaderboard_from_henrikdev_when_riot_fails(self):
+        self.link_riot()
+        self.app.riot.broken.add("leaderboard")
+        part = self.page("/leaderboard/part?region=ap", environ_base=VISITOR)
+        self.assertIn('data-source="henrik"', part)
+        self.assertIn("TopFrag", part)
+        self.assertNotIn("Riot から直接", part)
+        self.assertIn("/v3/leaderboard/ap/pc?size=50&start_index=0&page=1", self.fetch.henrik_calls()[0])
+        # the region rests a while: Riot is not asked again on every visit
+        self.page("/leaderboard/part?region=ap&page=2", environ_base=VISITOR)
+        self.assertEqual(len(self.pd_boards()), 1)
+
+    def test_find_a_player_on_the_leaderboard(self):
+        text = self.page("/leaderboard?region=ap&q=TopFrag%23JP1", environ_base=VISITOR)
+        self.assertIn('value="TopFrag#JP1"', text)
+        self.assertIn('data-load="/leaderboard/part?region=ap&amp;q=TopFrag%23JP1"', text)
+        self.assertIn('href="/leaderboard?region=kr&amp;q=TopFrag%23JP1"', text, "other regions look for them too")
+        part = self.page("/leaderboard/part?region=ap&q=TopFrag%23JP1", environ_base=VISITOR)
+        self.assertIn("&name=TopFrag&tag=JP1", self.fetch.henrik_calls()[-1])
+        self.assertIn('href="/p/TopFrag/JP1"', part)
+        self.assertNotIn("Second Best", part, "only who was looked for")
+        self.assertNotIn('class="thresholds"', part)
+        self.assertIn("ランキング全体に戻る", part)
+        self.assertNotIn('rel="next"', part)
+        # Riot's own: the name asked for, the tag checked here
+        self.link_riot()
+        part = self.page("/leaderboard/part?region=ap&q=riottop%23ap1", environ_base=VISITOR)
+        self.assertIn("&query=riottop", self.pd_boards()[-1])
+        self.assertIn('href="/p/RiotTop/AP1"', part)
+        self.assertNotIn("RiotTopper", part, "a name that only starts so is someone else")
+        # a hidden player is not found by the name they hide
+        part = self.page("/leaderboard/part?region=ap&q=Hidden%20Name%23XX1", environ_base=VISITOR)
+        self.assertNotIn("1,250", part)
+        self.assertIn("名前を隠している人は名前では探せません", part)
+        # not a Riot ID
+        part = self.page("/leaderboard/part?region=ap&q=%23%23", 400, environ_base=VISITOR)
+        self.assertIn("「名前#タグ」の形で入れてください。", part)
+
     def test_leaderboard_without_a_key(self):
         self.app.config["VAL_SETTINGS"].save(henrik_key="")
         text = self.page("/leaderboard", 503, environ_base=VISITOR)

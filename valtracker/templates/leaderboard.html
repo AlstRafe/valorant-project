@@ -7,14 +7,20 @@
 <p class="lead">{{ t('今のアクトのランクマッチ上位（イモータル以上）です。名前を押すと戦績が見られます。') }}</p>
 {% if act %}<p class="note">{{ act.text }}</p>{% endif %}
 <p class="note"><a href="{{ url_for('ranks', region=region) }}">{{ t('すべてのランクの分布') }}</a></p>
+<form class="search" action="{{ url_for('leaderboard') }}" method="get" role="search">
+<input type="hidden" name="region" value="{{ region }}">
+<label for="board-q" class="sr">{{ t('ランキングでプレイヤーを探す') }}</label>
+<input id="board-q" name="q" type="search" value="{{ q or '' }}" placeholder="{{ t('名前#タグ で順位を探す') }}" maxlength="40" autocomplete="off" spellcheck="false"{% if problem and q %} aria-invalid="true"{% endif %}>
+<button type="submit">{{ t('探す') }}</button>
+</form>
 </section>
 <nav class="modes" aria-label="{{ t('地域') }}">
 {% for item in regions %}<a href="{{ item.url }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
 {% endfor %}</nav>
-<div id="board"{% if loading %} data-load="{{ url_for('leaderboard_part', region=region, page=page if page > 1 else None) }}" data-failed="{{ t('読み込めませんでした。') }}"{% endif %}>
+<div id="board"{% if loading %} data-load="{{ url_for('leaderboard_part', region=region, page=page if page > 1 else None, q=q or None) }}" data-failed="{{ t('読み込めませんでした。') }}"{% endif %}>
 {% if loading %}
 <p class="wait" role="status"><span class="spinner" aria-hidden="true"></span><span>{{ t('ランキングを読み込んでいます…') }}</span></p>
-{% set full = url_for('leaderboard', region=region, page=page if page > 1 else None, full=1) %}
+{% set full = url_for('leaderboard', region=region, page=page if page > 1 else None, q=q or None, full=1) %}
 <p class="retry" hidden><a href="{{ full }}">{{ t('もう一度読み込む') }}</a></p>
 <noscript><p><a href="{{ full }}">{{ t('ランキングを見る') }}</a></p></noscript>
 {% else %}

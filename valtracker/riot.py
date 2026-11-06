@@ -21,8 +21,9 @@ import re
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime
 from pathlib import Path
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 from valtracker import net
 from valtracker.cache import TTLCache
@@ -48,6 +49,12 @@ PHASES = (("pregame", "/pregame/v1"), ("ingame", "/core-game/v1"))
 ACTIONS = ("start", "leave", "select", "lock")
 #: A player's rank (PD's mmr) is asked once a match at most: it changes only when a match ends.
 RANK_KEEP = 900
+#: A page of a region's leaderboard is kept this long (seconds): Riot itself counts it again every few minutes.
+BOARD_KEEP = 300
+#: A region whose leaderboard Riot did not give is not asked again for this long (HenrikDev's is shown meanwhile).
+BOARD_RESTING = 600
+#: The leaderboard's regions (as the game names them) -> the PD server that keeps each.
+BOARD_REGIONS = {"ap": "ap", "kr": "kr", "eu": "eu", "na": "na", "latam": "na", "br": "na"}
 _QUEUE_ID = re.compile(r"^[a-z0-9_-]{2,40}$")
 _UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 #: The account's region (Riot's geo answer) -> the PD server that keeps its items.
@@ -103,6 +110,8 @@ class Riot:
         self.cache = TTLCache(8)
         #: Players' ranks in the owner's match: {puuid: PD's mmr answer}.
         self.ranks = TTLCache(64)
+        #: Pages of the leaderboards, and the regions resting after a failure.
+        self.boards = TTLCache(64)
         self._lock = threading.Lock()
 
     # -- what the pages use ---------------------------------------------------------------------------
@@ -177,6 +186,44 @@ class Riot:
         "party": GLZ's party (in the menus) or None, "names": {puuid: [name, tag]}, "ranks": {puuid: PD's mmr},
         "at", "missing", "problem"}``. Names are asked only for players who do not hide theirs (``Incognito``)."""
         return self._kept("live", self._live, LIVE_KEEP)
+
+    def leaderboard(self, region: str, season: str, start: int = 0, size: int = 50, query: str = "") -> dict:
+        """One page of a region's ranked leaderboard from the game's own server (PD), in henrik.Henrik.leaderboard's
+        shape: ``{"players": [{"rank", "name", "tag", "puuid", "card", "tier", "rr", "wins", "hidden"}],
+        "thresholds": [{"tier", "rr", "from"}], "total", "updated"}``. It is the same for every player, so the
+        public pages may show it; the players who hide their name (Riot's ``IsAnonymized``) come without one.
+        ``query``: a name to look for. RiotError when Riot does not give it (the region then rests a while)."""
+        if region not in BOARD_REGIONS or not _UUID.match(season):
+            raise RiotError("down", "leaderboard: no such region or act")
+        resting = self.boards.get(("resting", region))
+        if resting:
+            raise RiotError(resting, "leaderboard: asked again later")
+        key = ("board", region, season, max(0, int(start)), int(size), query.casefold())
+        kept = self.boards.get(key)
+        if kept is not None:
+            return kept
+
+        def read(tokens: dict, saved: dict) -> dict:
+            asked = {"startIndex": max(0, int(start)), "size": int(size)} | ({"query": query} if query else {})
+            url = (
+                f"{PD.format(shard=BOARD_REGIONS[region])}/mmr/v1/leaderboards/affinity/{region}"
+                f"/queue/competitive/season/{season}?{urlencode(asked)}"
+            )
+            return _board(self._pd("leaderboard", url, self._headers(tokens)), self.clock())
+
+        try:
+            found = self._read(read)
+        except RiotError as error:
+            if error.kind in ("busy", "down"):
+                self.boards.put(("resting", region), error.kind, BOARD_RESTING)
+            raise
+        self.boards.put(key, found, BOARD_KEEP)
+        return found
+
+    def has_board(self, region: str, season: str, start: int = 0, size: int = 50, query: str = "") -> bool:
+        """Whether that page is kept (it needs no call)."""
+        key = ("board", region, season, max(0, int(start)), int(size), query.casefold())
+        return self.boards.get(key) is not None
 
     def act(self, action: str, value: str = "") -> dict:
         """One of the owner's buttons on /live, sent as the game's own client sends it: ``start`` (value: a queue
@@ -420,20 +467,24 @@ class Riot:
         kept = self.cache.get(key) if seconds > 0 else None
         if kept is not None:
             return kept
+        found = self._read(read)
+        self.store.save(problem=found["problem"] or None)
+        if seconds > 0:
+            self.cache.put(key, found, seconds)
+        return found
+
+    def _read(self, read) -> dict:
+        """``read(tokens, saved)``, with a refused token traded for a new one once."""
         for renew in (False, True):
             tokens, saved = self._tokens(renew)
             try:
-                found = read(tokens, saved)
-                break
+                return read(tokens, saved)
             except RiotError as error:
                 if error.kind != "expired":
                     raise
                 if renew:  # a token just made is refused too: not the cookie's fault
                     raise RiotError("down", error.detail) from None
-        self.store.save(problem=found["problem"] or None)
-        if seconds > 0:
-            self.cache.put(key, found, seconds)
-        return found
+        raise RiotError("down")  # not reached
 
     # -- tokens ---------------------------------------------------------------------------------------
 
@@ -634,6 +685,51 @@ def _wallet(answer) -> dict | None:
     if not isinstance(balances, dict):
         return None
     return {str(key).lower(): int(value) for key, value in balances.items() if isinstance(value, int | float)}
+
+
+def _board(answer: dict, now: float) -> dict:
+    """PD's leaderboard -> henrik.Henrik.leaderboard's shape. A hidden player keeps only their place, rank, RR and
+    wins (no name, puuid or card), as the game shows them."""
+    if not isinstance(answer.get("Players"), list):
+        raise RiotError("down", "leaderboard: no players")
+    players = []
+    for item in answer["Players"]:
+        if not isinstance(item, dict):
+            continue
+        hidden = bool(item.get("IsAnonymized")) or not item.get("gameName")
+        players.append(
+            {
+                "rank": int(_number(item.get("leaderboardRank"))),
+                "name": "" if hidden else str(item.get("gameName") or ""),
+                "tag": "" if hidden else str(item.get("tagLine") or ""),
+                "puuid": "" if hidden else str(item.get("puuid") or "").lower(),
+                "card": "" if hidden else str(item.get("PlayerCardID") or "").lower(),
+                "tier": int(_number(item.get("competitiveTier"))),
+                "rr": int(_number(item.get("rankedRating"))),
+                "wins": int(_number(item.get("numberOfWins"))),
+                "hidden": hidden,
+            }
+        )
+    details = answer.get("tierDetails") if isinstance(answer.get("tierDetails"), dict) else {}
+    details = {
+        int(_number(tier)): info for tier, info in details.items() if isinstance(info, dict) and _number(tier) > 2
+    }
+    # the top rank starts at the first place; a lower one that Riot gives no place to (0) is not on the list
+    thresholds = [
+        {
+            "tier": tier,
+            "rr": int(_number(info.get("rankedRatingThreshold"))),
+            "from": int(_number(info.get("startingIndex"))) + 1,
+        }
+        for tier, info in details.items()
+        if tier == max(details) or _number(info.get("startingIndex")) > 0
+    ]
+    return {
+        "players": players,
+        "thresholds": sorted(thresholds, key=lambda item: -item["tier"]),
+        "total": int(_number(answer.get("totalPlayers"))),
+        "updated": datetime.fromtimestamp(now, UTC).isoformat(),  # Riot does not say: when it was read
+    }
 
 
 def _check(status: int, what: str) -> None:
