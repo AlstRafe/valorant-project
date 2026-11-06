@@ -1556,6 +1556,8 @@ meter {
 :root:not([data-theme="dark"]) .act-numbers img,
 :root:not([data-theme="dark"]) img.tri,
 :root:not([data-theme="dark"]) .seat-rank img,
+:root:not([data-theme="dark"]) .meta.avg img,
+:root:not([data-theme="dark"]) .ceilings img,
 :root:not([data-theme="dark"]) .wallet img {
   filter: drop-shadow(1px 0 0 rgb(0 0 0 / 60%)) drop-shadow(-1px 0 0 rgb(0 0 0 / 60%))
     drop-shadow(0 1px 0 rgb(0 0 0 / 60%)) drop-shadow(0 -1px 0 rgb(0 0 0 / 60%));
