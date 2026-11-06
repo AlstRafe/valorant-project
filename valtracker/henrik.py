@@ -247,20 +247,21 @@ class Henrik:
         return games, None
 
     def _esports(self) -> list:
-        """A new schedule: the whole one, or when it does not come (it is big: a timeout, an error), the main
-        leagues one by one."""
+        """A new schedule: the whole one, or when it does not come, the main leagues one by one. The whole one is
+        big: a timeout, an error, or HTTP 429 from HenrikDev, which counts each request it makes to Riot for it
+        against the key (docs.henrikdev.xyz/general/rate-limiting); on the live site it was refused every time."""
         path = "/valorant/v1/esports/schedule"
         if not self.cache.get(("no-esports",)):
             try:
                 return self._get(("esports",), path, KEEP["esports"], _slim_esports)
             except HenrikError as error:
-                if error.kind != "down":
+                if not (error.kind == "down" or _refused(error)):
                     raise
                 first = error
                 self.cache.put(("no-esports",), True, KEEP["news"])
         else:
             first = HenrikError("down", "the whole schedule did not come a while ago")
-        games, problems = [], []
+        games, problems, busy = [], [], None
         for league in ESPORTS_LEAGUES:
             failed = self.cache.get(("no-esports", league))
             if failed:  # failed a while ago: not asked again for a while (each visit would cost the budget)
@@ -269,12 +270,16 @@ class Henrik:
             try:
                 games += self._get(("esports", league), f"{path}?league={league}", KEEP["esports"], _slim_esports)
             except HenrikError as error:
-                if error.kind in ("nokey", "badkey", "busy"):
+                if error.kind in ("nokey", "badkey"):
                     raise
+                if error.kind == "busy":  # the allowance is used up for now: the rest another time
+                    busy = error
+                    problems.append(f"{league}: {error.detail or 'busy'}")
+                    break
                 problems.append(f"{league}: {error.detail or error.kind}")
                 self.cache.put(("no-esports", league), error.detail or error.kind, KEEP["news"])
         if not games:
-            raise HenrikError("down", "; ".join([first.detail or "down", *problems]))
+            raise HenrikError("busy" if busy else "down", "; ".join([first.detail or first.kind, *problems]))
         seen, kept = set(), []
         for game in games:  # a match can be in two leagues' lists (a league and its event)
             key = (game["at"], tuple(team["name"] for team in game["teams"]))
@@ -319,6 +324,11 @@ ESPORTS_LEAGUES = ("vct_pacific", "vct_americas", "vct_emea", "vct_china", "mast
 #: after a failure: a short while when the allowance was used up, longer when HenrikDev did not answer.
 ESPORTS_LAST = 24 * 3600
 ESPORTS_WAIT = {"busy": 20, "down": 120}
+
+
+def _refused(error: HenrikError) -> bool:
+    """HenrikDev itself said the key has asked too much (HTTP 429), not this site's own budget."""
+    return error.kind == "busy" and error.detail == "HTTP 429"
 
 
 def shows_rr(mode: str) -> bool:

@@ -1408,8 +1408,9 @@ meter {
 }
 /* More of the game's pictures are drawn for its dark screens. On paper: the VP and Kingdom Credits signs (white)
    are inked; rank and tier signs (Radiant's is pale yellow and white) get a crisp dark edge, 1px all round (a
-   blurred shadow was too faint to see on the live site); the items (light grey guns, white sprays) stand on a dark
-   plate, as they do in the game's store. */
+   blurred shadow was too faint to see on the live site), the thin triangles a darker one; the sprays, buddies and
+   cards (often white) stand on a dark plate, as in the game's store. The weapon skins keep the paper (most are
+   dark or bright colours, which a dark plate hid) with a soft shadow. */
 :root:not([data-theme="dark"]) .price img {
   filter: invert(0.85);
 }
@@ -1425,11 +1426,21 @@ meter {
   filter: drop-shadow(1px 0 0 rgb(0 0 0 / 60%)) drop-shadow(-1px 0 0 rgb(0 0 0 / 60%))
     drop-shadow(0 1px 0 rgb(0 0 0 / 60%)) drop-shadow(0 -1px 0 rgb(0 0 0 / 60%));
 }
-:root:not([data-theme="dark"]) .items .item > img,
-:root:not([data-theme="dark"]) .items .item > a > img {
+:root:not([data-theme="dark"]) img.tri {
+  filter: drop-shadow(1px 0 0 rgb(0 0 0 / 70%)) drop-shadow(-1px 0 0 rgb(0 0 0 / 70%))
+    drop-shadow(0 1px 0 rgb(0 0 0 / 70%)) drop-shadow(0 -1px 0 rgb(0 0 0 / 70%));
+}
+:root:not([data-theme="dark"]) .items:not(.skins) .item:not(:has(> .skin-link)) > img {
   padding: 0.3rem;
   border-radius: 8px;
   background-color: #34312b;
+}
+:root:not([data-theme="dark"]) .items .item > .skin-link > img,
+:root:not([data-theme="dark"]) .items.skins .item > img {
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 45%));
+}
+:root:not([data-theme="dark"]) .items .item.locked > img {
+  filter: grayscale(1);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .price img,
@@ -1444,8 +1455,11 @@ meter {
   :root:not([data-theme="light"]) .wallet img {
     filter: none;
   }
-  :root:not([data-theme="light"]) .items .item > img,
-  :root:not([data-theme="light"]) .items .item > a > img {
+  :root:not([data-theme="light"]) .items .item > .skin-link > img,
+  :root:not([data-theme="light"]) .items.skins .item > img {
+    filter: none;
+  }
+  :root:not([data-theme="light"]) .items:not(.skins) .item:not(:has(> .skin-link)) > img {
     padding: 0;
     background-color: transparent;
   }
