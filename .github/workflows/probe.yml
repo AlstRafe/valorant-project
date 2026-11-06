@@ -23,22 +23,14 @@ jobs:
                   return getattr(e, "code", 0), str(e), (e.read() if hasattr(e, "read") else b"")
           s, ct, b = get("https://haruxera.duckdns.org/val/esports")
           print("LIVE /esports", s, len(b))
-          for url in ("https://valorantesports.com/ja-JP/schedule", "https://valorantesports.com/en-US/schedule?leagues=vct_pacific"):
+          for url in ("https://valorantesports.com/ja-JP/schedule",):
               s, ct, b = get(url)
               t = b.decode("utf-8", "replace")
-              chunks = re.findall(r'self\.__next_f\.push\(\[1,"((?:[^"\\]|\\.)*)"\]\)', t)
-              flight = "".join(json.loads('"' + c + '"') for c in chunks)
-              print("\n==", url, s, len(b), "| chunks", len(chunks), "| flight", len(flight), "| startTime", flight.count("startTime"))
-              i = flight.find("startTime")
-              print("  AROUND FIRST:", flight[max(0, i - 1500): i + 2500])
-              # the lines of the flight that hold events: their ids and sizes
-              for line in flight.split("\n"):
-                  if "startTime" in line:
-                      head = line[:60]
-                      print("  LINE", head, "| len", len(line), "| startTime", line.count("startTime"))
-              # keys next to startTime
-              keys = re.findall(r'"([A-Za-z_]+)":', flight[i - 3000: i + 6000])
-              print("  KEYS:", sorted(set(keys)))
-              print("  LEAGUE SLUGS:", sorted(set(re.findall(r'"slug":"([a-z0-9_\-]+)"', flight)))[:80])
-              print("  STATES:", sorted(set(re.findall(r'"state":"([A-Za-z]+)"', flight))))
-              print("  LAST:", flight[flight.rfind("startTime") - 200: flight.rfind("startTime") + 1500])
+              spots = [m.start() for m in re.finditer("startTime", t)]
+              print("\n==", url, s, len(t), "| startTime in raw", len(spots))
+              print("  script kinds:", sorted(set(re.findall(r"<script([^>]*)>", t)))[:20])
+              print("  push heads:", sorted(set(m.group(0)[:30] for m in re.finditer(r"self\.__next_f\.push\(\[\d+", t))))
+              for n in (1, 2, 5, 40):
+                  if n < len(spots):
+                      i = spots[n]
+                      print(f"  RAW #{n} at {i}:", t[i - 1200: i + 1800])
