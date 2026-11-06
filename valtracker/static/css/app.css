@@ -3884,3 +3884,132 @@ code {
     gap: 0.4rem;
   }
 }
+
+/* Where a player's kills and deaths happened (_heat.html): the minimap on dark ground in both themes, like the
+   game's own, so the dots' colours are the same in both. The filters work without a script (:has). */
+.heat-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0.6rem 0 0.8rem;
+}
+.heat-filter fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.heat-filter label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  padding: 0 0.8rem;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: var(--card);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.heat-filter label:has(:checked) {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.heat-filter input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+.heat-filter .k input {
+  accent-color: var(--win);
+}
+.heat-filter .d input {
+  accent-color: var(--loss);
+}
+.heat-body {
+  display: grid;
+  grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+  gap: 1rem 1.5rem;
+  align-items: start;
+}
+@media (max-width: 760px) {
+  .heat-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.heat-figure {
+  padding: 0.5rem;
+  border-radius: 10px;
+  background: #181715;
+}
+.heat-svg {
+  display: block;
+  width: 100%;
+  max-width: 26rem;
+  height: auto;
+  margin-inline: auto;
+  aspect-ratio: 1;
+}
+.heat-svg circle {
+  stroke: #111;
+  stroke-width: 0.25;
+  opacity: 0.85;
+}
+.heat-panel .heat-svg circle {
+  opacity: 0.7;
+}
+.heat-svg circle.k {
+  fill: #4cc79a;
+}
+.heat-svg circle.d {
+  fill: #ff6b76;
+}
+.heat-svg circle.first {
+  stroke: #fff;
+  stroke-width: 0.4;
+}
+.heat-svg line {
+  stroke-width: 0.35;
+  opacity: 0.55;
+}
+.heat-svg line.k {
+  stroke: #4cc79a;
+}
+.heat-svg line.d {
+  stroke: #ff6b76;
+}
+.heat:has(.heat-side input[value="atk"]:checked) .heat-svg .def,
+.heat:has(.heat-side input[value="def"]:checked) .heat-svg .atk,
+.heat:has(.heat-kind input[value="k"]:not(:checked)) .heat-svg .k,
+.heat:has(.heat-kind input[value="d"]:not(:checked)) .heat-svg .d {
+  display: none;
+}
+.heat-panel {
+  margin: 0.6rem 0;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--card);
+}
+.heat-panel summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.7rem;
+  min-height: 2.75rem;
+  padding: 0.3rem 0.9rem;
+  cursor: pointer;
+}
+.heat-panel summary small {
+  color: var(--soft);
+}
+.heat-panel .heat-body {
+  padding: 0 0.9rem 0.9rem;
+}
+.heat-places table {
+  width: 100%;
+}
+.heat-worst {
+  margin: 0.6rem 0 0;
+  font-size: 0.92rem;
+}

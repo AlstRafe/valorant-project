@@ -5,7 +5,44 @@
    "uuid": "7eaecc1b-4337-bbf6-6ab9-04b8f06b3319",
    "displayName": "アセント",
    "mapUrl": "/Game/Maps/Ascent/Ascent",
-   "listViewIcon": "https://media.valorant-api.com/maps/7eaecc1b-4337-bbf6-6ab9-04b8f06b3319/listviewicon.png"
+   "listViewIcon": "https://media.valorant-api.com/maps/7eaecc1b-4337-bbf6-6ab9-04b8f06b3319/listviewicon.png",
+   "displayIcon": "https://media.valorant-api.com/maps/7eaecc1b-4337-bbf6-6ab9-04b8f06b3319/displayicon.png",
+   "xMultiplier": 7e-05,
+   "yMultiplier": -7e-05,
+   "xScalarToAdd": 0.813895,
+   "yScalarToAdd": 0.573242,
+   "callouts": [
+    {
+     "regionName": "ツリー",
+     "superRegion": "ECalloutSuperRegion::A",
+     "superRegionName": "A",
+     "location": {
+      "x": 3980.9062,
+      "y": -5938.758,
+      "z": 400.00003
+     }
+    },
+    {
+     "regionName": "ロビー",
+     "superRegion": "ECalloutSuperRegion::A",
+     "superRegionName": "A",
+     "location": {
+      "x": 4489.032,
+      "y": -3014.0515,
+      "z": 400
+     }
+    },
+    {
+     "regionName": "マーケット",
+     "superRegion": "ECalloutSuperRegion::Mid",
+     "superRegionName": "中央",
+     "location": {
+      "x": 2200,
+      "y": -4300,
+      "z": 400
+     }
+    }
+   ]
   }
  ]
 }

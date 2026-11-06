@@ -62,7 +62,8 @@ class HenrikTest(unittest.TestCase):
         # what the pages use of the rounds and kills is kept, small (rounds.py)
         digest = matches[0]["digest"]
         self.assertEqual(len(digest["rounds"]), 22)
-        self.assertEqual(digest["kills"][0], [0, 10000, 0, 2, VANDAL_OR_CLASSIC, [1]])
+        # where the victim died and where the killer stood (heatmap.py)
+        self.assertEqual(digest["kills"][0], [0, 10000, 0, 2, VANDAL_OR_CLASSIC, [1], [2050, -4450], [4339, -3164]])
         self.assertEqual(matches[1]["digest"], {}, "a match without rounds or kills")
         mmr = self.henrik.mmr("ap", "Tester", "JP1")
         self.assertEqual(set(mmr), {"current", "peak", "seasons"})
@@ -300,6 +301,11 @@ class RoundsTest(unittest.TestCase):
                     "killer_puuid": "b",
                     "victim_puuid": "a",
                     "damage_weapon_name": "Ghost",
+                    "victim_death_location": {"x": 100, "y": -200},
+                    "player_locations_on_kill": [
+                        {"player_puuid": "a", "location": {"x": 1, "y": 1}},
+                        {"player_puuid": "b", "location": {"x": 300.4, "y": 400}},
+                    ],
                 }
             ],
         }
@@ -308,7 +314,7 @@ class RoundsTest(unittest.TestCase):
             found["rounds"][0] | {"l": None},
             {"w": "Blue", "e": "defuse", "c": "", "s": "C", "p": 0, "d": 1, "a": "Red", "l": None},
         )
-        self.assertEqual(found["kills"], [[0, 900, 1, 0, "Ghost", []]])
+        self.assertEqual(found["kills"], [[0, 900, 1, 0, "Ghost", [], [100, -200], [300, 400]]])
         self.assertEqual(found["players"][1]["weapons"], {"Ghost": 1})
 
     def test_nothing_to_tell(self):

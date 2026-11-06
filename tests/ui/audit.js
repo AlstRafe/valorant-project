@@ -47,6 +47,7 @@ const PAGES = [
 const MADE_UP = [
   "/p/Tester/JP1?full=1",
   "/m/ap/aaaaaaaa-0000-4000-8000-000000000001",
+  "/m/ap/aaaaaaaa-0000-4000-8000-000000000001?me=Tester%23JP1",
   "/agents/11111111-1111-4111-8111-111111111111",
   "/collection",
   "/settings",

@@ -3,7 +3,8 @@ first read, so the rest of them (about 0.5 MB a match) can be dropped before it 
 
 For each player: first kills and deaths, KAST rounds (a kill, an assist, survived or traded), multi-kills, clutches
 won, plants and defuses, kills by weapon. For each round: who won and how, which team attacked, the plant site, each
-team's loadout, and its kills in order (compact: a player is their place in the match's ``players``).
+team's loadout, and its kills in order (compact: a player is their place in the match's ``players``), with where
+the victim died and where the killer stood (heatmap.py draws them).
 
 HenrikDev's older answers (v2) named these differently; both are read, and whatever is missing is left out.
 """
@@ -43,7 +44,8 @@ def _puuid(who) -> str:
 
 
 def _kill(raw: dict, place: dict) -> list | None:
-    """[round, ms into the round, killer, victim, weapon key, [assistants]] (players by place; -1: nobody's)."""
+    """[round, ms into the round, killer, victim, weapon key, [assistants], weapon name, where the victim died,
+    where the killer stood] (players by place, -1: nobody's; places as _spot gives them)."""
     victim = place.get(_puuid(raw.get("victim") or raw.get("victim_puuid")))
     if victim is None:
         return None
@@ -57,7 +59,34 @@ def _kill(raw: dict, place: dict) -> list | None:
         if found is not None and found != killer:
             helpers.append(found)
     moment = raw.get("time_in_round_in_ms", raw.get("kill_time_in_round"))
-    return [_int(raw.get("round", raw.get("round_number"))), _int(moment), killer, victim, key or name, helpers, name]
+    victim_at = _spot(raw.get("location") if "location" in raw else raw.get("victim_death_location"))
+    killer_at = None
+    killer_id = _puuid(raw.get("killer") or raw.get("killer_puuid"))
+    for item in raw.get("player_locations") or raw.get("player_locations_on_kill") or []:
+        if isinstance(item, dict) and killer_id and _puuid(item.get("player") or item.get("player_puuid")) == killer_id:
+            killer_at = _spot(item.get("location"))
+            break
+    return [
+        _int(raw.get("round", raw.get("round_number"))),
+        _int(moment),
+        killer,
+        victim,
+        key or name,
+        helpers,
+        name,
+        victim_at,
+        killer_at,
+    ]
+
+
+def _spot(where) -> list | None:
+    """A place in the game's units, [x, y]; None when not known (HenrikDev gives 0, 0 for that)."""
+    if not isinstance(where, dict):
+        return None
+    x, y = where.get("x"), where.get("y")
+    if isinstance(x, bool) or isinstance(y, bool) or not isinstance(x, int | float) or not isinstance(y, int | float):
+        return None
+    return None if x == 0 and y == 0 else [round(x), round(y)]
 
 
 def _event(raw: dict, *names: str) -> dict:
@@ -164,7 +193,8 @@ def digest(match: dict) -> dict:
             side = sides.setdefault(name, {"atk": [0, 0], "def": [0, 0]})["atk" if item["a"] == name else "def"]
             side[1] += 1
             side[0] += 1 if item["w"] == name else 0
-    compact = [kill[:6] for kill in kills] if rounds and len(kills) <= MAX_KILLS else []
+    # [round, ms, killer, victim, weapon, [assistants], where the victim died, where the killer stood]
+    compact = [kill[:6] + kill[7:9] for kill in kills] if rounds and len(kills) <= MAX_KILLS else []
     return {"rounds": rounds, "kills": compact, "weapons": weapons, "players": each, "sides": sides}
 
 
