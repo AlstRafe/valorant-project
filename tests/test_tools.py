@@ -33,6 +33,14 @@ class ToolsTest(unittest.TestCase):
             self.assertIn(f'href="{path}"', text)
         self.assertNotIn('href="/settings"', text)
 
+    def test_tools_by_kind(self):
+        text = self.page("/tools", environ_base=VISITOR)
+        headings = re.findall(r'<h2 id="tools-\d">([^<]+)</h2>', text)
+        self.assertEqual(headings, ["試合の前に", "プレイヤーとランク", "ニュースと大会", "スキンとショップ"])
+        self.assertIn('href="/agents/stats"', text, "the pick and win rates are a tool too")
+        self.assertNotIn("自分のアカウント", text)
+        self.assertIn('<h2 id="tools-me">自分のアカウント</h2>', self.page("/tools"))
+
     # -- the leaderboard ------------------------------------------------------------------------------
 
     def test_leaderboard_comes_later_then_at_once(self):

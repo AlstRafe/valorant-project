@@ -955,6 +955,10 @@
       tab.setAttribute("data-phase", state.phase || "off");
       tab.setAttribute("aria-label", state.words ? "ライブ（" + state.words + "）" : "ライブ");
       tab.title = state.words || "";
+      // the top page's 自分 box says it too
+      document.querySelectorAll("[data-live-text]").forEach(function (words) {
+        if (state.words) words.textContent = state.words;
+      });
       note(state);
     }
 

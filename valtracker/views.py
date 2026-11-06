@@ -794,10 +794,18 @@ def _match_page(found: dict, me: str) -> dict:
     }
 
 
+def _me() -> dict | None:
+    """The owner's linked Riot account for the top page's 自分 box (riot.Riot.status: read from this server's own
+    file, no call to Riot), or None for a visitor."""
+    if not security.is_owner():
+        return None
+    return current_app.config["VAL_RIOT"].status()
+
+
 def register(app: Flask) -> None:
     @app.get("/")
     def top():
-        return render_template("home.html", query="", problem="")
+        return render_template("home.html", query="", problem="", me=_me())
 
     @app.get("/search")
     def search():
@@ -805,7 +813,7 @@ def register(app: Flask) -> None:
         found = split_riot_id(query)
         if not found:
             problem = _t("「名前#タグ」の形で入れてください（例: Name#JP1）。") if query else ""
-            return render_template("home.html", query=query, problem=problem), 400 if query else 200
+            return render_template("home.html", query=query, problem=problem, me=_me()), 400 if query else 200
         return redirect(url_for("player", name=found[0], tag=found[1]), 303)
 
     @app.get("/p/<name>/<tag>")

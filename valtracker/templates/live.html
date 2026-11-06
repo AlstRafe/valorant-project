@@ -9,6 +9,7 @@
 {%- if row.title %}{% set _ = parts.append(row.title) %}{% endif -%}
 {%- if row.level %}{% set _ = parts.append('レベル ' ~ row.level) %}{% endif %}
 {% if parts %}<small>{{ parts|join(' · ') }}</small>{% endif %}
+{% if row.record %}<small class="seat-record">このアクト {{ row.record.wins }}勝 / {{ row.record.games }}試合（{{ row.record.win_rate }}%）{% if row.record.peak_rank %} · 最高 {{ row.record.peak_rank.name }}{% endif %}</small>{% endif %}
 </span>
 {% if row.rank %}<span class="seat-rank">{% if row.rank.icon %}<img src="{{ media(row.rank.icon) }}" alt="" width="28" height="28">{% endif %}<span class="rank-words">{{ row.rank.name }}{% if row.rank.rr is not none %} {{ row.rank.rr }} RR{% endif %}</span></span>{% endif %}
 </li>
@@ -35,6 +36,7 @@
 {% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">設定で Riot と連携する</a></p>{% endif %}
 {% else %}
 <p class="game-state"><span class="dot {{ 'on' if running else 'off' }}" aria-hidden="true"></span>VALORANT: {% if phase == 'pregame' %}エージェント選択{% elif phase == 'ingame' %}試合中{% elif phase == 'menus' %}{{ 'マッチング中' if party and party.state == 'matchmaking' else 'メニュー' }}{% elif running %}開いています{% elif running is none %}わかりません{% else %}開いていません{% endif %}</p>
+{% if last_match and phase != 'pregame' and phase != 'ingame' %}<p class="last-match"><a class="button quiet" href="{{ last_match }}">さっきの試合を見る</a> <small>試合が終わってから数分で見られるようになります。</small></p>{% endif %}
 {% if not phase %}
 <p class="note">{% if running is none %}ゲームの状態を読めませんでした。{% else %}VALORANT を開くと、ここからキューを開始できます。エージェント選択が始まると、味方とピックがここに出ます。{% endif %}</p>
 {% elif phase == 'menus' %}
@@ -69,7 +71,7 @@
 <p class="live-head">{% if map.image %}<img src="{{ media(map.image) }}" alt="" width="160" height="60">{% endif %}<span><strong>{{ map.name or 'マップ' }}</strong>{% if queue %} · {{ queue }}{% endif %} · {{ 'エージェント選択' if phase == 'pregame' else '試合中' }}{% if left %} · 残り {{ left }} 秒{% endif %}</span></p>
 {% if phase == 'pregame' %}
 <section aria-labelledby="ally-title">
-<h2 id="ally-title">味方</h2>
+<h2 id="ally-title">味方{% if average %} <small class="team-average">平均 {{ average.name }}</small>{% endif %}</h2>
 <ul class="seats">{% for row in players %}{{ person(row) }}{% endfor %}</ul>
 {% if enemy_size %}<p class="note">相手は {{ enemy_locked }} / {{ enemy_size }} 人が確定（相手の名前とエージェントは、ゲームでも試合が始まるまで出ません）</p>{% endif %}
 </section>
@@ -103,7 +105,7 @@
 {% else %}
 {% for team in teams %}
 <section aria-labelledby="team-{{ loop.index }}">
-<h2 id="team-{{ loop.index }}">{{ '味方' if team.ours else '相手' }}</h2>
+<h2 id="team-{{ loop.index }}">{{ '味方' if team.ours else '相手' }}{% if team.average %} <small class="team-average">平均 {{ team.average.name }}</small>{% endif %}</h2>
 <ul class="seats">{% for row in team.players %}{{ person(row) }}{% endfor %}</ul>
 </section>
 {% endfor %}

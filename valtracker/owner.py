@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import re
 import time
 
 from flask import Flask, current_app, g, jsonify, redirect, render_template, request, session, url_for
@@ -17,11 +18,15 @@ from valtracker import progress as progress_page
 from valtracker import security
 from valtracker.activity import LINE_QUEUES
 from valtracker.collection import STARTERS
+from valtracker.henrik import REGIONS
 from valtracker.riot import RiotError
 from valtracker.tools import _when
 from valtracker.views import QUEUES, RIOT_FAILURES, _t
 
 #: What can be worn from the collection page -> where the loadout keeps it.
+#: How long /live links to the match the owner played last, once it is over.
+LAST_MATCH_KEPT = 3 * 3600
+_MATCH_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 IDENTITY = {"cards": "PlayerCardID", "titles": "PlayerTitleID"}
 #: What /live says after one of its buttons: (words, whether it worked).
 LIVE_SAID = {
@@ -55,6 +60,31 @@ def _agents_on_the_map(map_id: str, queue: str) -> dict:
     """How each agent does on a map in the matches this site has seen, in the queue (competitive for others)."""
     queue = queue if queue in LINE_QUEUES else "competitive"
     return current_app.config["VAL_ACTIVITY"].agents(queue, "", map_id)
+
+
+def _last_match(found: dict) -> str:
+    """The match the owner played last, kept in their session while it is played (by /live or the header's tab
+    asking /live/state), for the link to it on /live once it is over: its id, or "" (playing, or none lately)."""
+    match = found.get("match") if isinstance(found.get("match"), dict) else {}
+    playing = str(match.get("MatchID") or match.get("ID") or "").lower()
+    if found.get("phase") == "ingame" and _MATCH_ID.match(playing):
+        session["live_match"] = [playing, time.time()]
+        return ""
+    kept = session.get("live_match")
+    if found.get("phase") in ("ingame", "pregame") or not isinstance(kept, list) or len(kept) != 2:
+        return ""
+    match_id, when = str(kept[0]), float(kept[1] or 0)
+    return match_id if _MATCH_ID.match(match_id) and time.time() - when < LAST_MATCH_KEPT else ""
+
+
+def _match_link(match_id: str) -> str:
+    """The owner's last match on this site, with their line marked (?me=)."""
+    if not match_id:
+        return ""
+    status = current_app.config["VAL_RIOT"].status()
+    region = status["shard"] if status["shard"] in REGIONS else "ap"
+    me = f"{status['name']}#{status['tag']}" if status["name"] and status["tag"] else None
+    return url_for("match", region=region, match_id=match_id, me=me)
 
 
 def _problem(error: RiotError) -> dict:
@@ -170,6 +200,7 @@ def register(app: Flask) -> None:
             said=words,
             said_ok=worked,
             live_state=live_page.state(found, current_app.config["VAL_CONTENT"], g.lang),
+            last_match=_match_link(_last_match(found)),
         )
 
     @app.get("/live/state")
@@ -183,6 +214,7 @@ def register(app: Flask) -> None:
         except RiotError as error:
             answer = jsonify({"phase": "", "words": "", "problem": error.kind})
         else:
+            _last_match(found)  # a match played while another page was open is linked from /live afterwards
             answer = jsonify(live_page.state(found, current_app.config["VAL_CONTENT"], g.lang) | {"problem": ""})
         answer.headers["Cache-Control"] = "no-store"
         return answer

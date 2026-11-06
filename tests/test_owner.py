@@ -179,6 +179,48 @@ class OwnerTest(unittest.TestCase):
         self.assertIn('<li aria-current="step"><strong>エージェント選択</strong>', text)
         self.assertIn('data-live-phase="pregame"', text, "the tab's dot without asking again")
 
+    def test_the_top_pages_box(self):
+        text = self.page("/")
+        self.assertIn('<h2 id="me-title">自分</h2>', text)
+        self.assertIn("設定</a>で連携すると", text)
+        self.assertNotIn("<strong>自分の戦績</strong>", text, "not linked yet: whose page is not known")
+        self.assertNotIn("me-title", self.page("/", environ_base=VISITOR))
+        self.link()
+        text = self.page("/")
+        self.assertIn('href="/p/Owner/JP1"><strong>自分の戦績</strong><small>Owner#JP1</small>', text)
+        self.assertIn("<small data-live-text>", text, "the game's state, from the tab's asking")
+        self.assertNotIn("設定</a>で連携すると", text)
+
+    def test_the_players_act_and_the_teams_rank(self):
+        self.link()
+        self.riot.phase = "pregame"
+        text = self.page("/live")
+        self.assertIn("このアクト 15勝 / 30試合（50%） · 最高 Tier 22", text, "a player who shows their name")
+        self.assertNotIn("7勝 / 9試合", text, "nothing about a player who hides who they are")
+        self.assertIn('味方 <small class="team-average">平均 Tier 17</small>', text, "(18 + 21 + 12) / 3")
+        self.riot.phase = "ingame"
+        self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+        text = self.page("/live")
+        self.assertEqual(text.count('class="team-average"'), 1, "the other team has one rank: no average")
+        self.assertIn("このアクト 15勝 / 30試合", text)
+
+    def test_the_last_match_once_it_is_over(self):
+        self.link()
+        self.riot.phase = "ingame"
+        self.assertNotIn("さっきの試合を見る", self.page("/live"))
+        self.riot.phase = ""
+        self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+        match_id = self.riot.pd["coregame"]["MatchID"].lower()
+        self.assertIn(f'href="/m/ap/{match_id}?me=Owner%23JP1">さっきの試合を見る', self.page("/live"))
+        with self.client.session_transaction() as kept:
+            kept["live_match"] = [match_id, time.time() - 4 * 3600]
+        self.assertNotIn("さっきの試合を見る", self.page("/live"), "hours ago: not the last match any more")
+        self.riot.phase = "ingame"
+        self.state()  # played while another page was open: the tab's asking keeps it
+        self.riot.phase = "menus"
+        self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+        self.assertIn("さっきの試合を見る", self.page("/live"))
+
     def test_agent_select(self):
         self.link()
         self.riot.phase = "pregame"
