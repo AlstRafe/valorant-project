@@ -70,6 +70,8 @@ const MADE_UP = [
   "/collection?weapon=9c82e19d-4575-0200-1a81-3eacf00cf872&equip=ok",
   "/collection?show=titles",
   "/collection?show=sprays",
+  // what is worn could not be read from Riot (tests/ui/serve.py: the made-up PD has no loadout)
+  "/collection?weapon=9c82e19d-4575-0200-1a81-3eacf00cf872&loadout=none",
   "/compare?a=Tester%23JP1&b=Other%23KR1",
   "/leaderboard?q=RiotTop%23AP1&full=1",
   "/agents/stats?queue=competitive",

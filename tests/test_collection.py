@@ -150,6 +150,48 @@ class CollectionTest(unittest.TestCase):
         self.assertIn("ぬいぐるみ", self.page("/collection?show=flex"))
         self.assertIn('aria-current="true">スキン', self.page("/collection?show=nothing"))
 
+    def test_the_loadout_v3(self):
+        """PD's playerloadout v3 (v2 answers 404 since September 2026): sprays and flex are its ActiveExpressions."""
+        self.link()
+        vandal = self.page(f"/collection?weapon={VANDAL}")
+        self.assertIn('<p class="worn-name">プライム ヴァンダル</p>', vandal)
+        self.assertNotIn("読めませんでした", vandal)
+        asked = [url for _, url, _, _ in self.riot.asked if "playerloadout" in url]
+        self.assertTrue(asked, "the loadout is asked")
+        self.assertTrue(all("/personalization/v3/" in url for url in asked), asked)
+        sprays = self.page("/collection?show=sprays")
+        self.assertIn('<span class="badge" lang="ja">装備中</span>', sprays)
+        self.assertIn('<option value="0">1（いま GG スプレー）</option>', sprays, "a place is its position")
+        flex = self.page("/collection?show=flex")
+        self.assertIn('<span class="badge" lang="ja">装備中</span>', flex, "the flex on the wheel is marked")
+
+    def test_the_loadout_v2_when_v3_is_not_there(self):
+        self.riot.loadout_version = 2
+        loadout = self.riot.pd["loadout"]
+        del loadout["ActiveExpressions"], loadout["DynamicOptions"]
+        loadout["Sprays"] = [
+            {"EquipSlotID": "x", "SprayID": "dd000000-0000-4000-8000-000000000001", "SprayLevelID": None}
+        ]
+        self.link()
+        self.assertIn('<p class="worn-name">プライム ヴァンダル</p>', self.page(f"/collection?weapon={VANDAL}"))
+        self.assertIn('<option value="x">1（いま GG スプレー）</option>', self.page("/collection?show=sprays"))
+
+    def test_what_is_worn_cannot_be_read(self):
+        """No loadout (both answer 404): nothing is called worn or standard, and the page says why."""
+        self.riot.loadout_version = 1
+        self.link()
+        text = self.page()
+        self.assertIn("いま装備しているものを Riot から読めませんでした", text)
+        self.assertIn("loadout 404 RESOURCE_NOT_FOUND", text)
+        self.assertNotIn('<small class="worn">', text)
+        self.assertIn('<ul class="guns"', text, "what is owned is still shown")
+        vandal = self.page(f"/collection?weapon={VANDAL}")
+        now = vandal[vandal.index('class="worn-now') : vandal.index('class="items skins rows"')]
+        self.assertIn('<p class="worn-name">読めませんでした</p>', now)
+        self.assertNotIn("標準", now)
+        self.assertNotIn('<span class="badge">装備中</span>', vandal)
+        self.assertNotIn("読めませんでした", self.page("/collection?show=agents"))
+
     def test_kept_a_while(self):
         self.link()
         self.page()

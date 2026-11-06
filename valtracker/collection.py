@@ -7,6 +7,7 @@ from __future__ import annotations
 from collections import Counter
 
 from valtracker.content import Content, variant_name
+from valtracker.riot import ITEM_TYPES
 
 #: The tabs: the collection's kind -> its name on the page (the owner's page: Japanese only).
 TABS = {
@@ -45,6 +46,24 @@ def _id(value) -> str:
     return str(value or "").lower()
 
 
+def expressions(loadout: dict) -> list[dict]:
+    """What the loadout's wheel holds, in its order: ``[{"slot", "type": PD's item type, "id"}]``. playerloadout v3
+    lists sprays and flex as ``ActiveExpressions`` (``TypeID``, ``AssetID``; a place is its position there), v2 had
+    only sprays (``Sprays``, a place is its ``EquipSlotID``)."""
+    found = []
+    if isinstance(loadout.get("ActiveExpressions"), list):
+        for number, item in enumerate(loadout["ActiveExpressions"]):
+            if isinstance(item, dict) and item.get("AssetID"):
+                found.append({"slot": str(number), "type": _id(item.get("TypeID")), "id": _id(item["AssetID"])})
+        return found
+    for item in loadout.get("Sprays") or []:
+        if isinstance(item, dict) and item.get("EquipSlotID"):
+            found.append(
+                {"slot": str(item["EquipSlotID"]), "type": ITEM_TYPES["sprays"], "id": _id(item.get("SprayID"))}
+            )
+    return found
+
+
 def page(found: dict, content: Content, lang: str, show: str, weapon: str = "") -> dict:
     """What collection.html shows of ``found`` (riot.Riot.collection) with the tab ``show`` open; on the skins'
     tab, ``weapon`` (a uuid) is the weapon whose skins are open, as the game's collection opens one at a time."""
@@ -78,6 +97,8 @@ def page(found: dict, content: Content, lang: str, show: str, weapon: str = "") 
         ],
         "show": show,
         "missing": show in (found.get("missing") or []) or show not in owned,
+        # what is worn could not be read (PD's playerloadout): nothing is marked worn, and nothing called standard
+        "worn_read": isinstance(found.get("loadout"), dict),
         "items": items,
         "picked": picked,
         "problem_detail": found.get("problem") or "",
@@ -86,16 +107,14 @@ def page(found: dict, content: Content, lang: str, show: str, weapon: str = "") 
 
 
 def _spray_slots(loadout: dict, content: Content, lang: str) -> list[dict]:
-    """The spray wheel's places, in the loadout's order: ``[{"slot": EquipSlotID, "number", "name": the spray in
+    """The wheel's places that hold a spray, in the loadout's order: ``[{"slot", "number", "name": the spray in
     it}]`` (the owner picks where a spray goes)."""
     index = content.index("sprays", lang)
     slots = []
-    for spray in loadout.get("Sprays") or []:
-        if isinstance(spray, dict) and spray.get("EquipSlotID"):
-            known = index.get(_id(spray.get("SprayID"))) or {}
-            slots.append(
-                {"slot": str(spray["EquipSlotID"]), "number": len(slots) + 1, "name": known.get("displayName") or ""}
-            )
+    for item in expressions(loadout):
+        if item["type"] == ITEM_TYPES["sprays"]:
+            known = index.get(item["id"]) or {}
+            slots.append({"slot": item["slot"], "number": len(slots) + 1, "name": known.get("displayName") or ""})
     return slots
 
 
@@ -302,7 +321,7 @@ def _cards(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict
 
 
 def _sprays(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict]:
-    worn = Counter(_id(spray.get("SprayID")) for spray in loadout.get("Sprays") or [] if isinstance(spray, dict))
+    worn = Counter(item["id"] for item in expressions(loadout) if item["type"] == ITEM_TYPES["sprays"])
     picture = lambda item: item.get("fullTransparentIcon") or item.get("displayIcon")
     return _simple("sprays", owned.get("sprays"), content, lang, picture, worn)
 
@@ -314,7 +333,8 @@ def _titles(owned: dict, loadout: dict, content: Content, lang: str) -> list[dic
 
 
 def _flex(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict]:
-    return _simple("flex", owned.get("flex"), content, lang, lambda item: item.get("displayIcon"), Counter())
+    worn = Counter(item["id"] for item in expressions(loadout) if item["type"] == ITEM_TYPES["flex"])
+    return _simple("flex", owned.get("flex"), content, lang, lambda item: item.get("displayIcon"), worn)
 
 
 def _agents(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict]:

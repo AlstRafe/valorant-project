@@ -1,7 +1,8 @@
 """The app with the tests' made-up answers of the outside APIs (tests/helpers.py), for looking at the pages and for
 tests/ui/audit.js: the owner signed in to Riot (so /queues and the owner's store show), made-up matches on the servers
 page, pictures a browser can show, one player with the longest name there can be, a lifetime of matches for the
-made-up player (pages of them, long charts), and a ``visitor=1`` cookie that shows a page as a visitor sees it.
+made-up player (pages of them, long charts), a ``visitor=1`` cookie that shows a page as a visitor sees it, and
+``/collection?loadout=none`` (Riot gives no loadout).
 
     python tests/ui/serve.py [port, default 5077]
 """
@@ -218,6 +219,12 @@ def main() -> None:
                 else "0001-01-01T00:00:00Z"
             )
             app.config["VAL_RIOT"].cache.put("live", None, 0)
+        # /collection?...&loadout=none: Riot gives no loadout (what is worn cannot be read)
+        if environ.get("PATH_INFO", "").startswith("/collection"):
+            version = 1 if "loadout=none" in environ.get("QUERY_STRING", "") else 3
+            if app.riot.loadout_version != version:
+                app.riot.loadout_version = version
+                app.config["VAL_RIOT"].cache.put("collection", None, 0)
         return inner(environ, start)
 
     app.wsgi_app = wsgi
