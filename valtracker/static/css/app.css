@@ -2334,9 +2334,11 @@ meter {
 }
 
 /* Settings */
+/* a file name or an address in the text (instance/riot.json, playvalorant.com/opt_in#…) may break anywhere */
 .panel {
   margin-top: 1rem;
   padding: 0.2rem 1.2rem 1.2rem;
+  overflow-wrap: anywhere;
   border: 1px solid var(--rule);
   border-radius: 14px;
   background: var(--card);

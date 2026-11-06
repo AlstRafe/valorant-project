@@ -106,7 +106,7 @@ FAILURES = {
     "down": (503, "戦績のサービスから答えがありませんでした。時間をおいてもう一度どうぞ。", None),
 }
 
-#: Why the owner's Riot account could not be read (the owner's pages: Japanese only).
+#: Why the owner's Riot account could not be read (riot_failure: in the page's language).
 RIOT_FAILURES = {
     "nologin": "Riot アカウントがまだ連携されていません。設定で ssid を貼ってください。",
     "badpaste": "貼られたものが ssid ではありませんでした。手順 3 の値（Value）をそのまま貼ってください。",
@@ -118,6 +118,11 @@ RIOT_FAILURES = {
 
 def _t(ja: str, **values) -> str:
     return i18n.text(getattr(g, "lang", i18n.DEFAULT), ja, **values)
+
+
+def riot_failure(kind: str) -> str:
+    """Why the owner's Riot account could not be read (RiotError's kind), in the page's language."""
+    return _t(RIOT_FAILURES.get(kind, RIOT_FAILURES["down"]))
 
 
 def _failure(kind: str) -> tuple[int, str, bool]:
@@ -1107,7 +1112,7 @@ def register(app: Flask) -> None:
             found = current_app.config["VAL_RIOT"].collection()
         except RiotError as error:
             status = 503 if error.kind in ("busy", "down") else 200
-            values = {"problem": RIOT_FAILURES.get(error.kind, RIOT_FAILURES["down"]), "detail": error.detail}
+            values = {"problem": riot_failure(error.kind), "detail": error.detail}
             return render_template("collection.html", **values, settings_link=status == 200), status
         weapon = request.args.get("weapon", "")[:36] if show == "skins" else ""
         sets = [item for item in current_app.config["VAL_SETS"].load().get("sets") or [] if isinstance(item, dict)]
@@ -1122,27 +1127,28 @@ def register(app: Flask) -> None:
     def settings():
         security.owner_only()
         store, riot = current_app.config["VAL_SETTINGS"], current_app.config["VAL_RIOT"]
-        saved = riot_problem = ""
+        saved = riot_problem = riot_detail = ""
         if request.method == "POST":
             do = request.form.get("do")
             if do == "clear":
                 store.save(henrik_key="")
-                saved = "API キーを消しました。"
+                saved = _t("API キーを消しました。")
             elif do == "riot":
                 try:
                     linked = riot.sign_in(request.form.get("riot", ""))
-                    saved = f"Riot アカウント {linked['name']}#{linked['tag']} と連携しました。"
+                    saved = _t(
+                        "Riot アカウント {account} と連携しました。", account=f"{linked['name']}#{linked['tag']}"
+                    )
                 except RiotError as error:
-                    riot_problem = RIOT_FAILURES.get(error.kind, RIOT_FAILURES["down"])
-                    riot_problem += f"（{error.detail}）" if error.detail else ""
+                    riot_problem, riot_detail = riot_failure(error.kind), error.detail
             elif do == "riot_off":
                 riot.sign_out()
-                saved = "Riot アカウントとの連携を解除しました。"
+                saved = _t("Riot アカウントとの連携を解除しました。")
             else:
                 key = request.form.get("henrik_key", "").strip()
                 if key:
                     store.save(henrik_key=key[:200])
-                    saved = "API キーを保存しました。"
+                    saved = _t("API キーを保存しました。")
         key = store.henrik_key()
         shown = f"{key[:4]}…{key[-4:]}" if len(key) > 12 else ("●●●●" if key else "")
         status = riot.status()
@@ -1154,6 +1160,7 @@ def register(app: Flask) -> None:
             riot=status,
             riot_until=until,
             riot_problem=riot_problem,
+            riot_detail=riot_detail,
             riot_link=AUTHORIZE,
         )
 

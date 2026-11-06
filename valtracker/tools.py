@@ -20,7 +20,7 @@ from valtracker.henrik import BOARD_PAGE, HenrikError
 from valtracker.riot import RiotError
 from valtracker.riotweb import RiotWebError
 from valtracker.stats import JST
-from valtracker.views import QUEUES, RIOT_FAILURES, _failure, _rank, _t, act_left, cluster, share_text
+from valtracker.views import QUEUES, _failure, _rank, _t, act_left, cluster, riot_failure, share_text
 
 #: The leaderboard's and the notices' regions, in the order of the tabs -> their names (translated).
 REGION_NAMES = {
@@ -403,7 +403,7 @@ def _queues_page() -> tuple[dict, int]:
         found = current_app.config["VAL_RIOT"].queues()
     except RiotError as error:
         if security.is_owner():
-            values["problem"] = RIOT_FAILURES.get(error.kind, RIOT_FAILURES["down"])
+            values["problem"] = riot_failure(error.kind)
             values["settings_link"] = error.kind not in ("busy", "down")
         else:
             values["problem"] = _t("いまはゲームの設定を読めません。時間をおいてもう一度どうぞ。")
@@ -478,8 +478,7 @@ def _day_text(day: str) -> str:
         moment = datetime.fromisoformat(day)
     except ValueError:
         return day
-    weekday = "月火水木金土日"[moment.weekday()]
-    return f"{moment.month}月{moment.day}日（{weekday}）"
+    return i18n.weekday(g.lang, moment)
 
 
 def _ics(text: str) -> str:
@@ -651,7 +650,7 @@ def register(app: Flask) -> None:
             try:
                 found = riot.shop()
             except RiotError as error:
-                values["own_problem"] = RIOT_FAILURES.get(error.kind, RIOT_FAILURES["down"])
+                values["own_problem"] = riot_failure(error.kind)
                 values["own_detail"] = error.detail
                 values["own_settings"] = error.kind not in ("busy", "down")
             else:

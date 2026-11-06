@@ -13,7 +13,7 @@
 <span class="iname">{{ item.name or '—' }}{% if item.amount and item.amount > 1 %} ×{{ item.amount }}{% endif %}</span>
 {% if item.price %}{{ price(item.price, icon, item.base) }}{% endif %}
 {% if item.skin %}</a>{% endif %}
-{% if item.discount %}<span class="badge">−{{ item.discount }}%</span>{% elif item.owned %}<span class="badge" lang="ja">所持</span>{% elif item.wanted %}<span class="badge" lang="ja">欲しい</span>{% endif %}
+{% if item.discount %}<span class="badge">−{{ item.discount }}%</span>{% elif item.owned %}<span class="badge">{{ t('所持') }}</span>{% elif item.wanted %}<span class="badge">{{ t('欲しい') }}</span>{% endif %}
 </li>
 {% endfor %}</ul>
 {%- endmacro %}
@@ -38,44 +38,44 @@
 </section>
 {% include "_pages.html" %}
 {% if owner %}
-<div lang="ja">
+<div>
 {% if own_problem %}
 <p class="problem" role="alert">{{ own_problem }}{% if own_detail %} <code>{{ own_detail }}</code>{% endif %}</p>
-{% if own_settings %}<p><a class="button" href="{{ url_for('settings') }}#riot">設定で Riot と連携する</a></p>{% endif %}
+{% if own_settings %}<p><a class="button" href="{{ url_for('settings') }}#riot">{{ t('設定で Riot と連携する') }}</a></p>{% endif %}
 {% elif own %}
 {% if own.wallet %}
-<ul class="wallet" aria-label="残高">
+<ul class="wallet" aria-label="{{ t('残高') }}">
 {% for coin in own.wallet %}<li title="{{ coin.name }}">{% if coin.icon %}<img src="{{ media(coin.icon) }}" alt="" width="24" height="24">{% endif %}<span class="sr">{{ coin.name }}</span><strong>{{ '{:,}'.format(coin.amount) }}</strong></li>
 {% endfor %}</ul>
 {% endif %}
-{% if own.wanted %}<p class="verdict ok" role="status">欲しいスキンが並んでいます: {{ own.wanted|join('、') }}</p>{% endif %}
+{% if own.wanted %}<p class="verdict ok" role="status">{{ t('欲しいスキンが並んでいます: {skins}', skins=own.wanted|join(t('、'))) }}</p>{% endif %}
 <section class="shelf">
-<h2>{{ own.name }} さんの今日のスキン {{ left(own.daily_left) }}</h2>
-<p class="meta">{% if own.streak > 1 %}<strong>{{ own.streak }} 日連続</strong>でチェック · {% endif %}<a href="{{ url_for('shop_history') }}">これまでのストア</a> · <a href="{{ url_for('skins', wants=1) }}">欲しいリスト</a></p>
-{% if own.daily %}{{ things(own.daily, own.vp_icon) }}{% else %}<p class="note">読み込めませんでした。</p>{% endif %}
+<h2>{{ t('{name} さんの今日のスキン', name=own.name) }} {{ left(own.daily_left) }}</h2>
+<p class="meta">{% if own.streak > 1 %}{{ t('{days} 日連続でチェック', days=own.streak) }} · {% endif %}<a href="{{ url_for('shop_history') }}">{{ t('これまでのストア') }}</a> · <a href="{{ url_for('skins', wants=1) }}">{{ t('欲しいリスト') }}</a></p>
+{% if own.daily %}{{ things(own.daily, own.vp_icon) }}{% else %}<p class="note">{{ t('読み込めませんでした。') }}</p>{% endif %}
 </section>
 {% if own.night is not none %}
 <section class="shelf night" data-night="{{ own.night_key }}">
-<h2>ナイトマーケット {{ left(own.night_left) }}</h2>
-<p class="flip-all" hidden><button type="button" class="quiet">すべてめくる</button></p>
+<h2>{{ t('ナイトマーケット') }} {{ left(own.night_left) }}</h2>
+<p class="flip-all" hidden data-flip="{{ t('めくる') }}"><button type="button" class="quiet">{{ t('すべてめくる') }}</button></p>
 {{ things(own.night, own.vp_icon) }}
 </section>
 {% endif %}
 {% if own.bundles %}
 <section class="shelf">
-<h2>バンドル</h2>
+<h2>{{ t('バンドル') }}</h2>
 {{ bundles(own.bundles, own.vp_icon) }}
 </section>
 {% endif %}
 {% if own.accessories %}
 <section class="shelf">
-<h2>アクセサリー（キングダムクレジット） {{ left(own.accessories_left) }}</h2>
+<h2>{{ t('アクセサリー（キングダムクレジット）') }} {{ left(own.accessories_left) }}</h2>
 {{ things(own.accessories, own.kingdom_icon) }}
 </section>
 {% endif %}
-{% if own.missing %}<p class="note">読み込めなかったもの: {{ own.missing|join(', ') }}{% if own.problem_detail %} <code>{{ own.problem_detail }}</code>{% endif %}</p>{% endif %}
-<p class="note">ストアは 2 分ほどで新しくなります。「所持」は持っているもの。</p>
-<p class="note"><a href="{{ url_for('shop_reminder') }}" download>入れ替わりをカレンダーに入れる（毎日の通知）</a></p>
+{% if own.missing %}<p class="note">{{ t('読み込めなかったもの:') }} {{ own.missing|join(', ') }}{% if own.problem_detail %} <code>{{ own.problem_detail }}</code>{% endif %}</p>{% endif %}
+<p class="note">{{ t('ストアは 2 分ほどで新しくなります。「所持」は持っているもの。') }}</p>
+<p class="note"><a href="{{ url_for('shop_reminder') }}" download>{{ t('入れ替わりをカレンダーに入れる（毎日の通知）') }}</a></p>
 {% endif %}
 </div>
 {% endif %}

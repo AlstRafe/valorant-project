@@ -27,15 +27,15 @@
 </section>
 
 {% if me %}
-<section class="me-box" lang="ja" aria-labelledby="me-title">
-<h2 id="me-title">自分</h2>
+<section class="me-box" aria-labelledby="me-title">
+<h2 id="me-title">{{ t('自分') }}</h2>
 <ul class="me-links">
-{% if me.linked and me.name %}<li><a href="{{ url_for('player', name=me.name, tag=me.tag) }}"><strong>自分の戦績</strong><small>{{ me.name }}#{{ me.tag }}</small></a></li>{% endif %}
-<li><a href="{{ url_for('live') }}"><strong>ライブ</strong><small data-live-text>キュー開始・ピックと確定</small></a></li>
-<li><a href="{{ url_for('progress') }}"><strong>進み具合</strong><small>バトルパス・ミッション</small></a></li>
-<li><a href="{{ url_for('collection') }}"><strong>所持品</strong><small>スキンやカードを装備</small></a></li>
+{% if me.linked and me.name %}<li><a href="{{ url_for('player', name=me.name, tag=me.tag) }}"><strong>{{ t('自分の戦績') }}</strong><small>{{ me.name }}#{{ me.tag }}</small></a></li>{% endif %}
+<li><a href="{{ url_for('live') }}"><strong>{{ t('ライブ') }}</strong><small data-live-text>{{ t('キュー開始・ピックと確定') }}</small></a></li>
+<li><a href="{{ url_for('progress') }}"><strong>{{ t('進み具合') }}</strong><small>{{ t('バトルパス・ミッション') }}</small></a></li>
+<li><a href="{{ url_for('collection') }}"><strong>{{ t('所持品') }}</strong><small>{{ t('スキンやカードを装備') }}</small></a></li>
 </ul>
-{% if not me.linked %}<p class="note">Riot アカウントを<a href="{{ url_for('settings') }}#riot">設定</a>で連携すると、自分の戦績・ライブ・進み具合・所持品をここから開けます。</p>{% endif %}
+{% if not me.linked %}<p class="note">{{ t('Riot アカウントを設定で連携すると、自分の戦績・ライブ・進み具合・所持品をここから開けます。') }} <a href="{{ url_for('settings') }}#riot">{{ t('設定で Riot と連携する') }}</a></p>{% endif %}
 </section>
 {% endif %}
 <section class="people" aria-labelledby="fav-title">

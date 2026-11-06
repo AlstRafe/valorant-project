@@ -66,7 +66,7 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("完了", text)
         self.assertIn("<strong>1 / 3</strong> 完了", text)
         self.assertIn("週のミッションが補充されるのは", text)
-        self.assertIn('href="/progress" lang="ja" aria-current="true"', text)
+        self.assertIn('href="/progress" aria-current="true"', text)
 
     def test_progress_when_riot_fails(self):
         self.link()
@@ -98,7 +98,7 @@ class OwnerTest(unittest.TestCase):
         text = self.page("/live")
         self.assertIn("キューを開始しました", text)
         self.assertIn("VALORANT: マッチング中", text)
-        self.assertIn("<strong>コンペティティブ</strong> でマッチング中", text)
+        self.assertIn("コンペティティブ でマッチング中", text)
         self.assertNotIn("キューを開始しました", self.page("/live"), "said once")
         self.client.post("/live/act", data={"csrf": self.token(), "do": "leave"})
         self.assertEqual(self.riot.pressed[-1], ("leave", ""))
@@ -142,15 +142,18 @@ class OwnerTest(unittest.TestCase):
 
     def test_the_live_tab_on_every_page(self):
         text = self.page("/")
-        self.assertIn('class="live-tab" lang="ja" data-live-state="/live/state"', text)
+        self.assertIn('class="live-tab" data-live-state="/live/state"', text)
         self.assertNotIn("live-tab", self.page("/", environ_base=VISITOR), "the owner's only")
         for path in ("/live", "/progress"):
             text = self.page(path)
             self.assertIn('data-live-state="/live/state" aria-current="page"', text, path)
             self.assertNotIn('href="/shop" aria-current="page"', text, "no longer under the shop")
-            self.assertIn('href="/progress" lang="ja"', text, "the two pages lead to each other")
+            self.assertIn(
+                '<nav class="modes" aria-label="ページ"><a href="/live"', text, "the two pages lead to each other"
+            )
+            self.assertIn('<a href="/progress"', text)
         shop = self.page("/shop")
-        self.assertNotIn('href="/live" lang="ja">', shop.split("<main")[1], "the shop's pages are the shop's")
+        self.assertNotIn('aria-label="ページ"><a href="/live"', shop, "the shop's pages are the shop's")
         self.assertIn('href="/collection"', shop)
         tools = self.page("/tools")
         self.assertIn("<strong>ライブ</strong>", tools)
@@ -171,7 +174,7 @@ class OwnerTest(unittest.TestCase):
         self.assertEqual(found["words"], "エージェント選択中（アセント）")
         self.assertEqual(found["match"], self.riot.pd["pregame"]["ID"].lower(), "told once per match")
         self.riot.phase = "ingame"
-        self.assertEqual(self.state()["words"], "試合中（アセント）")
+        self.assertEqual(self.state()["words"], "対戦中（アセント）")
 
     def test_the_live_page_says_what_it_does_on_each_screen(self):
         self.link()
@@ -189,14 +192,14 @@ class OwnerTest(unittest.TestCase):
     def test_the_top_pages_box(self):
         text = self.page("/")
         self.assertIn('<h2 id="me-title">自分</h2>', text)
-        self.assertIn("設定</a>で連携すると", text)
+        self.assertIn("設定で連携すると", text)
         self.assertNotIn("<strong>自分の戦績</strong>", text, "not linked yet: whose page is not known")
         self.assertNotIn("me-title", self.page("/", environ_base=VISITOR))
         self.link()
         text = self.page("/")
         self.assertIn('href="/p/Owner/JP1"><strong>自分の戦績</strong><small>Owner#JP1</small>', text)
         self.assertIn("<small data-live-text>", text, "the game's state, from the tab's asking")
-        self.assertNotIn("設定</a>で連携すると", text)
+        self.assertNotIn("設定で連携すると", text)
 
     def test_the_players_act_and_the_teams_rank(self):
         self.link()
@@ -269,7 +272,7 @@ class OwnerTest(unittest.TestCase):
         self.client.post("/live/act", data={"csrf": self.token(), "do": "lock", "value": sova})
         self.assertEqual(self.riot.pressed, [("select", sova), ("lock", sova)])
         text = self.page("/live")
-        self.assertIn("<strong>ソーヴァ</strong> で確定しています", text)
+        self.assertIn("ソーヴァ で確定しています", text)
         self.assertNotIn('class="pick-grid"', text)
         self.assertNotIn(jett + '" class="pick', text)
 
@@ -310,7 +313,7 @@ class OwnerTest(unittest.TestCase):
         self.link()
         self.riot.phase = "ingame"
         text = self.page("/live")
-        self.assertIn("試合中", text)
+        self.assertIn("対戦中", text)
         self.assertIn("アンレート", text)
         self.assertLess(text.index("味方"), text.index("相手"))
         self.assertLess(text.index("Owner"), text.index("Teammate"), "our team first")
@@ -666,6 +669,40 @@ class OwnerTest(unittest.TestCase):
     def test_sets_are_the_owners(self):
         answer = self.client.post("/collection/sets", data={"do": "save"}, environ_base=VISITOR)
         self.assertIn(answer.status_code, (400, 404))
+
+    def test_the_owners_pages_in_other_languages(self):
+        """The owner's own pages are in the page's language too (not Japanese whatever the language)."""
+        self.link()
+        self.riot.phase = "menus"
+        pages = {
+            "/live": ("Reads your VALORANT as you play", "Start the queue", "Party"),
+            "/progress": ("Battle pass", "Agent contracts", "Missions"),
+            "/collection": ("Gun buddies", "Filter by skin or weapon name", "Level 187"),
+            f"/collection?weapon={VANDAL}": ("Equipped now", "Buddy: ", "Take off"),
+            "/collection?show=sets": ("Save what is equipped now", "Set name", "None yet."),
+            "/settings": ("HenrikDev API key", "Stay signed in", "linked to Owner#JP1 (AP)"),
+            "/shop/history": ("Past stores",),
+            "/": ("Me", "Collection", "Progress", "Start a queue · pick and lock in"),
+            "/tools": ("My account", "Battle pass, contracts and missions."),
+        }
+        self.client.set_cookie("lang", "en-GB")
+        for path, words in pages.items():
+            text = self.page(path)
+            for said in words:
+                self.assertIn(said, text, path)
+            main = text.split("<main", 1)[1]
+            self.assertNotIn('lang="ja"', main.replace('lang="ja" hreflang="ja"', ""), path)
+        self.assertIn('data-live-said="Agent select has started|Pick on Live|Close|Live ({state})"', self.page("/"))
+        self.assertEqual(self.state()["words"], "Menu")
+        self.client.set_cookie("lang", "ko")
+        self.assertIn("총기 장식", self.page("/collection"))
+        self.client.set_cookie("lang", "zh-TW")
+        self.assertIn("即時", self.page("/live"))
+        answer = self.client.post(
+            "/collection/equip",
+            data={"csrf": self.token(), "show": "titles", "item": "ee000000-0000-4000-8000-000000000002"},
+        )
+        self.assertIn("已裝備", self.page(answer.headers["Location"]))
 
 
 if __name__ == "__main__":

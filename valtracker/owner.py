@@ -1,4 +1,4 @@
-"""The owner's pages beyond the store and the collection (Japanese only, refused to visitors):
+"""The owner's pages beyond the store and the collection (in the page's language, refused to visitors):
 
 - /progress: the battle pass, the events' passes, the agents' contracts and the missions (progress.py);
 - /live: the game right now (live.py), asked again every few seconds: the menus (the party, start or stop a
@@ -27,7 +27,7 @@ from valtracker.henrik import REGIONS
 from valtracker.riot import ITEM_TYPES, RiotError
 from valtracker.stats import JST
 from valtracker.tools import _when
-from valtracker.views import QUEUES, RIOT_FAILURES, _t
+from valtracker.views import QUEUES, _t, riot_failure
 
 #: What can be worn from the collection page -> where the loadout keeps it.
 #: How long /live links to the match the owner played last, once it is over.
@@ -46,13 +46,21 @@ LIVE_SAID = {
     ),
     "unknown": ("そのボタンは使えません。", False),
 }
+#: What the collection page says after a press that worked.
+EQUIP_SAID = {
+    "ok": "装備しました。Riot に保存されています。",
+    "okopen": "装備しました。Riot に保存されています。開いているゲームでは次の試合から使われます"
+    "（ゲームのコレクション画面は、開き直すまで前の装備のままのことがあります）。",
+    "saved": "いまの装備をセットに保存しました。",
+    "deleted": "セットを消しました。",
+}
 #: Why wearing something did not work (shown on the collection page).
 EQUIP_FAILURES = {
     "unknown": "持っていないものは装備できません。",
     "noweapon": "その武器がロードアウトにありませんでした。",
     "notsaved": "Riot は受け付けましたが、装備は変わっていませんでした。",
     "melee": "近接武器にはガンバディーを付けられません。",
-    "full": f"セットは {owned_items.MAX_SETS} 個までです。使わないものを消してから保存してください。",
+    "full": "セットは {count} 個までです。使わないものを消してから保存してください。",
     "noset": "そのセットはもうありません。",
 }
 
@@ -99,7 +107,7 @@ def _match_link(match_id: str) -> str:
 
 def _problem(error: RiotError) -> dict:
     return {
-        "problem": RIOT_FAILURES.get(error.kind, RIOT_FAILURES["down"]),
+        "problem": riot_failure(error.kind),
         "detail": error.detail,
         "settings_link": error.kind not in ("busy", "down"),
     }
@@ -279,7 +287,8 @@ def register(app: Flask) -> None:
             found, current_app.config["VAL_CONTENT"], g.lang, me, owned, _queue_name, _agents_on_the_map
         )
         said = session.pop("live_said", "")  # once: the page is asked again every few seconds
-        words, worked = LIVE_SAID.get(said) or (RIOT_FAILURES.get(said, RIOT_FAILURES["down"]) if said else "", False)
+        words, worked = LIVE_SAID.get(said) or (riot_failure(said) if said else "", False)
+        words = _t(words) if said in LIVE_SAID else words
         return render_template(
             "live.html",
             **values,
@@ -384,7 +393,7 @@ def register(app: Flask) -> None:
                 loadout = current_app.config["VAL_RIOT"].loadout()
             except RiotError as error:
                 return back(error.kind, error.detail)
-            name = " ".join(request.form.get("name", "").split())[:30] or f"セット {len(sets) + 1}"
+            name = " ".join(request.form.get("name", "").split())[:30] or _t("セット {number}", number=len(sets) + 1)
             when = datetime.now(JST).isoformat(timespec="minutes")
             sets.append({"id": secrets.token_hex(8), "name": name, "at": when, **owned_items.snapshot(loadout)})
             store.save(sets=sets)
@@ -402,19 +411,11 @@ def register(app: Flask) -> None:
 
 
 def equip_said(kind: str) -> tuple[str, bool]:
-    """The collection page's words after wearing something: (words, whether it worked)."""
+    """The collection page's words after wearing something, in the page's language: (words, whether it worked)."""
     if not kind:
         return "", False
-    if kind == "ok":
-        return "装備しました。Riot に保存されています。", True
-    if kind == "saved":
-        return "いまの装備をセットに保存しました。", True
-    if kind == "deleted":
-        return "セットを消しました。", True
-    if kind == "okopen":
-        return (
-            "装備しました。Riot に保存されています。開いているゲームでは次の試合から使われます"
-            "（ゲームのコレクション画面は、開き直すまで前の装備のままのことがあります）。",
-            True,
-        )
-    return EQUIP_FAILURES.get(kind) or RIOT_FAILURES.get(kind) or RIOT_FAILURES["down"], False
+    if kind in EQUIP_SAID:
+        return _t(EQUIP_SAID[kind]), True
+    if kind in EQUIP_FAILURES:
+        return _t(EQUIP_FAILURES[kind], count=owned_items.MAX_SETS), False
+    return riot_failure(kind), False
