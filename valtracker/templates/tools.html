@@ -38,13 +38,13 @@
 </ul>
 </section>
 {% if owner %}
-<section class="tool-section" aria-labelledby="tools-me" lang="ja">
-<h2 id="tools-me">自分のアカウント</h2>
+<section class="tool-section" aria-labelledby="tools-me">
+<h2 id="tools-me">{{ t('自分のアカウント') }}</h2>
 <ul class="tool-grid">
-<li><a href="{{ url_for('live') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.2"/><path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.3 5.3a9.5 9.5 0 0 0 0 13.4M18.7 5.3a9.5 9.5 0 0 1 0 13.4"/></svg><strong>ライブ</strong><small>いまの VALORANT からキュー開始、エージェントのピックと確定。</small></a></li>
-<li><a href="{{ url_for('progress') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16M4 18V6M8 18v-5M12 18V9M16 18v-7"/></svg><strong>進み具合</strong><small>バトルパス・契約・ミッション。</small></a></li>
-<li><a href="{{ url_for('collection') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h16V20H4z"/><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5M4 13h16"/></svg><strong>所持品</strong><small>自分のスキン・バディー・カードなど。</small></a></li>
-<li><a href="{{ url_for('settings') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg><strong>設定</strong><small>HenrikDev の API キーと Riot アカウントの連携。</small></a></li>
+<li><a href="{{ url_for('live') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.2"/><path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.3 5.3a9.5 9.5 0 0 0 0 13.4M18.7 5.3a9.5 9.5 0 0 1 0 13.4"/></svg><strong>{{ t('ライブ') }}</strong><small>{{ t('いまの VALORANT からキュー開始、エージェントのピックと確定。') }}</small></a></li>
+<li><a href="{{ url_for('progress') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16M4 18V6M8 18v-5M12 18V9M16 18v-7"/></svg><strong>{{ t('進み具合') }}</strong><small>{{ t('バトルパス・契約・ミッション。') }}</small></a></li>
+<li><a href="{{ url_for('collection') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h16V20H4z"/><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5M4 13h16"/></svg><strong>{{ t('所持品') }}</strong><small>{{ t('自分のスキン・バディー・カードなど。') }}</small></a></li>
+<li><a href="{{ url_for('settings') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg><strong>{{ t('設定') }}</strong><small>{{ t('HenrikDev の API キーと Riot アカウントの連携。') }}</small></a></li>
 </ul>
 </section>
 {% endif %}

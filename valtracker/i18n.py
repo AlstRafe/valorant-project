@@ -125,3 +125,18 @@ def day(lang: str, moment) -> str:
     if lang == "ko":
         return f"{moment.year}년 {moment.month}월 {moment.day}일"
     return f"{moment.year}年{moment.month}月{moment.day}日"
+
+
+_EN_DAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+
+
+def weekday(lang: str, moment) -> str:
+    """A day of this year with its weekday: 11月6日（金） / Fri 6 Nov / 11월 6일 (금) / 11月6日（五）."""
+    number = moment.weekday()
+    if lang == "en-GB":
+        return f"{_EN_DAYS[number]} {moment.day} {_EN_MONTHS[moment.month - 1]}"
+    if lang == "ko":
+        return f"{moment.month}월 {moment.day}일 ({'월화수목금토일'[number]})"
+    if lang == "zh-TW":
+        return f"{moment.month}月{moment.day}日（{'一二三四五六日'[number]}）"
+    return f"{moment.month}月{moment.day}日（{'月火水木金土日'[number]}）"

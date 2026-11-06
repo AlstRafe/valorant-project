@@ -1,40 +1,45 @@
 {% extends "base.html" %}
-{% block title %}設定 · {{ site_name }}{% endblock %}
+{# A sentence of the page's language with one link in it: the link's place is {link} in the words. #}
+{% macro linked(words, href, label, outside=true) -%}
+{%- set parts = words.split('{link}', 1) -%}
+{{ parts[0] }}<a href="{{ href }}"{% if outside %} rel="noopener noreferrer" target="_blank"{% endif %}>{{ label }}</a>{{ parts[1] if parts|length > 1 else '' }}
+{%- endmacro %}
+{% block title %}{{ t('設定') }} · {{ site_name }}{% endblock %}
 {% block main %}
-<section class="hero" lang="ja">
-<h1>設定</h1>
-<p class="lead">持ち主だけが見られるページです（公開の名前では、持ち主としてログインした端末だけ）。</p>
+<section class="hero">
+<h1>{{ t('設定') }}</h1>
+<p class="lead">{{ t('持ち主だけが見られるページです（公開の名前では、持ち主としてログインした端末だけ）。') }}</p>
 {% if saved %}<p class="done" role="status">{{ saved }}</p>{% endif %}
 </section>
-<section class="panel" lang="ja" aria-labelledby="key-title">
-<h2 id="key-title">HenrikDev API キー</h2>
-<p>プレイヤーの検索と試合の取得に使います。<a href="https://api.henrikdev.xyz/dashboard/" rel="noopener noreferrer" target="_blank">HenrikDev のダッシュボード</a>で「API Keys」→「Generate New Key」から無料で作れます。キーはこのサーバーの <code>instance/settings.json</code> にだけ保存し、画面には一部しか出しません。</p>
-<p>いまのキー: {% if shown %}<code>{{ shown }}</code>{% else %}未設定{% endif %}</p>
+<section class="panel" aria-labelledby="key-title">
+<h2 id="key-title">{{ t('HenrikDev API キー') }}</h2>
+<p>{{ linked(t('プレイヤーの検索と試合の取得に使います。{link}で「API Keys」→「Generate New Key」から無料で作れます。'), 'https://api.henrikdev.xyz/dashboard/', t('HenrikDev のダッシュボード')) }} {{ t('キーはこのサーバーの instance/settings.json にだけ保存し、画面には一部しか出しません。') }}</p>
+<p>{{ t('いまのキー:') }} {% if shown %}<code>{{ shown }}</code>{% else %}{{ t('未設定') }}{% endif %}</p>
 <form method="post" class="stack">
 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-<label for="henrik_key">新しいキー</label>
+<label for="henrik_key">{{ t('新しいキー') }}</label>
 <input id="henrik_key" name="henrik_key" type="password" autocomplete="off" spellcheck="false" maxlength="200">
-<div class="row"><button type="submit" name="do" value="save">保存</button>{% if shown %}<button type="submit" name="do" value="clear" class="quiet">消す</button>{% endif %}</div>
+<div class="row"><button type="submit" name="do" value="save">{{ t('保存') }}</button>{% if shown %}<button type="submit" name="do" value="clear" class="quiet">{{ t('消す') }}</button>{% endif %}</div>
 </form>
 </section>
-<section class="panel" lang="ja" id="riot" aria-labelledby="riot-title">
-<h2 id="riot-title">Riot アカウント（所持品）</h2>
-<p>あなたの Riot アカウントの所持品（スキン・バディー・カードなど）と残高を<a href="{{ url_for('collection') }}">所持品</a>のページに出すのに使います。パスワードは使いません。</p>
-<p>いまの状態: {% if riot.linked %}<strong>{{ riot.name }}#{{ riot.tag }}</strong>（{{ riot.shard|upper }}）と連携中{% if riot.signed_out %} — <span class="down">ログインが切れています。下の手順でもう一度貼ってください。</span>{% elif riot_until %} — {{ riot_until }} まで{% endif %}{% else %}未連携{% endif %}</p>
-{% if riot.problem %}<p class="note">最後に読めなかったもの: <code>{{ riot.problem }}</code></p>{% endif %}
-{% if riot_problem %}<p class="problem" role="alert">{{ riot_problem }}</p>{% endif %}
+<section class="panel" id="riot" aria-labelledby="riot-title">
+<h2 id="riot-title">{{ t('Riot アカウント（所持品）') }}</h2>
+<p>{{ linked(t('あなたの Riot アカウントの所持品（スキン・バディー・カードなど）と残高を{link}のページに出すのに使います。パスワードは使いません。'), url_for('collection'), t('所持品'), false) }}</p>
+<p>{{ t('いまの状態:') }} {% if riot.linked %}{{ t('{account}（{shard}）と連携中', account=riot.name ~ '#' ~ riot.tag, shard=riot.shard|upper) }}{% if riot.signed_out %} — <span class="down">{{ t('ログインが切れています。下の手順でもう一度貼ってください。') }}</span>{% elif riot_until %} — {{ t('{when} まで', when=riot_until) }}{% endif %}{% else %}{{ t('未連携') }}{% endif %}</p>
+{% if riot.problem %}<p class="note">{{ t('最後に読めなかったもの:') }} <code>{{ riot.problem }}</code></p>{% endif %}
+{% if riot_problem %}<p class="problem" role="alert">{{ riot_problem }}{% if riot_detail %} <code>{{ riot_detail }}</code>{% endif %}</p>{% endif %}
 <ol class="steps">
-<li>PC の Chrome か Edge で <a href="{{ riot_link }}" rel="noopener noreferrer" target="_blank">Riot のサインイン</a>を開き、「サインインしたままにする」にチェックを入れてログイン（playvalorant.com に移れば成功）</li>
-<li>同じブラウザで <a href="https://auth.riotgames.com/userinfo" rel="noopener noreferrer" target="_blank">auth.riotgames.com/userinfo</a> を開く（中身は空やエラーでよい）</li>
-<li>F12 →「アプリケーション」→「Cookie」→「https://auth.riotgames.com」→ 名前が <code>ssid</code> の行の「値」をコピー</li>
-<li>下に貼って「連携」</li>
+<li>{{ linked(t('PC の Chrome か Edge で{link}を開き、「サインインしたままにする」にチェックを入れてログイン（playvalorant.com に移れば成功）'), riot_link, t('Riot のサインイン')) }}</li>
+<li>{{ linked(t('同じブラウザで {link} を開く（中身は空やエラーでよい）'), 'https://auth.riotgames.com/userinfo', 'auth.riotgames.com/userinfo') }}</li>
+<li>{{ t('F12 →「アプリケーション」→「Cookie」→「https://auth.riotgames.com」→ 名前が ssid の行の「値」をコピー') }}</li>
+<li>{{ t('下に貼って「連携」') }}</li>
 </ol>
 <form method="post" class="stack">
 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
 <label for="riot-ssid">ssid</label>
 <input id="riot-ssid" name="riot" type="password" autocomplete="off" spellcheck="false" maxlength="8000">
-<div class="row"><button type="submit" name="do" value="riot">連携</button>{% if riot.linked %}<button type="submit" name="do" value="riot_off" class="quiet">解除</button>{% endif %}</div>
+<div class="row"><button type="submit" name="do" value="riot">{{ t('連携') }}</button>{% if riot.linked %}<button type="submit" name="do" value="riot_off" class="quiet">{{ t('解除') }}</button>{% endif %}</div>
 </form>
-<p class="note">ssid はログインしたままの状態そのものなので、このサーバーの <code>instance/riot.json</code> にだけ保存し、画面には出しません。使うたびに Riot が新しいものに替え、サーバーが保存し直します。Riot でパスワードを変えるかログアウトすると使えなくなるので、そのときはもう一度貼ってください。ログイン後に移ったアドレス（<code>playvalorant.com/opt_in#access_token=…</code>）を貼っても 1 時間だけ使えます。</p>
+<p class="note">{{ t('ssid はログインしたままの状態そのものなので、このサーバーの instance/riot.json にだけ保存し、画面には出しません。使うたびに Riot が新しいものに替え、サーバーが保存し直します。Riot でパスワードを変えるかログアウトすると使えなくなるので、そのときはもう一度貼ってください。ログイン後に移ったアドレス（playvalorant.com/opt_in#access_token=…）を貼っても 1 時間だけ使えます。') }}</p>
 </section>
 {% endblock %}

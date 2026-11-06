@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}これまでのストア · {{ site_name }}{% endblock %}
+{% block title %}{{ t('これまでのストア') }} · {{ site_name }}{% endblock %}
 {% block main %}
-<div lang="ja">
-<p class="crumb"><a href="{{ url_for('shop') }}">ショップ</a></p>
+<div>
+<p class="crumb"><a href="{{ url_for('shop') }}">{{ t('ショップ') }}</a></p>
 <section class="hero">
-<h1>これまでのストア</h1>
-<p class="lead">このページでショップを開いた日の、毎日のスキンとナイトマーケットです。{% if streak > 1 %}いま <strong>{{ streak }} 日連続</strong>でチェックしています。{% endif %}</p>
+<h1>{{ t('これまでのストア') }}</h1>
+<p class="lead">{{ t('このページでショップを開いた日の、毎日のスキンとナイトマーケットです。') }}{% if streak > 1 %}{{ t('いま {days} 日連続でチェックしています。', days=streak) }}{% endif %}</p>
 </section>
 {% if not days %}
-<p class="note">まだありません。ショップを開くとその日のストアがここに残ります。</p>
+<p class="note">{{ t('まだありません。ショップを開くとその日のストアがここに残ります。') }}</p>
 {% else %}
 {% for day in days %}
 <section class="shelf history-day">
@@ -19,13 +19,13 @@
 {% if item.image %}<img src="{{ media(item.image) }}" alt="" width="256" height="96" loading="lazy">{% endif %}
 <span class="iname">{{ item.name or '—' }}</span>
 {% if item.price %}<span class="price">{% if vp_icon %}<img src="{{ media(vp_icon) }}" alt="" width="16" height="16">{% endif %}<strong>{{ '{:,}'.format(item.price) }}</strong></span>{% endif %}
-{% if item.skin and seen[item.skin] > 1 %}<small>{{ seen[item.skin] }} 回目</small>{% endif %}
+{% if item.skin and seen[item.skin] > 1 %}<small>{{ t('{count} 回目', count=seen[item.skin]) }}</small>{% endif %}
 {% if item.skin %}</a>{% endif %}
-{% if item.wanted %}<span class="badge">欲しい</span>{% endif %}
+{% if item.wanted %}<span class="badge">{{ t('欲しい') }}</span>{% endif %}
 </li>
 {% endfor %}</ul>
 {% if day.night %}
-<h3 class="history-night">ナイトマーケット</h3>
+<h3 class="history-night">{{ t('ナイトマーケット') }}</h3>
 <ul class="items offers night">
 {% for item in day.night %}<li class="item{% if item.tier and item.tier.key %} tier-{{ item.tier.key }}{% endif %}{% if item.wanted %} want{% endif %}">
 {% if item.skin %}<a class="skin-link" href="{{ url_for('skin', uuid=item.skin) }}">{% endif %}
@@ -33,13 +33,13 @@
 <span class="iname">{{ item.name or '—' }}</span>
 {% if item.price %}<span class="price">{% if vp_icon %}<img src="{{ media(vp_icon) }}" alt="" width="16" height="16">{% endif %}<strong>{{ '{:,}'.format(item.price) }}</strong></span>{% endif %}
 {% if item.skin %}</a>{% endif %}
-{% if item.discount %}<span class="badge">−{{ item.discount }}%</span>{% elif item.wanted %}<span class="badge">欲しい</span>{% endif %}
+{% if item.discount %}<span class="badge">−{{ item.discount }}%</span>{% elif item.wanted %}<span class="badge">{{ t('欲しい') }}</span>{% endif %}
 </li>
 {% endfor %}</ul>
 {% endif %}
 </section>
 {% endfor %}
 {% endif %}
-<p class="note">「n 回目」はこのページに残っている日の中で並んだ回数です。日付はストアの日（日本時間の 9 時から翌朝 9 時まで）。</p>
+<p class="note">{{ t('「n 回目」はこのページに残っている日の中で並んだ回数です。日付はストアの日（日本時間の 9 時から翌朝 9 時まで）。') }}</p>
 </div>
 {% endblock %}

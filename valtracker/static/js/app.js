@@ -916,7 +916,7 @@
       var button = document.createElement("button");
       button.type = "button";
       button.className = "flip";
-      button.textContent = "めくる";
+      button.textContent = (all && all.getAttribute("data-flip")) || "めくる";
       button.addEventListener("click", function () {
         turn(card, true);
       });
@@ -1060,6 +1060,14 @@
   function liveWatch() {
     var tab = document.querySelector("[data-live-state]");
     if (!tab) return;
+    // the words in the page's language (base.html): agent select began, pick on ライブ, close, ライブ（{state}）
+    var said = (tab.getAttribute("data-live-said") || "").split("|");
+    var SAID = {
+      began: said[0] || "エージェント選択が始まりました",
+      pick: said[1] || "ライブでピックする",
+      close: said[2] || "閉じる",
+      label: said[3] || "ライブ（{state}）",
+    };
     var STOP = { nologin: true, signedout: true, badpaste: true };
     var TOLD = "val.live.told";
     var page = document.querySelector("[data-live-phase]");
@@ -1085,21 +1093,22 @@
       box = document.createElement("div");
       box.id = "live-alert";
       box.className = "live-alert";
-      box.lang = "ja";
       box.setAttribute("role", "status");
       var words = document.createElement("p");
       var strong = document.createElement("strong");
-      strong.textContent = "エージェント選択が始まりました";
+      strong.textContent = SAID.began;
       words.appendChild(strong);
-      if (state.map) words.appendChild(document.createTextNode("（" + state.map + "）"));
+      var wide = /^(ja|zh)/.test(document.documentElement.lang); // full-width brackets in Japanese and Chinese
+      if (state.map)
+        words.appendChild(document.createTextNode(wide ? "（" + state.map + "）" : " (" + state.map + ")"));
       var go = document.createElement("a");
       go.className = "button";
       go.href = tab.getAttribute("href");
-      go.textContent = "ライブでピックする";
+      go.textContent = SAID.pick;
       var close = document.createElement("button");
       close.type = "button";
       close.className = "quiet";
-      close.textContent = "閉じる";
+      close.textContent = SAID.close;
       close.addEventListener("click", function () {
         told(state.match || "seen");
         box.remove();
@@ -1112,7 +1121,7 @@
 
     function show(state) {
       tab.setAttribute("data-phase", state.phase || "off");
-      tab.setAttribute("aria-label", state.words ? "ライブ（" + state.words + "）" : "ライブ");
+      tab.setAttribute("aria-label", state.words ? SAID.label.replace("{state}", state.words) : tab.textContent.trim());
       tab.title = state.words || "";
       // the top page's 自分 box says it too
       document.querySelectorAll("[data-live-text]").forEach(function (words) {

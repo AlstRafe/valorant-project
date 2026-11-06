@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from valtracker import i18n
 from valtracker.activity import FEW
 from valtracker.content import Content
 
@@ -284,10 +285,21 @@ def page(
     return values
 
 
+#: Where the owner's game is, in a few words (the header's ライブ tab, the top page's 自分 box).
+STATE_WORDS = {
+    "menus": "メニュー",
+    "queue": "マッチング中",
+    "pregame": "エージェント選択中",
+    "ingame": "対戦中",
+    "unknown": "ゲームの状態を読めません",
+    "closed": "VALORANT は開いていません",
+}
+
+
 def state(found: dict, content: Content, lang: str) -> dict:
     """Where the owner's game is, in a few words, for the header's ライブ tab on every page (/live/state):
     ``{"phase": "menus", "queue" (matchmaking), "pregame", "ingame" or "" (closed or not known), "words", "map",
-    "match": the match's id (agent select and the match), "running"}``. The owner's pages are in Japanese only."""
+    "match": the match's id (agent select and the match), "running"}``, in the page's language (``lang``)."""
     phase = found.get("phase") or ""
     party = found.get("party") if isinstance(found.get("party"), dict) else {}
     match = found.get("match") if isinstance(found.get("match"), dict) else {}
@@ -298,15 +310,11 @@ def state(found: dict, content: Content, lang: str) -> dict:
         address = str(match.get("MapID") or "").rsplit("/", 1)[-1].lower()
         place = (content.map_index(lang).get(address) or {}).get("displayName") or ""
     running = found.get("running")
-    words = {
-        "menus": "メニュー",
-        "queue": "マッチング中",
-        "pregame": "エージェント選択中",
-        "ingame": "試合中",
-    }.get(phase) or ("ゲームの状態を読めません" if running is None else "VALORANT は開いていません")
+    words = STATE_WORDS.get(phase) or STATE_WORDS["unknown" if running is None else "closed"]
+    words = i18n.text(lang, words)
     return {
         "phase": phase,
-        "words": f"{words}（{place}）" if place else words,
+        "words": i18n.text(lang, "{state}（{map}）", state=words, map=place) if place else words,
         "map": place,
         "match": _id(match.get("ID") or match.get("MatchID")) if phase in ("pregame", "ingame") else "",
         "running": running,

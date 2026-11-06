@@ -1,4 +1,4 @@
-"""Every text the pages show has its Korean, English and Chinese (the owner's own pages excepted)."""
+"""Every text the pages show has its Korean, English and Chinese, the owner's own pages too."""
 
 import ast
 import re
@@ -6,23 +6,22 @@ import unittest
 from pathlib import Path
 
 from valtracker import crosshair, i18n
+from valtracker.collection import TABS
 from valtracker.compare import LINES
-from valtracker.locale import OWNER_ONLY, TEXTS
+from valtracker.live import STATE_WORDS
+from valtracker.locale import TEXTS
+from valtracker.owner import EQUIP_FAILURES, EQUIP_SAID, LIVE_SAID
 from valtracker.skinlib import LEVEL_ITEMS
 from valtracker.tools import CLOCKS, PARTY_WORDS, REGION_NAMES
-from valtracker.views import BUYS, CLUSTERS, ENDINGS, FAILURES, LOBBY_LABELS, QUEUES
+from valtracker.views import BUYS, CLUSTERS, ENDINGS, FAILURES, LOBBY_LABELS, QUEUES, RIOT_FAILURES
 from valtracker.world import CATEGORIES
 
 PACKAGE = Path(__file__).resolve().parent.parent / "valtracker"
-#: The owner's pages: Japanese only.
-OWNER_PAGES = {"settings.html", "collection.html"}
 
 
 def used_texts() -> set[str]:
     found = set()
     for template in (PACKAGE / "templates").glob("*.html"):
-        if template.name in OWNER_PAGES:
-            continue
         found.update(re.findall(r"\bt\('((?:[^'\\]|\\.)*)'", template.read_text(encoding="utf-8")))
     for module in PACKAGE.glob("*.py"):
         tree = ast.parse(module.read_text(encoding="utf-8"))
@@ -48,7 +47,14 @@ def used_texts() -> set[str]:
     found.update(label for label, _ in LOBBY_LABELS.values() if re.search(r"[ぁ-んァ-ヶ一-龯]", label))
     found.update(text for _, visitor, owner in FAILURES.values() for text in (visitor, owner) if text)
     found.update(("自動", "オフ", "オン"))
-    return found - OWNER_ONLY
+    found.update(RIOT_FAILURES.values())
+    found.update(TABS.values())
+    found.update(STATE_WORDS.values())
+    found.update(EQUIP_SAID.values())
+    found.update(EQUIP_FAILURES.values())
+    found.update(words for words, _ in LIVE_SAID.values())
+    found.add("{state}（{map}）")
+    return found
 
 
 class TranslationsTest(unittest.TestCase):

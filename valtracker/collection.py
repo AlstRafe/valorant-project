@@ -12,7 +12,7 @@ from valtracker import i18n
 from valtracker.content import Content, variant_name
 from valtracker.riot import ITEM_TYPES, wearing
 
-#: The tabs: the collection's kind -> its name on the page (the owner's page: Japanese only).
+#: The tabs: the collection's kind -> its name on the page (in the page's language: i18n).
 TABS = {
     "skins": "スキン",
     "buddies": "ガンバディー",
@@ -114,7 +114,8 @@ def page(found: dict, content: Content, lang: str, show: str, weapon: str = "", 
         "title": title.get("titleText") or "",
         "wallet": _wallet(found.get("wallet"), content, lang),
         "tabs": [
-            {"key": key, "name": name, "count": counts[key], "current": key == show} for key, name in TABS.items()
+            {"key": key, "name": i18n.text(lang, name), "count": counts[key], "current": key == show}
+            for key, name in TABS.items()
         ],
         "show": show,
         "missing": show != "sets" and (show in (found.get("missing") or []) or show not in owned),
@@ -297,7 +298,7 @@ def _sets(sets: list, loadout: dict | None, content: Content, lang: str) -> list
             {
                 "id": kept.get("id") or "",
                 "name": kept.get("name") or "",
-                "when": _saved_at(kept.get("at")),
+                "when": _saved_at(kept.get("at"), lang),
                 "card": card.get("smallArt"),
                 "title": title.get("titleText") or "",
                 "guns": guns,
@@ -399,7 +400,7 @@ def _skins(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict
             for number, part in enumerate(wearable):
                 part["current"] = on and part["uuid"] == equipped.get(uuid)
                 if number == 0:
-                    part["name"] = "標準"
+                    part["name"] = i18n.text(lang, "標準")
             items.append(
                 {
                     "uuid": uuid,
@@ -541,9 +542,9 @@ def _agents(owned: dict, loadout: dict, content: Content, lang: str) -> list[dic
     ]
 
 
-def _saved_at(value) -> str:
-    """When a set was saved (an ISO time in Japan's), short: 11月7日 2:50."""
+def _saved_at(value, lang: str) -> str:
+    """When a set was saved (an ISO time in Japan's), short: 11月7日 2:50 / 7 Nov 2:50."""
     try:
-        return i18n.when("ja", datetime.fromisoformat(str(value or "")))
+        return i18n.when(lang, datetime.fromisoformat(str(value or "")))
     except ValueError:
         return ""

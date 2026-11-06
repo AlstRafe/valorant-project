@@ -160,10 +160,10 @@ class CollectionTest(unittest.TestCase):
         self.assertTrue(asked, "the loadout is asked")
         self.assertTrue(all("/personalization/v3/" in url for url in asked), asked)
         sprays = self.page("/collection?show=sprays")
-        self.assertIn('<span class="badge" lang="ja">装備中</span>', sprays)
+        self.assertIn('<span class="badge">装備中</span>', sprays)
         self.assertIn('<option value="0">1（いま GG スプレー）</option>', sprays, "a place is its position")
         flex = self.page("/collection?show=flex")
-        self.assertIn('<span class="badge" lang="ja">装備中</span>', flex, "the flex on the wheel is marked")
+        self.assertIn('<span class="badge">装備中</span>', flex, "the flex on the wheel is marked")
 
     def test_the_loadout_v2_when_v3_is_not_there(self):
         self.riot.loadout_version = 2

@@ -9,7 +9,7 @@
 </section>
 {% if problem %}
 <p class="problem" role="alert">{{ problem }}</p>
-{% if settings_link %}<p lang="ja"><a class="button" href="{{ url_for('settings') }}#riot">設定で Riot と連携する</a></p>{% endif %}
+{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">{{ t('設定で Riot と連携する') }}</a></p>{% endif %}
 {% else %}
 {% if competitive %}
 <section aria-labelledby="party-title">
