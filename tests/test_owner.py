@@ -95,6 +95,16 @@ class OwnerTest(unittest.TestCase):
         self.assertEqual(self.riot.pressed[-1], ("leave", ""))
         self.assertIn("キューをやめました", self.page("/live"))
 
+    def test_each_press_is_sent_on_a_slow_clock(self):
+        """Windows' clock moves in 16 ms steps: two presses in one step are still two presses."""
+        self.link()
+        self.riot.phase = "menus"
+        riot = self.app.config["VAL_RIOT"]
+        riot.cache = type(riot.cache)(64, clock=lambda: 100.0)
+        self.client.post("/live/act", data={"csrf": self.token(), "do": "start", "value": "competitive"})
+        self.client.post("/live/act", data={"csrf": self.token(), "do": "leave"})
+        self.assertEqual(self.riot.pressed[-1], ("leave", ""))
+
     def test_buttons_refused(self):
         self.link()
         token = self.token()

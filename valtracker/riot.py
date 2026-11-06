@@ -414,8 +414,10 @@ class Riot:
         }
 
     def _kept(self, key: str, read, seconds: float = KEEP) -> dict:
-        """``read(tokens, saved)``'s answer, kept ``seconds``; a refused token is traded for a new one once."""
-        kept = self.cache.get(key)
+        """``read(tokens, saved)``'s answer, kept ``seconds`` (0: a button, done each time it is pressed: Windows'
+        clock moves in 16 ms steps, so an answer kept for 0 seconds was still there for the next press); a refused
+        token is traded for a new one once."""
+        kept = self.cache.get(key) if seconds > 0 else None
         if kept is not None:
             return kept
         for renew in (False, True):
@@ -429,7 +431,8 @@ class Riot:
                 if renew:  # a token just made is refused too: not the cookie's fault
                     raise RiotError("down", error.detail) from None
         self.store.save(problem=found["problem"] or None)
-        self.cache.put(key, found, seconds)
+        if seconds > 0:
+            self.cache.put(key, found, seconds)
         return found
 
     # -- tokens ---------------------------------------------------------------------------------------
