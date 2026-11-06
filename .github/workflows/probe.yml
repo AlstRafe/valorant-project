@@ -23,14 +23,33 @@ jobs:
                   return getattr(e, "code", 0), str(e), (e.read() if hasattr(e, "read") else b"")
           s, ct, b = get("https://haruxera.duckdns.org/val/esports")
           print("LIVE /esports", s, len(b))
-          for url in ("https://valorantesports.com/ja-JP/schedule",):
+          import collections
+          def events(t):
+              t = t.replace(":undefined", ":null")
+              dec, found = json.JSONDecoder(), {}
+              for m in re.finditer(r'\{"__typename":"Event(Match|Show)"', t):
+                  try:
+                      obj, _ = dec.raw_decode(t, m.start())
+                  except ValueError as e:
+                      print("   bad at", m.start(), e); continue
+                  found[obj.get("id")] = obj
+              return list(found.values())
+          s, ct, b = get("https://valorantesports.com/ja-JP/schedule")
+          t = b.decode("utf-8", "replace")
+          print("hrefs:", sorted(set(re.findall(r'href="(/ja-JP/[^"?#]*(?:schedule|result|vod|match|watch|leagues)[^"]*)"', t)))[:40])
+          for m in re.finditer(r'"variables":(\{[^{}]*\})', t):
+              print("VARS", m.group(1)[:400])
+          print("transport:", [t[m.start()-120:m.start()+40] for m in re.finditer(r'ApolloSSR|__APOLLO', t)][:3])
+          for url in ("https://valorantesports.com/ja-JP/schedule", "https://valorantesports.com/ja-JP/schedule?state=completed", "https://valorantesports.com/ja-JP/results", "https://valorantesports.com/ja-JP/vods", "https://valorantesports.com/ja-JP/schedule?leagues=vct_pacific", "https://valorantesports.com/ja-JP"):
               s, ct, b = get(url)
               t = b.decode("utf-8", "replace")
-              spots = [m.start() for m in re.finditer("startTime", t)]
-              print("\n==", url, s, len(t), "| startTime in raw", len(spots))
-              print("  script kinds:", sorted(set(re.findall(r"<script([^>]*)>", t)))[:20])
-              print("  push heads:", sorted(set(m.group(0)[:30] for m in re.finditer(r"self\.__next_f\.push\(\[\d+", t))))
-              for n in (1, 2, 5, 40):
-                  if n < len(spots):
-                      i = spots[n]
-                      print(f"  RAW #{n} at {i}:", t[i - 1200: i + 1800])
+              ev = events(t)
+              states = collections.Counter((e.get("__typename"), e.get("state")) for e in ev)
+              leagues = collections.Counter((e.get("league") or {}).get("slug") for e in ev)
+              times = sorted(e.get("startTime") or "" for e in ev)
+              print("\n==", url, s, len(t), "| events", len(ev), dict(states))
+              print("   leagues", dict(leagues))
+              print("   from", times[:1], "to", times[-1:])
+              done = [e for e in ev if e.get("state") == "completed"][:1] + [e for e in ev if e.get("state") == "inProgress"][:1]
+              for e in done:
+                  print("   SAMPLE", json.dumps(e, ensure_ascii=False)[:1800])
