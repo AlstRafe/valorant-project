@@ -6,6 +6,8 @@
   --ink: #1d1c1a;
   --soft: #5f5c56;
   --rule: #d9d5cc;
+  /* the edge of what can be pressed or typed in: 3:1 against the page (WCAG 1.4.11); --rule stays for lines */
+  --edge: #8a857b;
   --accent: #b8202f;
   --on-a: #fff;
   --win: #17704f;
@@ -24,6 +26,7 @@
     --ink: #ebe7df;
     --soft: #a8a49b;
     --rule: #3a3833;
+    --edge: #78736a;
     --accent: #ff5f6b;
     --on-a: #141310;
     --win: #4cc79a;
@@ -38,6 +41,7 @@
   --ink: #ebe7df;
   --soft: #a8a49b;
   --rule: #3a3833;
+  --edge: #78736a;
   --accent: #ff5f6b;
   --on-a: #141310;
   --win: #4cc79a;
@@ -213,7 +217,7 @@ h2 {
   align-items: center;
   min-height: 2.25rem;
   padding: 0 0.8rem;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--edge);
   border-radius: 999px;
   background: var(--card);
   color: var(--ink);
@@ -252,7 +256,7 @@ h2 {
   gap: 0.4rem;
   min-height: 2.25rem;
   padding: 0 0.8rem;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--edge);
   border-radius: 999px;
   background: var(--card);
   color: var(--ink);
@@ -426,7 +430,7 @@ h2 {
   min-width: 0;
   min-height: 2.9rem;
   padding: 0 0.9rem;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--edge);
   border-radius: 10px;
   background: var(--card);
   color: var(--ink);
@@ -455,7 +459,7 @@ button,
 button.quiet {
   background: transparent;
   color: var(--soft);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--edge);
 }
 .problem {
   margin: 0.8rem 0 0;
@@ -591,7 +595,7 @@ button.quiet {
   flex: none;
   width: 2.9rem;
   padding: 0;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--edge);
   background: var(--card);
   color: var(--soft);
 }
@@ -626,7 +630,7 @@ button.quiet {
   min-height: 0;
   margin-left: 0.4rem;
   padding: 0;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--edge);
   border-radius: 8px;
   background: transparent;
   color: var(--soft);
@@ -747,7 +751,7 @@ button.quiet {
 }
 .acts-head select {
   padding: 0.35rem 0.6rem;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--edge);
   border-radius: 8px;
   background: var(--card);
   color: var(--ink);
@@ -884,7 +888,7 @@ span.tri.down {
 .modes a {
   flex: none;
   padding: 0.35rem 0.8rem;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--edge);
   border-radius: 999px;
   background: var(--card);
   color: var(--soft);
@@ -1400,6 +1404,47 @@ meter {
   :root:not([data-theme="light"]) .wpic img,
   :root:not([data-theme="light"]) .gun img {
     filter: none;
+  }
+}
+/* More of the game's pictures are drawn for its dark screens. On paper: the VP and Kingdom Credits signs (white)
+   are inked; rank and tier signs (Radiant's is pale yellow) get a thin dark edge; the items (light grey guns,
+   white sprays) a soft shadow to stand on. */
+:root:not([data-theme="dark"]) .price img {
+  filter: invert(0.85);
+}
+:root:not([data-theme="dark"]) img.tier,
+:root:not([data-theme="dark"]) .prank,
+:root:not([data-theme="dark"]) .thresholds img,
+:root:not([data-theme="dark"]) .rank img,
+:root:not([data-theme="dark"]) .rank-cell img,
+:root:not([data-theme="dark"]) .act-numbers img,
+:root:not([data-theme="dark"]) img.tri,
+:root:not([data-theme="dark"]) .wallet img {
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / 75%));
+}
+:root:not([data-theme="dark"]) .items .item > img,
+:root:not([data-theme="dark"]) .items .item > a > img {
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 45%));
+}
+:root:not([data-theme="dark"]) .items .item.locked > img {
+  filter: grayscale(1) drop-shadow(0 1px 2px rgb(0 0 0 / 45%));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .price img,
+  :root:not([data-theme="light"]) img.tier,
+  :root:not([data-theme="light"]) .prank,
+  :root:not([data-theme="light"]) .thresholds img,
+  :root:not([data-theme="light"]) .rank img,
+  :root:not([data-theme="light"]) .rank-cell img,
+  :root:not([data-theme="light"]) .act-numbers img,
+  :root:not([data-theme="light"]) img.tri,
+  :root:not([data-theme="light"]) .wallet img,
+  :root:not([data-theme="light"]) .items .item > img,
+  :root:not([data-theme="light"]) .items .item > a > img {
+    filter: none;
+  }
+  :root:not([data-theme="light"]) .items .item.locked > img {
+    filter: grayscale(1);
   }
 }
 .weapons meter {
@@ -1986,7 +2031,6 @@ meter {
 }
 .modes small {
   margin-left: 0.15rem;
-  opacity: 0.75;
   font-size: 0.8em;
 }
 .find {
@@ -1997,7 +2041,7 @@ meter {
   max-width: 22rem;
   min-height: 2.6rem;
   padding: 0 0.9rem;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--edge);
   border-radius: 10px;
   background: var(--card);
   color: var(--ink);
@@ -2122,11 +2166,12 @@ meter {
 .skins .tier-ultra {
   border-top-color: #fad663;
 }
-.item.locked {
-  opacity: 0.45;
-}
 .item.locked img {
+  opacity: 0.45;
   filter: grayscale(1);
+}
+.item.locked .iname {
+  color: var(--soft);
 }
 .steps {
   padding-left: 1.3rem;
@@ -2295,7 +2340,7 @@ code {
 .button.quiet {
   background: transparent;
   color: var(--ink);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--edge);
 }
 
 /* Riot's notices; the top page's line about one. */
@@ -2485,8 +2530,13 @@ code {
 .offers .tier-ultra {
   border-top-color: #fad663;
 }
-.item.have {
-  opacity: 0.6;
+/* owned: the picture fades, the name, price and 「所持」 stay readable */
+.item.have img {
+  opacity: 0.5;
+}
+.item.have .iname,
+.item.have .price {
+  color: var(--soft);
 }
 .night .item {
   background: color-mix(in srgb, #6b3fd1 8%, var(--card));
@@ -2605,13 +2655,13 @@ code {
   margin: 0.5rem 0 0.2rem;
 }
 .hours .bar {
-  fill: color-mix(in srgb, var(--soft) 45%, transparent);
+  fill: color-mix(in srgb, var(--soft) 75%, transparent);
 }
 .hours .now {
   fill: var(--accent);
 }
 .hours .axis {
-  stroke: var(--rule);
+  stroke: var(--edge);
   stroke-width: 1;
 }
 .hours text {
@@ -2651,7 +2701,7 @@ code {
   min-width: 0;
   min-height: 2.9rem;
   padding: 0 0.6rem;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--edge);
   border-radius: 10px;
   background: var(--card);
   color: var(--ink);
@@ -3126,7 +3176,7 @@ code {
   gap: 0.35rem;
   min-height: 2.75rem;
   padding: 0 0.8rem;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--edge);
   border-radius: 999px;
   background: var(--card);
   white-space: nowrap;
@@ -3262,8 +3312,8 @@ code {
   width: 100%;
   height: 0.6rem;
 }
-.contract.complete {
-  opacity: 0.7;
+.contract.complete img {
+  opacity: 0.6;
 }
 .seat.me {
   border-color: var(--accent);
@@ -3340,7 +3390,7 @@ code {
   max-width: 100%;
   min-height: 2.4rem;
   padding: 0 0.4rem;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--edge);
   border-radius: 8px;
   background: var(--card);
   color: var(--ink);
@@ -3417,7 +3467,7 @@ code {
 .map-pick select {
   min-height: 2.6rem;
   padding: 0 0.6rem;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--edge);
   border-radius: 10px;
   background: var(--card);
   color: var(--ink);
