@@ -27,14 +27,15 @@ LINES = (
 )
 
 
-def _side(asked: str, mode: str) -> dict:
-    """One player: ``{"asked", "found": the player page's values or None, "problem"}``."""
+def _side(asked: str, mode: str, span: str = "") -> dict:
+    """One player: ``{"asked", "found": the player page's values or None, "problem"}``; ``span`` "all": over
+    their lifetime (views._lifetime)."""
     asked = _from_link(" ".join(asked.split()))[:40]
     parts = split_riot_id(asked)
     if not parts:
         problem = _t("「名前#タグ」の形で入れてください（例: Name#JP1）。") if asked else ""
         return {"asked": asked, "found": None, "problem": problem, "status": 400 if asked else 200}
-    values, status = _player(parts[0], parts[1], mode)
+    values, status = _player(parts[0], parts[1], mode, span=span)
     if not values.get("account"):
         return {"asked": asked, "found": None, "problem": values.get("problem") or "", "status": status}
     return {"asked": f"{values['name']}#{values['tag']}", "found": values, "problem": "", "status": 200}
@@ -104,7 +105,8 @@ def _rows(found: list[dict]) -> list[dict]:
 def page() -> tuple[dict, int]:
     mode = request.args.get("mode", "competitive")
     mode = mode if mode in MODES else "competitive"
-    sides = [_side(request.args.get(key, ""), mode) for key in ("a", "b")]
+    span = "all" if request.args.get("span") == "all" else ""
+    sides = [_side(request.args.get(key, ""), mode, span) for key in ("a", "b")]
     found = [side["found"] for side in sides]
     both = all(found)
     status = max(side["status"] for side in sides) if not both else 200
@@ -120,8 +122,14 @@ def page() -> tuple[dict, int]:
         "recent": RECENT,
         "mode": mode,
         "modes": [{"key": key, "name": _t(QUEUES[HENRIK_MODES[key]])} for key in MODES],
+        "span": span,
+        "spans": [{"key": "", "name": _t("直近 15 試合")}, {"key": "all", "name": _t("通算")}],
         "swap_url": url_for(
-            "compare", a=sides[1]["asked"], b=sides[0]["asked"], mode=mode if mode != "competitive" else None
+            "compare",
+            a=sides[1]["asked"],
+            b=sides[0]["asked"],
+            mode=mode if mode != "competitive" else None,
+            span=span or None,
         )
         if both
         else "",

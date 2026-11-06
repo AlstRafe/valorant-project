@@ -87,6 +87,14 @@ class CompareTest(unittest.TestCase):
         asked = [url for url in self.fetch.henrik_calls() if "/v4/matches/" in url]
         self.assertIn("mode=competitive", asked[-1], "a mode with nothing to compare is the usual one")
 
+    def test_lifetime(self):
+        text = self.page("/compare?a=Tester%23JP1&b=Other%23KR1&span=all")
+        self.assertIn('<option value="all" selected>通算</option>', text)
+        self.assertIn("それぞれ通算の試合（2 試合と 2 試合。", text)
+        self.assertIn('href="/p/Other/KR1?span=all"', text)
+        self.assertIn('href="/compare?a=Other%23KR1&amp;b=Tester%23JP1&amp;span=all"', text)
+        self.assertNotIn("多くて 15 試合", text)
+
     def test_in_english(self):
         self.client.set_cookie("lang", "en-GB")
         text = self.page("/compare?a=Tester%23JP1&b=Other%23KR1")

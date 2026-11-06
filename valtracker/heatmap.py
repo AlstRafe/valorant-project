@@ -94,9 +94,10 @@ def points(match: dict, mine: int) -> list[dict]:
     return found
 
 
-def drawing(drawn: dict, spots: list[dict], lines: bool = False) -> dict | None:
+def drawing(drawn: dict, spots: list[dict], lines: bool = False, most: int | None = None) -> dict | None:
     """What the page draws: the minimap, a dot for each kill and death (with a line to the other player's spot
-    when ``lines``), and the busiest named places with their kills, deaths and first deaths. None with too few."""
+    when ``lines``), and the busiest named places with their kills, deaths and first deaths. None with too few.
+    ``most``: the dots drawn at most (the first of ``spots``: the newest), while every one is counted."""
     dots, places = [], {}
     for spot in spots:
         at = onto(drawn, spot["at"])
@@ -128,9 +129,10 @@ def drawing(drawn: dict, spots: list[dict], lines: bool = False) -> dict | None:
     worst = max(busiest, key=lambda place: (place["deaths"] - place["kills"], place["deaths"]), default=None)
     return {
         "image": drawn["image"],
-        "dots": dots,
+        "dots": dots[:most] if most else dots,
         "kills": sum(dot["kind"] == "k" for dot in dots),
         "deaths": sum(dot["kind"] == "d" for dot in dots),
+        "drawn": min(len(dots), most or len(dots)),
         "sides": bool({dot["side"] for dot in dots} - {""}),
         "places": busiest[:PLACES_SHOWN],
         # where the player loses the most duels: worth a different angle or a utility first

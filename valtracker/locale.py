@@ -1868,6 +1868,101 @@ TEXTS = {
         "en-GB": "Search for {id}",
         "zh-TW": "搜尋「{id}」",
     },
+    "期間": {
+        "ko": "기간",
+        "en-GB": "Period",
+        "zh-TW": "期間",
+    },
+    "直近 15 試合": {
+        "ko": "최근 15경기",
+        "en-GB": "Last 15 matches",
+        "zh-TW": "最近 15 場",
+    },
+    "通算": {
+        "ko": "통산",
+        "en-GB": "Lifetime",
+        "zh-TW": "生涯",
+    },
+    "通算 {count} 試合": {
+        "ko": "통산 {count}경기",
+        "en-GB": "Lifetime · {count} matches",
+        "zh-TW": "生涯 {count} 場",
+    },
+    "{since} からの {count} 試合を数えています。": {
+        "ko": "{since}부터 {count}경기를 집계했습니다.",
+        "en-GB": "Counting {count} matches since {since}.",
+        "zh-TW": "統計自 {since} 起的 {count} 場比賽。",
+    },
+    "まだ数えられる試合がありません。": {
+        "ko": "아직 집계할 경기가 없습니다.",
+        "en-GB": "No matches to count yet.",
+        "zh-TW": "還沒有可以統計的比賽。",
+    },
+    "うち {thin} 試合は簡単な記録だけなので、KAST・ファーストキル・武器・キルの場所などは残りの {whole} 試合から出しています。": {
+        "ko": "그중 {thin}경기는 간단한 기록만 있어서 KAST·퍼스트 킬·무기·킬 위치 등은 나머지 {whole}경기로 계산합니다.",
+        "en-GB": "{thin} of them have a short record only, so KAST, first kills, weapons, kill spots and the like come from the other {whole}.",
+        "zh-TW": "其中 {thin} 場只有簡易紀錄，所以 KAST、首殺、武器、擊殺位置等是用其餘 {whole} 場算出的。",
+    },
+    "Riot から残りの試合を読み込んでいます（あと約 {left} 試合・{minutes} 分）。読み込んだ分から数えています。": {
+        "ko": "Riot에서 나머지 경기를 불러오는 중입니다 (약 {left}경기 · {minutes}분 남음). 불러온 경기까지 집계합니다.",
+        "en-GB": "Reading the rest of the matches from Riot (about {left} matches, {minutes} min to go). The numbers count what has been read so far.",
+        "zh-TW": "正在從 Riot 讀取其餘的比賽（還有約 {left} 場・{minutes} 分鐘）。目前以已讀取的比賽統計。",
+    },
+    "残りの試合を読み込んでいます。読み込んだ分から数えています。": {
+        "ko": "나머지 경기를 불러오는 중입니다. 불러온 경기까지 집계합니다.",
+        "en-GB": "Reading the rest of the matches. The numbers count what has been read so far.",
+        "zh-TW": "正在讀取其餘的比賽。目前以已讀取的比賽統計。",
+    },
+    "数え直す": {
+        "ko": "다시 집계",
+        "en-GB": "Count again",
+        "zh-TW": "重新統計",
+    },
+    "{count} 試合分": {
+        "ko": "{count}경기분",
+        "en-GB": "over {count} matches",
+        "zh-TW": "{count} 場的份",
+    },
+    "すべての試合": {
+        "ko": "모든 경기",
+        "en-GB": "All matches",
+        "zh-TW": "所有比賽",
+    },
+    "{page} / {pages} ページ": {
+        "ko": "{page} / {pages} 페이지",
+        "en-GB": "Page {page} of {pages}",
+        "zh-TW": "第 {page} / {pages} 頁",
+    },
+    "新しい試合": {
+        "ko": "최근 경기",
+        "en-GB": "Newer matches",
+        "zh-TW": "較新的比賽",
+    },
+    "古い試合": {
+        "ko": "이전 경기",
+        "en-GB": "Older matches",
+        "zh-TW": "較舊的比賽",
+    },
+    "このモードの試合はまだありません。": {
+        "ko": "이 모드의 경기는 아직 없습니다.",
+        "en-GB": "No matches in this mode yet.",
+        "zh-TW": "這個模式還沒有比賽。",
+    },
+    "まだ試合がありません。": {
+        "ko": "아직 경기가 없습니다.",
+        "en-GB": "No matches yet.",
+        "zh-TW": "還沒有比賽。",
+    },
+    "緑の点はキルを取ったときに立っていた場所、赤の点は倒された場所です（通算。点は新しいものから最大 {count} 個）。": {
+        "ko": "초록 점은 킬을 했을 때 서 있던 곳, 빨간 점은 죽은 곳입니다 (통산. 점은 최근 것부터 최대 {count}개).",
+        "en-GB": "Green dots are where the player stood for a kill, red ones where they died (lifetime; up to the newest {count} dots).",
+        "zh-TW": "綠點是擊殺時所站的位置，紅點是被擊殺的位置（生涯。點最多顯示最新的 {count} 個）。",
+    },
+    "それぞれ通算の試合（{a} 試合と {b} 試合。このサイトが読み込んだ分）の平均です。": {
+        "ko": "각각 통산 경기({a}경기와 {b}경기. 이 사이트가 불러온 만큼)의 평균입니다.",
+        "en-GB": "Each is the average over their lifetime ({a} and {b} matches, as far as this site has read).",
+        "zh-TW": "分別是生涯比賽（{a} 場與 {b} 場，本站已讀取的部分）的平均。",
+    },
 }
 
 #: Words only the owner sees (the settings, and why the search cannot work yet): Japanese only.

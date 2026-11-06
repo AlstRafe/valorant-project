@@ -975,6 +975,54 @@ span.tri.down {
   color: var(--on-a);
   font-weight: 700;
 }
+/* A player's latest matches or every match kept of them (their lifetime): two halves of one button. */
+.spans {
+  display: inline-flex;
+  margin: 1.5rem 0 0;
+  border: 1px solid var(--edge);
+  border-radius: 10px;
+  background: var(--card);
+  overflow: hidden;
+}
+.spans a {
+  padding: 0.45rem 1rem;
+  color: var(--soft);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.spans a + a {
+  border-left: 1px solid var(--edge);
+}
+.spans a:hover {
+  color: var(--ink);
+}
+.spans a[aria-current] {
+  background: var(--accent);
+  color: var(--on-a);
+}
+.spans + .modes {
+  margin-top: 0.7rem;
+}
+/* What a lifetime counts, and the reading still going on. */
+.life-note {
+  margin: 0.8rem 0 0;
+  color: var(--soft);
+  font-size: 0.92rem;
+}
+.life-note p {
+  margin: 0.3rem 0;
+}
+.life-note .reading {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.life-note .reading .spinner {
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-top: 0.2rem;
+}
 #games[aria-busy="true"] .summary,
 #games[aria-busy="true"] .matches {
   opacity: 0.45;

@@ -37,6 +37,14 @@ KEEP = {
 }
 #: The modes a player's seasons are counted in (stored matches; Deathmatch has no rounds or teams to count).
 STORED_MODES = ("competitive", "unrated", "swiftplay", "premier")
+#: The modes of stored matches (their ``meta.mode``, lower case) -> the queue id of the v4 matches.
+STORED_QUEUES = {
+    "spike rush": "spikerush",
+    "team deathmatch": "hurm",
+    "escalation": "ggteam",
+    "replication": "onefa",
+    "snowball fight": "snowball",
+}
 #: A player's page can be read again ("最新にする") once this long has passed since it was read (seconds).
 FRESH_AFTER = 60
 #: How long what "最新にする" dropped stays at hand, in case the new call fails (seconds).
@@ -175,6 +183,22 @@ class Henrik:
         query = urlencode({"mode": mode})
         path = f"/valorant/v1/stored-matches/{_region(region)}/{_part(name)}/{_part(tag)}?{query}"
         key = ("stored", _region(region), name.lower(), tag.lower(), mode)
+        return self._get(key, path, KEEP["stored"], _slim_stored)
+
+    def older(self, region: str, name: str, tag: str, start: int) -> list:
+        """PAGE of the player's matches from ``start`` on (newest first, any mode), each as ``match`` gives it: the
+        archive's (archive.py) when Riot cannot be asked."""
+        query = urlencode({"size": PAGE, "start": max(0, int(start))})
+        path = f"/valorant/v4/matches/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}?{query}"
+        key = ("older", _region(region), name.lower(), tag.lower(), max(0, int(start)))
+        found = self._get(key, path, KEEP["matches"], _slim_matches)
+        return [match for match in found if match["metadata"].get("is_completed", True)]
+
+    def stored_all(self, region: str, name: str, tag: str) -> list:
+        """Every match of any mode that HenrikDev keeps of the player (``stored`` without a mode): the archive's
+        thin lines, for the matches Riot no longer gives."""
+        path = f"/valorant/v1/stored-matches/{_region(region)}/{_part(name)}/{_part(tag)}"
+        key = ("stored", _region(region), name.lower(), tag.lower(), "")
         return self._get(key, path, KEEP["stored"], _slim_stored)
 
     def has_player(self, name: str, tag: str, mode: str = "") -> bool:
@@ -498,12 +522,19 @@ def _slim_stored(matches) -> list:
         damage = line.get("damage") if isinstance(line.get("damage"), dict) else {}
         agent = line.get("character") if isinstance(line.get("character"), dict) else {}
         place = meta.get("map") if isinstance(meta.get("map"), dict) else {}
+        mode = str(meta.get("mode") or "").strip().lower()
         found.append(
             {
                 "id": str(meta.get("id") or ""),
                 "season": str(season.get("short") or "").lower(),
                 "started": str(meta.get("started_at") or ""),
+                "at": _moment(meta.get("started_at")) if meta.get("started_at") else 0,
+                "queue": STORED_QUEUES.get(mode, mode.replace(" ", "")),
+                "cluster": str(meta.get("cluster") or ""),
                 "map": str(place.get("name") or ""),
+                "map_id": str(place.get("id") or "").lower(),
+                "us": mine,
+                "them": theirs,
                 "agent": str(agent.get("id") or "").lower(),
                 "tier": _number(line.get("tier")),
                 "won": (mine > theirs) if side in ("red", "blue") and mine != theirs else None,

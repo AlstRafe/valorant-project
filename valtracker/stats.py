@@ -356,6 +356,8 @@ def summary(rows: list[dict]) -> dict:
         "plants": sum(row["adv"]["plants"] for row in detailed) if detailed else None,
         "defuses": sum(row["adv"]["defuses"] for row in detailed) if detailed else None,
         "minutes": round(sum(row.get("length") or 0 for row in played) / 60000),
+        "timed": sum(1 for row in played if row.get("length")),  # a stored line (archive.py) has no length
+        "detailed": len(detailed),  # the matches with their rounds and kills: the first kills' and the like
         "aim": {
             "head": round(100 * heads / shots),
             "body": round(100 * bodies / shots),

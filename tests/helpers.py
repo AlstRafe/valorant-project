@@ -126,6 +126,8 @@ class FakeRiot:
         self.refuse = 0
         self.broken: set[str] = set()
         self.pd = json.loads(fixture("riot_pd.json"))
+        #: Another player's match history, two of their matches and their RR (riot_match.json).
+        self.pd |= json.loads(fixture("riot_match.json"))
         #: Whether VALORANT is open, and where the owner is: "" (nowhere: closed), "menus", "pregame" (agent
         #: select) or "ingame". A phase other than "" means the game is open.
         self.phase = ""
@@ -215,6 +217,16 @@ class FakeRiot:
             if query:  # Riot looks for names that start so
                 board["Players"] = [p for p in board["Players"] if p["gameName"].lower().startswith(query.lower())]
             return self._answer("leaderboard", board)
+        if f"/match-history/v1/history/{self.pd['player']}?" in url:
+            asked = parse_qs(urlsplit(url).query)
+            start, end = int(asked["startIndex"][0]), int(asked["endIndex"][0])
+            history = dict(self.pd["history"], BeginIndex=start, EndIndex=end)
+            return self._answer("history", history | {"History": self.pd["history"]["History"][start:end]})
+        if "/match-details/v1/matches/" in url:
+            found = self.pd["matches"].get(url.rsplit("/", 1)[-1])
+            return self._answer("match", found) if found else missing
+        if f"/mmr/v1/players/{self.pd['player']}/competitiveupdates?" in url:
+            return self._answer("rr", self.pd["updates"])
         if "/mmr/v1/players/" in url:
             found = self.pd["mmr"].get(url.rsplit("/", 1)[-1])
             return self._answer("rank", found) if found else missing
@@ -273,6 +285,7 @@ def make_app(key: str = "HDEV-test-key", mount: str = ""):
     def cleanup():
         app.config["VAL_ACTIVITY"].close()
         app.config["VAL_RATINGS"].close()
+        app.config["VAL_ARCHIVE"].close()
         remove()
 
     folder.cleanup = cleanup

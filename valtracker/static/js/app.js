@@ -397,8 +397,15 @@
       head.remove();
     });
     var format;
+    var dated; // a day of another year (a lifetime goes back years): with its year
     try {
       format = new Intl.DateTimeFormat(document.documentElement.lang, {
+        month: "short",
+        day: "numeric",
+        weekday: "short",
+      });
+      dated = new Intl.DateTimeFormat(document.documentElement.lang, {
+        year: "numeric",
         month: "short",
         day: "numeric",
         weekday: "short",
@@ -406,6 +413,7 @@
     } catch (e) {
       return;
     }
+    var year = new Date().getFullYear();
     var groups = [];
     list.querySelectorAll("li.match").forEach(function (item) {
       if (item.hidden) return;
@@ -415,7 +423,8 @@
       var key = moment.getFullYear() + "-" + moment.getMonth() + "-" + moment.getDate();
       var last = groups[groups.length - 1];
       if (!last || last.key !== key) {
-        last = { key: key, label: format.format(moment), items: [] };
+        var label = (moment.getFullYear() === year ? format : dated).format(moment);
+        last = { key: key, label: label, items: [] };
         groups.push(last);
       }
       last.items.push(item);
@@ -565,8 +574,15 @@
   function dayHeads(list, items) {
     if (!window.Intl || list.querySelector(".day")) return;
     var format;
+    var dated; // a day of another year (a lifetime goes back years): with its year
     try {
       format = new Intl.DateTimeFormat(document.documentElement.lang, {
+        month: "short",
+        day: "numeric",
+        weekday: "short",
+      });
+      dated = new Intl.DateTimeFormat(document.documentElement.lang, {
+        year: "numeric",
         month: "short",
         day: "numeric",
         weekday: "short",
@@ -574,6 +590,7 @@
     } catch (e) {
       return;
     }
+    var year = new Date().getFullYear();
     var last = "";
     list.querySelectorAll(items).forEach(function (item) {
       var time = item.querySelector("time[datetime]");
@@ -585,7 +602,7 @@
       var head = document.createElement("li");
       head.className = "day";
       var title = document.createElement("strong");
-      title.textContent = format.format(moment);
+      title.textContent = (moment.getFullYear() === year ? format : dated).format(moment);
       head.appendChild(title);
       list.insertBefore(head, item);
     });

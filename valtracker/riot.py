@@ -25,7 +25,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlsplit
 
-from valtracker import net
+from valtracker import net, pdmatch
 from valtracker.cache import TTLCache
 from valtracker.settings import Settings
 
@@ -59,6 +59,8 @@ _QUEUE_ID = re.compile(r"^[a-z0-9_-]{2,40}$")
 _UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 #: The account's region (Riot's geo answer) -> the PD server that keeps its items.
 SHARDS = {"na": "na", "latam": "na", "br": "na", "eu": "eu", "ap": "ap", "kr": "kr", "pbe": "pbe"}
+#: Matches (or RR changes) asked for in one call of a player's history: as many as the game's client asks for.
+HISTORY_PAGE = 20
 #: The PC game client, as PD wants to be told.
 PLATFORM = base64.b64encode(
     json.dumps(
@@ -224,6 +226,46 @@ class Riot:
         """Whether that page is kept (it needs no call)."""
         key = ("board", region, season, max(0, int(start)), int(size), query.casefold())
         return self.boards.get(key) is not None
+
+    def history(self, region: str, puuid: str, start: int = 0) -> dict:
+        """A page of any player's match history from the game's own server (PD), newest first:
+        ``{"total", "matches": [{"id", "at", "queue"}]}`` (pdmatch.history). RiotError without it."""
+        if not _UUID.match(puuid):
+            raise RiotError("down", "history: not a puuid")
+        asked = urlencode({"startIndex": max(0, int(start)), "endIndex": max(0, int(start)) + HISTORY_PAGE})
+
+        def read(tokens: dict, saved: dict) -> dict:
+            url = f"{PD.format(shard=SHARDS.get(region, 'ap'))}/match-history/v1/history/{puuid}?{asked}"
+            return pdmatch.history(self._pd("history", url, self._headers(tokens)))
+
+        return self._read(read)
+
+    def match_details(self, region: str, match_id: str) -> dict:
+        """A finished match as the game's own server keeps it (PD's match-details; pdmatch.to_v4 reads it)."""
+        if not _UUID.match(match_id):
+            raise RiotError("down", "match: not a match id")
+
+        def read(tokens: dict, saved: dict) -> dict:
+            url = f"{PD.format(shard=SHARDS.get(region, 'ap'))}/match-details/v1/matches/{match_id}"
+            return self._pd("match", url, self._headers(tokens))
+
+        return self._read(read)
+
+    def rr_updates(self, region: str, puuid: str, start: int = 0) -> dict:
+        """A page of any player's competitive matches with the RR each moved (PD's competitiveupdates), newest
+        first: ``{"changes": {match id: {"change", "tier", "rr", "elo", "at"}}, "count": matches on the page}``."""
+        if not _UUID.match(puuid):
+            raise RiotError("down", "rr: not a puuid")
+        start = max(0, int(start))
+        asked = urlencode({"startIndex": start, "endIndex": start + HISTORY_PAGE, "queue": "competitive"})
+
+        def read(tokens: dict, saved: dict) -> dict:
+            url = f"{PD.format(shard=SHARDS.get(region, 'ap'))}/mmr/v1/players/{puuid}/competitiveupdates?{asked}"
+            answer = self._pd("rr", url, self._headers(tokens))
+            listed = answer.get("Matches") if isinstance(answer.get("Matches"), list) else []
+            return {"changes": pdmatch.rr_updates(answer), "count": len(listed)}
+
+        return self._read(read)
 
     def act(self, action: str, value: str = "") -> dict:
         """One of the owner's buttons on /live, sent as the game's own client sends it: ``start`` (value: a queue
