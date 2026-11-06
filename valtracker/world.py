@@ -4,6 +4,8 @@ and the esports schedule and results (/esports, from HenrikDev), and how often e
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from flask import Flask, current_app, g, render_template, request, url_for
 
 from valtracker import security
@@ -158,13 +160,15 @@ def _esports_page() -> tuple[dict, int]:
     chosen = request.args.get("league", "").lower()
     values: dict = {"show": show, "games": [], "leagues": [], "league": "", "live": 0, "problem": ""}
     try:
-        found = current_app.config["VAL_HENRIK"].esports()
+        found, since = current_app.config["VAL_HENRIK"].esports()
     except HenrikError as error:
         code, values["problem"], values["settings_link"] = _failure(error.kind)
         if error.kind == "down":
             values["problem"] = _t("eスポーツの日程を読み込めませんでした。時間をおいてもう一度どうぞ。")
         values["detail"] = error.detail if security.is_owner() else ""
         return values, code
+    if since:  # a new schedule did not come: the last one, saying when it came
+        values["since"] = _when(datetime.fromtimestamp(since, UTC).isoformat())
     counts: dict[str, list] = {}
     for item in found:
         if item["league"]["id"]:

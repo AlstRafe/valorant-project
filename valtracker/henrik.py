@@ -219,10 +219,36 @@ class Henrik:
                 self.cache.put(("no-news", country), True, KEEP["news"])
             raise
 
-    def esports(self) -> list:
+    def esports(self) -> tuple[list, float | None]:
         """The esports schedule (every league): ``[{"at", "state", "league": {"name", "region", "icon"},
-        "tournament", "best_of", "vod", "teams": [{"name", "code", "icon", "won", "wins"}]}]``, by time.
-        When the whole schedule does not come (it is big: a timeout, an error), the main leagues one by one."""
+        "tournament", "best_of", "vod", "teams": [{"name", "code", "icon", "won", "wins"}]}]``, by time, and
+        ``None``, or the time (``time.time()``) of the last schedule that came when a new one does not: that one is
+        shown (for up to a day) rather than nothing. After a failure nothing is asked for a while (each try costs
+        the shared allowance, up to 7 calls)."""
+        fresh = self.cache.get(("esports",))
+        if fresh is not None:
+            return fresh, None
+        last = self.cache.get(("esports-last",))
+        waiting = self.cache.get(("esports-wait",))
+        if waiting:
+            if last:
+                return last["games"], last["at"]
+            raise HenrikError(*waiting)
+        try:
+            games = self._esports()
+        except HenrikError as error:
+            if error.kind in ("nokey", "badkey"):
+                raise
+            self.cache.put(("esports-wait",), (error.kind, error.detail), ESPORTS_WAIT.get(error.kind, 120))
+            if last:
+                return last["games"], last["at"]
+            raise
+        self.cache.put(("esports-last",), {"games": games, "at": time.time()}, ESPORTS_LAST)
+        return games, None
+
+    def _esports(self) -> list:
+        """A new schedule: the whole one, or when it does not come (it is big: a timeout, an error), the main
+        leagues one by one."""
         path = "/valorant/v1/esports/schedule"
         if not self.cache.get(("no-esports",)):
             try:
@@ -289,6 +315,10 @@ class Henrik:
 
 #: The leagues asked for one by one when the whole esports schedule does not come (HenrikDev's league names).
 ESPORTS_LEAGUES = ("vct_pacific", "vct_americas", "vct_emea", "vct_china", "masters", "champions")
+#: How long the last schedule that came is shown when a new one does not (seconds), and how long nothing is asked
+#: after a failure: a short while when the allowance was used up, longer when HenrikDev did not answer.
+ESPORTS_LAST = 24 * 3600
+ESPORTS_WAIT = {"busy": 20, "down": 120}
 
 
 def shows_rr(mode: str) -> bool:

@@ -119,8 +119,13 @@ class FakeRiot:
         self.refuse = 0
         self.broken: set[str] = set()
         self.pd = json.loads(fixture("riot_pd.json"))
-        #: The match the owner is in: "" (none), "pregame" (agent select) or "ingame".
+        #: Whether VALORANT is open, and where the owner is: "" (nowhere: closed), "menus", "pregame" (agent
+        #: select) or "ingame". A phase other than "" means the game is open.
         self.phase = ""
+        #: GLZ's session cannot be read (its address answers 500): the party tells whether the game is open.
+        self.no_session = False
+        #: The owner's buttons as GLZ got them: (what, value).
+        self.pressed: list[tuple[str, str]] = []
         #: The loadouts sent back (PUT playerloadout).
         self.worn: list[dict] = []
 
@@ -166,13 +171,47 @@ class FakeRiot:
         glz = "https://glz-ap-1.ap.a.pvp.net"
         if url.endswith(f"/contracts/v1/contracts/{PUUID}"):
             return self._answer("contracts", self.pd["contracts"])
+        missing = 404, [], json.dumps({"errorCode": "RESOURCE_NOT_FOUND"}).encode()
+        if url == f"{glz}/session/v1/sessions/{PUUID}":
+            if self.no_session:
+                return 500, [], b"{}"
+            if not self.phase:
+                return missing
+            loop = {"menus": "MENUS", "pregame": "PREGAME", "ingame": "INGAME"}[self.phase]
+            return self._answer("session", {"subject": PUUID, "cxnState": "CONNECTED", "loopState": loop})
+        party = self.pd["party"]
+        if url == f"{glz}/parties/v1/players/{PUUID}":
+            return self._answer("party", {"Subject": PUUID, "CurrentPartyID": party["ID"]}) if self.phase else missing
+        if url == f"{glz}/parties/v1/parties/{party['ID']}" and method == "GET":
+            return self._answer("party", party)
+        if url.startswith(f"{glz}/parties/v1/parties/{party['ID']}/") and method == "POST":
+            what = url.rsplit("/", 1)[-1]
+            if what == "queue":
+                queue = json.loads(body)["queueId"]
+                self.pressed.append(("queue", queue))
+                party["MatchmakingData"]["QueueID"] = queue
+            else:
+                self.pressed.append((what, ""))
+                party["State"] = "MATCHMAKING" if what == "join" else "DEFAULT"
+                party["QueueEntryTime"] = "2026-11-06T00:00:00Z" if what == "join" else "0001-01-01T00:00:00Z"
+            return self._answer("party", party)
+        pregame_id = self.pd["pregame"]["ID"]
+        if url.startswith(f"{glz}/pregame/v1/matches/{pregame_id}/") and method == "POST":
+            what, agent = url.rsplit("/", 2)[-2:]
+            self.pressed.append((what, agent))
+            mine = next(item for item in self.pd["pregame"]["AllyTeam"]["Players"] if item["Subject"] == PUUID)
+            mine.update({"CharacterID": agent, "CharacterSelectionState": "locked" if what == "lock" else "selected"})
+            return self._answer("pregame", self.pd["pregame"])
+        if "/mmr/v1/players/" in url:
+            found = self.pd["mmr"].get(url.rsplit("/", 1)[-1])
+            return self._answer("rank", found) if found else missing
         for phase, path, match in (
             ("pregame", "/pregame/v1", self.pd["pregame"]["ID"]),
             ("ingame", "/core-game/v1", self.pd["coregame"]["MatchID"]),
         ):
             if url == f"{glz}{path}/players/{PUUID}":
                 if self.phase != phase:
-                    return 404, [], json.dumps({"errorCode": "RESOURCE_NOT_FOUND"}).encode()
+                    return missing
                 return self._answer(phase, {"Subject": PUUID, "MatchID": match})
             if url == f"{glz}{path}/matches/{match}":
                 return self._answer(phase, self.pd["pregame" if phase == "pregame" else "coregame"])

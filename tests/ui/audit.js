@@ -54,6 +54,8 @@ const MADE_UP = [
   "/shop/history",
   "/progress",
   "/live",
+  "/live?phase=menus",
+  "/live?phase=queue",
   "/live?phase=pregame",
   "/live?phase=ingame",
   "/collection?show=cards",

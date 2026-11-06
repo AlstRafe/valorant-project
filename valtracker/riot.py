@@ -44,6 +44,12 @@ QUEUES_KEEP = 1800
 LIVE_KEEP = 4
 #: The phases of a match the owner can be in, and where GLZ tells of each.
 PHASES = (("pregame", "/pregame/v1"), ("ingame", "/core-game/v1"))
+#: What the owner can press on /live (Riot.act): start a queue (its id), leave it, pick or lock an agent (its uuid).
+ACTIONS = ("start", "leave", "select", "lock")
+#: A player's rank (PD's mmr) is asked once a match at most: it changes only when a match ends.
+RANK_KEEP = 900
+_QUEUE_ID = re.compile(r"^[a-z0-9_-]{2,40}$")
+_UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 #: The account's region (Riot's geo answer) -> the PD server that keeps its items.
 SHARDS = {"na": "na", "latam": "na", "br": "na", "eu": "eu", "ap": "ap", "kr": "kr", "pbe": "pbe"}
 #: The PC game client, as PD wants to be told.
@@ -95,6 +101,8 @@ class Riot:
         self.store = Settings(folder, "riot.json")
         self.send, self.version, self.clock = send, version, clock
         self.cache = TTLCache(8)
+        #: Players' ranks in the owner's match: {puuid: PD's mmr answer}.
+        self.ranks = TTLCache(64)
         self._lock = threading.Lock()
 
     # -- what the pages use ---------------------------------------------------------------------------
@@ -164,10 +172,58 @@ class Riot:
         return self._kept("contracts", self._contracts)
 
     def live(self) -> dict:
-        """The match the owner is in now (GLZ): ``{"phase": "pregame" (agent select), "ingame" or "" (none),
-        "match": GLZ's answer or None, "names": {puuid: [name, tag]}, "at", "missing", "problem"}``. Names are
-        asked only for players who do not hide theirs (``Incognito``)."""
+        """Where the owner's game is now (GLZ): ``{"running": whether VALORANT is open (None: could not tell),
+        "phase": "menus", "pregame" (agent select), "ingame" or "" (not playing), "match": GLZ's match or None,
+        "party": GLZ's party (in the menus) or None, "names": {puuid: [name, tag]}, "ranks": {puuid: PD's mmr},
+        "at", "missing", "problem"}``. Names are asked only for players who do not hide theirs (``Incognito``)."""
         return self._kept("live", self._live, LIVE_KEEP)
+
+    def act(self, action: str, value: str = "") -> dict:
+        """One of the owner's buttons on /live, sent as the game's own client sends it: ``start`` (value: a queue
+        id) sets the party's queue and starts matchmaking, ``leave`` stops it, ``select`` / ``lock`` (value: an
+        agent's uuid) pick or lock an agent at agent select. RiotError: ``unknown`` (not one of these),
+        ``notnow`` (not in a party, or not at agent select), or what Riot said."""
+        value = str(value or "").strip().lower()
+        if (
+            action not in ACTIONS
+            or (action == "start" and not _QUEUE_ID.match(value))
+            or (action in ("select", "lock") and not _UUID.match(value))
+        ):
+            raise RiotError("unknown")
+
+        def send(tokens: dict, saved: dict) -> dict:
+            glz, puuid, headers = self._glz(saved), str(saved["puuid"]), self._headers(tokens)
+            posted = {**headers, "Content-Type": "application/json"}
+            if action in ("select", "lock"):
+                match_id = self._now("pregame", f"{glz}/pregame/v1/players/{puuid}", headers, "MatchID")
+                url = f"{glz}/pregame/v1/matches/{match_id}/{action}/{value}"
+                answer = self._pd(action, url, headers, "POST", b"")
+            else:
+                party = self._now("party", f"{glz}/parties/v1/players/{puuid}", headers, "CurrentPartyID")
+                base = f"{glz}/parties/v1/parties/{party}"
+                if action == "start":
+                    self._pd("queue", f"{base}/queue", posted, "POST", json.dumps({"queueId": value}).encode())
+                answer = self._pd(
+                    action, f"{base}/matchmaking/{'join' if action == 'start' else 'leave'}", posted, "POST", b""
+                )
+            return {"answer": answer, "missing": [], "problem": ""}
+
+        try:
+            return self._kept("act", send, 0)
+        finally:
+            self.cache.put("live", None, 0)  # what the page shows next is asked again
+
+    def _now(self, key: str, url: str, headers: dict, field: str) -> str:
+        """The id GLZ gives for where the owner is now (their party, their agent select), or RiotError notnow."""
+        try:
+            found = str(self._pd(key, url, headers).get(field) or "").lower()
+        except RiotError as error:
+            if error.kind == "down" and " 404" in f" {error.detail}":
+                raise RiotError("notnow", error.detail) from None
+            raise
+        if not _UUID.match(found):
+            raise RiotError("notnow", f"{key}: no {field}")
+        return found
 
     def equip(self, change) -> dict:
         """Changes the owner's loadout: ``change(loadout)`` edits PD's playerloadout (a fresh one) in place, and
@@ -193,10 +249,95 @@ class Riot:
         url = f"{self._base(saved)}/contracts/v1/contracts/{saved['puuid']}"
         return {"contracts": self._pd("contracts", url, self._headers(tokens)), "missing": [], "problem": ""}
 
-    def _live(self, tokens: dict, saved: dict) -> dict:
+    def _glz(self, saved: dict) -> str:
         shard = str(saved.get("shard") or "ap")
-        glz = GLZ.format(shard=shard if shard in SHARDS.values() and shard != "pbe" else "ap")
-        puuid, headers = str(saved["puuid"]), self._headers(tokens)
+        return GLZ.format(shard=shard if shard in SHARDS.values() and shard != "pbe" else "ap")
+
+    def _live(self, tokens: dict, saved: dict) -> dict:
+        glz, puuid, headers = self._glz(saved), str(saved["puuid"]), self._headers(tokens)
+        # the game's session says whether it is open and where: the menus, agent select or a match
+        running, loop = None, ""
+        try:
+            session = self._pd("session", f"{glz}/session/v1/sessions/{puuid}", headers)
+            loop = str(session.get("loopState") or "").upper()
+            running = str(session.get("cxnState") or "CONNECTED").upper() == "CONNECTED" and bool(loop)
+        except RiotError as error:
+            if error.kind == "expired":
+                raise
+            if error.kind == "down" and " 404" in f" {error.detail}":
+                running = False
+        if loop == "MENUS":
+            return self._menus(glz, puuid, headers, saved)
+        found = self._match(glz, puuid, headers, saved)
+        if found["phase"]:
+            return found | {"running": True}
+        if running is None:  # the session could not be read: the party tells whether the game is open
+            return self._menus(glz, puuid, headers, saved)
+        return found | {"running": running}
+
+    def _menus(self, glz: str, puuid: str, headers: dict, saved: dict) -> dict:
+        """In the menus: the owner's party (its queue, whether it is matchmaking, its members)."""
+        empty = {"phase": "", "match": None, "party": None, "names": {}, "ranks": {}, "at": self.clock()}
+        try:
+            party_id = self._now("party", f"{glz}/parties/v1/players/{puuid}", headers, "CurrentPartyID")
+        except RiotError as error:
+            if error.kind != "notnow":
+                raise
+            return empty | {"running": False, "missing": [], "problem": ""}
+        party = self._pd("party", f"{glz}/parties/v1/parties/{party_id}", headers)
+        members = [item for item in party.get("Members") or [] if isinstance(item, dict)]
+        names, problem = self._open_names(saved, headers, members)
+        return empty | {
+            "running": True,
+            "phase": "menus",
+            "party": party,
+            "names": names,
+            "missing": ["names"] if problem else [],
+            "problem": problem,
+        }
+
+    def _open_names(self, saved: dict, headers: dict, players: list) -> tuple[dict, str]:
+        """The names of the players who do not hide theirs (the others' are never asked), and a problem."""
+        open_names = [
+            str(item.get("Subject")).lower()
+            for item in players
+            if isinstance(item, dict)
+            and item.get("Subject")
+            and not (item.get("PlayerIdentity") or {}).get("Incognito")
+        ]
+        try:
+            return self._names(saved, headers, open_names), ""
+        except RiotError as error:
+            if error.kind == "expired":
+                raise
+            return {}, error.detail or error.kind
+
+    def _ranks(self, saved: dict, headers: dict, subjects: list[str]) -> dict:
+        """PD's mmr of each player (their rank, as the game's own scoreboard shows it), kept RANK_KEEP."""
+        found, wanted = {}, []
+        for subject in subjects:
+            kept = self.ranks.get(subject)
+            if kept is not None:
+                found[subject] = kept
+            elif _UUID.match(subject):
+                wanted.append(subject)
+        base = self._base(saved)
+
+        def ask(subject: str):
+            try:
+                return subject, self._pd("rank", f"{base}/mmr/v1/players/{subject}", headers)
+            except RiotError:
+                return subject, {}  # not asked again this match either: the page falls back to GLZ's badge
+
+        if wanted:
+            with ThreadPoolExecutor(5, thread_name_prefix="riot-rank") as pool:
+                for subject, answer in pool.map(ask, wanted):
+                    self.ranks.put(subject, answer, RANK_KEEP)
+                    found[subject] = answer
+        return found
+
+    def _match(self, glz: str, puuid: str, headers: dict, saved: dict) -> dict:
+        """Agent select or the match the owner is in (``phase`` "" when neither)."""
         for phase, path in PHASES:
             try:
                 player = self._pd(phase, f"{glz}{path}/players/{puuid}", headers)
@@ -209,30 +350,35 @@ class Riot:
                 continue
             match = self._pd(phase, f"{glz}{path}/matches/{match_id}", headers)
             team = match.get("AllyTeam") if isinstance(match.get("AllyTeam"), dict) else {}
-            players = (team.get("Players") if phase == "pregame" else match.get("Players")) or []
-            open_names = [
-                str(item.get("Subject")).lower()
-                for item in players
+            players = [
+                item
+                for item in (team.get("Players") if phase == "pregame" else match.get("Players")) or []
                 if isinstance(item, dict)
-                and item.get("Subject")
-                and not (item.get("PlayerIdentity") or {}).get("Incognito")
             ]
-            names, problem = {}, ""
-            try:
-                names = self._names(saved, headers, open_names)
-            except RiotError as error:
-                if error.kind == "expired":
-                    raise
-                problem = error.detail or error.kind
+            names, problem = self._open_names(saved, headers, players)
+            ranks = self._ranks(
+                saved, headers, [str(item.get("Subject") or "").lower() for item in players if not item.get("IsCoach")]
+            )
             return {
                 "phase": phase,
                 "match": match,
+                "party": None,
                 "names": names,
+                "ranks": ranks,
                 "at": self.clock(),
                 "missing": ["names"] if problem else [],
                 "problem": problem,
             }
-        return {"phase": "", "match": None, "names": {}, "at": self.clock(), "missing": [], "problem": ""}
+        return {
+            "phase": "",
+            "match": None,
+            "party": None,
+            "names": {},
+            "ranks": {},
+            "at": self.clock(),
+            "missing": [],
+            "problem": "",
+        }
 
     def _names(self, saved: dict, headers: dict, subjects: list[str]) -> dict:
         """PD's name service: ``{puuid: [game name, tag]}`` of these players."""
@@ -259,9 +405,7 @@ class Riot:
         return found
 
     def _queues(self, tokens: dict, saved: dict) -> dict:
-        shard = str(saved.get("shard") or "ap")
-        shard = shard if shard in SHARDS.values() and shard != "pbe" else "ap"
-        url = GLZ.format(shard=shard) + "/parties/v1/parties/customgameconfigs"
+        url = self._glz(saved) + "/parties/v1/parties/customgameconfigs"
         return {
             "config": self._pd("queues", url, self._headers(tokens)),
             "at": self.clock(),
@@ -270,8 +414,10 @@ class Riot:
         }
 
     def _kept(self, key: str, read, seconds: float = KEEP) -> dict:
-        """``read(tokens, saved)``'s answer, kept ``seconds``; a refused token is traded for a new one once."""
-        kept = self.cache.get(key)
+        """``read(tokens, saved)``'s answer, kept ``seconds`` (0: a button, done each time it is pressed: Windows'
+        clock moves in 16 ms steps, so an answer kept for 0 seconds was still there for the next press); a refused
+        token is traded for a new one once."""
+        kept = self.cache.get(key) if seconds > 0 else None
         if kept is not None:
             return kept
         for renew in (False, True):
@@ -285,7 +431,8 @@ class Riot:
                 if renew:  # a token just made is refused too: not the cookie's fault
                     raise RiotError("down", error.detail) from None
         self.store.save(problem=found["problem"] or None)
-        self.cache.put(key, found, seconds)
+        if seconds > 0:
+            self.cache.put(key, found, seconds)
         return found
 
     # -- tokens ---------------------------------------------------------------------------------------

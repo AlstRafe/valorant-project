@@ -1419,6 +1419,11 @@ TEXTS = {
         "en-GB": "Official schedule",
         "zh-TW": "在官方網站查看賽程",
     },
+    "いまは日程を読み込めないため、{time} に読み込んだものを出しています。スコアや試合中の印は古いかもしれません。": {
+        "ko": "지금은 일정을 불러올 수 없어 {time}에 불러온 일정을 보여 줍니다. 점수와 경기 중 표시는 오래되었을 수 있습니다.",
+        "en-GB": "The schedule cannot be loaded right now, so this is the one loaded at {time}. Scores and live marks may be out of date.",
+        "zh-TW": "目前無法載入賽程，因此顯示 {time} 載入的賽程。比分與進行中的標示可能已過時。",
+    },
 }
 
 #: Words only the owner sees (the settings, and why the search cannot work yet): Japanese only.

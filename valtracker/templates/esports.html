@@ -19,6 +19,7 @@
 <a href="{{ every_url }}"{% if not league %} aria-current="true"{% endif %}>{{ t('すべて') }}</a>
 {% for item in leagues %}<a href="{{ item.url }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
 {% endfor %}</nav>{% endif %}
+{% if since %}<p class="note">{{ t('いまは日程を読み込めないため、{time} に読み込んだものを出しています。スコアや試合中の印は古いかもしれません。', time=since.text) }}</p>{% endif %}
 <p class="fav-only" hidden><label><input type="checkbox" id="fav-only"> {{ t('印をつけたチームだけ') }}</label></p>
 {% if not games %}
 <p class="note">{{ t('結果はまだありません。') if show == 'results' else t('これからの試合はまだ出ていません。') }}</p>
