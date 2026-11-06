@@ -12,7 +12,7 @@ from unittest import mock
 from helpers import make_app
 
 from valtracker import score
-from valtracker.activity import LINES_ENOUGH, Activity
+from valtracker.activity import LINES_ENOUGH, RANKS_ENOUGH, Activity
 
 VISITOR = {"homepage.visitor": True}
 NOON = int(datetime(2026, 11, 4, 12, tzinfo=UTC).timestamp())
@@ -131,6 +131,25 @@ class YardstickTest(unittest.TestCase):
         self.assertEqual(self.activity.yardstick(16), ({}, 0, ""))
 
 
+class RanksTest(unittest.TestCase):
+    def setUp(self):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.now = NOON + 3600
+        self.activity = Activity(Path(folder.name), clock=lambda: self.now)
+        self.addCleanup(self.activity.close)
+
+    def test_competitive_lines_by_rank_in_a_region(self):
+        games = [match(number, tier=12) for number in range(3)] + [match(10 + number, tier=24) for number in range(1)]
+        games.append(match(20, tier=12, queue="unrated"))
+        eu = match(30, tier=5)
+        eu["metadata"]["region"] = "eu"
+        self.activity.seen(games + [eu])
+        self.assertEqual(self.activity.ranks("ap"), {"lines": 40, "tiers": {12: 30, 24: 10}})
+        self.assertEqual(self.activity.ranks("eu"), {"lines": 10, "tiers": {5: 10}})
+        self.assertEqual(self.activity.ranks("na"), {"lines": 0, "tiers": {}})
+
+
 class PagesTest(unittest.TestCase):
     def setUp(self):
         env = mock.patch.dict(os.environ, {"VAL_HENRIK_KEY": ""})
@@ -169,6 +188,27 @@ class PagesTest(unittest.TestCase):
             text = self.page("/p/Tester/JP1?full=1")
         self.assertNotIn("VAL スコア", text)
         self.assertNotIn("row-score", text)
+
+    def test_the_rank_distribution_page(self):
+        spread = {"lines": 400, "tiers": {27: 2, 24: 38, 12: 160, 5: 200}}
+        with mock.patch.object(self.app.config["VAL_ACTIVITY"], "ranks", return_value=spread):
+            text = self.page("/ranks?region=ap")
+            self.assertIn("ランクの分布", text)
+            self.assertIn("<strong>0.5%</strong>", text, "under 1%: one decimal")
+            self.assertIn("<td>10%</td>", text, "Radiant and Immortal 3 together: the top 10%")
+            self.assertIn("<td>100%</td>", text)
+            self.assertLess(text.index("Tier 27"), text.index("Tier 5"), "best first")
+            self.assertIn("400", text)
+            player = self.page("/p/Tester/JP1?full=1")
+        self.assertRegex(player, r"この地域で上位 [\d.]+%")
+
+    def test_no_distribution_with_too_few_lines(self):
+        few = {"lines": RANKS_ENOUGH - 1, "tiers": {12: RANKS_ENOUGH - 1}}
+        with mock.patch.object(self.app.config["VAL_ACTIVITY"], "ranks", return_value=few):
+            text = self.page("/ranks")
+            self.assertIn("まだ集まっていません", text)
+            self.assertNotIn("この地域で上位", self.page("/p/Tester/JP1?full=1"))
+        self.assertIn('href="/ranks"', self.page("/tools"))
 
     def test_the_match_page_has_a_score_column(self):
         with self.stick(0, 400):

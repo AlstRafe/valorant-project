@@ -15,7 +15,7 @@ from flask import Flask, abort, current_app, g, make_response, redirect, render_
 from valtracker import collection as owned_items
 from valtracker import i18n, score, security, stats
 from valtracker import rounds as rounds_module
-from valtracker.activity import BANDS, LINE_QUEUES, LINE_STATS
+from valtracker.activity import BANDS, LINE_QUEUES, LINE_STATS, RANKS_ENOUGH
 from valtracker.henrik import MODES, REGIONS, HenrikError, shows_rr, split_riot_id
 from valtracker.media import kind as media_kind
 from valtracker.riot import AUTHORIZE, RiotError
@@ -254,6 +254,21 @@ def _band_name(name: str) -> str:
 def _family(name: str) -> str:
     """A rank's name without its number: "Gold 2" -> "Gold"."""
     return re.sub(r"\s*\d+$", "", name)
+
+
+def share_text(value: float) -> str:
+    """A percentage for the page: one decimal under 1% (0.4), else whole (12); none at all is 0."""
+    return "0" if value <= 0 else f"{value:.1f}" if value < 1 else str(round(value))
+
+
+def rank_top(region: str, tier: int) -> str | None:
+    """ "Top X%" of a rank in a region: the share of the competitive lines seen there at that rank or above
+    (activity.Activity.ranks), or None with fewer than RANKS_ENOUGH of them."""
+    found = current_app.config["VAL_ACTIVITY"].ranks(region)
+    if tier <= 2 or found["lines"] < RANKS_ENOUGH:
+        return None
+    above = sum(count for number, count in found["tiers"].items() if number >= tier)
+    return share_text(100 * above / found["lines"])
 
 
 def _score(line: dict, rounds: int, queue: str, tier: int, won) -> dict | None:
@@ -568,6 +583,7 @@ def _player(name: str, tag: str, mode: str = "") -> tuple[dict, int]:
         "region": region,
         "card": str(account.get("card") or ""),
         "rank": rank,
+        "rank_top": rank_top(region, rank["tier"]) if rank else None,
         "rr": current.get("rr"),
         "next_rank": _next_rank(rank, current.get("rr"), rr_changes),
         "act": act_left() if rank else None,

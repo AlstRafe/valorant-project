@@ -30,6 +30,7 @@ const PAGES = [
   "/shop",
   "/tools",
   "/servers",
+  "/ranks",
   "/queues?rank=14&rank=17",
   "/sensitivity?sens=0.35&dpi=800&new_dpi=1600",
   "/agents",

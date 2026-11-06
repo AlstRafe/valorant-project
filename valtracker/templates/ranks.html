@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ t('ランクの分布') }} · {{ region_name }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('コンペティティブでどのランクがどれくらいいるか、各ランクが上位何 % か。このサイトが見た試合からの目安です。') }}{% endblock %}
+{% block main %}
+<p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
+<section class="hero">
+<h1>{{ t('ランクの分布') }}</h1>
+<p class="lead">{{ t('コンペティティブでどのランクがどれくらいいるか、各ランクが上位何 % か。このサイトが見た試合からの目安です。') }}</p>
+</section>
+<nav class="modes" aria-label="{{ t('地域') }}">
+{% for item in regions %}<a href="{{ item.url }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
+{% endfor %}</nav>
+<p class="note estimate">{{ t('Riot はランクの分布を公開していません。ここ {days} 日にこのサイトが見たコンペティティブの試合の、1 試合 1 人ずつの {count} 人分から数えています（たくさん遊ぶ人ほど多く数えられます）。', days=days, count='{:,}'.format(lines)) }}</p>
+{% if not enough %}
+<p class="note">{{ t('この地域の試合はまだ集まっていません。誰かの戦績が見られるたびに増えていきます。') }}</p>
+{% else %}
+<div class="table-wrap"><table class="board plain rank-spread">
+<thead><tr><th scope="col">{{ t('ランク') }}</th><th scope="col">{{ t('割合') }}</th><th scope="col">{{ t('上位') }}</th></tr></thead>
+<tbody>
+{% for row in rows %}<tr{% if not row.count %} class="few"{% endif %}>
+<th scope="row"><span class="agent-cell">{% if row.rank.icon %}<img src="{{ media(row.rank.icon) }}" alt="" width="28" height="28" loading="lazy">{% endif %}<span>{{ row.rank.name }}</span></span></th>
+<td><svg class="share-bar" viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true"><rect width="100" height="6" rx="3" class="back"/><rect width="{{ row.bar }}" height="6" rx="3"/></svg><strong>{{ row.share }}%</strong></td>
+<td>{% if row.top != '0' %}{{ row.top }}%{% else %}—{% endif %}</td>
+</tr>
+{% endfor %}</tbody>
+</table></div>
+{% endif %}
+<p class="note"><a href="{{ url_for('leaderboard', region=region) }}">{{ t('この地域のランキング') }}</a></p>
+{% endblock %}

@@ -15,6 +15,7 @@
 <li><a href="{{ url_for('sensitivity') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="5"/><path d="M12 7v3"/></svg><strong>{{ t('感度の換算') }}</strong><small>{{ t('ほかのゲームの感度と、振り向きの長さ。') }}</small></a></li>
 <li><a href="{{ url_for('status') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><strong>{{ t('サーバー状況') }}</strong><small>{{ t('メンテナンスと障害のお知らせ。') }}</small></a></li>
 <li><a href="{{ url_for('leaderboard') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg><strong>{{ t('ランキング') }}</strong><small>{{ t('地域ごとの上位プレイヤーと、レディアントに必要な RR。') }}</small></a></li>
+<li><a href="{{ url_for('ranks') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M6 20v-4M10 20v-9M14 20V7M18 20v-6"/></svg><strong>{{ t('ランクの分布') }}</strong><small>{{ t('どのランクがどれくらいいて、上位何 % か。') }}</small></a></li>
 <li><a href="{{ url_for('shop') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h16V20H4z"/><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5"/></svg><strong>{{ t('ショップ') }}</strong><small>{{ t('いまのバンドルと値段。') }}</small></a></li>
 {% if owner %}
 <li lang="ja"><a href="{{ url_for('collection') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h16V20H4z"/><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5M4 13h16"/></svg><strong>所持品</strong><small>自分のスキン・バディー・カードなど。</small></a></li>
