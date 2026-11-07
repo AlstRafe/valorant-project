@@ -224,14 +224,21 @@ def main() -> None:
     diary.want("ac000000-0000-4000-8000-000000000001", True)
     seed_sets(app)
     inner = app.wsgi_app
+    next_live: list[str] = []
 
     def wsgi(environ, start):
         if "visitor=1" in environ.get("HTTP_COOKIE", ""):
             environ["homepage.visitor"] = True
         # /live?phase=menus, queue (the menus, matchmaking), pregame or ingame: where the owner's made-up game is
-        # (helpers.FakeRiot); none: the game is closed
+        # (helpers.FakeRiot); none: the game is closed. A button pressed on /live (POST /live/act, then /live) keeps
+        # the phase of the page it was pressed on.
+        if environ.get("PATH_INFO") == "/live/act":
+            pressed_on = environ.get("HTTP_REFERER", "").partition("?")[2]
+            next_live.append(pressed_on.removeprefix("phase=") if pressed_on.startswith("phase=") else "")
         if environ.get("PATH_INFO") == "/live":
-            phase = environ.get("QUERY_STRING", "").removeprefix("phase=")
+            asked = environ.get("QUERY_STRING", "")
+            phase = asked.removeprefix("phase=") if asked or not next_live else next_live.pop()
+            next_live.clear()
             app.riot.phase = "menus" if phase == "queue" else phase if phase in ("menus", "pregame", "ingame") else ""
             party = app.riot.pd["party"]
             party["State"] = "MATCHMAKING" if phase == "queue" else "DEFAULT"

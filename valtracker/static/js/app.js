@@ -969,13 +969,127 @@
     });
   }
 
+  // /live is read again every few seconds in the background, and only what changed is put in place: no reload, so
+  // the scroll, a mode chosen in the menu and the focused button stay. Its buttons (queue, pick, lock) are sent the
+  // same way and the answer (the page after the press, with its note) is put in place at once. Never while a
+  // button is being pressed or the mode menu is open. Without a script, the buttons send the page as before.
   function refresh() {
     var box = document.querySelector("[data-refresh]");
-    if (!box) return;
-    var seconds = Math.max(3, Number(box.getAttribute("data-refresh")) || 10);
-    setInterval(function () {
-      if (document.visibilityState === "visible" && !document.querySelector("select:focus")) location.reload();
-    }, seconds * 1000);
+    if (!box || !window.fetch || !window.DOMParser) return;
+    var timer = null;
+    var asking = false;
+    var sending = false;
+    var pressed = 0; // when a button was pressed down (a press that never ends stops nothing after 3 s)
+    var last = box.innerHTML;
+
+    function pressing() {
+      return pressed > 0 && Date.now() - pressed < 3000;
+    }
+
+    function later() {
+      clearTimeout(timer);
+      timer = setTimeout(ask, Math.max(3, Number(box.getAttribute("data-refresh")) || 10) * 1000);
+    }
+
+    // a button the same as the one that had the focus (its name and value), in the new part
+    function same(old) {
+      if (!old || !box.contains(old) || !old.name) return null;
+      var found = null;
+      box.querySelectorAll("button[name]").forEach(function (button) {
+        if (!found && button !== old && button.name === old.name && button.value === old.value) found = button;
+      });
+      return found;
+    }
+
+    function put(text) {
+      var fresh = new DOMParser().parseFromString(text, "text/html").querySelector("[data-refresh]");
+      if (!fresh) return false;
+      ["data-refresh", "data-live-phase", "data-live-words"].forEach(function (name) {
+        box.setAttribute(name, fresh.getAttribute(name) || "");
+      });
+      if (fresh.innerHTML === last) return true;
+      last = fresh.innerHTML;
+      // a mode chosen in the menu but not started yet is kept
+      var chosen = {};
+      box.querySelectorAll("select[name]").forEach(function (select) {
+        var start = select.querySelector("option[selected]");
+        if (start && select.value !== start.value) chosen[select.name] = select.value;
+      });
+      var focused = document.activeElement;
+      var left = window.scrollX;
+      var top = window.scrollY;
+      box.innerHTML = fresh.innerHTML;
+      window.scrollTo(left, top);
+      box.querySelectorAll("select[name]").forEach(function (select) {
+        if (chosen[select.name] && select.querySelector('option[value="' + chosen[select.name] + '"]'))
+          select.value = chosen[select.name];
+      });
+      var again = focused && focused.tagName === "BUTTON" ? same(focused) : null;
+      if (again) again.focus({ preventScroll: true });
+      document.dispatchEvent(new CustomEvent("val:refreshed"));
+      return true;
+    }
+
+    function ask() {
+      clearTimeout(timer);
+      if (asking || document.visibilityState !== "visible") return;
+      if (sending || pressing() || box.querySelector("select:focus")) return later();
+      asking = true;
+      fetch(location.href, { credentials: "same-origin", headers: { Accept: "text/html" }, cache: "no-store" })
+        .then(function (answer) {
+          return answer.text();
+        })
+        .then(function (text) {
+          if (!sending && !pressing()) put(text);
+        })
+        .catch(function () {})
+        .then(function () {
+          asking = false;
+          later();
+        });
+    }
+
+    box.addEventListener("pointerdown", function () {
+      pressed = Date.now();
+    });
+    ["pointerup", "pointercancel"].forEach(function (name) {
+      document.addEventListener(name, function () {
+        pressed = 0;
+      });
+    });
+
+    document.addEventListener("submit", function (event) {
+      var form = event.target;
+      if (!form.matches || !form.matches(".live-act") || !box.contains(form)) return;
+      event.preventDefault();
+      if (sending) return;
+      sending = true;
+      var data = new FormData(form);
+      var button = event.submitter;
+      if (button && button.name) data.append(button.name, button.value);
+      form.querySelectorAll("button").forEach(function (each) {
+        each.disabled = true;
+      });
+      form.setAttribute("aria-busy", "true");
+      fetch(form.action, { method: "POST", body: data, credentials: "same-origin" })
+        .then(function (answer) {
+          return answer.text().then(function (text) {
+            if (!put(text)) throw new Error("no page"); // a refusal or Riot busy is a /live page too
+          });
+        })
+        .catch(function () {
+          location.reload();
+        })
+        .then(function () {
+          sending = false;
+          later();
+        });
+    });
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") ask();
+    });
+    later();
   }
 
   // The owner's collection lists every item of a tab at once: the names are narrowed as they are typed.
@@ -1055,8 +1169,8 @@
   }
 
   // The owner's game on every page: the header's ライブ tab shows where it is (a dot: the menus, matchmaking, agent
-  // select, the match), and agent select starting brings a note with the way to pick. /live itself reloads every
-  // few seconds, so there the page says where the game is and nothing is asked.
+  // select, the match), and agent select starting brings a note with the way to pick. /live itself is read again
+  // every few seconds (refresh), so there the page says where the game is and nothing is asked.
   function liveWatch() {
     var tab = document.querySelector("[data-live-state]");
     if (!tab) return;
@@ -1155,7 +1269,11 @@
     }
 
     if (page) {
-      show({ phase: page.getAttribute("data-live-phase"), words: page.getAttribute("data-live-words") });
+      var here = function () {
+        show({ phase: page.getAttribute("data-live-phase"), words: page.getAttribute("data-live-words") });
+      };
+      here();
+      document.addEventListener("val:refreshed", here); // the page's new part (refresh)
       return;
     }
     ask();

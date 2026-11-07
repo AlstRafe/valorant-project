@@ -471,6 +471,7 @@ async function main() {
       }
     }
   }
+  if (!live) await livePage(browser);
   await browser.close();
   for (const [kind, where, what, text] of early) add(kind, where, what, text, "once");
   console.log("\n--- all problems, and everywhere they show ---");
@@ -482,6 +483,37 @@ async function main() {
   }
   console.log(`${problems.size} problem(s) on ${pages.length} pages`);
   process.exitCode = problems.size ? 1 : 0;
+}
+
+// /live is read again every few seconds, and its buttons are sent, without reloading the page (the owner lost
+// the place in the agents each time): the page stays the same document through the timer and a pick.
+async function livePage(browser) {
+  const page = await browser.newPage({ viewport: { width: 390, height: 800 } });
+  let loads = 0;
+  page.on("load", () => loads++);
+  await page.goto(base + "/live?phase=pregame", { waitUntil: "networkidle", timeout: 60000 });
+  await page.evaluate(() => (window.auditMark = true));
+  await page.waitForTimeout(6500); // the timer: 5 s while the game is open
+  // the made-up game's one agent is a mate's: pressed anyway (the made-up Riot takes it)
+  const sent = page
+    .waitForResponse((answer) => answer.url().includes("/live/act"), { timeout: 15000 })
+    .then(() => true)
+    .catch(() => false);
+  const pressed = await page.evaluate(() => {
+    const button = document.querySelector(".pick-grid button.pick");
+    if (!button) return false;
+    button.disabled = false;
+    button.form.requestSubmit(button);
+    return true;
+  });
+  if (!pressed) early.push(["no agent to pick", "/live?phase=pregame", "", ""]);
+  else if (!(await sent)) early.push(["pick not sent", "/live?phase=pregame", "", ""]);
+  await page.waitForTimeout(1500);
+  const kept = await page.evaluate(() => window.auditMark === true).catch(() => false);
+  if (!kept || loads !== 1) early.push(["page reloads", "/live?phase=pregame", "", `${loads} loads`]);
+  else if (!(await page.locator(".verdict").count()))
+    early.push(["no note after a pick", "/live?phase=pregame", "", ""]);
+  await page.close();
 }
 
 // The real site: a real player (the leaderboard's first shown one), their latest match, an agent.
