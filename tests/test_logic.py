@@ -364,8 +364,10 @@ class MoreStatsTest(unittest.TestCase):
         self.assertEqual(summary["maps"][0] | {"image": None}, summary["maps"][0] | {"image": None})
         self.assertEqual((summary["maps"][0]["games"], summary["maps"][0]["atk_rate"]), (2, 58))
         self.assertEqual(summary["sides"]["def"], [12, 20])
-        self.assertEqual(summary["weapons"][0], {"key": "v", "kills": 6, "share": 75})
-        self.assertEqual(summary["aim"], {"head": 25, "body": 62, "leg": 13})
+        self.assertEqual(summary["weapons"][0], {"key": "v", "kills": 6, "share": 75, "far": None, "longest": None})
+        self.assertEqual(
+            summary["aim"], {"head": 25, "body": 62, "leg": 13, "hits": {"head": 20, "body": 50, "leg": 10}}
+        )
         self.assertEqual(
             summary["mates"][0] | {"puuid": ""},
             {"puuid": "", "name": "Mate", "tag": "0001", "games": 2, "wins": 1, "losses": 1, "win_rate": 50},
@@ -374,6 +376,91 @@ class MoreStatsTest(unittest.TestCase):
         self.assertTrue(acs["better"])
         fd = next(item for item in summary["lobby"] if item["key"] == "fd")
         self.assertTrue(fd["better"], "fewer first deaths than the lobby is better")
+
+
+class TrackerNumbersTest(unittest.TestCase):
+    """What tracker.gg shows beyond the digest's sums: flawless rounds, clutches tried, how far the kills were, and
+    the summary's totals, rates, roles and best match."""
+
+    #: Red: the player (0) and a team-mate (1); Blue: three.
+    MATCH = {
+        "players": [{"team_id": team} for team in ("Red", "Red", "Blue", "Blue", "Blue")],
+        "digest": {
+            "rounds": [{"w": "Red"}, {"w": "Red"}, {"w": "Blue"}],
+            "kills": [
+                # round 1: won without losing anyone; the player's kills 10 m and 30 m away
+                [0, 1000, 0, 2, "vandal", [], [1000, 0], [0, 0]],
+                [0, 2000, 0, 3, "vandal", [], [0, 3000], [0, 0]],
+                [0, 3000, 1, 4, "phantom", [], None, None],
+                # round 2: the team-mate falls first, the player wins alone against three
+                [1, 1000, 2, 1, "x", [], None, None],
+                [1, 2000, 0, 2, "vandal", [], [5000, 0], [0, 0]],
+                [1, 3000, 0, 3, "classic", [], [300, 400], [0, 0]],
+                [1, 4000, 0, 4, "classic", [], None, [0, 0]],
+                # round 3: alone against three again, and lost
+                [2, 1000, 3, 1, "x", [], None, None],
+                [2, 2000, 4, 0, "x", [], None, None],
+            ],
+        },
+    }
+
+    def test_extras(self):
+        found = rounds.extras(self.MATCH, 0)
+        self.assertEqual(found["flawless"], 1)
+        self.assertEqual(found["clutch"], {3: [1, 2]})
+        self.assertEqual(found["far"]["vandal"], [90.0, 3, 50.0])
+        self.assertEqual(found["far"]["classic"], [5.0, 1, 5.0], "a kill without both places is not measured")
+        self.assertNotIn("x", found["far"])
+        self.assertEqual(rounds.extras(self.MATCH, 1)["clutch"], {}, "never the last of the team")
+        self.assertEqual(rounds.extras({"players": [{}], "digest": {}}, 0), {})
+        self.assertEqual(rounds.extras(self.MATCH, 9), {})
+
+    def test_old_kills_without_places(self):
+        match = json.loads(json.dumps(self.MATCH))
+        match["digest"]["kills"] = [kill[:6] for kill in match["digest"]["kills"]]
+        self.assertEqual(rounds.extras(match, 0)["far"], {})
+        self.assertEqual(rounds.extras(match, 0)["clutch"], {3: [1, 2]})
+
+    def test_summary(self):
+        fixture_match = json.loads(fixture("henrik_matches.json"))["data"][0]
+        fixture_match["digest"] = rounds.digest(fixture_match)
+        me = stats.find_player(fixture_match, "puuid-me")
+        adv = stats.advanced(fixture_match, me)
+        row = {
+            "id": "m1",
+            "region": "ap",
+            "line": stats.line(me, 22, adv),
+            "adv": adv,
+            "extra": rounds.extras(self.MATCH, 0),
+            "result": {"won": True, "rounds": True},
+            "rounds": 22,
+            "agent_id": "a",
+            "agent_name": "A",
+            "role": {"name": "Duelist", "icon": None},
+            "map": {"name": "Ascent"},
+            "length": 2400000,
+            "weapons": {"vandal": 3},
+            "when": "11月4日 12:05",
+        }
+        other = dict(row, id="m2", result={"won": False, "rounds": True}, agent_id="b", agent_name="B")
+        other["role"] = {"name": "Sentinel", "icon": None}
+        other["line"] = dict(row["line"], kills=25)
+        summary = stats.summary([row, other])
+        self.assertEqual((summary["kills_total"], summary["deaths_total"], summary["assists_total"]), (45, 30, 10))
+        self.assertEqual(summary["kad"], round(55 / 30, 2))
+        self.assertEqual(summary["kpr"], round(45 / 44, 2))
+        self.assertEqual((summary["fk_rate"], summary["fd_rate"]), (59, 5))  # 26 and 2 of 44 rounds
+        self.assertEqual(summary["clutch_table"], [{"against": 3, "won": 2, "tried": 4, "rate": 50}])
+        self.assertEqual((summary["clutch_tried"], summary["clutch_rate"]), (4, 50))
+        self.assertEqual(summary["flawless"], 2)
+        self.assertEqual(summary["econ"], 50)
+        self.assertEqual((summary["best"]["kills"], summary["best"]["id"]), (25, "m2"))
+        self.assertEqual([role["name"] for role in summary["roles"]], ["Duelist", "Sentinel"])
+        self.assertEqual((summary["roles"][0]["games"], summary["roles"][0]["win_rate"]), (1, 100))
+        self.assertEqual(summary["agent_table"][0]["role"], "Duelist")
+        self.assertEqual((summary["agent_table"][0]["kast"], summary["agent_table"][0]["dd"]), (59, 91))
+        self.assertEqual(summary["agent_table"][0]["minutes"], 40)
+        self.assertEqual((summary["weapons"][0]["far"], summary["weapons"][0]["longest"]), (30, 50))
 
 
 class HostingTest(unittest.TestCase):

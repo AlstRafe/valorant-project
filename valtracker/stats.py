@@ -183,7 +183,13 @@ def _per_agent(played: list[dict]) -> list[dict]:
         key = row["agent_id"] or row["agent_name"]
         seen = agents.setdefault(
             key,
-            {"id": row["agent_id"], "name": row["agent_name"], "icon": row.get("agent_icon"), "rows": []},
+            {
+                "id": row["agent_id"],
+                "name": row["agent_name"],
+                "icon": row.get("agent_icon"),
+                "role": (row.get("role") or {}).get("name") or "",
+                "rows": [],
+            },
         )
         seen["rows"].append(row)
     table = []
@@ -194,13 +200,16 @@ def _per_agent(played: list[dict]) -> list[dict]:
 
 
 def _totals(rows: list[dict]) -> dict:
-    """Games, wins and losses, win rate, K/D, ACS, ADR and HS% over some of the rows."""
+    """Games, wins and losses, win rate, K/D, ACS, ADR, DDΔ, HS%, KAST and the time played over some of the rows."""
     wins = sum(1 for row in rows if row["result"]["won"] is True)
     losses = sum(1 for row in rows if row["result"]["won"] is False)
     kills = sum(row["line"]["kills"] for row in rows)
     deaths = sum(row["line"]["deaths"] for row in rows)
     shots = sum(row["line"]["shots"] for row in rows)
     with_rounds = [row for row in rows if row.get("rounds")]
+    rounds = sum(row["rounds"] for row in with_rounds)
+    detailed = [row for row in with_rounds if row.get("adv") and row["adv"].get("rounds")]
+    kast_rounds = sum(row["adv"]["rounds"] for row in detailed)
     return {
         "games": len(rows),
         "wins": wins,
@@ -209,8 +218,30 @@ def _totals(rows: list[dict]) -> dict:
         "kd": round(kills / deaths, 2) if deaths else float(kills),
         "acs": round(sum(row["line"]["acs"] for row in with_rounds) / len(with_rounds)) if with_rounds else None,
         "adr": round(sum(row["line"]["adr"] for row in with_rounds) / len(with_rounds)) if with_rounds else None,
+        "dd": round(sum(row["line"].get("damage", 0) - row["line"].get("taken", 0) for row in with_rounds) / rounds)
+        if rounds
+        else None,
         "hs": round(100 * sum(row["line"]["headshots"] for row in rows) / shots) if shots else 0,
+        "kast": round(100 * sum(row["adv"]["kast"] for row in detailed) / kast_rounds) if kast_rounds else None,
+        "minutes": round(sum(row.get("length") or 0 for row in rows) / 60000),
     }
+
+
+def _per_role(played: list[dict]) -> list[dict]:
+    """The player's numbers by the role of the agents they played (Duelist, Initiator, ...), the most played first."""
+    roles: dict[str, dict] = {}
+    for row in played:
+        role = row.get("role") or {}
+        if not role.get("name"):
+            continue
+        seen = roles.setdefault(role["name"], {"name": role["name"], "icon": role.get("icon"), "rows": []})
+        seen["rows"].append(row)
+    table = []
+    for seen in roles.values():
+        rows = seen.pop("rows")
+        agents = sorted({row["agent_name"] for row in rows if row.get("agent_name")})
+        table.append(seen | _totals(rows) | {"agents": agents})
+    return sorted(table, key=lambda role: (-role["games"], -role["wins"], role["name"]))
 
 
 def _per_map(played: list[dict]) -> list[dict]:
@@ -327,6 +358,23 @@ def summary(rows: list[dict]) -> dict:
     weapon_kills = sum(weapons.values())
     multi = [sum((row["adv"].get("mk") or [0, 0, 0, 0])[index] for row in detailed) for index in range(4)]
     agents = _per_agent(played)
+    assists = sum(row["line"]["assists"] for row in played)
+    detailed_rounds = sum(row["adv"].get("rounds") or 0 for row in detailed)
+    extra = [row["extra"] for row in with_rounds if row.get("extra")]
+    clutch = {against: [0, 0] for against in range(1, 6)}
+    far: dict[str, list] = {}
+    for found in extra:
+        for against, (won, tried) in (found.get("clutch") or {}).items():
+            clutch[int(against)][0] += won
+            clutch[int(against)][1] += tried
+        for key, (metres, measured, longest) in (found.get("far") or {}).items():
+            seen = far.setdefault(key, [0.0, 0, 0.0])
+            seen[0] += metres
+            seen[1] += measured
+            seen[2] = max(seen[2], longest)
+    tried = sum(item[1] for item in clutch.values())
+    econ = [row["line"]["econ"] for row in with_rounds if row["line"].get("econ") is not None]
+    best = max(played, key=lambda row: (row["line"]["kills"], row["line"]["acs"]))
     return {
         "games": count,
         "wins": totals["wins"],
@@ -336,10 +384,15 @@ def summary(rows: list[dict]) -> dict:
         "deaths": round(deaths / count, 1),
         "assists": round(sum(row["line"]["assists"] for row in played) / count, 1),
         "kd": totals["kd"],
+        "kills_total": kills,
+        "deaths_total": deaths,
+        "assists_total": assists,
+        "kad": round((kills + assists) / deaths, 2) if deaths else float(kills + assists),
+        "kpr": round(kills / rounds, 2) if rounds else None,
         # ACS, ADR and DDΔ are per round: a mode without rounds has none
         "acs": totals["acs"],
         "adr": totals["adr"],
-        "dd": round(sum(row["line"]["damage"] - row["line"]["taken"] for row in with_rounds) / rounds)
+        "dd": round(sum(row["line"].get("damage", 0) - row["line"].get("taken", 0) for row in with_rounds) / rounds)
         if rounds
         else None,
         "hs": totals["hs"],
@@ -350,9 +403,37 @@ def summary(rows: list[dict]) -> dict:
         ),
         "fk": sum(row["adv"]["fk"] for row in detailed) if detailed else None,
         "fd": sum(row["adv"]["fd"] for row in detailed) if detailed else None,
+        # the share of the rounds the player took (or gave) the first kill of
+        "fk_rate": round(100 * sum(row["adv"]["fk"] for row in detailed) / detailed_rounds)
+        if detailed_rounds
+        else None,
+        "fd_rate": round(100 * sum(row["adv"]["fd"] for row in detailed) / detailed_rounds)
+        if detailed_rounds
+        else None,
         "multi": multi if detailed else None,  # rounds with 2, 3, 4 and 5 kills
         "clutches": sum(row["adv"]["clutches"] for row in detailed) if detailed else None,
         "clutch_best": max((row["adv"]["clutch_best"] for row in detailed), default=0),
+        # clutches by how many were against the player: won and tried (the matches with their kills kept)
+        "clutch_table": [
+            {"against": against, "won": won, "tried": attempts, "rate": _rate(won, attempts)}
+            for against, (won, attempts) in clutch.items()
+            if attempts
+        ],
+        "clutch_tried": tried,
+        "clutch_rate": _rate(sum(item[0] for item in clutch.values()), tried),
+        "flawless": sum(found.get("flawless") or 0 for found in extra) if extra else None,
+        "aces": multi[3] if detailed else None,
+        "econ": round(sum(econ) / len(econ)) if econ else None,
+        "best": {
+            "kills": best["line"]["kills"],
+            "deaths": best["line"]["deaths"],
+            "assists": best["line"]["assists"],
+            "id": best.get("id"),
+            "region": best.get("region"),
+            "map": (best.get("map") or {}).get("name") or "",
+            "agent": best.get("agent_name") or "",
+            "when": best.get("when") or "",
+        },
         "plants": sum(row["adv"]["plants"] for row in detailed) if detailed else None,
         "defuses": sum(row["adv"]["defuses"] for row in detailed) if detailed else None,
         "minutes": round(sum(row.get("length") or 0 for row in played) / 60000),
@@ -362,6 +443,7 @@ def summary(rows: list[dict]) -> dict:
             "head": round(100 * heads / shots),
             "body": round(100 * bodies / shots),
             "leg": 100 - round(100 * heads / shots) - round(100 * bodies / shots),
+            "hits": {"head": heads, "body": bodies, "leg": legs},
         }
         if shots
         else None,
@@ -373,10 +455,18 @@ def summary(rows: list[dict]) -> dict:
         ],
         "agents": agents[:3],
         "agent_table": agents,
+        "roles": _per_role(played),
         "maps": _per_map(played),
         "sides": _sides(with_rounds),
         "weapons": [
-            {"key": key, "kills": number, "share": round(100 * number / weapon_kills)}
+            {
+                "key": key,
+                "kills": number,
+                "share": round(100 * number / weapon_kills),
+                # how far the kills were (metres), of those with both places known
+                "far": round(far[key][0] / far[key][1]) if far.get(key) and far[key][1] else None,
+                "longest": round(far[key][2]) if far.get(key) and far[key][1] else None,
+            }
             for key, number in sorted(weapons.items(), key=lambda item: -item[1])[:6]
         ],
         "lobby": _versus_lobby(with_rounds),

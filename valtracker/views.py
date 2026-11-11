@@ -193,10 +193,12 @@ def _rank(tier: dict | None, old: bool = False) -> dict:
 def _agent(agent: dict | None) -> dict:
     agent = agent or {}
     known = current_app.config["VAL_CONTENT"].agent_index(g.lang).get(str(agent.get("id") or "").lower()) or {}
+    role = known.get("role") if isinstance(known.get("role"), dict) else {}
     return {
         "id": str(agent.get("id") or ""),
         "name": str(known.get("displayName") or agent.get("name") or ""),
         "icon": known.get("displayIcon"),
+        "role": {"name": str(role.get("displayName") or ""), "icon": role.get("displayIcon")},
     }
 
 
@@ -226,6 +228,8 @@ def _row(match: dict, player: dict, rr_changes: dict) -> dict:
     adv = stats.advanced(match, player)
     result = stats.team_result(match, str(player.get("team_id") or ""))
     side = ((match.get("digest") or {}).get("sides") or {}).get(str(player.get("team_id") or ""))
+    everyone = [other for other in match.get("players") or [] if isinstance(other, dict)]
+    place = next((number for number, other in enumerate(everyone) if other is player), -1)
     return {
         "id": match_id,
         "region": str(metadata.get("region") or ""),
@@ -238,11 +242,13 @@ def _row(match: dict, player: dict, rr_changes: dict) -> dict:
         "agent_id": agent["id"],
         "agent_name": agent["name"],
         "agent_icon": agent["icon"],
+        "role": agent["role"],
         "result": result,
         "placing": stats.placing(match, player),
         "rr": (rr_changes.get(match_id) or {}).get("change"),
         "line": stats.line(player, rounds, adv),
         "adv": adv,
+        "extra": rounds_module.extras(match, place) if result["rounds"] else {},
         "rounds": rounds,
         "side": side if result["rounds"] else None,
         "weapons": adv.get("weapons") or {},
@@ -334,6 +340,11 @@ def _scores(rows: list[dict]) -> dict | None:
         "band": _band_name(widest["band"]),
         "tops": {key: score.top([row["score"]["standings"][key] for row in scored]) for key in LINE_STATS},
         "chart": _score_chart(_averages([row["score"]["value"] for row in reversed(scored)], SCORE_POINTS))
+        | {
+            "narrow": _score_chart(_averages([row["score"]["value"] for row in reversed(scored)], NARROW_DOTS), NARROW),
+            "first": i18n.day(g.lang, scored[-1]["started"]) if scored[-1].get("started") else "",
+            "last": i18n.day(g.lang, scored[0]["started"]) if scored[0].get("started") else "",
+        }
         if len(scored) > 1
         else None,
     }
@@ -352,11 +363,12 @@ def _averages(values: list[int], most: int) -> list[int]:
     ]
 
 
-def _score_chart(values: list[int]) -> dict:
+def _score_chart(values: list[int], size: tuple[int, int] = (420, 130)) -> dict:
     """The scores of the matches as a line, oldest first (an SVG drawn here), with a line where each grade
     begins. Narrower than the RR's (at most SCORE_POINTS dots: a lifetime's in averages), so it stays tall enough
-    on a phone."""
-    width, height, pad = 420, 130, 12
+    on a phone; ``size``: the drawing's width and height."""
+    width, height = size
+    pad = 12
 
     def y(value: float) -> float:
         return round(pad + (1000 - value) * (height - 2 * pad) / 1000, 1)
@@ -412,13 +424,31 @@ def _lobby_rows(compared: list[dict]) -> list[dict]:
 
 def _rr_chart(rr_changes: dict) -> dict | None:
     """The RR of the competitive matches as a line (an SVG drawn here: no script), oldest first, with a
-    line where each rank begins (elo: 100 a rank, rank 3 at 0)."""
+    line where each rank begins (elo: 100 a rank, rank 3 at 0): the wide drawing, and in ``narrow`` one for a phone
+    (taller for its width, so its words stay readable), the first and last days under it."""
     points = sorted(
         (item for item in rr_changes.values() if item.get("elo") and item.get("at")), key=lambda item: item["at"]
     )
     if len(points) < 2:
         return None
-    width, height, pad = 800, 150, 14
+    wide = _rr_drawing(points, 800, 150, RR_DOTS)
+    first, last = (datetime.fromtimestamp(points[index]["at"], stats.JST) for index in (0, -1))
+    return wide | {
+        "narrow": _rr_drawing(points, NARROW[0], NARROW[1], NARROW_DOTS),
+        "net": sum(item["change"] for item in points),
+        "games": len(points),
+        "first": i18n.day(g.lang, first),
+        "last": i18n.day(g.lang, last),
+    }
+
+
+#: A chart's size on a phone (wide 800 × 150 would be 65 px tall there, its words 5 px), and its dots at most.
+NARROW = (360, 190)
+NARROW_DOTS = 20
+
+
+def _rr_drawing(points: list[dict], width: int, height: int, most: int) -> dict:
+    pad = 14
     elos = [item["elo"] for item in points]
     low, high = min(elos) - 12, max(elos) + 12
     if high - low < 60:
@@ -440,7 +470,7 @@ def _rr_chart(rr_changes: dict) -> dict | None:
         for number, item in enumerate(points)
     ]
     # a lifetime's line: drawn through every match, with a dot on some of them (the first and the latest too)
-    gap = max(1, math.ceil(len(every) / RR_DOTS))
+    gap = max(1, math.ceil(len(every) / most))
     dots = [dot for number, dot in enumerate(every) if number % gap == 0 or number == len(every) - 1]
     lines = []
     for elo in range(int(low // 100 + 1) * 100, int(high) + 1, 100):
@@ -451,8 +481,6 @@ def _rr_chart(rr_changes: dict) -> dict | None:
         "path": "M" + " L".join(f"{dot['x']},{dot['y']}" for dot in every),
         "dots": dots,
         "lines": lines,
-        "net": sum(item["change"] for item in points),
-        "games": len(points),
     }
 
 
@@ -564,12 +592,13 @@ def _acts(seasons: list) -> list[dict]:
 
 
 def _player(
-    name: str, tag: str, mode: str = "", fresh: bool = False, span: str = "", page: int = 1
+    name: str, tag: str, mode: str = "", fresh: bool = False, span: str = "", page: int = 1, act: str = ""
 ) -> tuple[dict, int]:
     """What the player page shows, and its HTTP status. The account comes first (its region is needed); then
     the rank and the matches are asked for at the same time. ``fresh``: the visitor pressed "最新にする", so
     what is kept of the rank and the matches is asked for again (when it was read over a minute ago). ``span``
-    "all": every match kept of the player (archive.py), not the latest RECENT; ``page``: of its list."""
+    "all": every match kept of the player (archive.py), not the latest RECENT; "act": those of one act (``act``,
+    its uuid; the act being played when not given), as tracker.gg counts a season; ``page``: of its list."""
     henrik = current_app.config["VAL_HENRIK"]
     try:
         account = henrik.account(name, tag)
@@ -606,8 +635,10 @@ def _player(
         matches_problem = _failure(error.kind)[1]
     life, heat_maps, rr_all = None, None, rr_changes
     puuid = str(account.get("puuid") or "").lower()
-    if span == "all" and puuid:
-        life = _lifetime(puuid, region, name, tag, mode, rr_changes)
+    window = _act_window(act) if span == "act" else None
+    span = "act" if window else "all" if span else ""
+    if span and puuid:
+        life = _lifetime(puuid, region, name, tag, mode, rr_changes, window)
         rows, heat_maps, rr_all = life.pop("rows"), life.pop("heat_maps"), life.pop("rr")
         if rows:
             matches_problem = ""  # HenrikDev did not answer now, but the matches kept of the player are there
@@ -663,7 +694,9 @@ def _player(
         "matches_problem": matches_problem,
         "mode": mode,
         "modes": _modes(mode),
-        "span": "all" if life else "",
+        "span": span if life else "",
+        "window": window if life else None,
+        "acts_shown": _acts_shown(window, life) if life and window else [],
         "heat_dots": HEAT_DOTS,
         "life": life,
         "pages": {"page": page, "count": pages},
@@ -673,20 +706,60 @@ def _player(
     }, 200
 
 
-def _lifetime(puuid: str, region: str, name: str, tag: str, mode: str, recent_rr: dict) -> dict:
+def _act_window(uuid: str = "") -> dict | None:
+    """The act a player's numbers are counted over (span "act"): the one asked for, else the one being played, else
+    the latest: ``{"uuid", "name", "starts", "ends", "current", "from": its first day in the visitor's words}``.
+    None when the acts are not known (valorant-api.com did not answer)."""
+    acts = current_app.config["VAL_CONTENT"].acts(g.lang)
+    now = time.time()
+    current = next((item for item in acts if item["starts"].timestamp() <= now < item["ends"].timestamp()), None)
+    found = (
+        next((item for item in acts if uuid and item["uuid"] == uuid), None) or current or (acts[0] if acts else None)
+    )
+    if not found:
+        return None
+    starts = found["starts"].astimezone(stats.JST)
+    return dict(found, current=found is current, **{"from": i18n.day(g.lang, starts)})
+
+
+def _acts_shown(window: dict, life: dict) -> list[dict]:
+    """The acts to choose from on a player's page: from the act of their first kept match to the one being played
+    (and the one shown, whatever it is), the latest first."""
+    first = life.get("first") or 0
+    now = time.time()
+    shown = []
+    for item in current_app.config["VAL_CONTENT"].acts(g.lang):
+        started = item["starts"].timestamp()
+        if item["uuid"] == window["uuid"] or (started <= now and (not first or item["ends"].timestamp() > first)):
+            shown.append(
+                {"uuid": item["uuid"], "name": item["name"], "current": started <= now < item["ends"].timestamp()}
+            )
+    return shown
+
+
+def _lifetime(
+    puuid: str, region: str, name: str, tag: str, mode: str, recent_rr: dict, window: dict | None = None
+) -> dict:
     """Every match kept of the player (archive.py), as the player page counts them: ``{"rows", "heat_maps", "rr",
-    "count", "whole", "thin", "since", "reading"}``. Asks the background to read the rest of their history. What
-    the rows and drawings come to is kept until something of the player is added (or LIFE_KEEP)."""
+    "count", "whole", "thin", "since", "first", "reading"}``; with ``window`` (_act_window), only the matches of
+    that act. Asks the background to read the rest of their history. What the rows and drawings come to is kept
+    until something of the player is added (or LIFE_KEEP)."""
     archive = current_app.config["VAL_ARCHIVE"]
     state = current_app.config["VAL_FILLER"].want(region, puuid, name, tag)
     archive.keep_rr(puuid, recent_rr)
     queue = MODES.get(mode, "")
-    key = ("life", puuid, queue, g.lang, archive.version(puuid))
+    low, high = (window["starts"].timestamp(), window["ends"].timestamp()) if window else (0.0, math.inf)
+    key = ("life", puuid, queue, g.lang, archive.version(puuid), window["uuid"] if window else "")
     kept = current_app.config["VAL_LIVES"].get(key)
     if kept is None:
         rr_all = archive.rr(puuid)
+        if window:
+            rr_all = {match_id: item for match_id, item in rr_all.items() if low <= (item.get("at") or 0) < high}
         rows, spots = [], {}
         for match in archive.matches(puuid, queue):
+            moment = stats.started(match)
+            if window and not (moment and low <= moment.timestamp() < high):
+                continue
             found = stats.find_player(match, puuid)
             if found:
                 row = _row(match, found, rr_all)
@@ -695,7 +768,11 @@ def _lifetime(puuid: str, region: str, name: str, tag: str, mode: str, recent_rr
                 rows.append(row)
                 _add_spots(spots, match, found)
         whole = len(rows)
-        rows += [_thin_row(line, region, rr_all) for line in archive.thin(puuid, queue) if line.get("rounds")]
+        for line in archive.thin(puuid, queue):
+            if line.get("rounds"):
+                row = _thin_row(line, region, rr_all)
+                if not window or (row["started"] and low <= row["started"].timestamp() < high):
+                    rows.append(row)
         rows.sort(key=lambda row: row["started"].timestamp() if row["started"] else 0, reverse=True)
         kept = {"rows": rows, "heat_maps": _heat_maps(spots, HEAT_DOTS), "rr": rr_all, "whole": whole}
         current_app.config["VAL_LIVES"].put(key, kept, LIFE_KEEP)
@@ -708,6 +785,7 @@ def _lifetime(puuid: str, region: str, name: str, tag: str, mode: str, recent_rr
         "whole": kept["whole"],
         "thin": len(kept["rows"]) - kept["whole"],
         "since": i18n.day(g.lang, datetime.fromtimestamp(since, stats.JST)) if since else "",
+        "first": since or 0,
         "reading": archive_module.progress(state, archive),
     }
 
@@ -746,11 +824,13 @@ def _thin_row(line: dict, region: str, rr_changes: dict) -> dict:
         "agent_id": agent["id"],
         "agent_name": agent["name"],
         "agent_icon": agent["icon"],
+        "role": agent["role"],
         "result": {"won": line.get("won"), "us": line.get("us") or 0, "them": line.get("them") or 0, "rounds": True},
         "placing": {"place": 0, "of": 0, "mvp": ""},
         "rr": (rr_changes.get(match_id) or {}).get("change"),
         "line": stats.line(player, rounds),
         "adv": {},
+        "extra": {},
         "rounds": rounds,
         "side": None,
         "weapons": {},
@@ -765,8 +845,16 @@ def _thin_row(line: dict, region: str, rr_changes: dict) -> dict:
 
 
 def _span() -> str:
-    """ "all" when the visitor asked for a player's lifetime (``?span=all``), else "" (the latest matches)."""
-    return "all" if request.args.get("span") == "all" else ""
+    """ "all" when the visitor asked for a player's lifetime (``?span=all``), "act" for one act (``?span=act``,
+    ``&act=`` its uuid), else "" (the latest matches)."""
+    asked = request.args.get("span")
+    return asked if asked in ("all", "act") else ""
+
+
+def _act() -> str:
+    """The act asked for (``?act=``, a uuid), or ""."""
+    asked = str(request.args.get("act") or "").lower()
+    return asked if re.fullmatch(r"[0-9a-f-]{36}", asked) else ""
 
 
 def _page() -> int:
@@ -1011,7 +1099,7 @@ def register(app: Flask) -> None:
         henrik, mode, fresh = current_app.config["VAL_HENRIK"], _mode(), bool(request.args.get("fresh"))
         kept = henrik.has_player(name, tag, mode) and not fresh
         if request.args.get("full") or not henrik.key() or kept:  # an answer at once
-            values, status = _player(name, tag, mode, fresh, _span(), _page())
+            values, status = _player(name, tag, mode, fresh, _span(), _page(), _act())
             return render_template("player.html", **values), status
         return render_template(
             "player.html",
@@ -1021,6 +1109,7 @@ def register(app: Flask) -> None:
             fresh=fresh,
             span=_span(),
             page=_page(),
+            act_asked=_act(),
             loading=True,
             account=None,
             problem="",
@@ -1033,7 +1122,7 @@ def register(app: Flask) -> None:
         if not split_riot_id(f"{name}#{tag}"):
             abort(404)
         start = time.monotonic()
-        values, status = _player(name, tag, _mode(), bool(request.args.get("fresh")), _span(), _page())
+        values, status = _player(name, tag, _mode(), bool(request.args.get("fresh")), _span(), _page(), _act())
         response = make_response(render_template("_player.html", **values), status)
         response.headers["Cache-Control"] = "no-store"
         # how long HenrikDev took, for the browser's developer tools (Network -> Timing)

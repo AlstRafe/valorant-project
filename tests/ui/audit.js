@@ -51,6 +51,8 @@ const MADE_UP = [
   "/p/Tester/JP1?full=1",
   "/p/Tester/JP1?span=all&full=1",
   "/p/Tester/JP1?span=all&page=4&full=1",
+  "/p/Tester/JP1?span=act&full=1",
+  "/compare?a=Tester%23JP1&b=Other%23KR1&span=act",
   "/p/Tester/JP1/seasons",
   "/m/ap/aaaaaaaa-0000-4000-8000-000000000001",
   "/m/ap/aaaaaaaa-0000-4000-8000-000000000001?me=Tester%23JP1",

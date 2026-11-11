@@ -308,6 +308,48 @@ class LifetimePageTest(unittest.TestCase):
         part = self.page("/p/Tester/JP1/part?span=all")
         self.assertIn("通算", part)
 
+    def test_one_act(self):
+        # ACT I: 2026-01-07 to 03-01; ACT III (being played): from 03-01 (the fixture's seasons)
+        base = henrik._slim_matches(json.loads(fixture("henrik_matches.json"))["data"])[0]
+        many = []
+        for number, started in enumerate(["2026-01-20", "2026-02-10", "2026-02-11", "2026-05-01", "2026-06-01"]):
+            match = json.loads(json.dumps(base))
+            match["metadata"]["match_id"] = f"dddddddd-0000-4000-8000-{number:012d}"
+            match["metadata"]["started_at"] = f"{started}T10:00:00Z"
+            many.append(match)
+        self.archive.keep(many)
+        first = "aaaa0000-0000-4000-8000-000000000002"
+        with mock.patch.dict(os.environ, {"VAL_HENRIK_KEY": "HDEV-x"}):
+            shell = self.page(f"/p/Tester/JP1?span=act&act={first}")
+        self.assertIn(f'data-part="/p/Tester/JP1/part?span=act&amp;act={first}"', shell)
+        text = self.page("/p/Tester/JP1?span=act&full=1")
+        self.assertIn('aria-current="true">アクト</a>', text)
+        self.assertIn("エピソード 9 · ACT III · 4 試合", text)  # the 2 recent matches and 2 of May and June
+        self.assertIn("エピソード 9 · ACT III（2026年3月1日 から）の 4 試合を数えています。", text)
+        self.assertIn("RR の推移 · エピソード 9 · ACT III", text)
+        self.assertIn(
+            '<option value="aaaa0000-0000-4000-8000-000000000003" selected>エピソード 9 · ACT III （いま）', text
+        )
+        self.assertIn(f'<option value="{first}">エピソード 9 · ACT I</option>', text)
+        self.assertIn('href="/p/Tester/JP1?mode=competitive&amp;span=act"', text)
+        self.assertEqual(text.count('class="match '), 4)
+
+        old = self.page(f"/p/Tester/JP1?span=act&act={first}&full=1")
+        self.assertIn("エピソード 9 · ACT I · 3 試合", old)
+        self.assertIn(f'href="/p/Tester/JP1?mode=competitive&amp;span=act&amp;act={first}"', old)
+        self.assertEqual(old.count('class="match '), 3)
+        self.assertIn("エピソード 9 · ACT III · 4 試合", self.page("/p/Tester/JP1?span=act&act=nonsense&full=1"))
+
+        self.assertIn("ACT I · 3 試合", self.page(f"/p/Tester/JP1/part?span=act&act={first}"))
+
+    def test_the_recent_list_leads_on(self):
+        text = self.page("/p/Tester/JP1?full=1")
+        self.assertIn(
+            '<a class="button quiet" href="/p/Tester/JP1?span=all#m-title">もっと前の試合（通算） →</a>', text
+        )
+        self.assertIn('class="narrow"', text)  # the charts drawn for a phone too
+        self.assertIn('<p class="chart-days">', text)
+
     def test_kept_until_something_is_added(self):
         self.page("/p/Tester/JP1?span=all&full=1")
         with mock.patch.object(self.archive, "matches", side_effect=AssertionError("worked out again")):

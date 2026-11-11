@@ -1006,6 +1006,15 @@ span.tri.down {
 .spans + .modes {
   margin-top: 0.7rem;
 }
+@media (max-width: 34rem) {
+  /* three of them fit 360px in every language ("Last 15 matches · Act · Lifetime" was 8px too wide) */
+  .spans {
+    max-width: 100%;
+  }
+  .spans a {
+    padding: 0.45rem 0.7rem;
+  }
+}
 /* What a lifetime counts, and the reading still going on. */
 .life-note {
   margin: 0.8rem 0 0;
@@ -5041,4 +5050,202 @@ code {
     grid-row: auto;
     justify-content: flex-end;
   }
+}
+
+/* A player's numbers as tracker.gg lays them out: four big ones with where they stand in the player's rank band
+   (a bar and "上位 X%"), then the rest, smaller. */
+.numbers.big {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 0.6rem;
+}
+.numbers.big dd {
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+.numbers .place {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.45rem;
+  margin-top: 0.3rem;
+  color: var(--soft);
+  font-size: 0.78rem;
+  font-weight: 400;
+}
+.numbers .place meter {
+  width: 3.5rem;
+  height: 0.4rem;
+}
+.numbers .place small {
+  display: inline;
+}
+.numbers:not(.big) div {
+  padding: 0.55rem 0.75rem;
+}
+.numbers:not(.big) dd {
+  font-size: 1.1rem;
+}
+.numbers dd a {
+  color: inherit;
+}
+@media (max-width: 40rem) {
+  .numbers.big {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .numbers.big dd {
+    font-size: 1.45rem;
+  }
+  .numbers:not(.big) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+  .numbers:not(.big) div {
+    padding: 0.5rem 0.6rem;
+  }
+  .numbers:not(.big) dt {
+    font-size: 0.75rem;
+  }
+}
+/* A chart is drawn twice: wide, and for a phone taller for its width (so its words stay readable); the first and
+   last days under it. */
+.chart svg.narrow {
+  display: none;
+}
+@media (max-width: 34rem) {
+  .chart svg.wide {
+    display: none;
+  }
+  .chart svg.narrow {
+    display: block;
+  }
+}
+.chart-days {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0.3rem 0 0;
+  color: var(--soft);
+  font-size: 0.78rem;
+}
+.chart-days span:last-child {
+  text-align: right;
+}
+/* Each match's numbers in their own labelled cells, in columns down the list */
+.match .cells {
+  display: grid;
+  grid-template-columns: 5.6rem repeat(5, 3.2rem);
+  gap: 0.5rem;
+  text-align: center;
+}
+.match .cell small {
+  font-size: 0.68rem;
+}
+.match .cell strong {
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+}
+.match .cell .up {
+  color: var(--win);
+}
+.match .cell .down {
+  color: var(--loss);
+}
+.match .cell .row-score {
+  min-width: 2.2rem;
+  vertical-align: 0;
+}
+.match a {
+  grid-template-columns: 2.75rem minmax(0, 1fr) minmax(5.5rem, auto) auto;
+}
+.mvp.place {
+  white-space: nowrap;
+  background: var(--paper);
+  color: var(--soft);
+  box-shadow: 0 0 0 1px var(--rule);
+}
+@media (max-width: 48rem) {
+  .match a {
+    grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+    gap: 0.35rem 0.6rem;
+  }
+  .match .cells {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(4.6rem, 1.6fr) repeat(5, minmax(0, 1fr));
+    gap: 0.3rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid var(--rule);
+  }
+}
+.more-games {
+  margin: 0.8rem 0 0;
+}
+/* The act a player's numbers are counted over */
+.act-choice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.7rem 0 0;
+}
+.act-choice label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--soft);
+  font-size: 0.9rem;
+}
+.act-choice select {
+  min-height: 2.4rem;
+  max-width: 100%;
+}
+/* By role (Duelist, Initiator, ...), above the agents' table */
+.role-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+  gap: 0.5rem;
+  margin: 0 0 0.7rem;
+  padding: 0;
+  list-style: none;
+}
+.role-cards li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.role-cards img {
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  filter: invert(0.5);
+}
+.role-cards small {
+  display: block;
+  color: var(--soft);
+  font-size: 0.78rem;
+}
+.who-cell > span small {
+  display: block;
+  color: var(--soft);
+  font-size: 0.72rem;
+  font-weight: 400;
+}
+.stats-table th[scope="row"] {
+  text-align: left;
+}
+.weapons strong small {
+  display: block;
+  margin: 0;
+  font-size: 0.75rem;
+}
+.body-figure dd small {
+  color: var(--soft);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+.clutch .sides dt {
+  min-width: 2.5rem;
 }

@@ -241,3 +241,60 @@ def _round_players(item: dict, happened: list, team: list, each: list) -> None:
         if item["w"] == name:
             each[player]["clutches"] += 1
             each[player]["clutch_best"] = max(each[player]["clutch_best"], against)
+
+
+#: The game's units are centimetres: a kill's distance in metres is the floor distance between the two (x, y) / 100.
+METRE = 100
+
+
+def extras(match: dict, me: int) -> dict:
+    """What one player's rounds say beyond the digest's sums, read from its compact rounds and kills (so a match kept
+    before these were counted has them too): ``{"flawless": rounds the team won without losing anyone, "clutch":
+    {against: [won, tried]} (the moment the player was the last of their team, against 1-5), "far": {weapon key:
+    [metres, kills, longest]} (the player's kills with both places known)}``; {} without rounds and kills."""
+    digest = match.get("digest") if isinstance(match.get("digest"), dict) else {}
+    played, kills = digest.get("rounds") or [], digest.get("kills") or []
+    players = [player for player in match.get("players") or [] if isinstance(player, dict)]
+    if not played or not kills or not 0 <= me < len(players):
+        return {}
+    team = [str(player.get("team_id") or "") for player in players]
+    mine = team[me]
+    if not mine:
+        return {}
+    by_round: dict[int, list] = {}
+    for kill in kills:
+        if isinstance(kill, list) and len(kill) >= 4 and 0 <= _int(kill[3], -1) < len(team):
+            by_round.setdefault(_int(kill[0]), []).append(kill)
+    flawless, clutch, far = 0, {}, {}
+    for number, item in enumerate(played):
+        happened = by_round.get(number, [])
+        won = isinstance(item, dict) and item.get("w") == mine
+        if won and not any(team[kill[3]] == mine for kill in happened):
+            flawless += 1
+        alive = {name: {player for player in range(len(team)) if team[player] == name} for name in set(team) if name}
+        for kill in happened:
+            for members in alive.values():
+                members.discard(kill[3])
+            if alive.get(mine) == {me}:
+                against = sum(len(rest) for other, rest in alive.items() if other != mine)
+                if against:
+                    seen = clutch.setdefault(min(against, 5), [0, 0])
+                    seen[0] += 1 if won else 0
+                    seen[1] += 1
+                break
+            if not alive.get(mine):
+                break
+    for kill in kills:
+        if not isinstance(kill, list) or len(kill) < 8 or kill[2] != me or not kill[4]:
+            continue
+        if not 0 <= _int(kill[3], -1) < len(team) or team[kill[3]] == mine:
+            continue
+        victim_at, killer_at = kill[6], kill[7]
+        if not (isinstance(victim_at, list) and isinstance(killer_at, list) and len(victim_at) == len(killer_at) == 2):
+            continue
+        metres = ((victim_at[0] - killer_at[0]) ** 2 + (victim_at[1] - killer_at[1]) ** 2) ** 0.5 / METRE
+        seen = far.setdefault(str(kill[4]), [0.0, 0, 0.0])
+        seen[0] += metres
+        seen[1] += 1
+        seen[2] = max(seen[2], metres)
+    return {"flawless": flawless, "clutch": clutch, "far": far}

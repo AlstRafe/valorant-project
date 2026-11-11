@@ -194,10 +194,18 @@ class Content:
         }
 
     def act(self, lang: str, now: float | None = None) -> dict | None:
-        """The act being played: ``{"name": "EPISODE 9 · ACT III", "ends": datetime (UTC), "uuid"}``, or None."""
+        """The act being played: ``{"name": "EPISODE 9 · ACT III", "starts", "ends": datetime (UTC), "uuid"}``, or
+        None."""
         now = self.clock() if now is None else now
+        return next(
+            (item for item in self.acts(lang) if item["starts"].timestamp() <= now < item["ends"].timestamp()), None
+        )
+
+    def acts(self, lang: str) -> list[dict]:
+        """Every act, the latest first: ``{"name": "EPISODE 9 · ACT III", "starts", "ends": datetime (UTC), "uuid"}``."""
         seasons = [item for item in self._list("seasons", lang) if isinstance(item, dict)]
         by_id = {str(item.get("uuid") or "").lower(): item for item in seasons}
+        found = []
         for item in seasons:
             if "Act" not in str(item.get("type") or ""):
                 continue
@@ -206,15 +214,17 @@ class Content:
                 end = datetime.fromisoformat(str(item.get("endTime")).replace("Z", "+00:00"))
             except ValueError:
                 continue
-            if start.timestamp() <= now < end.timestamp():
-                parent = by_id.get(str(item.get("parentUuid") or "").lower()) or {}
-                names = [str(parent.get("displayName") or ""), str(item.get("displayName") or "")]
-                return {
+            parent = by_id.get(str(item.get("parentUuid") or "").lower()) or {}
+            names = [str(parent.get("displayName") or ""), str(item.get("displayName") or "")]
+            found.append(
+                {
                     "name": " · ".join(name for name in names if name),
+                    "starts": start,
                     "ends": end,
                     "uuid": str(item.get("uuid") or "").lower(),
                 }
-        return None
+            )
+        return sorted(found, key=lambda item: item["starts"], reverse=True)
 
     def weapons(self, lang: str) -> list:
         return [weapon for weapon in self._list("weapons", lang) if isinstance(weapon, dict)]

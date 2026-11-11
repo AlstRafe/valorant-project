@@ -43,9 +43,9 @@
 {% endfor %}</tbody>
 </table></div>
 <p class="compare-more"><a class="button quiet" href="{{ swap_url }}">{{ t('左右を入れ替える') }}</a></p>
-<p class="note">{% if span %}{{ t('それぞれ通算の試合（{a} 試合と {b} 試合。このサイトが読み込んだ分）の平均です。', a='{:,}'.format((sides[0].found.summary or {}).get('games', 0)), b='{:,}'.format((sides[1].found.summary or {}).get('games', 0))) }}{% else %}{{ t('それぞれ最近の試合（多くて {count} 試合）の平均です。試合の数が少ないと、たまたまの差が大きく出ます。', count=recent) }}{% endif %}</p>
+<p class="note">{% if span == 'act' %}{{ t('それぞれ今のアクトの試合（{a} 試合と {b} 試合。このサイトが読み込んだ分）の平均です。', a='{:,}'.format((sides[0].found.summary or {}).get('games', 0)), b='{:,}'.format((sides[1].found.summary or {}).get('games', 0))) }}{% elif span %}{{ t('それぞれ通算の試合（{a} 試合と {b} 試合。このサイトが読み込んだ分）の平均です。', a='{:,}'.format((sides[0].found.summary or {}).get('games', 0)), b='{:,}'.format((sides[1].found.summary or {}).get('games', 0))) }}{% else %}{{ t('それぞれ最近の試合（多くて {count} 試合）の平均です。試合の数が少ないと、たまたまの差が大きく出ます。', count=recent) }}{% endif %}</p>
 {% set names = rows|map(attribute='name')|list %}
-{% set terms = ['kda'] + (['acs'] if 'ACS' in names else []) + (['adr'] if 'ADR' in names else []) + (['hs'] if t('HS率') in names else []) + (['kast'] if 'KAST' in names else []) + (['dd'] if 'DDΔ' in names else []) %}
+{% set terms = ['kda'] + (['acs'] if 'ACS' in names else []) + (['adr'] if 'ADR' in names else []) + (['hs'] if t('HS率') in names else []) + (['kast'] if 'KAST' in names else []) + (['dd'] if 'DDΔ' in names else []) + (['kad'] if 'KAD' in names else []) + (['kpr'] if t('キル / ラウンド') in names else []) + (['econ'] if t('経済効率') in names else []) %}
 {% include "_glossary.html" %}
 {% endif %}
 {% endblock %}
