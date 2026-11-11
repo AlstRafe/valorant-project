@@ -1004,6 +1004,15 @@ span.tri.down {
 .spans + .modes {
   margin-top: 0.7rem;
 }
+@media (max-width: 34rem) {
+  /* three of them fit 360px in every language ("Last 15 matches · Act · Lifetime" was 8px too wide) */
+  .spans {
+    max-width: 100%;
+  }
+  .spans a {
+    padding: 0.45rem 0.7rem;
+  }
+}
 /* What a lifetime counts, and the reading still going on. */
 .life-note {
   margin: 0.8rem 0 0;
