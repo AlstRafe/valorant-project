@@ -112,7 +112,7 @@ class PagesTest(unittest.TestCase):
                 self.assertIn(words, text)
                 self.assertIn('id="riot-id"', text)
                 self.assertIn('<details class="glossary" open>', text)
-                self.assertEqual(text.count("<dt>"), 13, "every word of the numbers")
+                self.assertEqual(text.count("<dt>"), 18, "every word of the numbers")
         self.assertIn('href="/help"', self.get("/agents").get_data(as_text=True))  # from every page's foot
 
     def test_the_numbers_explained_where_they_are(self):
@@ -173,7 +173,7 @@ class PagesTest(unittest.TestCase):
         self.assertIn("アセント", text)  # the map too
         self.assertIn("13–9", text)
         self.assertIn("7–13", text)
-        self.assertIn("ACS 255", text)  # 5600 / 22 rounds
+        self.assertIn("<small>ACS</small><strong>255</strong>", text)  # 5600 / 22 rounds
         self.assertIn("50%", text)  # one win, one loss
         self.assertIn('data-name="Tester"', text)
         self.assertIn(f"/m/ap/{MATCH}", text)
@@ -233,9 +233,10 @@ class PagesTest(unittest.TestCase):
         self.assertIn('<span class="up">+18 RR</span>', text)  # each competitive match's RR
         self.assertIn('<span class="down">-15 RR</span>', text)
         self.assertIn('<span class="mvp match" title="マッチ MVP">MVP', text)  # the best combat score of the match
-        self.assertEqual(text.count('class="mvp '), 1)
+        self.assertEqual(text.count('class="mvp match'), 1)
+        self.assertIn('<span class="mvp place" title="4人中 3位">3位</span>', text)  # where the loss left the player
         self.assertIn('<li class="win">勝</li><li class="loss">敗</li>', text)  # newest first
-        self.assertIn("ADR 143", text)  # (3000 / 22 -> 136, 3000 / 20 -> 150) / 2
+        self.assertIn("<dt>ダメージ / ラウンド</dt><dd>143", text)  # (3000 / 22 -> 136, 3000 / 20 -> 150) / 2
         self.assertIn(f"/m/ap/{MATCH}?me=Tester%23JP1", text)
         self.assertNotIn("デスマッチなどは除く", text)
         self.assertIn("勝利", text)  # the game's words
@@ -253,8 +254,12 @@ class PagesTest(unittest.TestCase):
         self.assertIn('<path class="line" d="M14.0,93.3 L786.0,56.7"/>', text)  # the RR trend: two competitive matches
         self.assertIn("+3 RR", text)  # +18 - 15
         self.assertIn("<dd>59%", text)  # KAST over the match told round by round
-        self.assertIn("13 / 1", text)  # first kills / deaths
-        self.assertIn("最高 1v1", text)
+        self.assertIn("<dt>ファーストキル</dt><dd>13", text)
+        self.assertIn("<dt>ファーストデス</dt><dd>1<", text)
+        self.assertIn("挑戦 9 · 成功 11%", text)  # 1 of the 9 rounds the player was the last of their team
+        self.assertIn(
+            '<dt>1v2</dt><dd><meter min="0" max="100" value="0"></meter><span>0%</span><small>0/8</small>', text
+        )
         self.assertIn("1時間20分", text)  # two matches of 40 minutes
         self.assertIn('class="versus"', text)
         self.assertIn("強み", text)

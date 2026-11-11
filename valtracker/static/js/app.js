@@ -210,6 +210,19 @@
     });
   }
 
+  // A choice that is a page of its own (the act a player's numbers are counted over): shown when chosen, without
+  // the button a browser without a script needs.
+  function autoSubmit() {
+    document.querySelectorAll("select[data-auto-submit]").forEach(function (pick) {
+      var button = pick.form && pick.form.querySelector("button[type=submit]");
+      if (!button || button.hidden) return;
+      button.hidden = true;
+      pick.addEventListener("change", function () {
+        pick.form.submit();
+      });
+    });
+  }
+
   // A mode further along the row (Premier on a phone) is scrolled into sight.
   function chosen() {
     var current = document.querySelector(".modes a[aria-current]");
@@ -259,6 +272,7 @@
         }
         chosen();
         acts();
+        autoSubmit();
         times();
         days();
         mapPick();
@@ -434,10 +448,14 @@
       var losses = 0;
       var rr = 0;
       var rated = false;
+      var kills = 0;
+      var deaths = 0;
       group.items.forEach(function (item) {
         var outcome = item.getAttribute("data-outcome");
         if (outcome === "win") wins += 1;
         if (outcome === "loss") losses += 1;
+        kills += Number(item.getAttribute("data-k")) || 0;
+        deaths += Number(item.getAttribute("data-d")) || 0;
         var change = item.getAttribute("data-rr");
         if (change !== null && !isNaN(Number(change))) {
           rr += Number(change);
@@ -452,6 +470,10 @@
       record.textContent = list.getAttribute("data-day").replace("{wins}", wins).replace("{losses}", losses);
       head.appendChild(title);
       head.appendChild(record);
+      if (kills || deaths) {
+        // the day's K/D, as tracker.gg's day heads have it
+        record.appendChild(document.createTextNode(" · K/D " + (deaths ? kills / deaths : kills).toFixed(2)));
+      }
       if (rated) {
         var net = document.createElement("span");
         net.className = rr > 0 ? "up" : rr < 0 ? "down" : "";
@@ -1305,6 +1327,7 @@
     part();
     chosen();
     acts();
+    autoSubmit();
     profile();
     lists();
     times();

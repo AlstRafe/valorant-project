@@ -24,12 +24,17 @@ LINES = (
     ("hs", "HS率", True, "%"),
     ("kast", "KAST", True, "%"),
     ("dd", "DDΔ", True, ""),
+    ("kad", "KAD", True, ""),
+    ("kpr", "キル / ラウンド", True, ""),
+    ("fk_rate", "ファーストキル率", True, "%"),
+    ("clutch_rate", "クラッチ成功率", True, "%"),
+    ("econ", "経済効率", True, ""),
 )
 
 
 def _side(asked: str, mode: str, span: str = "") -> dict:
     """One player: ``{"asked", "found": the player page's values or None, "problem"}``; ``span`` "all": over
-    their lifetime (views._lifetime)."""
+    their lifetime (views._lifetime), "act": over the act being played."""
     asked = _from_link(" ".join(asked.split()))[:40]
     parts = split_riot_id(asked)
     if not parts:
@@ -105,7 +110,7 @@ def _rows(found: list[dict]) -> list[dict]:
 def page() -> tuple[dict, int]:
     mode = request.args.get("mode", "competitive")
     mode = mode if mode in MODES else "competitive"
-    span = "all" if request.args.get("span") == "all" else ""
+    span = request.args.get("span") if request.args.get("span") in ("all", "act") else ""
     sides = [_side(request.args.get(key, ""), mode, span) for key in ("a", "b")]
     found = [side["found"] for side in sides]
     both = all(found)
@@ -123,7 +128,11 @@ def page() -> tuple[dict, int]:
         "mode": mode,
         "modes": [{"key": key, "name": _t(QUEUES[HENRIK_MODES[key]])} for key in MODES],
         "span": span,
-        "spans": [{"key": "", "name": _t("直近 15 試合")}, {"key": "all", "name": _t("通算")}],
+        "spans": [
+            {"key": "", "name": _t("直近 15 試合")},
+            {"key": "act", "name": _t("今のアクト")},
+            {"key": "all", "name": _t("通算")},
+        ],
         "swap_url": url_for(
             "compare",
             a=sides[1]["asked"],
