@@ -64,6 +64,7 @@ const MADE_UP = [
   "/live",
   "/live?phase=menus",
   "/live?phase=queue",
+  "/live?phase=found",
   "/live?phase=pregame",
   "/live?phase=ingame",
   "/collection?show=cards",
@@ -486,14 +487,31 @@ async function main() {
 }
 
 // /live is read again every few seconds, and its buttons are sent, without reloading the page (the owner lost
-// the place in the agents each time): the page stays the same document through the timer and a pick.
+// the place in the agents each time): the page stays the same document through the timer and a pick, and the
+// agents' pictures stay the same elements, not made and fetched again at each look (the owner saw them load again).
 async function livePage(browser) {
   const page = await browser.newPage({ viewport: { width: 390, height: 800 } });
   let loads = 0;
   page.on("load", () => loads++);
   await page.goto(base + "/live?phase=pregame", { waitUntil: "networkidle", timeout: 60000 });
-  await page.evaluate(() => (window.auditMark = true));
-  await page.waitForTimeout(6500); // the timer: 5 s while the game is open
+  const timer = () => page.$eval(".live-head", (head) => head.textContent).catch(() => "");
+  const before = await timer();
+  await page.evaluate(() => {
+    window.auditMark = true;
+    document.querySelectorAll(".pick-grid img, .seats img").forEach((img) => (img.auditKept = true));
+  });
+  let pictures = 0;
+  const counting = (request) => request.url().includes("/media/") && pictures++;
+  page.on("request", counting);
+  await page.waitForTimeout(6500); // the timer: every 2 s at agent select, and the made-up timer counts down
+  page.off("request", counting);
+  const looked = (await timer()) !== before; // the made-up timer moved: the page was read again and put in place
+  const remade = await page.evaluate(
+    () => [...document.querySelectorAll(".pick-grid img, .seats img")].filter((img) => !img.auditKept).length,
+  );
+  if (!looked) early.push(["/live not updated", "/live?phase=pregame", "", before]);
+  if (remade || pictures)
+    early.push(["pictures made again", "/live?phase=pregame", "", `${remade} remade, ${pictures} fetched`]);
   // the made-up game's one agent is a mate's: pressed anyway (the made-up Riot takes it)
   const sent = page
     .waitForResponse((answer) => answer.url().includes("/live/act"), { timeout: 15000 })

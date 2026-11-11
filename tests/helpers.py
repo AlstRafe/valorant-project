@@ -133,6 +133,9 @@ class FakeRiot:
         self.phase = ""
         #: GLZ's session cannot be read (its address answers 500): the party tells whether the game is open.
         self.no_session = False
+        #: Agent select is there as soon as the party's match is found (State MATCHMADE_GAME_STARTING, the game's
+        #: 5-second count), while the session still says MENUS.
+        self.early_pregame = False
         #: The owner's buttons as GLZ got them: (what, value).
         self.pressed: list[tuple[str, str]] = []
         #: The loadouts sent back (PUT playerloadout).
@@ -239,7 +242,8 @@ class FakeRiot:
             ("ingame", "/core-game/v1", self.pd["coregame"]["MatchID"]),
         ):
             if url == f"{glz}{path}/players/{PUUID}":
-                if self.phase != phase:
+                found = self.phase == "menus" and party["State"] == "MATCHMADE_GAME_STARTING" and self.early_pregame
+                if self.phase != phase and not (phase == "pregame" and found):
                     return missing
                 return self._answer(phase, {"Subject": PUUID, "MatchID": match})
             if url == f"{glz}{path}/matches/{match}":

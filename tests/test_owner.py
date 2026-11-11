@@ -176,6 +176,95 @@ class OwnerTest(unittest.TestCase):
         self.riot.phase = "ingame"
         self.assertEqual(self.state()["words"], "対戦中（アセント）")
 
+    def look(self) -> int:
+        """Riot's calls of one look at the game (riot.Riot.live), asked anew."""
+        riot = self.app.config["VAL_RIOT"]
+        riot.cache.put("live", None, 0)
+        before = len(self.riot.asked)
+        riot.live()
+        return len(self.riot.asked) - before
+
+    def test_a_found_match_is_told_at_once(self):
+        """DailyVal shows agent select from the game's 5-second count when the match is found: so does /live, without
+        waiting for the session to say agent select."""
+        self.link()
+        self.riot.phase = "menus"
+        party = self.riot.pd["party"]
+        party["State"] = "MATCHMAKING"
+        found = self.state()
+        self.assertEqual((found["phase"], found["every"]), ("queue", 2), "matchmaking: every two seconds")
+        self.assertTrue(found["icons"], "the agents' pictures to fetch ahead")
+        self.assertTrue(all(url.startswith("/media/agents/") for url in found["icons"]), found["icons"])
+        self.assertIn('data-refresh="2"', self.page("/live"))
+        self.assertIn('data-warm="/media/agents/', self.page("/live"))
+        party["State"] = "MATCHMADE_GAME_STARTING"  # the match is found; agent select not made yet
+        found = self.state()
+        self.assertEqual((found["phase"], found["words"], found["every"]), ("found", "試合が見つかりました", 1))
+        text = self.page("/live")
+        self.assertIn("試合が見つかりました。まもなくエージェント選択です。", text)
+        self.assertIn('data-refresh="1"', text, "every second until agent select")
+        self.riot.early_pregame = True  # agent select made: shown while the session still says the menus
+        found = self.state()
+        self.assertEqual((found["phase"], found["map"]), ("pregame", "アセント"))
+        self.assertEqual(found["icons"], [])
+        self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+        text = self.page("/live")
+        self.assertIn('class="pick-grid"', text)
+        self.assertIn("残り 61 秒", text)
+        self.assertNotIn("data-warm", text)
+
+    def test_agent_select_opens_without_reading_the_collection(self):
+        """The owner's agents are read while matchmaking (one call, kept), not the whole collection at agent
+        select: the pick screen opens without waiting for ten calls."""
+        self.link()
+        self.riot.phase = "menus"
+        self.riot.pd["party"]["State"] = "MATCHMAKING"
+        self.state()
+        agents = f"/store/v1/entitlements/0c0c0c0c-1111-4222-8333-444444444444/{ITEM_TYPES['agents']}"
+        self.assertEqual(sum(url.endswith(agents) for _, url, _, _ in self.riot.asked), 1, "read ahead")
+        self.riot.phase = "pregame"
+        self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+        before = len(self.riot.asked)
+        self.assertIn('class="pick-grid"', self.page("/live"))
+        asked = [url for _, url, _, _ in self.riot.asked[before:]]
+        self.assertFalse([url for url in asked if "/store/" in url or "playerloadout" in url], asked)
+
+    def test_each_look_asks_riot_little(self):
+        """Matchmaking and agent select are looked at every second or two: each look asks Riot one or two
+        things (the session, and the party or agent select remembered from the last look), names once."""
+        self.link()
+        self.riot.phase = "menus"
+        self.riot.pd["party"]["State"] = "MATCHMAKING"
+        self.look()
+        self.assertEqual(self.look(), 2, "the session and the party")
+        self.riot.phase = "pregame"
+        self.look()
+        self.assertEqual(self.look(), 2, "the session and agent select")
+        names = sum(url.endswith("/name-service/v2/players") for _, url, _, _ in self.riot.asked)
+        self.assertEqual(names, 2, "the party's names, then the team's: each player asked once")
+        self.riot.phase = "ingame"
+        self.assertNotEqual(self.state()["phase"], "pregame", "the session says the match: agent select is over")
+
+    def test_pictures_are_kept_whatever_the_cookie(self):
+        """A picture answered with "Vary: Cookie" is kept by the browser only until the session cookie changes:
+        the agents' squares were fetched again and again."""
+        self.link()
+        fresh = self.client.get("/media/agents/11111111-1111-4111-8111-111111111111/displayicon.png")
+        self.assertNotIn("Cookie", fresh.headers.get("Vary", ""))
+        self.assertIn("max-age=2592000", fresh.headers["Cache-Control"])
+        self.assertIn("Cookie", self.client.get("/live").headers.get("Vary", ""), "the pages are the owner's")
+        self.riot.phase = "ingame"
+        self.state()
+        answer = self.client.get("/live/state")
+        self.assertNotIn("Set-Cookie", answer.headers, "the match is kept once, not written at every look")
+
+    def test_the_small_pictures(self):
+        from valtracker.live import icon
+
+        small = "https://media.valorant-api.com/agents/x/displayiconsmall.png"
+        self.assertEqual(icon({"displayIcon": "big", "displayIconSmall": small}), small)
+        self.assertEqual(icon({"displayIcon": "big"}), "big")
+
     def test_the_live_page_says_what_it_does_on_each_screen(self):
         self.link()
         text = self.page("/live")
@@ -254,7 +343,7 @@ class OwnerTest(unittest.TestCase):
         self.assertNotIn("<strong>デュエリスト</strong>", text, "a role a teammate already plays")
         names = [json for method, url, _, json in self.riot.asked if url.endswith("/name-service/v2/players")]
         self.assertNotIn(b"a1111111-0000-4000-8000-000000000002", names[0], "a hidden name is not even asked")
-        self.assertIn('data-refresh="5"', text)
+        self.assertIn('data-refresh="2"', text, "agent select: asked every two seconds")
 
     def test_pick_and_lock(self):
         self.link()
@@ -692,7 +781,9 @@ class OwnerTest(unittest.TestCase):
                 self.assertIn(said, text, path)
             main = text.split("<main", 1)[1]
             self.assertNotIn('lang="ja"', main.replace('lang="ja" hreflang="ja"', ""), path)
-        self.assertIn('data-live-said="Agent select has started|Pick on Live|Close|Live ({state})"', self.page("/"))
+        self.assertIn(
+            'data-live-said="Agent select has started|Pick on Live|Close|Live ({state})|Match found"', self.page("/")
+        )
         self.assertEqual(self.state()["words"], "Menu")
         self.client.set_cookie("lang", "ko")
         self.assertIn("총기 장식", self.page("/collection"))

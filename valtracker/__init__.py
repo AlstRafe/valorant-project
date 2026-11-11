@@ -87,9 +87,13 @@ def create_app(
     def _caching(response):
         if request.endpoint == "static" and request.args.get("v"):
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
-        elif request.endpoint != "media":
+        elif request.endpoint not in ("media", "picture"):
             response.headers.setdefault("Cache-Control", "no-cache")
-        response.headers.add("Vary", "Cookie, Accept-Language")
+        # the pictures and files are the same for everyone: kept by the browser whatever the cookies (a browser
+        # keeps a "Vary: Cookie" answer only until the session cookie changes, and /live's pictures were fetched
+        # again and again)
+        if request.endpoint not in ("static", "media", "picture"):
+            response.headers.add("Vary", "Cookie, Accept-Language")
         return response
 
     versions: dict[str, str] = {}

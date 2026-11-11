@@ -23,7 +23,7 @@
 {%- endmacro %}
 {% block title %}{{ t('ライブ') }} · {{ site_name }}{% endblock %}
 {% block main %}
-<div data-refresh="{{ 5 if phase else 20 }}" data-live-phase="{{ live_state.phase if live_state else '' }}" data-live-words="{{ live_state.words if live_state else '' }}">
+<div data-refresh="{{ every or 20 }}" data-live-phase="{{ live_state.phase if live_state else '' }}" data-live-words="{{ live_state.words if live_state else '' }}"{% if warm %} data-warm="{% for url in warm %}{{ media(url) }}{% if not loop.last %} {% endif %}{% endfor %}"{% endif %}>
 <section class="hero">
 <h1>{{ t('ライブ') }}</h1>
 <p class="lead">{{ t('あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。PC で VALORANT を開いていれば、スマホからでも使えます。') }}</p>

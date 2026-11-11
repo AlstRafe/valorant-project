@@ -2075,6 +2075,11 @@ TEXTS = {
         "en-GB": "Matchmaking",
         "zh-TW": "配對中",
     },
+    "試合が見つかりました": {
+        "ko": "경기를 찾았습니다",
+        "en-GB": "Match found",
+        "zh-TW": "找到對戰了",
+    },
     "エージェント選択中": {
         "ko": "요원 선택 중",
         "en-GB": "In agent select",
