@@ -8,6 +8,9 @@ a browser and pastes on the settings page either
 - the address the browser lands on after signing in (``https://playvalorant.com/opt_in#access_token=...``): an
   hour's tokens, with nothing long-lived kept.
 
+In the desktop app (desktop.py) none of this is needed: the account signed in to the Riot Client on the PC gives its
+tokens (localclient.py), and the client's events say where the game is without asking GLZ's session.
+
 Kept in instance/riot.json (readable by its owner only, never in Git): the cookies, the account (puuid, Riot ID,
 shard) and the tokens until they run out. These are the game client's own addresses, not a published API: Riot
 can change them without notice, so every field is read as optional, and what failed is kept for the owner to see.
@@ -37,8 +40,9 @@ ENTITLEMENTS = "https://entitlements.auth.riotgames.com/api/token/v1"
 USERINFO = "https://auth.riotgames.com/userinfo"
 GEO = "https://riot-geo.pas.si.riotgames.com/pas/v1/product/valorant"
 PD = "https://pd.{shard}.a.pvp.net"
-#: The party server: the game's queue settings (map pools, who may queue together) come from here.
-GLZ = "https://glz-{shard}-1.{shard}.a.pvp.net"
+#: The party server: the game's queue settings (map pools, who may queue together) come from here. Its region is
+#: the shard's but in Latin America and Brazil (latam, br on the na shard), which only the desktop app knows.
+GLZ = "https://glz-{region}-1.{shard}.a.pvp.net"
 #: How long the queue settings are kept (seconds): they change with a patch or a map rotation.
 QUEUES_KEEP = 1800
 #: Where the owner's game is, kept this long (seconds): only so that two pages asking at once ask Riot once. The
@@ -122,10 +126,13 @@ class RiotError(Exception):
 
 
 class Riot:
-    def __init__(self, folder: Path, send: net.Send = net.send, version=dict, clock=time.time):
-        """``version``: () -> valorant-api.com's /version (content.Content.client_version), which PD wants."""
+    def __init__(self, folder: Path, send: net.Send = net.send, version=dict, clock=time.time, local=None):
+        """``version``: () -> valorant-api.com's /version (content.Content.client_version), which PD wants.
+        ``local``: the Riot Client on this PC (localclient.LocalClient, the desktop app), else None."""
         self.store = Settings(folder, "riot.json")
-        self.send, self.version, self.clock = send, version, clock
+        self.send, self.version, self.clock, self.local = send, version, clock, local
+        #: The client's event count /live was last read at: a newer event reads it again at once.
+        self._local_version = -1
         self.cache = TTLCache(8)
         #: Players' ranks in the owner's match: {puuid: PD's mmr answer}.
         self.ranks = TTLCache(64)
@@ -146,8 +153,23 @@ class Riot:
 
     def status(self) -> dict:
         """For the settings page: the linked account, whether it lasts (a cookie) or ends at ``until`` (an
-        hour's address), and whether Riot refused it last time (``signed_out``)."""
+        hour's address), and whether Riot refused it last time (``signed_out``). ``client``: the account is the
+        one signed in to the Riot Client on this PC (the desktop app)."""
         saved = self.store.load()
+        found = self._client()
+        if found is not None:
+            account = found[1]
+            return {
+                "linked": True,
+                "name": account["name"],
+                "tag": account["tag"],
+                "shard": account["shard"],
+                "lasting": True,
+                "until": 0.0,
+                "signed_out": False,
+                "problem": str(saved.get("problem") or ""),
+                "client": True,
+            }
         token = saved.get("token") if isinstance(saved.get("token"), dict) else {}
         lasting = bool(saved.get("cookies"))
         return {
@@ -159,7 +181,17 @@ class Riot:
             "until": 0.0 if lasting else _number(token.get("until")) + EARLY,
             "signed_out": bool(saved.get("signed_out")) or (not lasting and _number(token.get("until")) < self.clock()),
             "problem": str(saved.get("problem") or ""),
+            "client": False,
         }
+
+    def me(self) -> str:
+        """The puuid of the owner's account: the Riot Client's on this PC (the desktop app), else the linked one."""
+        found = self._client()
+        return found[1]["puuid"] if found is not None else str(self.store.load().get("puuid") or "").lower()
+
+    def _client(self, renew: bool = False) -> tuple[dict, dict] | None:
+        """(tokens, account) from the Riot Client on this PC, or None (no desktop app, or the client closed)."""
+        return self.local.signed_in(renew) if self.local is not None else None
 
     def sign_in(self, pasted: str) -> dict:
         """Link the account from what the owner pasted (see the module's words); RiotError when it does not work."""
@@ -242,6 +274,10 @@ class Riot:
         "phase": "menus", "pregame" (agent select), "ingame" or "" (not playing), "match": GLZ's match or None,
         "party": GLZ's party (in the menus) or None, "names": {puuid: [name, tag]}, "ranks": {puuid: PD's mmr},
         "at", "missing", "problem"}``. Names are asked only for players who do not hide theirs (``Incognito``)."""
+        if self.local is not None and self.local.version != self._local_version:
+            # the client told of a change (the match found, agent select, a pick): read now, not the kept answer
+            self._local_version = self.local.version
+            self.cache.put("live", None, 0)
         return self._kept("live", self._live, LIVE_KEEP)
 
     def leaderboard(self, region: str, season: str, start: int = 0, size: int = 50, query: str = "") -> dict:
@@ -401,21 +437,35 @@ class Riot:
 
     def _glz(self, saved: dict) -> str:
         shard = str(saved.get("shard") or "ap")
-        return GLZ.format(shard=shard if shard in SHARDS.values() and shard != "pbe" else "ap")
+        shard = shard if shard in SHARDS.values() and shard != "pbe" else "ap"
+        region = str(saved.get("region") or "")
+        return GLZ.format(region=region if region in SHARDS and SHARDS[region] == shard else shard, shard=shard)
 
     def _live(self, tokens: dict, saved: dict) -> dict:
         glz, puuid, headers = self._glz(saved), str(saved["puuid"]), self._headers(tokens)
-        # the game's session says whether it is open and where: the menus, agent select or a match
+        # the game's session says whether it is open and where: the menus, agent select or a match; in the desktop
+        # app the Riot Client has told it already (its events), and GLZ is not asked
         running, loop = None, ""
-        try:
-            session = self._pd("session", f"{glz}/session/v1/sessions/{puuid}", headers)
-            loop = str(session.get("loopState") or "").upper()
-            running = str(session.get("cxnState") or "CONNECTED").upper() == "CONNECTED" and bool(loop)
-        except RiotError as error:
-            if error.kind == "expired":
-                raise
-            if error.kind == "down" and " 404" in f" {error.detail}":
-                running = False
+        seen = self.local.presence() if self.local is not None else None
+        if seen is not None and not seen["running"]:
+            self.where = {}
+            return {
+                "running": False,
+                "phase": "",
+                "match": None,
+                "party": None,
+                "names": {},
+                "ranks": {},
+                "at": self.clock(),
+                "missing": [],
+                "problem": "",
+            }
+        if seen is not None:
+            running, loop = True, seen["loop"]
+            if loop == "MENUS" and _UUID.match(seen.get("party") or ""):
+                self.where["party"] = seen["party"]  # asked for at once (and checked: the owner must be in it)
+        else:
+            running, loop = self._session(glz, puuid, headers)
         # a match remembered from an earlier look is the owner's only while the session is still in its phase
         for phase in ("pregame", "ingame"):
             if LOOPS.get(loop) != phase:
@@ -438,6 +488,17 @@ class Riot:
         if running is None:  # the session could not be read: the party tells whether the game is open
             return self._menus(glz, puuid, headers, saved)
         return found | {"running": running}
+
+    def _session(self, glz: str, puuid: str, headers: dict) -> tuple[bool | None, str]:
+        """GLZ's session of the owner: (whether the game is open, None: not known; its loopState)."""
+        try:
+            session = self._pd("session", f"{glz}/session/v1/sessions/{puuid}", headers)
+        except RiotError as error:
+            if error.kind == "expired":
+                raise
+            return (False if error.kind == "down" and " 404" in f" {error.detail}" else None), ""
+        loop = str(session.get("loopState") or "").upper()
+        return str(session.get("cxnState") or "CONNECTED").upper() == "CONNECTED" and bool(loop), loop
 
     def _read_agents_ahead(self) -> None:
         """The owner's agents read while the party is matchmaking: agent select then opens without waiting for
@@ -666,7 +727,12 @@ class Riot:
     # -- tokens ---------------------------------------------------------------------------------------
 
     def _tokens(self, renew: bool = False) -> tuple[dict, dict]:
-        """The hour's tokens (saved, or traded for with the cookies) and what is saved."""
+        """The hour's tokens (the Riot Client's on this PC, else saved or traded for with the cookies) and what is
+        saved (with the client's account)."""
+        found = self._client(renew)
+        if found is not None:
+            tokens, account = found
+            return tokens, {**self.store.load(), **account}
         with self._lock:
             saved = self.store.load()
             if not saved.get("puuid"):
@@ -758,7 +824,7 @@ class Riot:
             "Authorization": f"Bearer {tokens['access']}",
             "X-Riot-Entitlements-JWT": str(tokens["entitlements"]),
             "X-Riot-ClientPlatform": PLATFORM,
-            "X-Riot-ClientVersion": str((self.version() or {}).get("riotClientVersion") or ""),
+            "X-Riot-ClientVersion": str(tokens.get("version") or (self.version() or {}).get("riotClientVersion") or ""),
             "User-Agent": "ShooterGame/13 Windows/10.0.19043.1.256.64bit",
             "Accept": "application/json",
         }

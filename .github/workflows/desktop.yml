@@ -1,0 +1,105 @@
+# The PC app (VALTracker.exe, valtracker/desktop.py): built on Windows at every push that touches it, then checked
+# (the built app answers its pages; its window is opened and how much memory and processor the app takes, and at
+# which priority, is printed). The run keeps the zip as its download; on master it also goes on the release
+# "desktop" (Releases -> desktop -> VALTracker-windows.zip), replaced each time.
+name: Desktop app
+
+on:
+  push:
+    paths:
+      - "valtracker/**"
+      - "desktop/**"
+      - "requirements*.txt"
+      - ".github/workflows/desktop.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: "1"
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build VALTracker.exe
+    runs-on: windows-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write # the release, on master only
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      # Pillow: PyInstaller turns the site's icon (PNG) into the .exe's
+      - run: python -m pip install -r requirements.txt -r requirements-desktop.txt pyinstaller==6.22.3 pillow==12.2.0
+      - name: Build
+        run: >-
+          pyinstaller --noconfirm --clean --windowed --name VALTracker
+          --icon valtracker/static/apple-touch-icon.png
+          --add-data "valtracker/templates;valtracker/templates"
+          --add-data "valtracker/static;valtracker/static"
+          --collect-submodules valtracker
+          desktop/VALTracker.py
+      - name: The built app answers its pages (no window)
+        shell: pwsh
+        run: |
+          $env:VAL_DESKTOP_HOME = "$env:RUNNER_TEMP\vt-check"
+          $app = Start-Process dist\VALTracker\VALTracker.exe -ArgumentList "--check" -PassThru -Wait
+          Get-Content "$env:VAL_DESKTOP_HOME\desktop.log"
+          if ($app.ExitCode -ne 0) { exit 1 }
+      - name: The window, and what the app takes (memory, processor, priority)
+        shell: pwsh
+        continue-on-error: true # a runner without WebView2 or a desktop says so, and the build still counts
+        run: |
+          $env:VAL_DESKTOP_HOME = "$env:RUNNER_TEMP\vt-window"
+          $app = Start-Process dist\VALTracker\VALTracker.exe -ArgumentList "--close-after", "100" -PassThru
+          function Tree($root) {
+            $all = Get-CimInstance Win32_Process
+            $ids = @($root)
+            do {
+              $more = @($all | Where-Object { $ids -contains $_.ParentProcessId -and $ids -notcontains $_.ProcessId })
+              $ids += $more.ProcessId
+            } while ($more.Count -gt 0)
+            Get-Process -Id $ids -ErrorAction SilentlyContinue
+          }
+          function Busy($processes) { ($processes | Measure-Object -Property CPU -Sum).Sum }
+          Start-Sleep -Seconds 40 # started, the page drawn, the pictures fetched
+          $before = Tree $app.Id
+          $cpu = Busy $before
+          Start-Sleep -Seconds 40 # left alone, as during a match
+          $after = Tree $app.Id
+          $used = (Busy $after) - $cpu
+          $after | Sort-Object Id | Format-Table Id, ProcessName, PriorityClass,
+            @{ n = "Memory (MB)"; e = { [math]::Round($_.WorkingSet64 / 1MB) } },
+            @{ n = "Private (MB)"; e = { [math]::Round($_.PrivateMemorySize64 / 1MB) } }, CPU -AutoSize
+          $memory = [math]::Round(($after | Measure-Object WorkingSet64 -Sum).Sum / 1MB)
+          $private = [math]::Round(($after | Measure-Object PrivateMemorySize64 -Sum).Sum / 1MB)
+          $share = [math]::Round(100 * $used / 40, 2)
+          "Processes: $($after.Count), memory $memory MB (private $private MB)"
+          "Processor while idle: $([math]::Round($used, 2)) s in 40 s = $share % of one core"
+          if (-not ($after | Where-Object ProcessName -eq "msedgewebview2")) { "No WebView2 window opened here." }
+          Get-Content "$env:VAL_DESKTOP_HOME\desktop.log"
+          if (-not $app.WaitForExit(60000)) { Stop-Process -Id $app.Id -Force }
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path dist\VALTracker -DestinationPath VALTracker-windows.zip
+      - uses: actions/upload-artifact@v6
+        with:
+          name: VALTracker-windows
+          path: VALTracker-windows.zip
+          retention-days: 30
+      - name: Put it on the release "desktop" (master)
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete desktop --yes --cleanup-tag || true
+          gh release create desktop VALTracker-windows.zip --target "$GITHUB_SHA" --prerelease \
+            --title "VAL Tracker（PC アプリ）" \
+            --notes "Windows 10 / 11。VALTracker-windows.zip を展開して VALTracker.exe を開く。使い方と VALORANT への影響を抑える仕組みは README の「PC アプリ」。"

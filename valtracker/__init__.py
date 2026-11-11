@@ -2,7 +2,8 @@
 this host.
 
 ``create_app`` makes the Flask app (WSGI). Home Page's server loads it through hosting.py and serves it under
-its mount (``/val``); ``python -m valtracker`` serves it on its own on this PC.
+its mount (``/val``); ``python -m valtracker`` serves it on its own on this PC, and ``python -m valtracker.desktop``
+(the PC app, desktop.py) in a window of its own, signed in through the Riot Client.
 """
 
 from __future__ import annotations
@@ -30,11 +31,16 @@ NAME = "VAL Tracker"
 
 
 def create_app(
-    mount: str = "", instance: Path | None = None, fetch: net.Fetch = net.fetch, send: net.Send = net.send
+    mount: str = "",
+    instance: Path | None = None,
+    fetch: net.Fetch = net.fetch,
+    send: net.Send = net.send,
+    local=None,
 ) -> Flask:
     """``mount``: the path the site is served under (the session cookie's path). ``instance``: this machine's
     data (settings, saved lists and pictures). ``fetch``, ``send``: how the outside APIs and the owner's Riot
-    account are asked (the tests' own)."""
+    account are asked (the tests' own). ``local``: the Riot Client on this PC (localclient.LocalClient), in the
+    desktop app only."""
     instance = Path(instance) if instance is not None else paths.INSTANCE
     app = Flask(__name__, instance_path=str(instance), instance_relative_config=False)
     app.config["VAL_SETTINGS"] = settings = Settings(instance)
@@ -42,7 +48,8 @@ def create_app(
     app.config["VAL_RIOT_WEB"] = RiotWeb(fetch)
     app.config["VAL_CONTENT"] = Content(instance, fetch)
     app.config["VAL_MEDIA"] = Media(instance, fetch)
-    app.config["VAL_RIOT"] = Riot(instance, send, app.config["VAL_CONTENT"].client_version)
+    app.config["VAL_LOCAL"] = local
+    app.config["VAL_RIOT"] = Riot(instance, send, app.config["VAL_CONTENT"].client_version, local=local)
     app.config["VAL_DIARY"] = Diary(instance)
     # the owner's saved loadouts (owner.py: the collection's sets)
     app.config["VAL_SETS"] = Settings(instance, "loadout_sets.json")
@@ -133,6 +140,9 @@ def create_app(
             "site_name": NAME,
             "home": request.environ.get("homepage.home", ""),
             "owner": security.is_owner(),
+            # the PC app (desktop.py): the Riot Client tells when the game changes (/live/next)
+            "desktop": local is not None,
+            "push_version": g.get("push_version", local.version) if local is not None else 0,
         }
 
     from valtracker import views

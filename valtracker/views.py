@@ -109,6 +109,8 @@ FAILURES = {
 #: Why the owner's Riot account could not be read (riot_failure: in the page's language).
 RIOT_FAILURES = {
     "nologin": "Riot アカウントがまだ連携されていません。設定で ssid を貼ってください。",
+    # the PC app: the account is the Riot Client's
+    "noclient": "Riot クライアントが開いていないか、サインインしていません。開いてサインインすると自動でつながります。",
     "badpaste": "貼られたものが ssid ではありませんでした。手順 3 の値（Value）をそのまま貼ってください。",
     "signedout": "Riot のログインが切れています。もう一度ログインして、新しい ssid を設定で貼ってください。",
     "busy": "Riot のサーバーが混み合っています。少し待ってからもう一度どうぞ。",
@@ -122,6 +124,8 @@ def _t(ja: str, **values) -> str:
 
 def riot_failure(kind: str) -> str:
     """Why the owner's Riot account could not be read (RiotError's kind), in the page's language."""
+    if kind == "nologin" and current_app.config.get("VAL_LOCAL") is not None:
+        kind = "noclient"
     return _t(RIOT_FAILURES.get(kind, RIOT_FAILURES["down"]))
 
 

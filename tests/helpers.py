@@ -290,12 +290,13 @@ class FakeRiot:
         return sum(url.startswith(("https://pd.", "https://glz-")) for _, url, _, _ in self.asked)
 
 
-def make_app(key: str = "HDEV-test-key", mount: str = ""):
-    """(app, fetch, instance folder) with a fresh instance/ in a temporary folder; the Riot fake is app.riot."""
+def make_app(key: str = "HDEV-test-key", mount: str = "", local=None):
+    """(app, fetch, instance folder) with a fresh instance/ in a temporary folder; the Riot fake is app.riot.
+    ``local``: the Riot Client on the PC (the desktop app's localclient.LocalClient), else None (the site)."""
     folder = tempfile.TemporaryDirectory()
     fetch = FakeFetch()
     riot = FakeRiot()
-    app = create_app(mount=mount, instance=Path(folder.name), fetch=fetch, send=riot)
+    app = create_app(mount=mount, instance=Path(folder.name), fetch=fetch, send=riot, local=local)
     app.riot = riot
     app.config["TESTING"] = True
     if key:

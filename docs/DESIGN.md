@@ -185,11 +185,32 @@ Riot のサインインにはキャプチャがあるので、パスワードは
 ログイン後に移ったアドレス（`playvalorant.com/opt_in#access_token=…`）を貼っても 1 時間だけ使える。
 PD の答えの形は公開されていないので、読めなかったものは設定ページに「最後に読めなかったもの」として出す。
 
+## PC アプリ（`valtracker/desktop.py`・`valtracker/localclient.py`）
+
+2026-11-12、持ち主の頼み（「VALORANT には影響を大きく与えないことが絶対条件」）。
+
+- 形: サイトの Flask アプリをこの PC の 127.0.0.1（空いているポート）で動かし、pywebview の WebView2 ウィンドウで開く。
+  画面・4 言語・テーマはサイトのものそのまま。Electron のように Chromium を抱えず、Windows に入っている Edge の部品を使う
+- ログイン: Riot クライアントの lockfile（`%LOCALAPPDATA%\Riot Games\Riot Client\Config\lockfile`）のポートとパスワードで
+  ローカル API の `/entitlements/v1/token`（トークン）・`/chat/v1/session`（Riot ID）・
+  `/product-session/v1/external-sessions`（VALORANT の起動・シャード・クライアントの版）を読む。パーティーのサーバーの
+  地域は VALORANT のログ（`glz-<地域>-1.<シャード>`）から。riot.py はこれがあれば ssid より先に使う
+- 速さ: ローカル API の websocket で自分のプレゼンス（MENUS / PREGAME / INGAME、パーティーの状態
+  `MATCHMADE_GAME_STARTING`）、起動・終了、Riot のプッシュ（ares-parties / ares-pregame / ares-core-game）を受け、
+  `/live/next`（ロングポーリング、25 秒）でページに伝える。ページは知らせが来たらすぐ読み直す（いつもの間隔の読み直しも残す）。
+  GLZ の session は聞かない（プレゼンスでわかる）。ゲームが閉じていれば Riot には何も聞かない
+- 負荷: 優先度「通常以下」＋効率モード＋メモリ優先度低、WebView2 は `--disable-gpu --force-prefers-reduced-motion`、
+  ウィンドウが隠れている間は何も読まない、前面に出ない、活動の収集（`VAL_COLLECT_SECONDS`）は 0
+- 守り: 127.0.0.1 だけで待ち、Host が自分のアドレスでない要求は 403（DNS リバインディング）。二重起動しない（ミューテックス）
+- 確かめていないこと（コンテナからは Riot クライアントに届かない）: プレゼンスの形（2024 年以降の入れ子と以前の平らな形の
+  両方を読む）、external-sessions の `-ares-deployment`、Riot のプッシュの `uri`。読めなければサイトと同じく GLZ に聞く
+
 ## 段階
 
 1. 土台（共通ファイル・CI・サーバーの骨組み・画面の枠）、ID 検索の戦績＋お気に入り、エージェント、ランキング・ツール
 2. Riot ログイン → 今日のショップ・コレクション・進み具合・装備（済み）
 3. いまの試合（済み）。キューの開始・取り消しとピック・確定も（2026-11-06、持ち主の頼み。規約は持ち主が確かめた）
+4. PC アプリ（2026-11-12）
 
 ## 公開（Home Page 側でやること）
 

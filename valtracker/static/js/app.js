@@ -1055,6 +1055,43 @@
     }
   }
 
+  // The PC app (desktop.py): the Riot Client on the PC tells the app the moment the game changes (the match found,
+  // agent select, a pick), and the app tells the page (/live/next answers then, or after 25 s with nothing new):
+  // the page reads itself again at once instead of at its next look. Nothing is asked while the window is hidden or
+  // minimised. On the site there is no address and nothing happens.
+  function pushed(address, version, changed) {
+    if (!address || !window.fetch) return;
+    var waiting = false;
+    function wait() {
+      if (waiting || document.visibilityState !== "visible") return;
+      waiting = true;
+      fetch(address + "?after=" + encodeURIComponent(version), {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      })
+        .then(function (answer) {
+          return answer.ok ? answer.json() : null;
+        })
+        .then(function (found) {
+          waiting = false;
+          if (!found) return setTimeout(wait, 10000);
+          if (String(found.version) !== String(version)) {
+            version = found.version;
+            changed();
+          }
+          // a burst of events (picks at agent select) reads the page a few times a second at most
+          setTimeout(wait, 250);
+        })
+        .catch(function () {
+          waiting = false;
+          setTimeout(wait, 10000);
+        });
+    }
+    document.addEventListener("visibilitychange", wait);
+    wait();
+  }
+
   // /live is read again in the background (as often as the moment needs: each second once a match is found), and
   // only what changed is put in place: no reload, so the scroll, a mode chosen in the menu, the focused button and
   // the pictures stay. Its buttons (queue, pick, lock) are sent the same way and the answer (the page after the
@@ -1065,6 +1102,7 @@
     if (!box || !window.fetch || !window.DOMParser) return;
     var timer = null;
     var asking = false;
+    var again = false; // the game changed while the page was being read: read it once more
     var sending = false;
     var pressed = 0; // when a button was pressed down (a press that never ends stops nothing after 3 s)
     var last = box.innerHTML;
@@ -1133,7 +1171,10 @@
         .catch(function () {})
         .then(function () {
           asking = false;
-          later();
+          if (again) {
+            again = false;
+            ask();
+          } else later();
         });
     }
 
@@ -1179,6 +1220,10 @@
     });
     warm((box.getAttribute("data-warm") || "").split(" "));
     later();
+    pushed(box.getAttribute("data-push"), box.getAttribute("data-push-version"), function () {
+      if (asking) again = true;
+      else ask();
+    });
   }
 
   // The owner's collection lists every item of a tab at once: the names are narrowed as they are typed.
@@ -1278,6 +1323,7 @@
     var page = document.querySelector("[data-live-phase]");
     var timer = null;
     var asking = false;
+    var again = false;
 
     function told(match) {
       try {
@@ -1372,6 +1418,10 @@
         })
         .then(function (state) {
           asking = false;
+          if (again) {
+            again = false;
+            return ask();
+          }
           if (state) show(state);
           if (state && STOP[state.problem]) return;
           if (state) warm(state.icons);
@@ -1397,6 +1447,10 @@
     ask();
     document.addEventListener("visibilitychange", function () {
       if (document.visibilityState === "visible") ask();
+    });
+    pushed(tab.getAttribute("data-live-push"), tab.getAttribute("data-push-version"), function () {
+      if (asking) again = true;
+      else ask();
     });
   }
 

@@ -2091,6 +2091,11 @@ TEXTS = {
         "en-GB": "Reads your VALORANT as you play: start a queue, pick and lock in an agent from here. With VALORANT open on your PC, it works from your phone too.",
         "zh-TW": "即時讀取你的 VALORANT，可以從這裡開始排隊、選擇並鎖定特務。只要 PC 上開著 VALORANT，用手機也能操作。",
     },
+    "あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。この PC の Riot クライアントから直接読むので、試合が見つかるとすぐに切り替わります。": {
+        "ko": "내 VALORANT를 실시간으로 읽어서, 대기열 시작과 요원 선택·확정을 여기서 할 수 있습니다. 이 PC의 Riot 클라이언트에서 직접 읽기 때문에, 매치가 잡히면 바로 바뀝니다.",
+        "en-GB": "Reads your VALORANT as you play: start a queue, pick and lock in an agent from here. It reads the Riot Client on this PC directly, so it switches the moment a match is found.",
+        "zh-TW": "即時讀取你的 VALORANT，可以從這裡開始排隊、選擇並鎖定特務。直接讀取這台 PC 上的 Riot 用戶端，找到對戰時會立刻切換。",
+    },
     "ゲームの画面ごとにできること": {
         "ko": "게임 화면별로 할 수 있는 것",
         "en-GB": "What you can do on each screen of the game",
@@ -2320,6 +2325,11 @@ TEXTS = {
         "ko": "이 페이지는 몇 초마다 새로 고쳐집니다. 다른 페이지를 볼 때도 위쪽 '라이브' 탭의 점으로 게임 상태를 알 수 있고, 요원 선택이 시작되면 화면 아래에 알림이 나옵니다.",
         "en-GB": "This page refreshes every few seconds. On other pages the dot on the Live tab at the top shows where the game is, and a note appears at the bottom when agent select starts.",
         "zh-TW": "本頁每幾秒會更新一次。瀏覽其他頁面時，也能從上方「即時」分頁的圓點得知遊戲狀態，特務選擇開始時畫面下方會出現通知。",
+    },
+    "このページはゲームの状態が変わるとすぐ新しくなります。ほかのページを見ているときも、上のタブ「ライブ」の点でゲームの状態がわかり、エージェント選択が始まると画面の下に知らせが出ます。": {
+        "ko": "이 페이지는 게임 상태가 바뀌면 바로 새로 고쳐집니다. 다른 페이지를 볼 때도 위쪽 '라이브' 탭의 점으로 게임 상태를 알 수 있고, 요원 선택이 시작되면 화면 아래에 알림이 나옵니다.",
+        "en-GB": "This page refreshes as soon as the game changes. On other pages the dot on the Live tab at the top shows where the game is, and a note appears at the bottom when agent select starts.",
+        "zh-TW": "遊戲狀態一改變，本頁就會立刻更新。瀏覽其他頁面時，也能從上方「即時」分頁的圓點得知遊戲狀態，特務選擇開始時畫面下方會出現通知。",
     },
     "あなた": {
         "ko": "나",
@@ -2992,6 +3002,26 @@ TEXTS = {
         "ko": "지금 상태:",
         "en-GB": "Now:",
         "zh-TW": "目前狀態：",
+    },
+    "PC アプリでは、この PC の Riot クライアントでサインインしているアカウントを自動で使います（ssid を貼る必要はありません）。": {
+        "ko": "PC 앱에서는 이 PC의 Riot 클라이언트에 로그인한 계정을 자동으로 사용합니다(ssid를 붙여 넣을 필요가 없습니다).",
+        "en-GB": "In the PC app, the account signed in to the Riot Client on this PC is used automatically (no ssid to paste).",
+        "zh-TW": "在 PC 應用程式中，會自動使用這台 PC 上 Riot 用戶端登入中的帳號（不必貼上 ssid）。",
+    },
+    "Riot クライアントから": {
+        "ko": "Riot 클라이언트에서",
+        "en-GB": "from the Riot Client",
+        "zh-TW": "來自 Riot 用戶端",
+    },
+    "Riot クライアントを使わずに ssid を貼って連携する": {
+        "ko": "Riot 클라이언트 없이 ssid를 붙여 넣어 연동하기",
+        "en-GB": "Link by pasting an ssid instead of using the Riot Client",
+        "zh-TW": "不使用 Riot 用戶端，改貼上 ssid 連結",
+    },
+    "Riot クライアントが開いていないか、サインインしていません。開いてサインインすると自動でつながります。": {
+        "ko": "Riot 클라이언트가 켜져 있지 않거나 로그인되어 있지 않습니다. 켜서 로그인하면 자동으로 연결됩니다.",
+        "en-GB": "The Riot Client isn't open, or nobody is signed in to it. Open it and sign in, and this connects by itself.",
+        "zh-TW": "Riot 用戶端沒有開啟，或尚未登入。開啟並登入後就會自動連線。",
     },
     "{account}（{shard}）と連携中": {
         "ko": "{account} ({shard})와 연동 중",
