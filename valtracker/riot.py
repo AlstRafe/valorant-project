@@ -20,7 +20,7 @@ import json
 import re
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urlsplit
@@ -41,10 +41,23 @@ PD = "https://pd.{shard}.a.pvp.net"
 GLZ = "https://glz-{shard}-1.{shard}.a.pvp.net"
 #: How long the queue settings are kept (seconds): they change with a patch or a map rotation.
 QUEUES_KEEP = 1800
-#: The match being played (agent select, or the match itself) is asked again after this long.
-LIVE_KEEP = 4
+#: Where the owner's game is, kept this long (seconds): only so that two pages asking at once ask Riot once. The
+#: pages ask as often as the moment needs (live.EVERY): each second once a match is found.
+LIVE_KEEP = 1
 #: The phases of a match the owner can be in, and where GLZ tells of each.
 PHASES = (("pregame", "/pregame/v1"), ("ingame", "/core-game/v1"))
+#: The game's session (loopState) -> the phase GLZ is asked about first.
+LOOPS = {"PREGAME": "pregame", "INGAME": "ingame"}
+#: A party in one of these states is matchmaking, or its match was found (the game's 5-second count before agent
+#: select, "MATCHMADE_GAME_STARTING"): agent select is asked for at once, and the owner's agents are read ahead.
+QUEUEING = ("MATCHMAKING", "STARTING")
+#: The owner's agents (for the pick screen) are kept this long (seconds): an agent is unlocked rarely.
+AGENTS_KEEP = 1800
+#: A player's name is kept this long (seconds) for the party and the match: asked once, not every few seconds.
+NAME_KEEP = 3600
+#: How long a look at agent select waits for the players' ranks (seconds): the ones not read by then come with
+#: the next look, and the page shows the game's own badge meanwhile.
+RANK_WAIT = 0.8
 #: What the owner can press on /live (Riot.act): start a queue (its id), leave it, pick or lock an agent (its uuid).
 ACTIONS = ("start", "leave", "select", "lock")
 #: A player's rank (PD's mmr) is asked once a match at most: it changes only when a match ends.
@@ -116,6 +129,15 @@ class Riot:
         self.cache = TTLCache(8)
         #: Players' ranks in the owner's match: {puuid: PD's mmr answer}.
         self.ranks = TTLCache(64)
+        #: Players' names in the owner's party or match: {puuid: [name, tag]}.
+        self.names = TTLCache(64)
+        #: Where GLZ last had the owner ({"party": id, "pregame": id, "ingame": id}): the next look asks for it
+        #: at once, without asking first where the owner is.
+        self.where: dict[str, str] = {}
+        #: The ranks being read (the riot-rank threads), each asked once however many looks want it.
+        self._asking: set[str] = set()
+        self._asking_lock = threading.Lock()
+        self._ranker = ThreadPoolExecutor(5, thread_name_prefix="riot-rank")
         #: Pages of the leaderboards, and the regions resting after a failure.
         self.boards = TTLCache(64)
         self._lock = threading.Lock()
@@ -156,6 +178,7 @@ class Riot:
             account = self._account(tokens)
             self.store.save(cookies=cookies or None, token=tokens, signed_out=None, problem=None, **account)
             self.cache = TTLCache(8)  # another account's collection is not shown
+            self.where = {}
         return self.status()
 
     def sign_out(self) -> None:
@@ -164,6 +187,7 @@ class Riot:
                 cookies=None, token=None, puuid=None, name=None, tag=None, shard=None, signed_out=None, problem=None
             )
             self.cache = TTLCache(8)
+            self.where = {}
 
     def collection(self) -> dict:
         """``{"name", "tag", "wallet": {currency uuid: amount} or None, "loadout": PD's playerloadout or None,
@@ -196,6 +220,22 @@ class Riot:
         """The battle pass, the events' passes, the agents' contracts and the missions (PD's contracts):
         ``{"contracts": PD's answer, "missing", "problem"}``. RiotError when it could not be read."""
         return self._kept("contracts", self._contracts)
+
+    def agents(self) -> set[str]:
+        """The owner's agents (uuids; PD's entitlements of the agent type), for the pick screen: one call, kept
+        AGENTS_KEEP (the whole collection is ten). RiotError when it could not be read."""
+
+        def read(tokens: dict, saved: dict) -> dict:
+            url = f"{self._base(saved)}/store/v1/entitlements/{saved['puuid']}/{ITEM_TYPES['agents']}"
+            answer = self._pd("agents", url, self._headers(tokens))
+            owned = [
+                str(item["ItemID"]).lower()
+                for item in answer.get("Entitlements") or []
+                if isinstance(item, dict) and item.get("ItemID")
+            ]
+            return {"agents": owned, "missing": [], "problem": ""}
+
+        return set(self._kept("agents", read, AGENTS_KEEP)["agents"])
 
     def live(self) -> dict:
         """Where the owner's game is now (GLZ): ``{"running": whether VALORANT is open (None: could not tell),
@@ -299,7 +339,10 @@ class Riot:
             glz, puuid, headers = self._glz(saved), str(saved["puuid"]), self._headers(tokens)
             posted = {**headers, "Content-Type": "application/json"}
             if action in ("select", "lock"):
-                match_id = self._now("pregame", f"{glz}/pregame/v1/players/{puuid}", headers, "MatchID")
+                # the agent select the page shows (the last look's): a pick is sent with one call, not two
+                match_id = self.where.get("pregame") or self._now(
+                    "pregame", f"{glz}/pregame/v1/players/{puuid}", headers, "MatchID"
+                )
                 url = f"{glz}/pregame/v1/matches/{match_id}/{action}/{value}"
                 answer = self._pd(action, url, headers, "POST", b"")
             else:
@@ -373,25 +416,59 @@ class Riot:
                 raise
             if error.kind == "down" and " 404" in f" {error.detail}":
                 running = False
+        # a match remembered from an earlier look is the owner's only while the session is still in its phase
+        for phase in ("pregame", "ingame"):
+            if LOOPS.get(loop) != phase:
+                self.where.pop(phase, None)
         if loop == "MENUS":
-            return self._menus(glz, puuid, headers, saved)
-        found = self._match(glz, puuid, headers, saved)
+            found = self._menus(glz, puuid, headers, saved, quick=True)
+            state = str((found.get("party") or {}).get("State") or "").upper()
+            if "STARTING" in state:
+                # the match is found (the game's 5-second count): agent select is there before the session says so
+                early = self._match(glz, puuid, headers, saved, ("pregame",))
+                if early["phase"]:
+                    return early | {"running": True}
+            if any(word in state for word in QUEUEING):
+                self._read_agents_ahead()
+            return found
+        first = LOOPS.get(loop, "pregame")
+        found = self._match(glz, puuid, headers, saved, sorted(dict(PHASES), key=lambda phase: phase != first))
         if found["phase"]:
             return found | {"running": True}
         if running is None:  # the session could not be read: the party tells whether the game is open
             return self._menus(glz, puuid, headers, saved)
         return found | {"running": running}
 
-    def _menus(self, glz: str, puuid: str, headers: dict, saved: dict) -> dict:
-        """In the menus: the owner's party (its queue, whether it is matchmaking, its members)."""
+    def _read_agents_ahead(self) -> None:
+        """The owner's agents read while the party is matchmaking: agent select then opens without waiting for
+        them (they are kept AGENTS_KEEP, so this asks once in a while at most)."""
+        if self.cache.get("agents") is None and not self.cache.get("agents-resting"):
+            try:
+                self.agents()
+            except RiotError:
+                # not asked again at each look; agent select asks once more, and shows every agent if it fails
+                self.cache.put("agents-resting", True, 300)
+
+    def _menus(self, glz: str, puuid: str, headers: dict, saved: dict, quick: bool = False) -> dict:
+        """In the menus: the owner's party (its queue, whether it is matchmaking, its members). ``quick``: the
+        session says the owner is in the menus, so the party of the last look is asked for at once."""
         empty = {"phase": "", "match": None, "party": None, "names": {}, "ranks": {}, "at": self.clock()}
-        try:
-            party_id = self._now("party", f"{glz}/parties/v1/players/{puuid}", headers, "CurrentPartyID")
-        except RiotError as error:
-            if error.kind != "notnow":
-                raise
-            return empty | {"running": False, "missing": [], "problem": ""}
-        party = self._pd("party", f"{glz}/parties/v1/parties/{party_id}", headers)
+        party = None
+        if quick and self.where.get("party"):
+            party = self._remembered("party", f"{glz}/parties/v1/parties/{self.where['party']}", headers)
+            members = party.get("Members") if isinstance(party, dict) else None
+            if not any(isinstance(item, dict) and str(item.get("Subject")).lower() == puuid for item in members or []):
+                party = None  # left that party
+        if party is None:
+            self.where.pop("party", None)
+            try:
+                party_id = self._now("party", f"{glz}/parties/v1/players/{puuid}", headers, "CurrentPartyID")
+            except RiotError as error:
+                if error.kind != "notnow":
+                    raise
+                return empty | {"running": False, "missing": [], "problem": ""}
+            party = self._pd("party", f"{glz}/parties/v1/parties/{party_id}", headers)
+            self.where["party"] = party_id
         members = [item for item in party.get("Members") or [] if isinstance(item, dict)]
         names, problem = self._open_names(saved, headers, members)
         return empty | {
@@ -402,6 +479,16 @@ class Riot:
             "missing": ["names"] if problem else [],
             "problem": problem,
         }
+
+    def _remembered(self, key: str, url: str, headers: dict) -> dict | None:
+        """GLZ's answer at an address remembered from an earlier look, or None (gone: the owner is asked for
+        again)."""
+        try:
+            return self._pd(key, url, headers)
+        except RiotError as error:
+            if error.kind == "expired":
+                raise
+            return None
 
     def _open_names(self, saved: dict, headers: dict, players: list) -> tuple[dict, str]:
         """The names of the players who do not hide theirs (the others' are never asked), and a problem."""
@@ -420,7 +507,8 @@ class Riot:
             return {}, error.detail or error.kind
 
     def _ranks(self, saved: dict, headers: dict, subjects: list[str]) -> dict:
-        """PD's mmr of each player (their rank, as the game's own scoreboard shows it), kept RANK_KEEP."""
+        """PD's mmr of each player (their rank, as the game's own scoreboard shows it), kept RANK_KEEP. The ranks
+        not here yet are read side by side, and waited for RANK_WAIT at most: the rest come with a later look."""
         found, wanted = {}, []
         for subject in subjects:
             kept = self.ranks.get(subject)
@@ -430,32 +518,51 @@ class Riot:
                 wanted.append(subject)
         base = self._base(saved)
 
-        def ask(subject: str):
+        def ask(subject: str) -> dict:
             try:
-                return subject, self._pd("rank", f"{base}/mmr/v1/players/{subject}", headers)
+                answer = self._pd("rank", f"{base}/mmr/v1/players/{subject}", headers)
             except RiotError:
-                return subject, {}  # not asked again this match either: the page falls back to GLZ's badge
+                answer = {}  # not asked again this match either: the page falls back to GLZ's badge
+            self.ranks.put(subject, answer, RANK_KEEP)
+            with self._asking_lock:
+                self._asking.discard(subject)
+            return answer
 
-        if wanted:
-            with ThreadPoolExecutor(5, thread_name_prefix="riot-rank") as pool:
-                for subject, answer in pool.map(ask, wanted):
-                    self.ranks.put(subject, answer, RANK_KEEP)
-                    found[subject] = answer
+        asked = {}
+        with self._asking_lock:
+            for subject in wanted:
+                if subject not in self._asking:
+                    self._asking.add(subject)
+                    asked[subject] = self._ranker.submit(ask, subject)
+        if asked:
+            done, _ = wait(asked.values(), timeout=RANK_WAIT)
+            found |= {subject: future.result() for subject, future in asked.items() if future in done}
         return found
 
-    def _match(self, glz: str, puuid: str, headers: dict, saved: dict) -> dict:
-        """Agent select or the match the owner is in (``phase`` "" when neither)."""
-        for phase, path in PHASES:
-            try:
-                player = self._pd(phase, f"{glz}{path}/players/{puuid}", headers)
-            except RiotError as error:
-                if error.kind == "down" and " 404" in f" {error.detail}":
-                    continue  # not in this phase
-                raise
-            match_id = str(player.get("MatchID") or "")
-            if not re.fullmatch(r"[0-9a-fA-F-]{36}", match_id):
-                continue
-            match = self._pd(phase, f"{glz}{path}/matches/{match_id}", headers)
+    def _match(self, glz: str, puuid: str, headers: dict, saved: dict, phases=("pregame", "ingame")) -> dict:
+        """Agent select or the match the owner is in (``phase`` "" when neither), GLZ asked in ``phases``' order.
+        The match of the last look is asked for at once (one call instead of two)."""
+        paths = dict(PHASES)
+        for phase in phases:
+            path = paths[phase]
+            match, match_id = None, self.where.get(phase, "")
+            if match_id:
+                match = self._remembered(phase, f"{glz}{path}/matches/{match_id}", headers)
+                if match is not None and puuid not in _subjects(match, phase):
+                    match = None
+            if match is None:
+                self.where.pop(phase, None)
+                try:
+                    player = self._pd(phase, f"{glz}{path}/players/{puuid}", headers)
+                except RiotError as error:
+                    if error.kind == "down" and " 404" in f" {error.detail}":
+                        continue  # not in this phase
+                    raise
+                match_id = str(player.get("MatchID") or "").lower()
+                if not _UUID.match(match_id):
+                    continue
+                match = self._pd(phase, f"{glz}{path}/matches/{match_id}", headers)
+                self.where[phase] = match_id
             team = match.get("AllyTeam") if isinstance(match.get("AllyTeam"), dict) else {}
             players = [
                 item
@@ -488,14 +595,22 @@ class Riot:
         }
 
     def _names(self, saved: dict, headers: dict, subjects: list[str]) -> dict:
-        """PD's name service: ``{puuid: [game name, tag]}`` of these players."""
-        if not subjects:
-            return {}
+        """PD's name service: ``{puuid: [game name, tag]}`` of these players, each kept NAME_KEEP (the party and
+        the match are looked at every few seconds)."""
+        found, wanted = {}, []
+        for subject in subjects:
+            kept = self.names.get(subject)
+            if kept is not None:
+                found[subject] = kept
+            else:
+                wanted.append(subject)
+        if not wanted:
+            return found
         status, _, body = self.send(
             "PUT",
             f"{self._base(saved)}/name-service/v2/players",
             {**headers, "Content-Type": "application/json"},
-            json.dumps(subjects).encode(),
+            json.dumps(wanted).encode(),
         )
         if status == 401:
             raise RiotError("expired", "names 401")
@@ -505,10 +620,11 @@ class Riot:
             answer = json.loads(body.decode("utf-8"))
         except (ValueError, UnicodeDecodeError, AttributeError):
             answer = []
-        found = {}
         for item in answer if isinstance(answer, list) else []:
-            if isinstance(item, dict) and item.get("Subject") and item.get("GameName"):
-                found[str(item["Subject"]).lower()] = [str(item["GameName"]), str(item.get("TagLine") or "")]
+            subject = str(item.get("Subject") or "").lower() if isinstance(item, dict) else ""
+            if subject in wanted and item.get("GameName"):
+                found[subject] = [str(item["GameName"]), str(item.get("TagLine") or "")]
+                self.names.put(subject, found[subject], NAME_KEEP)
         return found
 
     def _queues(self, tokens: dict, saved: dict) -> dict:
@@ -528,7 +644,8 @@ class Riot:
         if kept is not None:
             return kept
         found = self._read(read)
-        self.store.save(problem=found["problem"] or None)
+        if (self.store.load().get("problem") or None) != (found["problem"] or None):  # not a write every look
+            self.store.save(problem=found["problem"] or None)
         if seconds > 0:
             self.cache.put(key, found, seconds)
         return found
@@ -753,6 +870,13 @@ class Riot:
             kind = "busy" if status == 429 else "down"
             raise RiotError(kind, f"{key} {status or 'no answer'} {code}".strip())
         return said
+
+
+def _subjects(match: dict, phase: str) -> set[str]:
+    """The players of GLZ's agent select (the owner's team) or match."""
+    team = match.get("AllyTeam") if isinstance(match.get("AllyTeam"), dict) else {}
+    players = (team.get("Players") if phase == "pregame" else match.get("Players")) or []
+    return {str(item.get("Subject") or "").lower() for item in players if isinstance(item, dict)}
 
 
 def _wallet(answer) -> dict | None:

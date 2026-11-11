@@ -26,10 +26,21 @@ ROLES = (CONTROLLER, INITIATOR, SENTINEL, DUELIST)
 SUGGESTED = 4
 #: How many of the owner's agents that win most on the map are named at agent select.
 BEST_SHOWN = 3
+#: How often (seconds) /live and the header's ライブ tab on the other pages ask where the game is, by where it is
+#: (state's phase): every second once a match is found (the game's 5-second count before agent select), every two
+#: while matchmaking and at agent select, seldom when nothing is about to change. Riot is asked once or twice a
+#: look (riot.Riot.live), from this server: nothing runs on the owner's PC.
+EVERY = {"": (20, 30), "menus": (5, 8), "queue": (2, 2), "found": (1, 1), "pregame": (2, 4), "ingame": (10, 15)}
 
 
 def _id(value) -> str:
     return str(value or "").lower()
+
+
+def icon(agent: dict) -> str:
+    """An agent's picture for the small squares (pick, seats, roles): valorant-api.com's small one (128 px, a
+    quarter of the bytes of the 256 px one) when it has it."""
+    return str(agent.get("displayIconSmall") or agent.get("displayIcon") or "")
 
 
 def _number(value) -> int:
@@ -104,7 +115,7 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
     return {
         "me": subject == me,
         "agent": agent.get("displayName") or "",
-        "agent_icon": agent.get("displayIcon") or "",
+        "agent_icon": icon(agent),
         "agent_id": _id(item.get("CharacterID")),
         "role": _id((agent.get("role") or {}).get("uuid")),
         "state": str(item.get("CharacterSelectionState") or ""),
@@ -206,6 +217,9 @@ def page(
         "party": None,
         "picker": None,
         "average": None,
+        "every": EVERY[where(found)][0],
+        # the agents' pictures, fetched by the browser while matchmaking: agent select then shows them at once
+        "warm": icons(content, lang) if where(found) in ("queue", "found") else [],
     }
     if phase == "menus" and isinstance(found.get("party"), dict):
         values["party"] = _party(found["party"], look, me, queue_name, float(found.get("at") or 0))
@@ -227,7 +241,7 @@ def page(
             if role in picked or role not in roles:
                 continue
             choices = [
-                {"name": agent.get("displayName") or "", "icon": agent.get("displayIcon") or ""}
+                {"name": agent.get("displayName") or "", "icon": icon(agent)}
                 for uuid, agent in sorted(agents.items(), key=lambda pair: str(pair[1].get("displayName") or ""))
                 if _id((agent.get("role") or {}).get("uuid")) == role
                 and uuid not in taken
@@ -253,7 +267,7 @@ def page(
                     {
                         "id": uuid,
                         "name": agent.get("displayName") or "",
-                        "icon": agent.get("displayIcon") or "",
+                        "icon": icon(agent),
                         "role": ((agent.get("role") or {}).get("displayName")) or "",
                         "taken": uuid in locked,
                         "win": here[uuid]["win"] if uuid in here else None,
@@ -289,6 +303,7 @@ def page(
 STATE_WORDS = {
     "menus": "メニュー",
     "queue": "マッチング中",
+    "found": "試合が見つかりました",
     "pregame": "エージェント選択中",
     "ingame": "対戦中",
     "unknown": "ゲームの状態を読めません",
@@ -296,15 +311,24 @@ STATE_WORDS = {
 }
 
 
-def state(found: dict, content: Content, lang: str) -> dict:
-    """Where the owner's game is, in a few words, for the header's ライブ tab on every page (/live/state):
-    ``{"phase": "menus", "queue" (matchmaking), "pregame", "ingame" or "" (closed or not known), "words", "map",
-    "match": the match's id (agent select and the match), "running"}``, in the page's language (``lang``)."""
+def where(found: dict) -> str:
+    """Where the owner's game is (riot.Riot.live's answer): "menus", "queue" (matchmaking), "found" (the match is
+    found: the game's 5-second count before agent select), "pregame", "ingame" or "" (closed or not known)."""
     phase = found.get("phase") or ""
     party = found.get("party") if isinstance(found.get("party"), dict) else {}
+    if phase == "menus":
+        party_state = str(party.get("State") or "").upper()
+        return "queue" if party_state == "MATCHMAKING" else "found" if "STARTING" in party_state else "menus"
+    return phase if phase in EVERY else ""
+
+
+def state(found: dict, content: Content, lang: str) -> dict:
+    """Where the owner's game is, in a few words, for the header's ライブ tab on every page (/live/state):
+    ``{"phase": where(found), "words", "map", "match": the match's id (agent select and the match), "running",
+    "every": seconds until the tab asks again, "icons": the agents' pictures to have ready before agent select
+    (matchmaking and a found match only)}``, in the page's language (``lang``)."""
+    phase = where(found)
     match = found.get("match") if isinstance(found.get("match"), dict) else {}
-    if phase == "menus" and str(party.get("State") or "").upper() == "MATCHMAKING":
-        phase = "queue"
     place = ""
     if phase in ("pregame", "ingame"):
         address = str(match.get("MapID") or "").rsplit("/", 1)[-1].lower()
@@ -318,4 +342,12 @@ def state(found: dict, content: Content, lang: str) -> dict:
         "map": place,
         "match": _id(match.get("ID") or match.get("MatchID")) if phase in ("pregame", "ingame") else "",
         "running": running,
+        "every": EVERY[phase][1],
+        "icons": icons(content, lang) if phase in ("queue", "found") else [],
     }
+
+
+def icons(content: Content, lang: str) -> list[str]:
+    """Every agent's small picture (icon), for the browser to fetch while the party is matchmaking: agent select
+    then shows its squares at once (the pictures are kept by the browser for a month)."""
+    return sorted({icon(agent) for agent in content.agent_index(lang).values() if icon(agent)})

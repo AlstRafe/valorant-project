@@ -229,9 +229,9 @@ def main() -> None:
     def wsgi(environ, start):
         if "visitor=1" in environ.get("HTTP_COOKIE", ""):
             environ["homepage.visitor"] = True
-        # /live?phase=menus, queue (the menus, matchmaking), pregame or ingame: where the owner's made-up game is
-        # (helpers.FakeRiot); none: the game is closed. A button pressed on /live (POST /live/act, then /live) keeps
-        # the phase of the page it was pressed on.
+        # /live?phase=menus, queue (the menus, matchmaking), found (the match found), pregame or ingame: where the
+        # owner's made-up game is (helpers.FakeRiot); none: the game is closed. A button pressed on /live (POST
+        # /live/act, then /live) keeps the phase of the page it was pressed on.
         if environ.get("PATH_INFO") == "/live/act":
             pressed_on = environ.get("HTTP_REFERER", "").partition("?")[2]
             next_live.append(pressed_on.removeprefix("phase=") if pressed_on.startswith("phase=") else "")
@@ -239,9 +239,12 @@ def main() -> None:
             asked = environ.get("QUERY_STRING", "")
             phase = asked.removeprefix("phase=") if asked or not next_live else next_live.pop()
             next_live.clear()
-            app.riot.phase = "menus" if phase == "queue" else phase if phase in ("menus", "pregame", "ingame") else ""
+            game = {"queue": "menus", "found": "menus"}.get(phase, phase)
+            app.riot.phase = game if game in ("menus", "pregame", "ingame") else ""
             party = app.riot.pd["party"]
-            party["State"] = "MATCHMAKING" if phase == "queue" else "DEFAULT"
+            party["State"] = {"queue": "MATCHMAKING", "found": "MATCHMADE_GAME_STARTING"}.get(phase, "DEFAULT")
+            # agent select's timer counts down, as in the game: the page changes at every look
+            app.riot.pd["pregame"]["PhaseTimeRemainingNS"] = int(85 - time.time() % 80) * 1_000_000_000
             party["QueueEntryTime"] = (
                 time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 95))
                 if phase == "queue"

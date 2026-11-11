@@ -969,10 +969,75 @@
     });
   }
 
-  // /live is read again every few seconds in the background, and only what changed is put in place: no reload, so
-  // the scroll, a mode chosen in the menu and the focused button stay. Its buttons (queue, pick, lock) are sent the
-  // same way and the answer (the page after the press, with its note) is put in place at once. Never while a
-  // button is being pressed or the mode menu is open. Without a script, the buttons send the page as before.
+  // Pictures fetched ahead (the agents' squares while the party is matchmaking): agent select then shows them at
+  // once, from the browser's own store. Each is asked once a page.
+  var warmed = {};
+  function warm(addresses) {
+    (addresses || []).forEach(function (address) {
+      address = ownPicture(address);
+      if (!address || warmed[address]) return;
+      var picture = new Image();
+      warmed[address] = picture; // held until it is loaded
+      picture.decoding = "async";
+      picture.src = address;
+    });
+  }
+
+  // Puts into `old` what changed in `fresh` (the same part, read again), keeping every element that stays: a
+  // picture already shown is not made again (the agents' squares blinked and were fetched again at each look), a
+  // button keeps its focus. Children are matched by their tag, id, first class and label; the rest are added or
+  // taken away.
+  function morph(old, fresh) {
+    function key(node) {
+      return node.nodeType === 1
+        ? node.nodeName +
+            "#" +
+            node.id +
+            "." +
+            (node.classList[0] || "") +
+            "@" +
+            (node.getAttribute("aria-labelledby") || "")
+        : "#" + node.nodeType;
+    }
+    var a = old.firstChild;
+    var b = fresh.firstChild;
+    while (b) {
+      var next = b.nextSibling;
+      var wanted = key(b);
+      var match = a;
+      while (match && key(match) !== wanted) match = match.nextSibling;
+      if (!match) {
+        old.insertBefore(b, a); // new here (at the end when a is null)
+      } else {
+        if (match !== a) old.insertBefore(match, a);
+        if (match.nodeType === 1) {
+          Array.prototype.slice.call(match.attributes).forEach(function (attribute) {
+            if (!b.hasAttribute(attribute.name)) match.removeAttribute(attribute.name);
+          });
+          Array.prototype.slice.call(b.attributes).forEach(function (attribute) {
+            if (match.getAttribute(attribute.name) !== attribute.value)
+              match.setAttribute(attribute.name, attribute.value);
+          });
+          morph(match, b);
+        } else if (match.nodeValue !== b.nodeValue) {
+          match.nodeValue = b.nodeValue;
+        }
+        a = match.nextSibling;
+      }
+      b = next;
+    }
+    while (a) {
+      var gone = a;
+      a = a.nextSibling;
+      old.removeChild(gone);
+    }
+  }
+
+  // /live is read again in the background (as often as the moment needs: each second once a match is found), and
+  // only what changed is put in place: no reload, so the scroll, a mode chosen in the menu, the focused button and
+  // the pictures stay. Its buttons (queue, pick, lock) are sent the same way and the answer (the page after the
+  // press, with its note) is put in place at once. Never while a button is being pressed or the mode menu is open.
+  // Without a script, the buttons send the page as before.
   function refresh() {
     var box = document.querySelector("[data-refresh]");
     if (!box || !window.fetch || !window.DOMParser) return;
@@ -988,15 +1053,15 @@
 
     function later() {
       clearTimeout(timer);
-      timer = setTimeout(ask, Math.max(3, Number(box.getAttribute("data-refresh")) || 10) * 1000);
+      timer = setTimeout(ask, Math.max(1, Number(box.getAttribute("data-refresh")) || 10) * 1000);
     }
 
-    // a button the same as the one that had the focus (its name and value), in the new part
-    function same(old) {
-      if (!old || !box.contains(old) || !old.name) return null;
+    // the button that had the focus, or one the same (its name and value) in the new part
+    function twin(old) {
+      if (box.contains(old)) return old;
       var found = null;
       box.querySelectorAll("button[name]").forEach(function (button) {
-        if (!found && button !== old && button.name === old.name && button.value === old.value) found = button;
+        if (!found && old.name && button.name === old.name && button.value === old.value) found = button;
       });
       return found;
     }
@@ -1004,9 +1069,10 @@
     function put(text) {
       var fresh = new DOMParser().parseFromString(text, "text/html").querySelector("[data-refresh]");
       if (!fresh) return false;
-      ["data-refresh", "data-live-phase", "data-live-words"].forEach(function (name) {
+      ["data-refresh", "data-live-phase", "data-live-words", "data-warm"].forEach(function (name) {
         box.setAttribute(name, fresh.getAttribute(name) || "");
       });
+      warm((fresh.getAttribute("data-warm") || "").split(" "));
       if (fresh.innerHTML === last) return true;
       last = fresh.innerHTML;
       // a mode chosen in the menu but not started yet is kept
@@ -1018,13 +1084,13 @@
       var focused = document.activeElement;
       var left = window.scrollX;
       var top = window.scrollY;
-      box.innerHTML = fresh.innerHTML;
+      morph(box, fresh);
       window.scrollTo(left, top);
       box.querySelectorAll("select[name]").forEach(function (select) {
         if (chosen[select.name] && select.querySelector('option[value="' + chosen[select.name] + '"]'))
           select.value = chosen[select.name];
       });
-      var again = focused && focused.tagName === "BUTTON" ? same(focused) : null;
+      var again = focused && focused.tagName === "BUTTON" && document.activeElement !== focused ? twin(focused) : null;
       if (again) again.focus({ preventScroll: true });
       document.dispatchEvent(new CustomEvent("val:refreshed"));
       return true;
@@ -1089,6 +1155,7 @@
     document.addEventListener("visibilitychange", function () {
       if (document.visibilityState === "visible") ask();
     });
+    warm((box.getAttribute("data-warm") || "").split(" "));
     later();
   }
 
@@ -1181,7 +1248,9 @@
       pick: said[1] || "ライブでピックする",
       close: said[2] || "閉じる",
       label: said[3] || "ライブ（{state}）",
+      found: said[4] || "試合が見つかりました",
     };
+    var FOUND = 60000; // closing the note when the match is found closes it for that match's agent select too
     var STOP = { nologin: true, signedout: true, badpaste: true };
     var TOLD = "val.live.told";
     var page = document.querySelector("[data-live-phase]");
@@ -1197,24 +1266,44 @@
       }
     }
 
+    // the note from the moment the match is found (the game's 5-second count) through agent select
     function note(state) {
       var box = document.getElementById("live-alert");
-      if (state.phase !== "pregame" || page || (state.match && told() === state.match)) {
+      var was = told();
+      var closed = was.indexOf("found@") === 0 && Date.now() - Number(was.slice(6)) < FOUND;
+      if (closed && state.match) told(state.match); // closed when the match was found: this agent select's
+      if (
+        (state.phase !== "found" && state.phase !== "pregame") ||
+        page ||
+        closed ||
+        (state.match && was === state.match)
+      ) {
         if (box) box.remove();
         return;
       }
-      if (box) return;
+      var wide = /^(ja|zh)/.test(document.documentElement.lang); // full-width brackets in Japanese and Chinese
+      var words = (state.phase === "found" ? SAID.found : SAID.began) + "|";
+      if (state.map) words += wide ? "（" + state.map + "）" : " (" + state.map + ")";
+      if (box) {
+        if (box.getAttribute("data-words") !== words) {
+          box.setAttribute("data-words", words);
+          box.querySelector("strong").textContent = words.split("|")[0];
+          box.querySelector("span").textContent = words.split("|")[1];
+        }
+        return;
+      }
       box = document.createElement("div");
       box.id = "live-alert";
       box.className = "live-alert";
       box.setAttribute("role", "status");
-      var words = document.createElement("p");
+      box.setAttribute("data-words", words);
+      var line = document.createElement("p");
       var strong = document.createElement("strong");
-      strong.textContent = SAID.began;
-      words.appendChild(strong);
-      var wide = /^(ja|zh)/.test(document.documentElement.lang); // full-width brackets in Japanese and Chinese
-      if (state.map)
-        words.appendChild(document.createTextNode(wide ? "（" + state.map + "）" : " (" + state.map + ")"));
+      strong.textContent = words.split("|")[0];
+      line.appendChild(strong);
+      var where = document.createElement("span");
+      where.textContent = words.split("|")[1];
+      line.appendChild(where);
       var go = document.createElement("a");
       go.className = "button";
       go.href = tab.getAttribute("href");
@@ -1224,16 +1313,20 @@
       close.className = "quiet";
       close.textContent = SAID.close;
       close.addEventListener("click", function () {
-        told(state.match || "seen");
+        var now = current;
+        told(now.match || (now.phase === "found" ? "found@" + Date.now() : "seen"));
         box.remove();
       });
-      box.appendChild(words);
+      box.appendChild(line);
       box.appendChild(go);
       box.appendChild(close);
       document.body.appendChild(box);
     }
 
+    var current = {};
+
     function show(state) {
+      current = state;
       tab.setAttribute("data-phase", state.phase || "off");
       tab.setAttribute("aria-label", state.words ? SAID.label.replace("{state}", state.words) : tab.textContent.trim());
       tab.title = state.words || "";
@@ -1259,8 +1352,11 @@
           asking = false;
           if (state) show(state);
           if (state && STOP[state.problem]) return;
-          // while the game is open, often (agent select lasts about a minute and a half); closed, now and then
-          timer = setTimeout(ask, state && state.phase ? 8000 : 30000);
+          if (state) warm(state.icons);
+          // as often as the server says the moment needs (each second once a match is found); else while the game
+          // is open, often, and closed, now and then
+          var every = state && Number(state.every) > 0 ? Number(state.every) * 1000 : 0;
+          timer = setTimeout(ask, every || (state && state.phase ? 8000 : 30000));
         })
         .catch(function () {
           asking = false;

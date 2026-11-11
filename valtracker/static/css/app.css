@@ -455,11 +455,13 @@ h2 {
   background: var(--blue);
   animation: live-pulse 1.4s ease-in-out infinite;
 }
+.live-tab[data-phase="found"] .live-dot,
 .live-tab[data-phase="pregame"] .live-dot,
 .live-tab[data-phase="ingame"] .live-dot {
   display: block;
   background: var(--accent);
 }
+.live-tab[data-phase="found"] .live-dot,
 .live-tab[data-phase="pregame"] .live-dot {
   animation: live-pulse 1s ease-in-out infinite;
 }

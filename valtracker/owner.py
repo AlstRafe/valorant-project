@@ -23,6 +23,7 @@ from valtracker import progress as progress_page
 from valtracker import security
 from valtracker.activity import LINE_QUEUES
 from valtracker.collection import CHARM, STARTERS
+from valtracker.content import media_path
 from valtracker.henrik import REGIONS
 from valtracker.riot import ITEM_TYPES, RiotError
 from valtracker.stats import JST
@@ -86,7 +87,11 @@ def _last_match(found: dict) -> str:
     match = found.get("match") if isinstance(found.get("match"), dict) else {}
     playing = str(match.get("MatchID") or match.get("ID") or "").lower()
     if found.get("phase") == "ingame" and _MATCH_ID.match(playing):
-        session["live_match"] = [playing, time.time()]
+        kept = session.get("live_match")
+        # written when the match is new, then once in a while: a session cookie changed at every look would make
+        # the browser fetch again what it keeps per cookie
+        if not isinstance(kept, list) or len(kept) != 2 or kept[0] != playing or time.time() - float(kept[1]) > 300:
+            session["live_match"] = [playing, time.time()]
         return ""
     kept = session.get("live_match")
     if found.get("phase") in ("ingame", "pregame") or not isinstance(kept, list) or len(kept) != 2:
@@ -279,7 +284,7 @@ def register(app: Flask) -> None:
         owned = None
         if found.get("phase") == "pregame":
             try:
-                owned = set((riot.collection().get("owned") or {}).get("agents") or {}) | STARTERS
+                owned = riot.agents() | STARTERS  # read ahead while matchmaking (riot.Riot.live)
             except RiotError:
                 owned = None
         me = _id(riot.store.load().get("puuid"))
@@ -311,7 +316,9 @@ def register(app: Flask) -> None:
             answer = jsonify({"phase": "", "words": "", "problem": error.kind})
         else:
             _last_match(found)  # a match played while another page was open is linked from /live afterwards
-            answer = jsonify(live_page.state(found, current_app.config["VAL_CONTENT"], g.lang) | {"problem": ""})
+            told = live_page.state(found, current_app.config["VAL_CONTENT"], g.lang)
+            told["icons"] = [url_for("media", path=media_path(url)) for url in told["icons"] if media_path(url)]
+            answer = jsonify(told | {"problem": ""})
         answer.headers["Cache-Control"] = "no-store"
         return answer
 
