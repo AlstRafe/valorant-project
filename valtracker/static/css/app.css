@@ -217,7 +217,8 @@ h2 {
   flex: none;
   gap: 0.25rem;
 }
-.app-nav button {
+.app-nav button,
+.app-settings {
   display: inline-grid;
   place-items: center;
   width: 2.25rem;
@@ -234,7 +235,15 @@ h2 {
   cursor: default;
   opacity: 0.55;
 }
-.app-nav svg {
+.app-settings {
+  flex: none;
+}
+.app-settings[aria-current] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.app-nav svg,
+.app-settings svg {
   width: 1.05rem;
   height: 1.05rem;
   fill: none;
@@ -269,9 +278,22 @@ h2 {
     white-space: nowrap;
   }
 }
-/* A small window: forward is the one done without (Alt+→ still does it). */
+/* A window between a phone's width and a wide one: the buttons beside the tabs need the room, so the tabs are
+   their pictures, the open page's with its name (in Japanese the names were cut off under 920 px). */
+@media (min-width: 761px) and (max-width: 930px) {
+  .app .tabs a:not([aria-current]) > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+/* A small window: forward is the one done without (Alt+→ still does it), and the settings are under ツール. */
 @media (max-width: 520px) {
-  .app-nav [data-go="forward"] {
+  .app-nav [data-go="forward"],
+  .app-settings {
     display: none;
   }
 }
@@ -3879,9 +3901,56 @@ code {
     gap: 0 1.6rem;
     align-items: start;
   }
+  /* the team and what it still lacks beside the agents to pick, half the page each: five teammates with their
+     act's record need the width, and every agent still fits beside them */
   .pregame-cols:has(> .live-pick) {
-    grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
     grid-template-areas: "ally pick" "comp pick";
+  }
+  /* agent select and a match (.live-wide): the page as wide as the window lets it, so that a player's act fits
+     on one line, and the rows close together: all ten players above the bottom of the PC app's window */
+  body:has(.live-wide) {
+    max-width: 86rem;
+  }
+  .live-wide .modes {
+    margin-top: 0.8rem;
+  }
+  .live-wide .live-head {
+    margin: 0.5rem 0 0;
+  }
+  .live-wide .live-head img {
+    width: 7rem;
+    height: 2.6rem;
+  }
+  .live-wide h2 {
+    margin: 0.9rem 0 0.5rem;
+  }
+  .live-wide .seats {
+    gap: 0.35rem;
+  }
+  .live-wide .seat {
+    padding: 0.4rem 0.8rem;
+  }
+  .live-wide .seat-text {
+    gap: 0;
+    line-height: 1.4;
+  }
+  .live-wide .note {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+  }
+  /* a role the team lacks and the agents for it on one line */
+  .live-wide .roles {
+    gap: 0.35rem;
+  }
+  .live-wide .roles li {
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    align-items: center;
+    padding: 0.4rem 0.8rem;
+  }
+  .live-wide .live-comp > p:not(.note) {
+    margin: 0 0 0.5rem;
   }
   .pregame-cols:not(:has(> .live-pick)) > * {
     grid-column: 1 / -1;

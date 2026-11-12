@@ -211,6 +211,67 @@ def seed_sets(app) -> None:
     app.config["VAL_SETS"].save(sets=sets)
 
 
+def full_lobby(app) -> None:
+    """A whole match on /live, as the owner meets it: five in agent select, five against five in the match (the
+    fixture has three, enough for the tests). Long names, a player who hides theirs, one without a rank."""
+    pd = app.riot.pd
+    agents = ("11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222")
+    names = (
+        "ながいなまえのプレイヤーさん",
+        "Sova Main",
+        "xX_Duelist_Xx",
+        "初心者です",
+        "TenZ fan",
+        "Controller",
+        "last one",
+    )
+    season = next(iter(next(iter(pd["mmr"].values()))["QueueSkills"]["competitive"]["SeasonalInfoBySeasonID"]))
+    for number, name in enumerate(names):
+        subject = f"b2222222-0000-4000-8000-{number:012d}"
+        hidden = number == 3
+        tier = (14, 17, 19, 0, 22, 16, 18)[number]
+        identity = {"AccountLevel": 20 + number * 37, "Incognito": hidden, "HideAccountLevel": number == 5}
+        pd["names"].append({"Subject": subject, "GameName": name, "TagLine": f"{number + 100}"})
+        played = {"CompetitiveTier": tier, "RankedRating": 11 * number, "NumberOfWinsWithPlacements": 9 + number}
+        played |= {"NumberOfGames": 20 + number, "WinsByTier": {str(tier + 1): 2}}
+        pd["mmr"][subject] = {
+            "QueueSkills": {"competitive": {"SeasonalInfoBySeasonID": {season: played} if tier else {}}},
+            "LatestCompetitiveUpdate": {"SeasonID": season, "TierAfterUpdate": tier, "RankedRatingAfterUpdate": 11},
+        }
+        pd["coregame"]["Players"].append(
+            {
+                "Subject": subject,
+                "TeamID": "Red" if number < 4 else "Blue",
+                "CharacterID": agents[number % 2],
+                "PlayerIdentity": identity,
+                "SeasonalBadgeInfo": {"Rank": tier},
+            }
+        )
+        if number < 2:
+            pd["pregame"]["AllyTeam"]["Players"].append(
+                {
+                    "Subject": subject,
+                    "CharacterID": agents[number % 2] if number else "",
+                    "CharacterSelectionState": "selected" if number else "",
+                    "CompetitiveTier": tier,
+                    "PlayerIdentity": identity,
+                }
+            )
+
+
+def last_match(app) -> None:
+    """Riot's record of the match the owner is in on /live?phase=ingame: once it is "over" (/live?phase=menus, or
+    the game closed), /live shows its result (owner._last_result)."""
+    pd = app.riot.pd
+    match_id = pd["coregame"]["MatchID"].lower()
+    record = json.dumps(pd["matches"]["bbbbbbbb-0000-4000-8000-000000000001"]).replace(pd["player"], helpers.PUUID)
+    record = json.loads(record)
+    record["matchInfo"] |= {"matchId": match_id, "gameStartMillis": int(time.time() - 2400) * 1000}
+    pd["matches"][match_id] = record
+    pd["player"] = helpers.PUUID
+    pd["updates"]["Matches"][0]["MatchID"] = match_id
+
+
 def desktop_client(folder: Path):
     """The Riot Client of the PC app, made up: signed in, VALORANT open. Its events are not listened to, so where
     the game is comes from the made-up Riot servers (/live?phase=...), as on the site."""
@@ -246,6 +307,8 @@ def main() -> None:
         diary.note(day, [{"uuid": "ac000000-0000-4000-8000-000000000001", "price": 3550}], None)
     diary.want("ac000000-0000-4000-8000-000000000001", True)
     seed_sets(app)
+    full_lobby(app)
+    last_match(app)
     inner = app.wsgi_app
     next_live: list[str] = []
 
