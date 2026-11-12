@@ -4,10 +4,15 @@ page, pictures a browser can show, one player with the longest name there can be
 made-up player (pages of them, long charts), two saved sets of the owner's loadout, a ``visitor=1`` cookie that
 shows a page as a visitor sees it, and ``/collection?loadout=none`` (Riot gives no loadout).
 
-    python tests/ui/serve.py [port, default 5077] [--desktop]
+    python tests/ui/serve.py [port, default 5077] [--desktop] [--real]
 
 --desktop: the pages as the PC app shows them (valtracker/desktop.py): signed in through a made-up Riot Client on
 the PC (tests/test_desktop.py's FakeClient), not with a pasted ssid.
+
+--real: the game's own names and pictures (valorant-api.com is asked for real, so this needs the network) around
+the made-up players and matches: the pages as an owner sees them, for the screenshots (tests/ui/shots.py). The
+fixtures' made-up ids are swapped for the real things they stand for. ``?update=1`` on any address says that a
+newer PC app is out.
 """
 
 import json
@@ -29,6 +34,8 @@ os.environ["VAL_HENRIK_KEY"] = ""
 import helpers  # noqa: E402
 from helpers import make_app  # noqa: E402
 
+from valtracker import release  # noqa: E402
+
 #: The made-up servers and how many matches each had in 14 days (Mumbai: too few to tell its busy hours).
 SERVERS = {"Tokyo": 900, "Hong Kong": 420, "Singapore": 380, "Sydney": 260, "Mumbai": 30}
 
@@ -37,12 +44,121 @@ SERVERS = {"Tokyo": 900, "Hong Kong": 420, "Singapore": 380, "Sydney": 260, "Mum
 LONGEST = ("長い名前のプレイヤーです一二三四", "WWWWW")
 
 
+JETT, SOVA = "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"
+#: --real: where the game's names and pictures are asked for real.
+REAL_SITES = ("https://valorant-api.com/", "https://media.valorant-api.com/")
+#: --real: the made-up skins -> the real ones they stand for (their English names).
+REAL_SKINS = {
+    "aa000000-0000-4000-8000-000000000001": "Prime Vandal",
+    "aa000000-0000-4000-8000-000000000002": "Reaver Vandal",
+    "aa000000-0000-4000-8000-000000000009": "Standard Vandal",
+    "ac000000-0000-4000-8000-000000000001": "Reaver Knife",
+    "ab000000-0000-4000-8000-000000000001": "Prime Classic",
+}
+#: --real: more skins for the day's store (it has four), and who plays what in the made-up lobby.
+REAL_STORE = ("Oni Phantom", "Ion Sheriff", "Glitchpop Frenzy")
+REAL_LOBBY = ("Jett", "Omen", "Killjoy", "Sage", "Raze", "Viper", "Cypher", "Breach", "Reyna", "Skye")
+#: --real: made-up id -> real id (real_ids), and the real things found by their English names.
+SWAP: dict[str, str] = {}
+FOUND: dict[str, dict] = {"agents": {}, "skins": {}}
+
+
+def real(made_up: str) -> str:
+    """The real id a made-up one stands for (--real), else itself."""
+    return SWAP.get(made_up, made_up)
+
+
+def real_ids(fetch) -> None:
+    """Fills SWAP and FOUND from valorant-api.com (``fetch``: net.fetch): each made-up agent, skin (with its levels
+    and variants), buddy, card, spray, title, bundle, act and contract of the fixtures gets a real one of its kind."""
+
+    def ask(kind: str) -> list:
+        status, body = fetch(f"https://valorant-api.com/v1/{kind}{'&' if '?' in kind else '?'}language=en-US", {})
+        try:
+            data = json.loads(body)["data"]
+        except (ValueError, KeyError, TypeError):
+            data = None
+        if status != 200 or not isinstance(data, list):
+            raise SystemExit(f"--real: valorant-api.com did not answer {kind} (HTTP {status})")
+        return data
+
+    made = json.loads(helpers.fixture("content_collection.json"))
+    agents = FOUND["agents"] = {item["displayName"]: item["uuid"] for item in ask("agents?isPlayableCharacter=true")}
+    SWAP[JETT], SWAP[SOVA] = agents["Jett"], agents["Sova"]
+    skins = FOUND["skins"] = {skin["displayName"]: skin for weapon in ask("weapons") for skin in weapon["skins"]}
+    for weapon in made["weapons"]:
+        for skin in weapon["skins"]:
+            true = skins.get(REAL_SKINS.get(skin["uuid"], ""))
+            if not true:
+                continue
+            SWAP[skin["uuid"]] = true["uuid"]
+            for part in ("levels", "chromas"):
+                for one, other in zip(skin.get(part) or [], true.get(part) or [], strict=False):
+                    SWAP[one["uuid"]] = other["uuid"]
+            if str(skin.get("themeUuid") or "").startswith("a1") and true.get("themeUuid"):
+                SWAP[skin["themeUuid"]] = true["themeUuid"]
+    # an offer of the store and a buddy of the bundle that the fixtures leave unknown
+    extra = skins.get(REAL_STORE[0]) or next(iter(skins.values()))
+    SWAP["77777777-0000-4000-8000-000000000000"] = extra["levels"][0]["uuid"]
+
+    def pair(kind: str, true_items: list, part: str = "") -> None:
+        for one, other in zip(made[kind], true_items, strict=False):
+            SWAP[one["uuid"]] = other["uuid"]
+            for sub, true_sub in zip(one.get(part) or [], other.get(part) or [], strict=False):
+                SWAP[sub["uuid"]] = true_sub["uuid"]
+
+    buddies = [item for item in ask("buddies") if item.get("displayIcon") and item.get("levels")]
+    pair("buddies", buddies, "levels")
+    if len(buddies) > 2:
+        SWAP["bb000000-0000-4000-8000-000000000099"] = buddies[2]["levels"][0]["uuid"]
+    cards = [item for item in ask("playercards") if item.get("smallArt") and item.get("wideArt")]
+    pair("playercards", cards)
+    if len(cards) > 2:
+        SWAP["33333333-3333-4333-8333-333333333333"] = cards[2]["uuid"]  # the made-up player's card (HenrikDev)
+    pair("sprays", [item for item in ask("sprays") if item.get("displayIcon")], "levels")
+    pair("playertitles", [item for item in ask("playertitles") if item.get("titleText")])
+    pair("flex", [item for item in ask("flex") if item.get("displayIcon")])
+    bundles = ask("bundles")
+    pair("bundles", [item for item in bundles if item.get("displayName") == "Prime"] or bundles)
+    # the act being played (else the latest), the one before it, and its episode
+    acts = [item for item in ask("seasons") if "Act" in str(item.get("type")) and item.get("startTime")]
+    acts.sort(key=lambda item: item["startTime"])
+    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    current = next((item for item in acts if item["startTime"] <= now < str(item.get("endTime"))), acts[-1])
+    before = acts[max(0, acts.index(current) - 1)]
+    SWAP["aaaa0000-0000-4000-8000-000000000003"] = SWAP["aaaaaaaa-1111-4222-8333-000000000000"] = current["uuid"]
+    SWAP["aaaa0000-0000-4000-8000-000000000002"] = before["uuid"]
+    if current.get("parentUuid"):
+        SWAP["aaaa0000-0000-4000-8000-000000000001"] = current["parentUuid"]
+    contracts = ask("contracts")
+
+    def contract(kind: str, relation: str = "") -> dict | None:
+        of_kind = [item for item in contracts if (item.get("content") or {}).get("relationType") == kind]
+        exact = [item for item in of_kind if item["content"].get("relationUuid") == relation]
+        return (exact or of_kind or [None])[-1]
+
+    wanted = (("Season", current["uuid"]), ("Season", before["uuid"]), ("Agent", agents["Jett"]), ("Event", ""))
+    for number, (kind, relation) in enumerate(wanted, 1):
+        true = contract(kind, relation)
+        if true:
+            SWAP[f"c0000000-0000-4000-8000-{number:012d}"] = true["uuid"]
+    print(f"--real: {len(SWAP)} made-up ids stand for real ones; the act: {current.get('displayName')}", flush=True)
+
+
 def _fixture(name: str, original=helpers.fixture) -> bytes:
     data = original(name)
     if name == "henrik_matches.json":
         longest, tag = LONGEST
         data = data.replace(b'"name": "Other"', f'"name": "{longest}"'.encode())
         data = data.replace(b'"tag": "EUW"', f'"tag": "{tag}"'.encode())
+    if SWAP and not name.startswith("content_"):
+        text = data.decode("utf-8")
+        # the names that test the pages (the longest there can be, one with HTML in it) read as ordinary ones
+        for odd, plain in ((LONGEST[0], "Hikari"), (LONGEST[1], "JP2"), ("<b>Foe</b>", "Kaze")):
+            text = text.replace(odd, plain)
+        for made_up, true in SWAP.items():
+            text = text.replace(made_up, true).replace(made_up.upper(), true.upper())
+        data = text.encode("utf-8")
     return data
 
 
@@ -169,7 +285,7 @@ def seed_lifetime(app, now: float) -> None:
                 "map_id": "7eaecc1b-4337-bbf6-6ab9-04b8f06b3319",
                 "us": 13,
                 "them": pick.randint(3, 11) if number % 3 else 14,
-                "agent": "11111111-1111-4111-8111-111111111111",
+                "agent": real(JETT),
                 "tier": 14,
                 "won": bool(number % 3),
                 "rounds": 24,
@@ -196,7 +312,7 @@ def seed_sets(app) -> None:
 
     now = snapshot(app.riot.pd["loadout"])
     other = json.loads(json.dumps(now))
-    other["Guns"][0] |= {"SkinID": "aa000000-0000-4000-8000-000000000002", "ChromaID": ""}
+    other["Guns"][0] |= {"SkinID": real("aa000000-0000-4000-8000-000000000002"), "ChromaID": ""}
     for key in ("CharmInstanceID", "CharmID", "CharmLevelID"):
         other["Guns"][0].pop(key, None)
     sets = [
@@ -215,16 +331,11 @@ def full_lobby(app) -> None:
     """A whole match on /live, as the owner meets it: five in agent select, five against five in the match (the
     fixture has three, enough for the tests). Long names, a player who hides theirs, one without a rank."""
     pd = app.riot.pd
-    agents = ("11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222")
-    names = (
-        "ながいなまえのプレイヤーさん",
-        "Sova Main",
-        "xX_Duelist_Xx",
-        "初心者です",
-        "TenZ fan",
-        "Controller",
-        "last one",
-    )
+    # --real: ten agents as in a real match, and the owner has every agent to pick from
+    agents = [FOUND["agents"][name] for name in REAL_LOBBY if name in FOUND["agents"]] or [real(JETT), real(SOVA)]
+    if FOUND["agents"]:
+        pd["entitlements"]["agents"] = sorted(FOUND["agents"].values())
+    names = ("ながいなまえのプレイヤーさん", "Sakura", "xX_Hayate_Xx", "初心者です", "mochi", "Kitsune", "yuki")
     season = next(iter(next(iter(pd["mmr"].values()))["QueueSkills"]["competitive"]["SeasonalInfoBySeasonID"]))
     for number, name in enumerate(names):
         subject = f"b2222222-0000-4000-8000-{number:012d}"
@@ -242,7 +353,7 @@ def full_lobby(app) -> None:
             {
                 "Subject": subject,
                 "TeamID": "Red" if number < 4 else "Blue",
-                "CharacterID": agents[number % 2],
+                "CharacterID": agents[number % len(agents)],
                 "PlayerIdentity": identity,
                 "SeasonalBadgeInfo": {"Rank": tier},
             }
@@ -251,7 +362,7 @@ def full_lobby(app) -> None:
             pd["pregame"]["AllyTeam"]["Players"].append(
                 {
                     "Subject": subject,
-                    "CharacterID": agents[number % 2] if number else "",
+                    "CharacterID": agents[number % len(agents)] if number else "",
                     "CharacterSelectionState": "selected" if number else "",
                     "CompetitiveTier": tier,
                     "PlayerIdentity": identity,
@@ -272,6 +383,21 @@ def last_match(app) -> None:
     pd["updates"]["Matches"][0]["MatchID"] = match_id
 
 
+def four_offers(app) -> None:
+    """--real: the day's store has four skins, as the game's (the fixture has two)."""
+    panel = app.riot.pd["storefront"]["SkinsPanelLayout"]
+    money = next(iter(panel["SingleItemStoreOffers"][0]["Cost"]))
+    for name, price in zip(REAL_STORE[1:], (1775, 2175), strict=False):
+        skin = FOUND["skins"].get(name)
+        if not skin:
+            continue
+        level = skin["levels"][0]["uuid"]
+        reward = {"ItemTypeID": "e7c63390-eda7-46e0-bb7a-a6abdacd2433", "ItemID": level, "Quantity": 1}
+        offer = {"OfferID": level, "IsDirectPurchase": True, "Cost": {money: price}, "Rewards": [reward]}
+        panel["SingleItemOffers"].append(level)
+        panel["SingleItemStoreOffers"].append(offer)
+
+
 def desktop_client(folder: Path):
     """The Riot Client of the PC app, made up: signed in, VALORANT open. Its events are not listened to, so where
     the game is comes from the made-up Riot servers (/live?phase=...), as on the site."""
@@ -290,6 +416,17 @@ def main() -> None:
     port = int(numbers[0]) if numbers else 5077
     helpers.PNG = _png()
     helpers.fixture = _fixture
+    if "--real" in flags:
+        from valtracker import net
+
+        class RealPictures(helpers.FakeFetch):
+            """The game's names and pictures from valorant-api.com itself; the rest made up as ever."""
+
+            def __call__(self, url: str, headers: dict) -> tuple[int, bytes]:
+                return net.fetch(url, headers) if url.startswith(REAL_SITES) else super().__call__(url, headers)
+
+        helpers.FakeFetch = RealPictures
+        real_ids(net.fetch)
     local = None
     if "--desktop" in flags:
         client_folder = tempfile.TemporaryDirectory()
@@ -304,17 +441,22 @@ def main() -> None:
     diary = app.config["VAL_DIARY"]
     for back in range(1, 4):
         day = time.strftime("%Y-%m-%d", time.gmtime(time.time() - back * 86400))
-        diary.note(day, [{"uuid": "ac000000-0000-4000-8000-000000000001", "price": 3550}], None)
-    diary.want("ac000000-0000-4000-8000-000000000001", True)
+        diary.note(day, [{"uuid": real("ac000000-0000-4000-8000-000000000001"), "price": 3550}], None)
+    diary.want(real("ac000000-0000-4000-8000-000000000001"), True)
     seed_sets(app)
     full_lobby(app)
     last_match(app)
+    if "--real" in flags:
+        four_offers(app)
     inner = app.wsgi_app
     next_live: list[str] = []
 
     def wsgi(environ, start):
         if "visitor=1" in environ.get("HTTP_COOKIE", ""):
             environ["homepage.visitor"] = True
+        # ?update=1: a newer PC app is out (desktop.look_for_updates found one)
+        newer = {"commit": "f" * 40, "date": "2026-11-13 09:00", "url": release.PAGE, "ready": True}
+        app.config["VAL_UPDATE"] = newer if "update=1" in environ.get("QUERY_STRING", "") else None
         # /live?phase=menus, queue (the menus, matchmaking), found (the match found), pregame or ingame: where the
         # owner's made-up game is (helpers.FakeRiot); none: the game is closed. A button pressed on /live (POST
         # /live/act, then /live) keeps the phase of the page it was pressed on.
