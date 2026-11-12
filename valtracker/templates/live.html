@@ -23,10 +23,10 @@
 {%- endmacro %}
 {% block title %}{{ t('ライブ') }} · {{ site_name }}{% endblock %}
 {% block main %}
-<div data-refresh="{{ every or 20 }}" data-live-phase="{{ live_state.phase if live_state else '' }}" data-live-words="{{ live_state.words if live_state else '' }}"{% if warm %} data-warm="{% for url in warm %}{{ media(url) }}{% if not loop.last %} {% endif %}{% endfor %}"{% endif %}>
+<div data-refresh="{{ every or 20 }}"{% if desktop %} data-push="{{ url_for('live_next') }}" data-push-version="{{ push_version }}"{% endif %} data-live-phase="{{ live_state.phase if live_state else '' }}" data-live-words="{{ live_state.words if live_state else '' }}"{% if warm %} data-warm="{% for url in warm %}{{ media(url) }}{% if not loop.last %} {% endif %}{% endfor %}"{% endif %}>
 <section class="hero">
 <h1>{{ t('ライブ') }}</h1>
-<p class="lead">{{ t('あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。PC で VALORANT を開いていれば、スマホからでも使えます。') }}</p>
+<p class="lead">{% if desktop %}{{ t('あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。この PC の Riot クライアントから直接読むので、試合が見つかるとすぐに切り替わります。') }}{% else %}{{ t('あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。PC で VALORANT を開いていれば、スマホからでも使えます。') }}{% endif %}</p>
 </section>
 {% include "_play.html" %}
 {% if not phase %}{{ steps() }}{% endif %}
@@ -114,7 +114,7 @@
 {% if names_missing %}<p class="note">{{ t('名前を読み込めませんでした。') }}</p>{% endif %}
 {% if phase %}<p class="note">{{ t('名前を隠しているプレイヤーの名前・カード・称号は出しません（本人が選んだ設定のため）。') }}</p>{% endif %}
 {% if phase %}{{ steps() }}{% endif %}
-<p class="note">{{ t('このページは数秒ごとに新しくなります。ほかのページを見ているときも、上のタブ「ライブ」の点でゲームの状態がわかり、エージェント選択が始まると画面の下に知らせが出ます。') }}</p>
+<p class="note">{% if desktop %}{{ t('このページはゲームの状態が変わるとすぐ新しくなります。ほかのページを見ているときも、上のタブ「ライブ」の点でゲームの状態がわかり、エージェント選択が始まると画面の下に知らせが出ます。') }}{% else %}{{ t('このページは数秒ごとに新しくなります。ほかのページを見ているときも、上のタブ「ライブ」の点でゲームの状態がわかり、エージェント選択が始まると画面の下に知らせが出ます。') }}{% endif %}</p>
 {% endif %}
 </div>
 {% endblock %}

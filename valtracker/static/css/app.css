@@ -5001,6 +5001,14 @@ code {
   color: var(--soft);
   font-size: 0.82rem;
 }
+/* Settings in the PC app: the ssid steps folded away (the Riot Client signs in) */
+.ssid-way > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--accent);
+  cursor: pointer;
+}
 .set details {
   font-size: 0.85rem;
 }

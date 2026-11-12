@@ -15,7 +15,7 @@ import secrets
 import time
 from datetime import datetime
 
-from flask import Flask, current_app, g, jsonify, redirect, render_template, request, session, url_for
+from flask import Flask, abort, current_app, g, jsonify, redirect, render_template, request, session, url_for
 
 from valtracker import collection as owned_items
 from valtracker import live as live_page
@@ -31,6 +31,8 @@ from valtracker.tools import _when
 from valtracker.views import QUEUES, _t, riot_failure
 
 #: What can be worn from the collection page -> where the loadout keeps it.
+#: How long /live/next waits for the Riot Client's next event (seconds) before it answers with nothing new.
+PUSH_WAIT = 25
 #: How long /live links to the match the owner played last, once it is over.
 LAST_MATCH_KEPT = 3 * 3600
 _MATCH_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
@@ -276,6 +278,9 @@ def register(app: Flask) -> None:
     def live():
         security.owner_only()
         riot = current_app.config["VAL_RIOT"]
+        local = current_app.config["VAL_LOCAL"]
+        # the client's events up to here are in what is read now: /live/next answers at the next one
+        g.push_version = local.version if local is not None else 0
         try:
             found = riot.live()
         except RiotError as error:
@@ -287,7 +292,7 @@ def register(app: Flask) -> None:
                 owned = riot.agents() | STARTERS  # read ahead while matchmaking (riot.Riot.live)
             except RiotError:
                 owned = None
-        me = _id(riot.store.load().get("puuid"))
+        me = riot.me()
         values = live_page.page(
             found, current_app.config["VAL_CONTENT"], g.lang, me, owned, _queue_name, _agents_on_the_map
         )
@@ -319,6 +324,23 @@ def register(app: Flask) -> None:
             told = live_page.state(found, current_app.config["VAL_CONTENT"], g.lang)
             told["icons"] = [url_for("media", path=media_path(url)) for url in told["icons"] if media_path(url)]
             answer = jsonify(told | {"problem": ""})
+        answer.headers["Cache-Control"] = "no-store"
+        return answer
+
+    @app.get("/live/next")
+    def live_next():
+        """The desktop app only: answers once the Riot Client on this PC tells of a change after ``after`` (the
+        match found, agent select, a pick, the game opening or closing), or after PUSH_WAIT seconds with nothing.
+        /live and the ライブ tab then read themselves again at once instead of at their next look."""
+        security.owner_only()
+        local = current_app.config["VAL_LOCAL"]
+        if local is None:
+            abort(404)
+        try:
+            after = int(request.args.get("after", "-1"))
+        except ValueError:
+            after = -1
+        answer = jsonify({"version": local.wait(after, PUSH_WAIT)})
         answer.headers["Cache-Control"] = "no-store"
         return answer
 

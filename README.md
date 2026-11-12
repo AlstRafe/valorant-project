@@ -21,6 +21,34 @@ python -m unittest discover -s tests
 - 所持品（`/val/collection`、持ち主だけ）は、設定に Riot の `ssid` クッキーを一度貼ると見られる（手順は設定ページ。仕組みは [DESIGN.md](docs/DESIGN.md#riot-のログイン段階2valtrackerriotpy)）
 - エージェントやマップの名前と絵は valorant-api.com から取り、`instance/` にためて自分のアドレスで出す（外部の読み込みはしない）
 
+## PC アプリ（Windows）
+
+サイトと同じ画面を、VALORANT と同じ PC で専用のウィンドウに開く。Riot クライアントにサインインしていれば ssid を貼らずに
+持ち主の機能（ライブ・ショップ・所持品・進み具合）が使え、ライブは Riot クライアントの知らせで、試合が見つかった瞬間・
+ピックのたびにすぐ切り替わる。
+
+- 入れ方: GitHub の Releases →「desktop」→ `VALTracker-windows.zip` を好きな場所に展開し、`VALTracker.exe` を開く。
+  署名がないので初回は「Windows によって PC が保護されました」→「詳細情報」→「実行」。データは `%LOCALAPPDATA%\VAL Tracker`
+  （HenrikDev のキーは「ツール → 設定」で一度入れる）。新しい版は同じところに上書きで展開する
+- ソースから: `python -m pip install -r requirements.txt -r requirements-desktop.txt` → `python -m valtracker.desktop`
+  （`--browser` でいつものブラウザに開く）
+
+VALORANT に影響を与えないために:
+
+- ゲームには触れない。ゲームのプロセスやメモリを読み書きせず、画面に重ねて描かず（オーバーレイなし）、キーやクリックも送らない。
+  話す相手は Riot クライアントのローカル API（127.0.0.1、Riot クライアント自身の画面が使うもの）と Riot のサーバーだけで、
+  サイトと同じ。Vanguard からは普通のアプリに見える
+- 優先度は「通常以下」（ウィンドウの描画プロセスも引き継ぐ）、Windows 11 では効率モード、メモリも先に手放す。CPU はいつもゲームが先
+- ウィンドウはグラフィックボードを使わずに描き（ソフトウェア描画）、アニメーションもしない。GPU はゲームだけのもの
+- 1 秒ごとに聞きに行かず、Riot クライアントの知らせ（イベント）を待つ。最小化・ゲームの裏に隠れている間は何も読まない
+- 自分から前に出ない（フルスクリーンのゲームからフォーカスを奪わない）。サイト用の裏の集計（混む時間帯の収集）は止めてある
+
+測った値（GitHub Actions の Windows、ウィンドウを開いて何もしないとき、2026-11-12）: CPU は 1 コアの 0.6%、メモリは
+アプリ自身の分で約 180 MB（7 プロセス、すべて優先度「通常以下」）。
+
+ビルドは Actions の「Desktop app」（`.github/workflows/desktop.yml`）。master に入るたびに Windows で exe を作り、
+ページが答えるかを確かめ、ウィンドウを開いて使うメモリ・CPU・優先度をログに出し、リリース「desktop」を置き換える。
+
 ## Home Page に載せる
 
 Home Page の `sites.toml` に次の `[[site]]` を足す（Home Page プロジェクト側の作業）。設定ページは持ち主だけが開ける（公開の名前では、持ち主としてログインした端末だけ）。

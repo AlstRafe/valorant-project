@@ -1,0 +1,4 @@
+# The PC app (python -m valtracker.desktop, VALTracker.exe) on top of requirements.txt: its window (WebView2 through
+# pywebview) and the Riot Client's events (a websocket). The site on the VM does not need these.
+pywebview>=6.2,<7
+websocket-client>=1.9,<2
