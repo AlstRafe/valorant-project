@@ -10,11 +10,23 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from urllib.parse import unquote
 
-from flask import Flask, abort, current_app, g, make_response, redirect, render_template, request, send_file, url_for
+from flask import (
+    Flask,
+    abort,
+    current_app,
+    g,
+    jsonify,
+    make_response,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    url_for,
+)
 
 from valtracker import archive as archive_module
 from valtracker import collection as owned_items
-from valtracker import heatmap, i18n, score, security, stats
+from valtracker import heatmap, i18n, release, score, security, stats
 from valtracker import rounds as rounds_module
 from valtracker.activity import BANDS, LINE_QUEUES, LINE_STATS, RANKS_ENOUGH
 from valtracker.henrik import FRESH_AFTER, MODES, NAME, REGIONS, HenrikError, shows_rr, split_riot_id
@@ -1179,6 +1191,17 @@ def register(app: Flask) -> None:
         order = {"Ability1": 1, "Ability2": 2, "Grenade": 0, "Ultimate": 3, "Passive": 4}
         abilities.sort(key=lambda item: order.get(str(item.get("slot")), 5))
         return render_template("agent.html", agent=found, abilities=abilities)
+
+    @app.get("/app/latest")
+    def app_latest():
+        """The newest build of the PC app, for the app's own "there is a newer one" (release.py: it cannot ask
+        GitHub, the repository is private). The site only: the app itself has no clone to read."""
+        found = None if current_app.config.get("VAL_LOCAL") is not None else release.latest()
+        if not found:
+            abort(404)
+        answer = jsonify(found)
+        answer.headers["Cache-Control"] = "public, max-age=300"
+        return answer
 
     @app.get("/media/<path:path>")
     def media(path: str):
