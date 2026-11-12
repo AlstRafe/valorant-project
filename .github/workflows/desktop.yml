@@ -64,8 +64,10 @@ jobs:
             $all = Get-CimInstance Win32_Process
             $ids = @($root)
             do {
-              $more = @($all | Where-Object { $ids -contains $_.ParentProcessId -and $ids -notcontains $_.ProcessId })
-              $ids += $more.ProcessId
+              $more = @($all | Where-Object {
+                $_.ProcessId -ne 0 -and $ids -contains $_.ParentProcessId -and $ids -notcontains $_.ProcessId
+              })
+              $ids += @($more | ForEach-Object ProcessId)
             } while ($more.Count -gt 0)
             Get-Process -Id $ids -ErrorAction SilentlyContinue
           }
@@ -82,7 +84,7 @@ jobs:
           $memory = [math]::Round(($after | Measure-Object WorkingSet64 -Sum).Sum / 1MB)
           $private = [math]::Round(($after | Measure-Object PrivateMemorySize64 -Sum).Sum / 1MB)
           $share = [math]::Round(100 * $used / 40, 2)
-          "Processes: $($after.Count), memory $memory MB (private $private MB)"
+          "Processes: $($after.Count), memory $memory MB counted per process, $private MB its own (private)"
           "Processor while idle: $([math]::Round($used, 2)) s in 40 s = $share % of one core"
           if (-not ($after | Where-Object ProcessName -eq "msedgewebview2")) { "No WebView2 window opened here." }
           Get-Content "$env:VAL_DESKTOP_HOME\desktop.log"

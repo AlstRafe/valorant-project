@@ -362,6 +362,12 @@ class ServerTest(unittest.TestCase):
             with mock.patch("sys.stdout"):
                 self.assertEqual(desktop.check(base), 0)
 
+    def test_the_window_processes(self):
+        """The processes the app started, at any depth (WebView2's browser, GPU and page processes), not others."""
+        pairs = [(10, 1), (20, 10), (21, 20), (22, 20), (30, 21), (40, 2), (10, 10)]
+        self.assertEqual(desktop.descendants(pairs, 10), {20, 21, 22, 30})
+        self.assertEqual(desktop.descendants(pairs, 99), set())
+
     def test_the_data_folder(self):
         with mock.patch.dict(os.environ, {"LOCALAPPDATA": "C:/Users/me/AppData/Local", "VAL_DESKTOP_HOME": ""}):
             self.assertEqual(desktop.data_folder(), Path("C:/Users/me/AppData/Local") / "VAL Tracker")

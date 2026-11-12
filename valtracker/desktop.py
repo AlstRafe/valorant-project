@@ -10,8 +10,9 @@ Made never to get in VALORANT's way:
 - it never touches the game: nothing reads or writes its process or memory, nothing is drawn over it (no
   overlay), no keys or clicks are sent. It talks to the Riot Client's local API and to Riot's servers, as the
   site does;
-- it runs below normal priority, so the game gets the processor first (the window's processes inherit it), in
-  Windows 11's efficiency mode, and Windows takes its memory back first;
+- it runs below normal priority, so the game gets the processor first (the window's processes too: they inherit
+  it, and the few Chromium raises itself are put back), in Windows 11's efficiency mode, and Windows takes its
+  memory back first;
 - the window draws without the graphics card and without animations: the GPU stays the game's;
 - it waits for the Riot Client's events instead of asking every second, and a hidden or minimised window asks
   nothing at all;
@@ -71,6 +72,13 @@ def _kernel():
     kernel.SetProcessInformation.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p, ctypes.c_ulong]
     kernel.CreateMutexW.restype = ctypes.c_void_p
     kernel.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_wchar_p]
+    kernel.CreateToolhelp32Snapshot.restype = ctypes.c_void_p
+    kernel.CreateToolhelp32Snapshot.argtypes = [ctypes.c_ulong, ctypes.c_ulong]
+    kernel.Process32FirstW.argtypes = kernel.Process32NextW.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    kernel.OpenProcess.restype = ctypes.c_void_p
+    kernel.OpenProcess.argtypes = [ctypes.c_ulong, ctypes.c_bool, ctypes.c_ulong]
+    kernel.GetPriorityClass.argtypes = [ctypes.c_void_p]
+    kernel.CloseHandle.argtypes = [ctypes.c_void_p]
     return kernel
 
 
@@ -99,6 +107,89 @@ def calm() -> list[str]:
     if kernel.SetProcessInformation(me, 0, ctypes.byref(memory), ctypes.sizeof(memory)):
         done.append("memory priority: below normal")
     return done
+
+
+#: Priority classes at or under below normal (BELOW_NORMAL, IDLE): left as they are.
+_LOW = (0x00004000, 0x00000040)
+#: When (seconds after the window opens) the window's processes are put back below normal: as they start, then
+#: every KEEP_LOW seconds.
+LOWER_AT, KEEP_LOW = (2, 5, 15), 30
+
+
+class _Entry(ctypes.Structure):
+    _fields_ = [
+        ("dwSize", ctypes.c_ulong),
+        ("cntUsage", ctypes.c_ulong),
+        ("th32ProcessID", ctypes.c_ulong),
+        ("th32DefaultHeapID", ctypes.c_size_t),
+        ("th32ModuleID", ctypes.c_ulong),
+        ("cntThreads", ctypes.c_ulong),
+        ("th32ParentProcessID", ctypes.c_ulong),
+        ("pcPriClassBase", ctypes.c_long),
+        ("dwFlags", ctypes.c_ulong),
+        ("szExeFile", ctypes.c_wchar * 260),
+    ]
+
+
+def descendants(pairs: list[tuple[int, int]], root: int) -> set[int]:
+    """The processes started (at any depth) by ``root``, from (process, parent) pairs."""
+    found, grew = set(), True
+    while grew:
+        more = {child for child, parent in pairs if (parent == root or parent in found) and child not in found}
+        more.discard(root)
+        found |= more
+        grew = bool(more)
+    return found
+
+
+def lower_window() -> int:
+    """Puts the window's processes (WebView2's, all started by this app) back below normal priority: they inherit
+    it, but Chromium raises a few itself (its GPU process above normal). How many were lowered (Windows only)."""
+    if sys.platform != "win32":
+        return 0
+    kernel, pairs = _kernel(), []
+    snapshot = kernel.CreateToolhelp32Snapshot(0x2, 0)  # TH32CS_SNAPPROCESS
+    if not snapshot or snapshot == ctypes.c_void_p(-1).value:
+        return 0
+    try:
+        entry = _Entry()
+        entry.dwSize = ctypes.sizeof(_Entry)
+        more = kernel.Process32FirstW(snapshot, ctypes.byref(entry))
+        while more:
+            pairs.append((entry.th32ProcessID, entry.th32ParentProcessID))
+            more = kernel.Process32NextW(snapshot, ctypes.byref(entry))
+    finally:
+        kernel.CloseHandle(snapshot)
+    lowered = 0
+    for pid in descendants(pairs, os.getpid()):
+        handle = kernel.OpenProcess(0x0200 | 0x1000, False, pid)  # SET_INFORMATION, QUERY_LIMITED_INFORMATION
+        if not handle:
+            continue
+        try:
+            if kernel.GetPriorityClass(handle) not in _LOW and kernel.SetPriorityClass(handle, 0x00004000):
+                lowered += 1
+        finally:
+            kernel.CloseHandle(handle)
+    return lowered
+
+
+def keep_window_low(stop: threading.Event) -> None:
+    """lower_window as the window's processes start, then every KEEP_LOW seconds (a new renderer, or one Chromium
+    raised again), until ``stop``. One small list of processes a time."""
+
+    def run():
+        started = time.monotonic()
+        for at in LOWER_AT:
+            if stop.wait(max(0.0, at - (time.monotonic() - started))):
+                return
+            lowered = lower_window()
+            if lowered:
+                print(f"{NAME}: {lowered} window process(es) put below normal", flush=True)
+        while not stop.wait(KEEP_LOW):
+            lower_window()
+
+    if sys.platform == "win32":
+        threading.Thread(target=run, name="keep-low", daemon=True).start()
 
 
 def first() -> bool:
@@ -249,10 +340,12 @@ def main(argv: list[str] | None = None) -> int:
     local = LocalClient()
     server, base = serve(create_app(instance=folder, local=local), args.port)
     local.start()
+    stopping = threading.Event()
     print(f"{NAME}: {base}/ (data: {folder})", flush=True)
     try:
         if args.check:
             return check(base)
+        keep_window_low(stopping)
         if args.browser or not window(base + FIRST_PAGE, folder, args.close_after):
             webbrowser.open(base + FIRST_PAGE)
             if getattr(sys, "frozen", False):  # no console to stop it from: the box's OK does
@@ -264,6 +357,7 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         pass
     finally:
+        stopping.set()
         local.stop()
         server.close()
     return 0
