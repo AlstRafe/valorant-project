@@ -1069,10 +1069,15 @@ def _me() -> dict | None:
     return current_app.config["VAL_RIOT"].status()
 
 
+def _no_key() -> bool:
+    """The owner has no HenrikDev key yet (the PC app's first start): the top page says where it goes."""
+    return security.is_owner() and not current_app.config["VAL_SETTINGS"].henrik_key()
+
+
 def register(app: Flask) -> None:
     @app.get("/")
     def top():
-        return render_template("home.html", query="", problem="", me=_me())
+        return render_template("home.html", query="", problem="", me=_me(), no_key=_no_key())
 
     @app.get("/search")
     def search():
@@ -1090,6 +1095,7 @@ def register(app: Flask) -> None:
             else:
                 problem = _t("「名前#タグ」の形で入れてください（例: Name#JP1）。") if query else ""
             values = {"query": query, "problem": problem, "name_only": name_only, "guess": guess, "me": _me()}
+            values["no_key"] = _no_key()
             return render_template("home.html", **values), 400 if query else 200
         return redirect(url_for("player", name=found[0], tag=found[1]), 303)
 

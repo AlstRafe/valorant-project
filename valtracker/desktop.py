@@ -18,13 +18,20 @@ Made never to get in VALORANT's way:
   nothing at all;
 - it never brings itself to the front (that would take a full-screen game out of focus);
 - the site's background work (looking at more players for the busy-hour estimates) is off.
+
+What a window without a browser around it needs: other sites' links open in the default browser (app.js), back,
+forward and reload are buttons and keys (app.js), saving a picture or a calendar file asks where, the window opens
+where and as large as it was left (window.json), and a newer build on the release is told on every page (looked
+for a minute after the start, then every few hours: one small request to GitHub).
 """
 
 from __future__ import annotations
 
 import argparse
 import ctypes
+import json
 import os
+import re
 import sys
 import threading
 import time
@@ -54,6 +61,10 @@ IN_BROWSER = (
     "OK を押すと VAL Tracker は終わります。"
 )
 _held = []  # the mutex's handle, for the app's life
+#: The release desktop.yml replaces at each change of the app (GitHub's API: its commit and its zip).
+RELEASE = "https://api.github.com/repos/AlstRafe/valorant-project/releases/tags/desktop"
+#: When the release is looked at: a minute after the start (not while the window opens), then every 6 hours.
+LOOK_FIRST, LOOK_EVERY = 60.0, 6 * 3600.0
 
 
 def data_folder() -> Path:
@@ -250,6 +261,134 @@ def light_windows() -> bool:
         return False
 
 
+def read_build() -> dict | None:
+    """The built app's commit and day (desktop.yml writes valtracker/BUILD: "<commit> <yyyy-mm-dd>"), None when
+    run from the source."""
+    try:
+        commit, day = Path(__file__).with_name("BUILD").read_text(encoding="utf-8").split()[:2]
+    except (OSError, ValueError):
+        return None
+    return {"commit": commit, "date": day} if re.fullmatch(r"[0-9a-f]{40}", commit) else None
+
+
+def newer(build: dict | None, release: dict) -> dict | None:
+    """The release's build when it is another than this one (it is replaced only by newer ones): {"commit",
+    "date", "url": its zip, else its page}. None when it is this one, or this app was not built."""
+    commit = str(release.get("target_commitish") or "")
+    if not build or not re.fullmatch(r"[0-9a-f]{40}", commit) or commit == build["commit"]:
+        return None
+    zips = [
+        str(asset.get("browser_download_url") or "")
+        for asset in release.get("assets") or []
+        if isinstance(asset, dict) and str(asset.get("name") or "").endswith(".zip")
+    ]
+    url = next((found for found in zips if found.startswith("https://github.com/")), "")
+    url = url or str(release.get("html_url") or "")
+    if not url.startswith("https://github.com/"):
+        return None
+    return {"commit": commit, "date": str(release.get("published_at") or "")[:10], "url": url}
+
+
+def _release() -> dict:
+    request = urllib.request.Request(
+        RELEASE, headers={"Accept": "application/vnd.github+json", "User-Agent": "VALTracker-desktop"}
+    )
+    with urllib.request.urlopen(request, timeout=15) as answer:  # noqa: S310 - a fixed https address
+        found = json.load(answer)
+    return found if isinstance(found, dict) else {}
+
+
+def look_for_updates(app, stop: threading.Event, read=_release) -> None:
+    """Looks at the release now and then (LOOK_FIRST, LOOK_EVERY) while the app runs: a newer build is put in
+    app.config["VAL_UPDATE"] (every page says so). Nothing when this app was not built (from the source)."""
+    build = app.config.get("VAL_BUILD")
+    if not build:
+        return
+
+    def run():
+        wait = LOOK_FIRST
+        while not stop.wait(wait):
+            wait = LOOK_EVERY
+            try:
+                app.config["VAL_UPDATE"] = newer(build, read())
+                app.config["VAL_UPDATE_LOOKED"] = time.time()
+            except (OSError, ValueError):
+                wait = LOOK_FIRST * 30  # no network, or GitHub said no: in half an hour
+
+    threading.Thread(target=run, name="updates", daemon=True).start()
+
+
+#: Where the window was left: window.json in the data folder.
+PLACE = "window.json"
+
+
+def placed(folder: Path, screens: list[tuple[int, int, int, int]]) -> dict:
+    """create_window's size and place from where the window was left: its size (at least the smallest), its place
+    only when its top left is on one of today's ``screens`` (x, y, width, height), and whether it was maximised."""
+    try:
+        saved = json.loads((folder / PLACE).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        saved = {}
+    if not isinstance(saved, dict):
+        saved = {}
+
+    def number(key, low, high, default):
+        value = saved.get(key)
+        return int(value) if isinstance(value, int | float) and low <= value <= high else default
+
+    found = {
+        "width": number("width", SMALLEST[0], 10000, SIZE[0]),
+        "height": number("height", SMALLEST[1], 10000, SIZE[1]),
+        "maximized": saved.get("maximized") is True,
+    }
+    x, y = number("x", -20000, 20000, None), number("y", -20000, 20000, None)
+    if x is not None and y is not None:
+        # the title bar's left end must be on a screen (one unplugged since: the window opens in the middle)
+        if any(left <= x + 40 < left + wide and top <= y + 10 < top + high for left, top, wide, high in screens):
+            found |= {"x": x, "y": y}
+    return found
+
+
+def left(form) -> dict | None:
+    """Where the window is as it closes (its WinForms form): its normal size and place (a maximised or minimised
+    window's are the ones it goes back to) and whether it is maximised. None when they cannot be read."""
+    try:
+        scale = float(getattr(form, "_scale", 1.0) or 1.0)  # pywebview's: the screen's pixels per window pixel
+        shape = str(form.WindowState).rsplit(".", 1)[-1]
+        bounds = form.Bounds if shape == "Normal" else form.RestoreBounds
+        found = {
+            "x": round(bounds.X / scale),
+            "y": round(bounds.Y / scale),
+            "width": round(bounds.Width / scale),
+            "height": round(bounds.Height / scale),
+            "maximized": shape == "Maximized",
+        }
+    except Exception:  # noqa: BLE001 - not WinForms (another platform), or the form is gone
+        return None
+    return found if found["width"] >= SMALLEST[0] and found["height"] >= SMALLEST[1] else None
+
+
+def remember(window, folder: Path) -> None:
+    """Writes where the window was left (window.json) as it closes: it opens there next time (placed)."""
+
+    def closing():
+        found = left(getattr(window, "native", None))
+        if found is not None:
+            try:
+                (folder / PLACE).write_text(json.dumps(found), encoding="utf-8")
+            except OSError:
+                pass
+
+    window.events.closing += closing
+
+
+def _screens(webview) -> list[tuple[int, int, int, int]]:
+    try:
+        return [(screen.x, screen.y, screen.width, screen.height) for screen in webview.screens]
+    except Exception:  # noqa: BLE001 - not known: the window opens in the middle
+        return []
+
+
 def window(url: str, folder: Path, close_after: float = 0) -> bool:
     """Shows ``url`` in the app's window until it is closed: False when there is no window to be had (no
     pywebview, or Windows without WebView2), and the default browser is used instead."""
@@ -264,15 +403,22 @@ def window(url: str, folder: Path, close_after: float = 0) -> bool:
                 return False
     except Exception:  # noqa: BLE001 - no pywebview, or its .NET part could not start
         return False
+    # a picture or a calendar file the page saves: Windows' "save as" box (else the window drops it)
+    webview.settings["ALLOW_DOWNLOADS"] = True
+    start = placed(folder, _screens(webview))
     shown = webview.create_window(
         NAME,
         url,
-        width=SIZE[0],
-        height=SIZE[1],
+        width=start["width"],
+        height=start["height"],
+        x=start.get("x"),
+        y=start.get("y"),
+        maximized=start["maximized"],
         min_size=SMALLEST,
         background_color="#f6f4ef" if light_windows() else "#161513",  # the site's paper
         text_select=True,
     )
+    remember(shown, folder)
 
     def close_later():
         time.sleep(close_after)
@@ -338,9 +484,13 @@ def main(argv: list[str] | None = None) -> int:
     print(f"{NAME}: {', '.join(calm()) or 'no Windows priorities (not Windows)'}", flush=True)
     os.environ.setdefault("VAL_COLLECT_SECONDS", "0")  # the busy-hour collector: the site's work, not the PC's
     local = LocalClient()
-    server, base = serve(create_app(instance=folder, local=local), args.port)
+    app = create_app(instance=folder, local=local)
+    app.config["VAL_BUILD"] = read_build()
+    server, base = serve(app, args.port)
     local.start()
     stopping = threading.Event()
+    if not args.check:
+        look_for_updates(app, stopping)
     print(f"{NAME}: {base}/ (data: {folder})", flush=True)
     try:
         if args.check:

@@ -12,7 +12,7 @@ import hashlib
 import os
 from pathlib import Path
 
-from flask import Flask, g, request, url_for
+from flask import Flask, current_app, g, request, url_for
 
 from valtracker import content, i18n, net, paths, security, theme
 from valtracker.activity import COLLECT_SECONDS, Activity, Collector
@@ -28,6 +28,17 @@ from valtracker.riotweb import RiotWeb
 from valtracker.settings import Settings
 
 NAME = "VAL Tracker"
+#: The public site: where a link copied in the PC app leads (the app's own address, 127.0.0.1 and a port that
+#: changes, leads nowhere on another device). VAL_PUBLIC_SITE names another.
+PUBLIC_SITE = "https://haruxera.duckdns.org/val"
+
+
+def shared_url(endpoint: str, **values) -> str:
+    """A page's full address to give to someone else: the public site's in the PC app, else this site's own."""
+    public = current_app.config.get("VAL_PUBLIC")
+    if public:
+        return public + url_for(endpoint, **values)
+    return url_for(endpoint, _external=True, **values)
 
 
 def create_app(
@@ -49,6 +60,13 @@ def create_app(
     app.config["VAL_CONTENT"] = Content(instance, fetch)
     app.config["VAL_MEDIA"] = Media(instance, fetch)
     app.config["VAL_LOCAL"] = local
+    app.config["VAL_PUBLIC"] = (
+        (os.environ.get("VAL_PUBLIC_SITE") or PUBLIC_SITE).rstrip("/") if local is not None else ""
+    )
+    # the PC app: {"version", "url"} when a newer build is on the release (desktop.py looks now and then)
+    app.config["VAL_UPDATE"] = None
+    app.config["VAL_UPDATE_LOOKED"] = 0.0  # when the release was last looked at (0: not yet)
+    app.config["VAL_BUILD"] = None  # the built app's {"commit", "date"} (desktop.py), None when run from source
     app.config["VAL_RIOT"] = Riot(instance, send, app.config["VAL_CONTENT"].client_version, local=local)
     app.config["VAL_DIARY"] = Diary(instance)
     # the owner's saved loadouts (owner.py: the collection's sets)
@@ -143,6 +161,10 @@ def create_app(
             # the PC app (desktop.py): the Riot Client tells when the game changes (/live/next)
             "desktop": local is not None,
             "push_version": g.get("push_version", local.version) if local is not None else 0,
+            "public_site": app.config["VAL_PUBLIC"],
+            "shared_url": shared_url,
+            "update": app.config["VAL_UPDATE"],
+            "data_folder": app.instance_path if local is not None else "",
         }
 
     from valtracker import views

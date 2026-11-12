@@ -3,8 +3,9 @@
 <div class="notice-box" data-load="{{ url_for('status_notice') }}" data-quiet hidden></div>
 <section class="hero">
 <h1>{{ t('プレイヤーを探す') }}</h1>
-<p class="lead">{{ t('Riot ID（名前#タグ）でランクと最近の試合を調べられます。☆を付けたプレイヤーはこのブラウザに保存され、ここに並びます。') }}</p>
-<form class="search" action="{{ url_for('search') }}" method="get" role="search">
+<p class="lead">{% if desktop %}{{ t('Riot ID（名前#タグ）でランクと最近の試合を調べられます。☆を付けたプレイヤーはこの PC に保存され、ここに並びます。') }}{% else %}{{ t('Riot ID（名前#タグ）でランクと最近の試合を調べられます。☆を付けたプレイヤーはこのブラウザに保存され、ここに並びます。') }}{% endif %}</p>
+{% if no_key %}<p class="app-update first-key"><strong>{{ t('はじめに: HenrikDev の API キーを入れてください。') }}</strong> {{ t('プレイヤーの検索と戦績に使います（無料、1 分ほどで作れます）。ライブ・ショップ・所持品はキーなしで使えます。') }} <a href="{{ url_for('settings') }}">{{ t('設定でキーを入れる') }}</a></p>
+{% endif %}<form class="search" action="{{ url_for('search') }}" method="get" role="search">
 <label for="q" class="sr">{{ t('Riot ID') }}</label>
 <input id="q" name="q" type="search" value="{{ query }}" placeholder="{{ t('名前#タグ') }}" list="known" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" maxlength="40" required{% if problem %} aria-invalid="true" aria-describedby="q-problem"{% endif %}>
 <button type="submit">{{ t('検索') }}</button>
