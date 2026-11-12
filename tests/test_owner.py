@@ -374,6 +374,18 @@ class OwnerTest(unittest.TestCase):
         self.app.config["VAL_RIOT"].cache.put("live", None, 0)
         self.assertIn('id="last-title"', self.page("/live"))
 
+    def test_a_record_that_is_not_a_finished_match(self):
+        self.link()
+        match_id = self.played()
+        whole = self.riot.pd["matches"][match_id]
+        for record in ({"httpStatus": 200}, whole | {"matchInfo": whole["matchInfo"] | {"isCompleted": False}}):
+            self.riot.pd["matches"][match_id] = record
+            self.app.config["VAL_LAST_RESULT"] = {}
+            self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+            answer = self.client.get("/live")
+            self.assertEqual(answer.status_code, 200)
+            self.assertNotIn('id="last-title"', answer.get_data(as_text=True))
+
     def test_riot_is_asked_for_a_result_a_few_times_only(self):
         """The Range is a "match" without a record."""
         self.link()

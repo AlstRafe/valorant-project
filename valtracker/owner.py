@@ -133,11 +133,10 @@ def _last_result(match_id: str) -> dict | None:
         except RiotError:
             return None
         maps = current_app.config["VAL_CONTENT"].map_index("en-GB")
-        match = _slim_match(pdmatch.to_v4(details, region, maps, puuid, status["name"], status["tag"]) or {})
-        metadata = match.get("metadata") or {}
-        if not metadata.get("match_id") or not metadata.get("is_completed", True):
-            return None
-        kept["match"] = match
+        raw = pdmatch.to_v4(details, region, maps, puuid, status["name"], status["tag"])
+        if not raw or not raw["metadata"].get("is_completed", True):
+            return None  # not a finished match (yet)
+        match = kept["match"] = _slim_match(raw)
         archive.keep([match], "riot")
     match = kept["match"]
     player = next((item for item in match.get("players") or [] if item.get("puuid") == puuid), None)
