@@ -66,7 +66,7 @@ jobs:
         continue-on-error: true # a runner without WebView2 or a desktop says so, and the build still counts
         run: |
           $env:VAL_DESKTOP_HOME = "$env:RUNNER_TEMP\vt-window"
-          $app = Start-Process dist\VALTracker\VALTracker.exe -ArgumentList "--close-after", "100" -PassThru
+          $app = Start-Process dist\VALTracker\VALTracker.exe -ArgumentList "--close-after", "140" -PassThru
           function Tree($root) {
             $all = Get-CimInstance Win32_Process
             $ids = @($root)
@@ -94,6 +94,11 @@ jobs:
           "Processes: $($after.Count), memory $memory MB counted per process, $private MB its own (private)"
           "Processor while idle: $([math]::Round($used, 2)) s in 40 s = $share % of one core"
           if (-not ($after | Where-Object ProcessName -eq "msedgewebview2")) { "No WebView2 window opened here." }
+          # opened a second time: it finds the first one's window, brings it back and ends (a message box that
+          # nobody closes would keep it running)
+          $second = Start-Process dist\VALTracker\VALTracker.exe -PassThru
+          if ($second.WaitForExit(20000)) { "Opened twice: the second start found the window and ended." }
+          else { Stop-Process -Id $second.Id -Force; "Opened twice: THE WINDOW WAS NOT FOUND (the second start waits in its message box)." }
           Get-Content "$env:VAL_DESKTOP_HOME\desktop.log"
           if (-not $app.WaitForExit(60000)) { Stop-Process -Id $app.Id -Force }
       - name: Zip
