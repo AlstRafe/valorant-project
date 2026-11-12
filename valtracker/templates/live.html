@@ -23,12 +23,16 @@
 {%- endmacro %}
 {% block title %}{{ t('ライブ') }} · {{ site_name }}{% endblock %}
 {% block main %}
-<div data-refresh="{{ every or 20 }}"{% if desktop %} data-push="{{ url_for('live_next') }}" data-push-version="{{ push_version }}"{% endif %} data-live-phase="{{ live_state.phase if live_state else '' }}" data-live-words="{{ live_state.words if live_state else '' }}"{% if warm %} data-warm="{% for url in warm %}{{ media(url) }}{% if not loop.last %} {% endif %}{% endfor %}"{% endif %}>
-<section class="hero{% if phase in ('pregame', 'ingame') %} sr{% endif %}">
+{#- agent select and a match: the whole lobby in one screen (the page as wide as the window lets it, the rows
+    close together, nothing explained that the owner has read before: that is on the page while the game is closed
+    and in the menus) #}
+{% set playing = phase in ('pregame', 'ingame') %}
+<div{% if playing %} class="live-wide"{% endif %} data-refresh="{{ every or 20 }}"{% if desktop %} data-push="{{ url_for('live_next') }}" data-push-version="{{ push_version }}"{% endif %} data-live-phase="{{ live_state.phase if live_state else '' }}" data-live-words="{{ live_state.words if live_state else '' }}"{% if warm %} data-warm="{% for url in warm %}{{ media(url) }}{% if not loop.last %} {% endif %}{% endfor %}"{% endif %}>
+<section class="hero{% if playing %} sr{% endif %}">
 <h1>{{ t('ライブ') }}</h1>
 {#- in agent select and a match, what is happening takes the room: the team and the agents to pick in one screen
     (what the page does is said again at the bottom, in the steps) #}
-{% if phase not in ('pregame', 'ingame') %}<p class="lead">{% if desktop %}{{ t('あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。この PC の Riot クライアントから直接読むので、試合が見つかるとすぐに切り替わります。') }}{% else %}{{ t('あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。PC で VALORANT を開いていれば、スマホからでも使えます。') }}{% endif %}</p>{% endif %}
+{% if not playing %}<p class="lead">{% if desktop %}{{ t('あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。この PC の Riot クライアントから直接読むので、試合が見つかるとすぐに切り替わります。') }}{% else %}{{ t('あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。PC で VALORANT を開いていれば、スマホからでも使えます。') }}{% endif %}</p>{% endif %}
 </section>
 {% include "_play.html" %}
 {% if not phase %}{{ steps() }}{% endif %}
@@ -37,8 +41,36 @@
 <p class="problem" role="alert">{{ problem }}{% if detail %} <code>{{ detail }}</code>{% endif %}</p>
 {% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">{{ t('設定で Riot と連携する') }}</a></p>{% endif %}
 {% else %}
-<p class="game-state"><span class="dot {{ 'on' if running else 'off' }}" aria-hidden="true"></span>VALORANT: {% if phase == 'pregame' %}{{ t('エージェント選択') }}{% elif phase == 'ingame' %}{{ t('対戦中') }}{% elif phase == 'menus' %}{{ t('マッチング中') if party and party.state == 'matchmaking' else t('メニュー') }}{% elif running %}{{ t('開いています') }}{% elif running is none %}{{ t('わかりません') }}{% else %}{{ t('開いていません') }}{% endif %}</p>
-{% if last_match and phase != 'pregame' and phase != 'ingame' %}<p class="last-match"><a class="button quiet" href="{{ last_match }}">{{ t('さっきの試合を見る') }}</a> <small>{{ t('試合が終わってから数分で見られるようになります。') }}</small></p>{% endif %}
+<p class="game-state{% if playing %} sr{% endif %}"><span class="dot {{ 'on' if running else 'off' }}" aria-hidden="true"></span>VALORANT: {% if phase == 'pregame' %}{{ t('エージェント選択') }}{% elif phase == 'ingame' %}{{ t('対戦中') }}{% elif phase == 'menus' %}{{ t('マッチング中') if party and party.state == 'matchmaking' else t('メニュー') }}{% elif running %}{{ t('開いています') }}{% elif running is none %}{{ t('わかりません') }}{% else %}{{ t('開いていません') }}{% endif %}</p>
+{% if last_result and not playing %}
+{#- the match just played, from the game's own server the moment it ends: the result, the owner's line, the RR #}
+{% set row = last_result %}
+{% set outcome = 'win' if row.result.won is sameas true or (row.result.won is none and not row.result.rounds and row.placing.place == 1) else ('loss' if row.result.won is sameas false else 'draw') %}
+<section class="last-result" aria-labelledby="last-title">
+<h2 id="last-title">{{ t('さっきの試合') }}</h2>
+<ol class="match-list"><li class="match {{ outcome }}"><a href="{{ last_match }}">
+<span class="pic">{% if row.agent_icon %}<img class="agent" src="{{ media(row.agent_icon) }}" alt="{{ row.agent_name }}" width="44" height="44">{% else %}<span class="agent">{{ row.agent_name[:2] }}</span>{% endif %}
+{% if row.placing.mvp %}<span class="mvp {{ row.placing.mvp }}" title="{{ t('マッチ MVP') if row.placing.mvp == 'match' else t('チーム MVP') }}">MVP<span class="sr">{{ t('マッチ MVP') if row.placing.mvp == 'match' else t('チーム MVP') }}</span></span>{% elif row.result.rounds and row.placing.place %}<span class="mvp place" title="{{ t('{count}人中', count=row.placing.of) }} {{ t('{place}位', place=row.placing.place) }}">{{ t('{place}位', place=row.placing.place) }}</span>{% endif %}</span>
+<span class="what"><strong>{{ row.map.name }}</strong><small>{{ row.queue }}{% if row.started %} · <time datetime="{{ row.started.isoformat() }}">{{ row.when }}</time>{% endif %}</small></span>
+<span class="score">
+{% if row.result.rounds %}<strong>{{ row.result.us }}–{{ row.result.them }}</strong>
+{% elif row.result.won is none and row.placing.place %}<strong>{{ t('{place}位', place=row.placing.place) }}</strong>
+{% elif row.result.won is none %}<strong>–</strong>
+{% else %}<strong>{% if outcome == 'win' %}{{ t('勝利') }}{% else %}{{ t('敗北') }}{% endif %}</strong>{% endif %}
+<small>{% if not row.result.rounds and row.result.won is none %}{{ t('{count}人中', count=row.placing.of) }}{% elif row.result.rounds %}{% if outcome == 'win' %}{{ t('勝利') }}{% elif outcome == 'loss' %}{{ t('敗北') }}{% else %}{{ t('引き分け') }}{% endif %}{% endif %}{% if row.rr is not none %}{% if row.result.rounds %} · {% endif %}<span class="{{ 'up' if row.rr > 0 else ('down' if row.rr < 0 else '') }}">{{ '%+d'|format(row.rr) }} RR</span>{% endif %}</small>
+</span>
+<span class="cells">
+<span class="cell"><small>K / D / A</small><strong>{{ row.line.kills }} / {{ row.line.deaths }} / {{ row.line.assists }}</strong></span>
+<span class="cell"><small>K/D</small><strong class="{{ 'up' if row.line.kd >= 1.2 else ('down' if row.line.kd < 0.8 else '') }}">{{ '%.2f'|format(row.line.kd) }}</strong></span>
+<span class="cell"><small>ADR</small><strong>{{ row.line.adr if row.rounds else '–' }}</strong></span>
+<span class="cell"><small>ACS</small><strong>{{ row.line.acs if row.rounds else '–' }}</strong></span>
+<span class="cell"><small>HS</small><strong>{{ row.line.hs }}%</strong></span>
+<span class="cell"><small>{{ t('スコア') }}</small><strong>{% if row.score %}<span class="row-score grade-{{ row.score.grade|lower }}" title="{{ t('VAL スコア') }}">{{ row.score.value }}</span>{% else %}–{% endif %}</strong></span>
+</span>
+</a></li></ol>
+<p class="note">{{ t('ゲームのサーバーから直接読んだ結果です。全員のスコアボードは、試合が終わってから数分で見られるようになります。') }}</p>
+</section>
+{% elif last_match and not playing %}<p class="last-match"><a class="button quiet" href="{{ last_match }}">{{ t('さっきの試合を見る') }}</a> <small>{{ t('試合が終わってから数分で見られるようになります。') }}</small></p>{% endif %}
 {% if not phase %}
 <p class="note">{% if running is none %}{{ t('ゲームの状態を読めませんでした。') }}{% else %}{{ t('VALORANT を開くと、ここからキューを開始できます。エージェント選択が始まると、味方とピックがここに出ます。') }}{% endif %}</p>
 {% if account and account.linked %}
@@ -130,9 +162,9 @@
 {% endif %}
 {% endif %}
 {% if names_missing %}<p class="note">{{ t('名前を読み込めませんでした。') }}</p>{% endif %}
-{% if phase %}<p class="note">{{ t('名前を隠しているプレイヤーの名前・カード・称号は出しません（本人が選んだ設定のため）。') }}</p>{% endif %}
-{% if phase %}{{ steps() }}{% endif %}
-<p class="note">{% if desktop %}{{ t('このページはゲームの状態が変わるとすぐ新しくなります。ほかのページを見ているときも、上のタブ「ライブ」の点でゲームの状態がわかり、エージェント選択が始まると画面の下に知らせが出ます。') }}{% else %}{{ t('このページは数秒ごとに新しくなります。ほかのページを見ているときも、上のタブ「ライブ」の点でゲームの状態がわかり、エージェント選択が始まると画面の下に知らせが出ます。') }}{% endif %}</p>
+{% if hidden_names %}<p class="note">{{ t('名前を隠しているプレイヤーの名前・カード・称号は出しません（本人が選んだ設定のため）。') }}</p>{% endif %}
+{% if phase == 'menus' %}{{ steps() }}{% endif %}
+{% if not playing %}<p class="note">{% if desktop %}{{ t('このページはゲームの状態が変わるとすぐ新しくなります。ほかのページを見ているときも、上のタブ「ライブ」の点でゲームの状態がわかり、エージェント選択が始まると画面の下に知らせが出ます。') }}{% else %}{{ t('このページは数秒ごとに新しくなります。ほかのページを見ているときも、上のタブ「ライブ」の点でゲームの状態がわかり、エージェント選択が始まると画面の下に知らせが出ます。') }}{% endif %}</p>{% endif %}
 {% endif %}
 </div>
 {% endblock %}

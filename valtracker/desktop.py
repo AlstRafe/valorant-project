@@ -21,8 +21,9 @@ Made never to get in VALORANT's way:
 
 What a window without a browser around it needs: other sites' links open in the default browser (app.js), back,
 forward and reload are buttons and keys (app.js), saving a picture or a calendar file asks where, the window opens
-where and as large as it was left (window.json), and a newer build on the release is told on every page (looked
-for a minute after the start, then every few hours: one small request to GitHub).
+where and as large as it was left (window.json), and a newer build is told on every page (the site is asked a
+minute after the start, then every few hours: one small request. GitHub cannot be asked: the repository is
+private).
 """
 
 from __future__ import annotations
@@ -31,7 +32,6 @@ import argparse
 import ctypes
 import json
 import os
-import re
 import sys
 import threading
 import time
@@ -40,19 +40,24 @@ import urllib.request
 import webbrowser
 from pathlib import Path
 
-from valtracker import NAME, create_app
+from valtracker import NAME, create_app, release
 from valtracker.localclient import LocalClient
 
 #: The window's engine is told: no graphics card, no animations (the site's prefers-reduced-motion rules).
 BROWSER_ARGUMENTS = "--disable-gpu --force-prefers-reduced-motion --disable-features=ElasticOverscroll"
 #: The window's first size and its smallest (the site's phone layout below 760 px).
 SIZE, SMALLEST = (1180, 860), (400, 560)
+#: The room left below the window on its screen: Windows' taskbar.
+TASKBAR = 48
 #: The page the window opens on.
 FIRST_PAGE = "/live"
 #: The server's threads: the pages, their pictures, and the pages waiting for the client's next event.
 THREADS = 8
 #: Held while the app runs: a second start finds it and says so instead of starting twice.
 MUTEX = "Local\\VALTracker.Desktop"
+#: The app's window among the windows with its title: WinForms names its windows' class so. Another program's
+#: window can have the same title (the data folder open in Explorer is "VAL Tracker" too).
+WINDOW_CLASS = "WindowsForms10."
 ALREADY_OPEN = (
     "VAL Tracker はもう開いています（タスクバーにあります）。\nVAL Tracker is already open (see the taskbar)."
 )
@@ -61,10 +66,11 @@ IN_BROWSER = (
     "OK を押すと VAL Tracker は終わります。"
 )
 _held = []  # the mutex's handle, for the app's life
-#: The release desktop.yml replaces at each change of the app (GitHub's API: its commit and its zip).
-RELEASE = "https://api.github.com/repos/AlstRafe/valorant-project/releases/tags/desktop"
-#: When the release is looked at: a minute after the start (not while the window opens), then every 6 hours.
-LOOK_FIRST, LOOK_EVERY = 60.0, 6 * 3600.0
+#: Where the site says which build is the newest (after the site's own address).
+LATEST = "/app/latest"
+#: When the site is asked: a minute after the start (not while the window opens), then every 6 hours; in half an
+#: hour when it could not be asked, or when the newest build is still being made.
+LOOK_FIRST, LOOK_EVERY, LOOK_AGAIN = 60.0, 6 * 3600.0, 1800.0
 
 
 def data_folder() -> Path:
@@ -213,6 +219,42 @@ def first() -> bool:
     return ctypes.get_last_error() != 183  # ERROR_ALREADY_EXISTS
 
 
+def is_app_window(title: str, kind: str) -> bool:
+    """Whether a window with this title and window class is the app's (WINDOW_CLASS)."""
+    return title == NAME and kind.startswith(WINDOW_CLASS)
+
+
+def show_running() -> bool:
+    """The window of the VAL Tracker already running, put back when it is minimised and brought to the front: the
+    owner asked for it by opening the app again (the one time the app comes to the front). False when it is not
+    found (still starting), or not on Windows."""
+    if sys.platform != "win32":
+        return False
+    user = ctypes.WinDLL("user32", use_last_error=True)
+    each = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
+    user.EnumWindows.argtypes = [each, ctypes.c_void_p]
+    user.GetWindowTextW.argtypes = user.GetClassNameW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p, ctypes.c_int]
+    user.IsIconic.argtypes = user.SetForegroundWindow.argtypes = [ctypes.c_void_p]
+    user.ShowWindow.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    found = []
+
+    def look(handle, _):
+        title, kind = ctypes.create_unicode_buffer(64), ctypes.create_unicode_buffer(128)
+        user.GetWindowTextW(handle, title, 64)
+        user.GetClassNameW(handle, kind, 128)
+        if is_app_window(title.value, kind.value):
+            found.append(handle)
+        return not found  # stops at the first
+
+    user.EnumWindows(each(look), None)
+    if not found:
+        return False
+    if user.IsIconic(found[0]):
+        user.ShowWindow(found[0], 9)  # SW_RESTORE
+    user.SetForegroundWindow(found[0])
+    return True
+
+
 def tell(words: str) -> None:
     """A message box (Windows), else a line on the console."""
     if sys.platform == "win32":
@@ -262,45 +304,24 @@ def light_windows() -> bool:
 
 
 def read_build() -> dict | None:
-    """The built app's commit and day (desktop.yml writes valtracker/BUILD: "<commit> <yyyy-mm-dd>"), None when
-    run from the source."""
-    try:
-        commit, day = Path(__file__).with_name("BUILD").read_text(encoding="utf-8").split()[:2]
-    except (OSError, ValueError):
-        return None
-    return {"commit": commit, "date": day} if re.fullmatch(r"[0-9a-f]{40}", commit) else None
+    """The built app's commit and when it was made (desktop.yml writes valtracker/BUILD), None when run from the
+    source."""
+    return release.read_build(Path(__file__).with_name("BUILD"))
 
 
-def newer(build: dict | None, release: dict) -> dict | None:
-    """The release's build when it is another than this one (it is replaced only by newer ones): {"commit",
-    "date", "url": its zip, else its page}. None when it is this one, or this app was not built."""
-    commit = str(release.get("target_commitish") or "")
-    if not build or not re.fullmatch(r"[0-9a-f]{40}", commit) or commit == build["commit"]:
-        return None
-    zips = [
-        str(asset.get("browser_download_url") or "")
-        for asset in release.get("assets") or []
-        if isinstance(asset, dict) and str(asset.get("name") or "").endswith(".zip")
-    ]
-    url = next((found for found in zips if found.startswith("https://github.com/")), "")
-    url = url or str(release.get("html_url") or "")
-    if not url.startswith("https://github.com/"):
-        return None
-    return {"commit": commit, "date": str(release.get("published_at") or "")[:10], "url": url}
+def _latest(site: str) -> object:
+    """What the site says the newest build is (release.py: the repository is private, GitHub would say 404)."""
+    if not site.startswith("https://"):
+        raise ValueError("not a site to ask")
+    request = urllib.request.Request(site + LATEST, headers={"User-Agent": "VALTracker-desktop"})
+    with urllib.request.urlopen(request, timeout=15) as answer:  # noqa: S310 - https, checked above
+        return json.loads(answer.read(4096))
 
 
-def _release() -> dict:
-    request = urllib.request.Request(
-        RELEASE, headers={"Accept": "application/vnd.github+json", "User-Agent": "VALTracker-desktop"}
-    )
-    with urllib.request.urlopen(request, timeout=15) as answer:  # noqa: S310 - a fixed https address
-        found = json.load(answer)
-    return found if isinstance(found, dict) else {}
-
-
-def look_for_updates(app, stop: threading.Event, read=_release) -> None:
-    """Looks at the release now and then (LOOK_FIRST, LOOK_EVERY) while the app runs: a newer build is put in
-    app.config["VAL_UPDATE"] (every page says so). Nothing when this app was not built (from the source)."""
+def look_for_updates(app, stop: threading.Event, read=_latest) -> None:
+    """Asks the site for the newest build now and then (LOOK_FIRST, LOOK_EVERY) while the app runs: a newer one
+    is put in app.config["VAL_UPDATE"] (every page says so). Nothing when this app was not built (from the
+    source)."""
     build = app.config.get("VAL_BUILD")
     if not build:
         return
@@ -310,10 +331,15 @@ def look_for_updates(app, stop: threading.Event, read=_release) -> None:
         while not stop.wait(wait):
             wait = LOOK_EVERY
             try:
-                app.config["VAL_UPDATE"] = newer(build, read())
-                app.config["VAL_UPDATE_LOOKED"] = time.time()
+                found = release.newer(build, read(app.config["VAL_PUBLIC"]), time.time())
             except (OSError, ValueError):
-                wait = LOOK_FIRST * 30  # no network, or GitHub said no: in half an hour
+                wait = LOOK_AGAIN  # no network, or the site is down: in half an hour
+                continue
+            if found and not found["ready"]:
+                wait = LOOK_AGAIN  # the change is minutes old: its build is still being made
+                continue
+            app.config["VAL_UPDATE"] = found
+            app.config["VAL_UPDATE_LOOKED"] = time.time()
 
     threading.Thread(target=run, name="updates", daemon=True).start()
 
@@ -323,8 +349,9 @@ PLACE = "window.json"
 
 
 def placed(folder: Path, screens: list[tuple[int, int, int, int]]) -> dict:
-    """create_window's size and place from where the window was left: its size (at least the smallest), its place
-    only when its top left is on one of today's ``screens`` (x, y, width, height), and whether it was maximised."""
+    """create_window's size and place from where the window was left: its size (at least the smallest, at most
+    its screen), its place only when its top left is on one of today's ``screens`` (x, y, width, height), and
+    whether it was maximised."""
     try:
         saved = json.loads((folder / PLACE).read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -342,10 +369,19 @@ def placed(folder: Path, screens: list[tuple[int, int, int, int]]) -> dict:
         "maximized": saved.get("maximized") is True,
     }
     x, y = number("x", -20000, 20000, None), number("y", -20000, 20000, None)
+    screen = screens[0] if screens else None  # the main screen, where a window without a place opens
     if x is not None and y is not None:
         # the title bar's left end must be on a screen (one unplugged since: the window opens in the middle)
-        if any(left <= x + 40 < left + wide and top <= y + 10 < top + high for left, top, wide, high in screens):
-            found |= {"x": x, "y": y}
+        for left, top, wide, high in screens:
+            if left <= x + 40 < left + wide and top <= y + 10 < top + high:
+                found |= {"x": x, "y": y}
+                screen = (left, top, wide, high)
+                break
+    if screen:
+        # never larger than its screen (a small or enlarged one: 1366 x 768, or 1920 x 1080 at 150 %), with the
+        # taskbar's room below
+        found["width"] = max(SMALLEST[0], min(found["width"], screen[2]))
+        found["height"] = max(SMALLEST[1], min(found["height"], screen[3] - TASKBAR))
     return found
 
 
@@ -476,7 +512,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--close-after", type=float, default=0, help="close the window after this many seconds")
     args = parser.parse_args(argv)
     if not args.check and not first():
-        tell(ALREADY_OPEN)
+        # opened twice: the window already there comes back (minimised, or behind other windows)
+        if not show_running():
+            tell(ALREADY_OPEN)
         return 0
     folder = data_folder()
     folder.mkdir(parents=True, exist_ok=True)

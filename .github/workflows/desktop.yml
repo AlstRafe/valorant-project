@@ -32,17 +32,17 @@ jobs:
       contents: write # the release, on master only
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # the stamp reads the history
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       # Pillow: PyInstaller turns the site's icon (PNG) into the .exe's
       - run: python -m pip install -r requirements.txt -r requirements-desktop.txt pyinstaller==6.22.3 pillow==12.2.0
-      # the build's commit and day (JST), shown in the app's 設定 and compared with the release's (desktop.read_build)
+      # which commit the app is built from and when it was made, shown in the app's 設定 and compared with what the
+      # site says is the newest (valtracker/release.py: the last commit that changed the app's files)
       - name: Stamp the build
-        shell: pwsh
-        run: |
-          $day = [DateTime]::UtcNow.AddHours(9).ToString("yyyy-MM-dd")
-          Set-Content -Path valtracker/BUILD -Value "$env:GITHUB_SHA $day" -Encoding ascii -NoNewline
+        run: python -m valtracker.release valtracker/BUILD
       - name: Build
         run: >-
           pyinstaller --noconfirm --clean --windowed --name VALTracker --paths .
@@ -66,7 +66,7 @@ jobs:
         continue-on-error: true # a runner without WebView2 or a desktop says so, and the build still counts
         run: |
           $env:VAL_DESKTOP_HOME = "$env:RUNNER_TEMP\vt-window"
-          $app = Start-Process dist\VALTracker\VALTracker.exe -ArgumentList "--close-after", "100" -PassThru
+          $app = Start-Process dist\VALTracker\VALTracker.exe -ArgumentList "--close-after", "140" -PassThru
           function Tree($root) {
             $all = Get-CimInstance Win32_Process
             $ids = @($root)
@@ -94,6 +94,11 @@ jobs:
           "Processes: $($after.Count), memory $memory MB counted per process, $private MB its own (private)"
           "Processor while idle: $([math]::Round($used, 2)) s in 40 s = $share % of one core"
           if (-not ($after | Where-Object ProcessName -eq "msedgewebview2")) { "No WebView2 window opened here." }
+          # opened a second time: it finds the first one's window, brings it back and ends (a message box that
+          # nobody closes would keep it running)
+          $second = Start-Process dist\VALTracker\VALTracker.exe -PassThru
+          if ($second.WaitForExit(20000)) { "Opened twice: the second start found the window and ended." }
+          else { Stop-Process -Id $second.Id -Force; "Opened twice: THE WINDOW WAS NOT FOUND (the second start waits in its message box)." }
           Get-Content "$env:VAL_DESKTOP_HOME\desktop.log"
           if (-not $app.WaitForExit(60000)) { Stop-Process -Id $app.Id -Force }
       - name: Zip
@@ -114,3 +119,11 @@ jobs:
           gh release create desktop VALTracker-windows.zip --target "$GITHUB_SHA" --prerelease \
             --title "VAL Tracker（PC アプリ）" \
             --notes "Windows 10 / 11。VALTracker-windows.zip を展開して VALTracker.exe を開く。使い方と VALORANT への影響を抑える仕組みは README の「PC アプリ」。"
+      # the app asks the site which build is the newest: what the site answers now (it follows master every minute)
+      - name: What the site says the newest build is
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        continue-on-error: true
+        shell: bash
+        run: |
+          echo "This build: $(cat valtracker/BUILD)"
+          echo "The site:   $(curl -sS --max-time 20 https://haruxera.duckdns.org/val/app/latest)"

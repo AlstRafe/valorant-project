@@ -2141,6 +2141,16 @@ TEXTS = {
         "en-GB": "See the match you just played",
         "zh-TW": "查看剛才的對戰",
     },
+    "さっきの試合": {
+        "ko": "방금 한 경기",
+        "en-GB": "The match you just played",
+        "zh-TW": "剛才的對戰",
+    },
+    "ゲームのサーバーから直接読んだ結果です。全員のスコアボードは、試合が終わってから数分で見られるようになります。": {
+        "ko": "게임 서버에서 직접 읽은 결과입니다. 전원의 스코어보드는 경기가 끝나고 몇 분 뒤에 볼 수 있습니다.",
+        "en-GB": "Read straight from the game's server. Everyone's scoreboard can be seen a few minutes after the match ends.",
+        "zh-TW": "這是直接從遊戲伺服器讀取的結果。所有人的計分板在對戰結束後幾分鐘就能查看。",
+    },
     "試合が終わってから数分で見られるようになります。": {
         "ko": "경기가 끝나고 몇 분 뒤에 볼 수 있습니다.",
         "en-GB": "It can be seen a few minutes after the match ends.",

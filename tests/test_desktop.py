@@ -13,8 +13,9 @@ from unittest import mock
 
 from helpers import ACCESS, ENTITLEMENTS, PUUID, make_app
 
-from valtracker import desktop, localclient
+from valtracker import desktop, localclient, release
 from valtracker.localclient import EVENTS, LocalClient, launched, logged_server, read_lockfile, where
+from valtracker.paths import ROOT
 
 PARTY = "9a000000-0000-4000-8000-000000000001"
 VERSION = "release-13.09-shipping-7-4012345"
@@ -431,29 +432,33 @@ class AppPagesTest(unittest.TestCase):
 
 
 class UpdateTest(unittest.TestCase):
-    BUILD = {"commit": "a" * 40, "date": "2026-11-12"}
-    ZIP = "https://github.com/AlstRafe/valorant-project/releases/download/desktop/VALTracker-windows.zip"
+    """The repository is private (GitHub says 404 to the app): the site says which build is the newest."""
 
-    def release(self, commit: str = "b" * 40, **more) -> dict:
-        return {
-            "target_commitish": commit,
-            "published_at": "2026-11-13T03:06:11Z",
-            "html_url": "https://github.com/AlstRafe/valorant-project/releases/tag/desktop",
-            "assets": [{"name": "VALTracker-windows.zip", "browser_download_url": self.ZIP}],
-        } | more
+    BUILD = {"commit": "a" * 40, "time": 1_794_463_677, "date": "2026-11-12 15:07"}
+    LATER = {"commit": "b" * 40, "time": 1_794_470_000}
+    NOW = 1_794_480_000.0
 
     def test_a_newer_build(self):
-        self.assertEqual(
-            desktop.newer(self.BUILD, self.release()), {"commit": "b" * 40, "date": "2026-11-13", "url": self.ZIP}
-        )
-        self.assertIsNone(desktop.newer(self.BUILD, self.release("a" * 40)), "this one")
-        self.assertIsNone(desktop.newer(None, self.release()), "run from the source: nothing to compare")
-        self.assertIsNone(desktop.newer(self.BUILD, self.release("master")), "not a commit")
-        page = desktop.newer(self.BUILD, self.release(assets=[]))
-        self.assertEqual(page["url"], "https://github.com/AlstRafe/valorant-project/releases/tag/desktop")
-        elsewhere = self.release(assets=[{"name": "x.zip", "browser_download_url": "https://evil.example/x.zip"}])
-        self.assertTrue(desktop.newer(self.BUILD, elsewhere)["url"].startswith("https://github.com/"))
-        self.assertIsNone(desktop.newer(self.BUILD, self.release(assets=[], html_url="http://evil.example/")))
+        found = release.newer(self.BUILD, self.LATER, self.NOW)
+        self.assertEqual((found["commit"], found["url"], found["ready"]), ("b" * 40, release.PAGE, True))
+        self.assertTrue(found["url"].startswith("https://github.com/AlstRafe/valorant-project/releases/"))
+        self.assertIsNone(release.newer(self.BUILD, {"commit": "a" * 40, "time": 1_794_470_000}, self.NOW), "this one")
+        self.assertIsNone(release.newer(None, self.LATER, self.NOW), "run from the source: nothing to compare")
+        older = {"commit": "c" * 40, "time": self.BUILD["time"] - 60}
+        self.assertIsNone(release.newer(self.BUILD, older, self.NOW), "the site is behind this build")
+
+    def test_a_change_minutes_old_is_still_being_built(self):
+        soon = self.LATER["time"] + 5 * 60
+        self.assertFalse(release.newer(self.BUILD, self.LATER, soon)["ready"])
+        self.assertTrue(release.newer(self.BUILD, self.LATER, self.LATER["time"] + release.BUILT_AFTER)["ready"])
+
+    def test_an_answer_that_is_not_one(self):
+        for told in (None, [], "x", {}, {"commit": "master", "time": 1}, {"commit": "b" * 40, "time": "soon"}):
+            self.assertIsNone(release.newer(self.BUILD, told, self.NOW), told)
+        self.assertIsNone(release.newer(self.BUILD, {"commit": "b" * 40, "time": True}, self.NOW))
+        # nothing the answer says is opened: the link is the release's page
+        told = self.LATER | {"url": "https://evil.example/", "page": "https://evil.example/"}
+        self.assertEqual(release.newer(self.BUILD, told, self.NOW)["url"], release.PAGE)
 
     def test_the_builds_stamp(self):
         folder = tempfile.TemporaryDirectory()
@@ -461,38 +466,145 @@ class UpdateTest(unittest.TestCase):
         stamp = Path(folder.name) / "BUILD"
         with mock.patch.object(desktop, "__file__", str(Path(folder.name) / "desktop.py")):
             self.assertIsNone(desktop.read_build(), "no stamp: run from the source")
-            stamp.write_text("c" * 40 + " 2026-11-12", encoding="ascii")
-            self.assertEqual(desktop.read_build(), {"commit": "c" * 40, "date": "2026-11-12"})
-            stamp.write_text("not-a-commit 2026-11-12", encoding="ascii")
-            self.assertIsNone(desktop.read_build())
+            stamp.write_text("c" * 40 + " 1794463677", encoding="ascii")
+            found = desktop.read_build()
+            self.assertEqual((found["commit"], found["time"]), ("c" * 40, 1_794_463_677))
+            self.assertRegex(found["date"], r"^2026-11-1[12] \d\d:\d\d$")
+            for wrong in ("not-a-commit 1794463677", "c" * 40 + " 2026-11-12", "c" * 40, ""):
+                stamp.write_text(wrong, encoding="ascii")
+                self.assertIsNone(desktop.read_build(), wrong)
 
-    def test_looked_for_while_the_app_runs(self):
+    def test_the_stamp_is_the_last_commit_that_changed_the_app(self):
+        """The same answer in the build (desktop.yml) and on the site: here, this repository's own history."""
+        if not (ROOT / ".git").exists():
+            self.skipTest("not a clone")
+        found = release.source(ROOT)
+        self.assertRegex(found["commit"], "^[0-9a-f]{40}$")
+        self.assertGreater(found["time"], 1_700_000_000)
+        self.assertIsNone(release.source(Path(tempfile.gettempdir()) / "no-such-clone"))
+
+    def test_the_site_says_the_newest_build(self):
         app, _, _ = make_app()
         self.addCleanup(app._test_folder.cleanup)
+        with mock.patch.object(release, "latest", return_value=self.LATER):
+            answer = app.test_client().get("/app/latest")
+        self.assertEqual(answer.get_json(), self.LATER)
+        self.assertIn("max-age=300", answer.headers["Cache-Control"])
+        with mock.patch.object(release, "latest", return_value=None):
+            self.assertEqual(app.test_client().get("/app/latest").status_code, 404, "not a clone")
+
+    def app(self):
+        """The PC app (the default public site, a Riot Client that is not running)."""
+        env = mock.patch.dict(os.environ, {"VAL_PUBLIC_SITE": ""})
+        env.start()
+        self.addCleanup(env.stop)
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        local = LocalClient(Path(folder.name) / "lockfile", Path(folder.name) / "none.log", ask=FakeClient())
+        app, _, _ = make_app(local=local)
+        self.addCleanup(app._test_folder.cleanup)
+        return app
+
+    def test_the_app_itself_does_not_answer_it(self):
+        app = self.app()
+        with mock.patch.object(release, "latest", return_value=self.LATER) as asked:
+            self.assertEqual(app.test_client().get("/app/latest").status_code, 404)
+        asked.assert_not_called()
+
+    def test_read_again_only_now_and_then(self):
+        with (
+            mock.patch.object(release, "source", side_effect=[self.LATER, None]) as read,
+            mock.patch.dict(release._kept, {"at": 0.0, "found": None}),
+        ):
+            self.assertEqual(release.latest(ROOT, now=1000.0), self.LATER)
+            self.assertEqual(release.latest(ROOT, now=1000.0 + release.KEPT - 1), self.LATER)
+            self.assertEqual(read.call_count, 1)
+            self.assertIsNone(release.latest(ROOT, now=1000.0 + release.KEPT))
+
+    def looked(self, told, now: float):
+        app = self.app()
         app.config["VAL_BUILD"] = self.BUILD
         stop = threading.Event()
         self.addCleanup(stop.set)
+        asked = []
         looked = threading.Event()
 
-        def read():
+        def read(site):
+            asked.append(site)
             looked.set()
-            return self.release()
+            if isinstance(told, Exception):
+                raise told
+            return told
 
-        with mock.patch.multiple(desktop, LOOK_FIRST=0.01, LOOK_EVERY=60):
+        with (
+            mock.patch.multiple(desktop, LOOK_FIRST=0.01, LOOK_EVERY=60, LOOK_AGAIN=60),
+            mock.patch.object(desktop.time, "time", return_value=now),
+        ):
             desktop.look_for_updates(app, stop, read)
             self.assertTrue(looked.wait(5))
-        for _ in range(100):
-            if app.config["VAL_UPDATE_LOOKED"]:
-                break
-            time.sleep(0.01)
-        self.assertEqual(app.config["VAL_UPDATE"]["url"], self.ZIP)
+            for _ in range(100):
+                if app.config["VAL_UPDATE_LOOKED"]:
+                    break
+                time.sleep(0.01)
+        self.assertEqual(asked, ["https://haruxera.duckdns.org/val"])
+        return app
+
+    def test_looked_for_while_the_app_runs(self):
+        app = self.looked(self.LATER, self.NOW)
+        self.assertEqual(app.config["VAL_UPDATE"]["url"], release.PAGE)
+        self.assertTrue(app.config["VAL_UPDATE_LOOKED"])
+
+    def test_not_told_while_it_is_being_built_or_the_site_is_down(self):
+        app = self.looked(self.LATER, self.LATER["time"] + 60)
+        self.assertIsNone(app.config["VAL_UPDATE"])
+        self.assertFalse(app.config["VAL_UPDATE_LOOKED"], "not yet 「最新です」: looked at again soon")
+        app = self.looked(OSError("no network"), self.NOW)
+        self.assertIsNone(app.config["VAL_UPDATE"])
+
+    def test_only_the_site_is_asked(self):
+        with self.assertRaises(ValueError):
+            desktop._latest("http://127.0.0.1:1")
+        with self.assertRaises(ValueError):
+            desktop._latest("")
 
     def test_not_looked_for_from_the_source(self):
         app, _, _ = make_app()
         self.addCleanup(app._test_folder.cleanup)
         with mock.patch.object(threading, "Thread") as thread:
-            desktop.look_for_updates(app, threading.Event(), lambda: {})
+            desktop.look_for_updates(app, threading.Event(), lambda site: {})
         thread.assert_not_called()
+
+
+class OpenedTwiceTest(unittest.TestCase):
+    """A second start brings the running app's window back instead of only saying that it is open."""
+
+    def test_which_window_is_the_apps(self):
+        self.assertTrue(desktop.is_app_window("VAL Tracker", "WindowsForms10.Window.8.app.0.141b42a_r6_ad1"))
+        self.assertFalse(desktop.is_app_window("VAL Tracker", "CabinetWClass"), "the data folder open in Explorer")
+        self.assertFalse(desktop.is_app_window("VAL Tracker - Google Chrome", "WindowsForms10.Window.8.app.0.1"))
+
+    def test_the_window_comes_back(self):
+        with (
+            mock.patch.object(desktop, "first", return_value=False),
+            mock.patch.object(desktop, "show_running", return_value=True) as shown,
+            mock.patch.object(desktop, "tell") as told,
+        ):
+            self.assertEqual(desktop.main([]), 0)
+        shown.assert_called_once()
+        told.assert_not_called()
+
+    def test_said_when_the_window_is_not_there_yet(self):
+        with (
+            mock.patch.object(desktop, "first", return_value=False),
+            mock.patch.object(desktop, "show_running", return_value=False),
+            mock.patch.object(desktop, "tell") as told,
+        ):
+            self.assertEqual(desktop.main([]), 0)
+        told.assert_called_once_with(desktop.ALREADY_OPEN)
+
+    @unittest.skipIf(os.name == "nt", "another system's answer")
+    def test_no_windows_to_look_through_elsewhere(self):
+        self.assertFalse(desktop.show_running())
 
 
 class PlaceTest(unittest.TestCase):
@@ -517,6 +629,18 @@ class PlaceTest(unittest.TestCase):
             desktop.placed(self.folder, self.SCREENS),
             {"x": 2100, "y": 40, "width": 1400, "height": 1000, "maximized": False},
         )
+
+    def test_never_larger_than_its_screen(self):
+        small = [(0, 0, 1366, 768)]
+        self.assertEqual(desktop.placed(self.folder, small), {"width": 1180, "height": 720, "maximized": False})
+        enlarged = [(0, 0, 1280, 720)]  # 1920 x 1080 at 150 %
+        self.assertEqual(desktop.placed(self.folder, enlarged), {"width": 1180, "height": 672, "maximized": False})
+        # left large on the second screen, which is a smaller one today
+        self.save(x=1940, y=20, width=2400, height=1300, maximized=False)
+        found = desktop.placed(self.folder, [(0, 0, 1920, 1080), (1920, 0, 1600, 900)])
+        self.assertEqual(found, {"x": 1940, "y": 20, "width": 1600, "height": 852, "maximized": False})
+        tiny = [(0, 0, 320, 480)]
+        self.assertEqual(desktop.placed(self.folder, tiny)["width"], desktop.SMALLEST[0], "never under the smallest")
 
     def test_a_screen_unplugged_since(self):
         self.save(x=5000, y=40, width=1400, height=1000, maximized=True)

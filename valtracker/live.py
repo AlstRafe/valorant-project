@@ -217,6 +217,7 @@ def page(
         "party": None,
         "picker": None,
         "average": None,
+        "hidden_names": False,
         "every": EVERY[where(found)][0],
         # the agents' pictures, fetched by the browser while matchmaking: agent select then shows them at once
         "warm": icons(content, lang) if where(found) in ("queue", "found") else [],
@@ -296,6 +297,10 @@ def page(
         ]
         making = match.get("MatchmakingData") if isinstance(match.get("MatchmakingData"), dict) else {}
         values["queue"] = queue_name(str(making.get("QueueID") or ""))
+    # someone on the page hides their name: the page says why it is not there (only then)
+    shown = values["players"] + [row for team in values["teams"] for row in team["players"]]
+    shown += (values["party"] or {}).get("members") or []
+    values["hidden_names"] = any(not row["name"] and not row["me"] for row in shown)
     return values
 
 

@@ -19,22 +19,25 @@ from flask import Flask, abort, current_app, g, jsonify, redirect, render_templa
 
 from valtracker import collection as owned_items
 from valtracker import live as live_page
+from valtracker import pdmatch, security
 from valtracker import progress as progress_page
-from valtracker import security
 from valtracker.activity import LINE_QUEUES
 from valtracker.collection import CHARM, STARTERS
 from valtracker.content import media_path
-from valtracker.henrik import REGIONS
+from valtracker.henrik import REGIONS, _slim_match
 from valtracker.riot import ITEM_TYPES, RiotError
 from valtracker.stats import JST
 from valtracker.tools import _when
-from valtracker.views import QUEUES, _t, riot_failure
+from valtracker.views import QUEUES, _row, _score, _t, riot_failure
 
 #: What can be worn from the collection page -> where the loadout keeps it.
 #: How long /live/next waits for the Riot Client's next event (seconds) before it answers with nothing new.
 PUSH_WAIT = 25
 #: How long /live links to the match the owner played last, once it is over.
 LAST_MATCH_KEPT = 3 * 3600
+#: The last match's result from Riot (_last_result): asked for at most every RESULT_EVERY seconds, RESULT_TRIES
+#: times (it is there seconds after the match ends; the Range has none), and so its RR, written a little later.
+RESULT_EVERY, RESULT_TRIES = 12.0, 8
 _MATCH_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 IDENTITY = {"cards": "PlayerCardID", "titles": "PlayerTitleID"}
 #: What /live says after one of its buttons: (words, whether it worked).
@@ -100,6 +103,60 @@ def _last_match(found: dict) -> str:
         return ""
     match_id, when = str(kept[0]), float(kept[1] or 0)
     return match_id if _MATCH_ID.match(match_id) and time.time() - when < LAST_MATCH_KEPT else ""
+
+
+def _last_result(match_id: str) -> dict | None:
+    """The owner's last match from the game's own server, the moment it ends (its page here waits for HenrikDev,
+    which takes minutes): its line as a player's list shows one (views._row), with the RR it moved. None while
+    Riot does not have it, or when it is not a match with a record (the Range). Riot is asked for a match a few
+    times at most, then no more; the match goes into the owner's archive (their lifetime numbers) at once."""
+    if not match_id:
+        return None
+    riot = current_app.config["VAL_RIOT"]
+    status, puuid = riot.status(), riot.me()
+    if not puuid:
+        return None
+    region = status["shard"] if status["shard"] in REGIONS else "ap"
+    kept = current_app.config.setdefault("VAL_LAST_RESULT", {})
+    if kept.get("id") != match_id:
+        kept.clear()
+        kept |= {"id": match_id, "match": None, "rr": None, "tries": 0, "rr_tries": 0, "tried": 0.0, "rr_tried": 0.0}
+    now = time.time()
+    archive = current_app.config["VAL_ARCHIVE"]
+    if kept["match"] is None:
+        if kept["tries"] >= RESULT_TRIES or now - kept["tried"] < RESULT_EVERY:
+            return None
+        kept["tries"] += 1
+        kept["tried"] = now
+        try:
+            details = riot.match_details(region, match_id)
+        except RiotError:
+            return None
+        maps = current_app.config["VAL_CONTENT"].map_index("en-GB")
+        raw = pdmatch.to_v4(details, region, maps, puuid, status["name"], status["tag"])
+        if not raw or not raw["metadata"].get("is_completed", True):
+            return None  # not a finished match (yet)
+        match = kept["match"] = _slim_match(raw)
+        archive.keep([match], "riot")
+    match = kept["match"]
+    player = next((item for item in match.get("players") or [] if item.get("puuid") == puuid), None)
+    if player is None:
+        return None
+    queue = str(((match.get("metadata") or {}).get("queue") or {}).get("id") or "").lower()
+    # the RR is written a little after the match: asked for a few times, at the page's next looks
+    waiting = kept["rr"] is None and kept["rr_tries"] < RESULT_TRIES and now - kept["rr_tried"] >= RESULT_EVERY
+    if queue == "competitive" and waiting:
+        kept["rr_tries"] += 1
+        kept["rr_tried"] = now
+        try:
+            kept["rr"] = riot.rr_updates(region, puuid)["changes"].get(match_id)
+        except RiotError:
+            pass
+        if kept["rr"]:
+            archive.keep_rr(puuid, {match_id: kept["rr"]})
+    row = _row(match, player, {match_id: kept["rr"]} if kept["rr"] else {})
+    row["score"] = _score(row["line"], row["rounds"], row["queue_id"], row["tier"], row["result"]["won"])
+    return row
 
 
 def _match_link(match_id: str) -> str:
@@ -296,6 +353,7 @@ def register(app: Flask) -> None:
         values = live_page.page(
             found, current_app.config["VAL_CONTENT"], g.lang, me, owned, _queue_name, _agents_on_the_map
         )
+        last = _last_match(found)
         said = session.pop("live_said", "")  # once: the page is asked again every few seconds
         words, worked = LIVE_SAID.get(said) or (riot_failure(said) if said else "", False)
         words = _t(words) if said in LIVE_SAID else words
@@ -306,7 +364,8 @@ def register(app: Flask) -> None:
             said=words,
             said_ok=worked,
             live_state=live_page.state(found, current_app.config["VAL_CONTENT"], g.lang),
-            last_match=_match_link(_last_match(found)),
+            last_match=_match_link(last),
+            last_result=_last_result(last) if found.get("phase") not in ("pregame", "ingame") else None,
             # the game closed: links to the owner's other pages (the account as the settings page reads it)
             account=riot.status() if not found.get("phase") else None,
         )

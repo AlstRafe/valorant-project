@@ -8,8 +8,9 @@ import unittest
 from datetime import UTC, datetime
 from unittest import mock
 
-from helpers import make_app
+from helpers import PUUID, make_app
 
+from valtracker import owner
 from valtracker.riot import ITEM_TYPES
 
 VISITOR = {"homepage.visitor": True}
@@ -272,11 +273,11 @@ class OwnerTest(unittest.TestCase):
         self.assertIn('class="live-steps"', text)
         self.assertNotIn('aria-current="step"', text, "the game is closed")
         self.assertIn('data-live-phase=""', text)
-        self.riot.phase = "pregame"
+        self.riot.phase = "menus"
         self.app.config["VAL_RIOT"].cache.put("live", None, 0)
         text = self.page("/live")
-        self.assertIn('<li aria-current="step"><strong>エージェント選択</strong>', text)
-        self.assertIn('data-live-phase="pregame"', text, "the tab's dot without asking again")
+        self.assertIn('<li aria-current="step"><strong>メニュー</strong>', text)
+        self.assertIn('data-live-phase="menus"', text, "the tab's dot without asking again")
 
     def test_the_top_pages_box(self):
         text = self.page("/")
@@ -319,6 +320,113 @@ class OwnerTest(unittest.TestCase):
         self.riot.phase = "menus"
         self.app.config["VAL_RIOT"].cache.put("live", None, 0)
         self.assertIn("さっきの試合を見る", self.page("/live"))
+
+    def played(self, queue: str = "competitive") -> str:
+        """The owner's match is over and Riot's server has its record: the match's id."""
+        match_id = self.riot.pd["coregame"]["MatchID"].lower()
+        other = self.riot.pd["player"]
+        record = json.loads(json.dumps(self.riot.pd["matches"]["bbbbbbbb-0000-4000-8000-000000000001"]))
+        record["matchInfo"] |= {"matchId": match_id, "queueID": queue}
+        record = json.loads(json.dumps(record).replace(other, PUUID))
+        self.riot.pd["matches"][match_id] = record
+        self.riot.pd["player"] = PUUID
+        self.riot.pd["updates"]["Matches"][0]["MatchID"] = match_id
+        self.riot.phase = "ingame"
+        self.page("/live")
+        self.riot.phase = "menus"
+        self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+        return match_id
+
+    def test_the_last_matchs_result_the_moment_it_ends(self):
+        """From the game's own server: no waiting for HenrikDev, no key needed."""
+        self.link()
+        match_id = self.played()
+        text = self.page("/live")
+        self.assertIn('<h2 id="last-title">さっきの試合</h2>', text)
+        self.assertIn(f'<li class="match win"><a href="/m/ap/{match_id}?me=Owner%23JP1">', text)
+        self.assertIn("<strong>2–1</strong>", text)
+        self.assertIn('<span class="up">+18 RR</span>', text)
+        self.assertIn("<strong>3 / 1 / 1</strong>", text)
+        self.assertIn("コンペティティブ", text)
+        self.assertNotIn("さっきの試合を見る", text, "the result is the link")
+        for name in ("Secret Mate", "Foe One", "Pd Player"):
+            self.assertNotIn(name, text, "Riot's record names everyone: no one else's name is shown")
+        asked = len(self.riot.asked)
+        self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+        self.page("/live")
+        after = [url for _, url, _, _ in self.riot.asked[asked:]]
+        self.assertFalse([url for url in after if "/match-details/" in url or "competitiveupdates" in url], "kept")
+        # in the owner's lifetime numbers at once
+        self.assertEqual(self.app.config["VAL_ARCHIVE"].known([match_id]), {match_id})
+        self.assertEqual(self.app.config["VAL_ARCHIVE"].rr(PUUID)[match_id]["change"], 18)
+
+    def test_the_result_waits_for_riot(self):
+        self.link()
+        match_id = self.played()
+        record = self.riot.pd["matches"].pop(match_id)
+        text = self.page("/live")
+        self.assertNotIn('id="last-title"', text)
+        self.assertIn("さっきの試合を見る", text, "the link as before")
+        self.riot.pd["matches"][match_id] = record
+        self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+        self.assertNotIn('id="last-title"', self.page("/live"), "asked again only after a while")
+        self.app.config["VAL_LAST_RESULT"]["tried"] = 0.0
+        self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+        self.assertIn('id="last-title"', self.page("/live"))
+
+    def test_a_record_that_is_not_a_finished_match(self):
+        self.link()
+        match_id = self.played()
+        whole = self.riot.pd["matches"][match_id]
+        for record in ({"httpStatus": 200}, whole | {"matchInfo": whole["matchInfo"] | {"isCompleted": False}}):
+            self.riot.pd["matches"][match_id] = record
+            self.app.config["VAL_LAST_RESULT"] = {}
+            self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+            answer = self.client.get("/live")
+            self.assertEqual(answer.status_code, 200)
+            self.assertNotIn('id="last-title"', answer.get_data(as_text=True))
+
+    def test_riot_is_asked_for_a_result_a_few_times_only(self):
+        """The Range is a "match" without a record."""
+        self.link()
+        match_id = self.played()
+        del self.riot.pd["matches"][match_id]
+        for _ in range(owner.RESULT_TRIES + 3):
+            self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+            self.assertNotIn('id="last-title"', self.page("/live"))
+            self.app.config["VAL_LAST_RESULT"]["tried"] = 0.0
+        asked = [url for _, url, _, _ in self.riot.asked if "/match-details/" in url]
+        self.assertEqual(len(asked), owner.RESULT_TRIES)
+
+    def test_a_result_without_rr(self):
+        self.link()
+        self.played("unrated")
+        text = self.page("/live")
+        self.assertIn('id="last-title"', text)
+        self.assertNotIn(" RR</span>", text)
+        self.assertFalse([url for _, url, _, _ in self.riot.asked if "competitiveupdates" in url], "not asked for")
+
+    def test_nothing_explained_again_during_a_match(self):
+        """Agent select and a match: the lobby takes the screen. What the page does is said while the game is
+        closed and in the menus."""
+        self.link()
+        for phase, wide in (("", False), ("menus", False), ("pregame", True), ("ingame", True)):
+            self.riot.phase = phase
+            self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+            text = self.page("/live")
+            self.assertEqual('class="live-wide"' in text, wide, phase)
+            self.assertEqual('class="live-steps"' in text, not wide, phase)
+            self.assertEqual("上のタブ「ライブ」の点で" in text, not wide, phase)
+            self.assertEqual('<p class="game-state sr">' in text, wide, phase)
+
+    def test_hidden_names_are_explained_only_when_someone_hides_theirs(self):
+        self.link()
+        self.riot.phase = "ingame"
+        self.assertIn("本人が選んだ設定のため", self.page("/live"))
+        for player in self.riot.pd["coregame"]["Players"]:
+            player["PlayerIdentity"]["Incognito"] = False
+        self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+        self.assertNotIn("本人が選んだ設定のため", self.page("/live"))
 
     def test_agent_select(self):
         self.link()
