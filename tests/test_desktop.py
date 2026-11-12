@@ -8,6 +8,7 @@ import threading
 import time
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 from helpers import ACCESS, ENTITLEMENTS, PUUID, make_app
@@ -338,6 +339,229 @@ class DesktopAppTest(unittest.TestCase):
         self.assertIn("Riot クライアントが開いていないか、サインインしていません。", text)
         self.assertEqual(self.client.get("/live/state").get_json()["problem"], "nologin")
         self.assertIn("未連携", self.client.get("/settings").get_data(as_text=True))
+
+
+class AppPagesTest(unittest.TestCase):
+    """What the pages do differently in the PC app's window (no browser bar around them)."""
+
+    def setUp(self):
+        self.env = mock.patch.dict(os.environ, {"VAL_HENRIK_KEY": "", "VAL_PUBLIC_SITE": ""})  # the default site
+        self.env.start()
+        self.addCleanup(self.env.stop)
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        lockfile = Path(folder.name) / "lockfile"
+        lockfile.write_text("Riot Client:1234:5555:secret:https", encoding="utf-8")
+        self.local = LocalClient(lockfile, Path(folder.name) / "none.log", ask=FakeClient())
+        self.app, _, _ = make_app(local=self.local)
+        self.addCleanup(self.app._test_folder.cleanup)
+        self.client = self.app.test_client()
+        self.client.set_cookie("lang", "ja")
+        self.site, _, _ = make_app()
+        self.addCleanup(self.site._test_folder.cleanup)
+
+    def test_the_windows_own_buttons(self):
+        text = self.client.get("/").get_data(as_text=True)
+        self.assertIn('<body class="app" data-public="https://haruxera.duckdns.org/val">', text)
+        for go in ("back", "forward", "reload"):
+            self.assertIn(f'data-go="{go}"', text)
+        site = self.site.test_client().get("/").get_data(as_text=True)
+        self.assertIn("<body>", site)
+        self.assertNotIn("data-go=", site)
+
+    def test_links_given_away_lead_to_the_public_site(self):
+        """The app's own address (127.0.0.1, a port of the moment) leads nowhere on another device."""
+        code = "0;P;c;5"
+        text = self.client.get("/crosshair", query_string={"code": code}).get_data(as_text=True)
+        self.assertIn('data-copy="https://haruxera.duckdns.org/val/crosshair?code=0', text)
+        calendar = self.client.get("/shop/reminder.ics").get_data(as_text=True)
+        self.assertIn("https://haruxera.duckdns.org/val/shop", calendar)
+        site = self.site.test_client().get("/crosshair", query_string={"code": code}).get_data(as_text=True)
+        self.assertIn('data-copy="http://localhost/crosshair?code=0', site)
+
+    def test_the_first_start_says_where_the_key_goes(self):
+        self.app.config["VAL_SETTINGS"].save(henrik_key="")
+        text = self.client.get("/").get_data(as_text=True)
+        self.assertIn("はじめに: HenrikDev の API キーを入れてください。", text)
+        self.assertIn("この PC に保存され", text)
+        self.app.config["VAL_SETTINGS"].save(henrik_key="HDEV-x")
+        self.assertNotIn("はじめに:", self.client.get("/").get_data(as_text=True))
+        visitor = self.site.test_client().get("/", environ_base={"homepage.visitor": True})
+        self.assertNotIn("はじめに:", visitor.get_data(as_text=True))
+
+    def test_settings_of_the_app(self):
+        text = self.client.get("/settings").get_data(as_text=True)
+        self.assertIn("この PC の VAL Tracker の設定です。", text)
+        self.assertIn('data-pref="val.live.switch"', text)
+        self.assertIn("ソースから実行中", text)
+        self.assertIn(self.app.instance_path, text)
+        self.assertIn("キーはこの PC にだけ保存し", text)
+        self.app.config["VAL_BUILD"] = {"commit": "a" * 40, "date": "2026-11-12"}
+        self.app.config["VAL_UPDATE_LOOKED"] = 1.0
+        self.assertIn("2026-11-12 · aaaaaaa</code> — 最新です", self.client.get("/settings").get_data(as_text=True))
+        self.assertNotIn('id="app-title"', self.site.test_client().get("/settings").get_data(as_text=True))
+
+    def test_a_newer_build_is_told_on_every_page(self):
+        self.assertNotIn("app-update", self.client.get("/tools").get_data(as_text=True))
+        url = "https://github.com/AlstRafe/valorant-project/releases/download/desktop/VALTracker-windows.zip"
+        self.app.config["VAL_UPDATE"] = {"commit": "b" * 40, "date": "2026-11-13", "url": url}
+        for path in ("/tools", "/live", "/settings"):
+            text = self.client.get(path).get_data(as_text=True)
+            self.assertIn(f'<a href="{url}">ダウンロード</a>', text, path)
+
+    def test_live_while_the_game_is_closed(self):
+        """Nothing to do until the game opens (the app opens on /live): the owner's other pages a click away."""
+        self.app.riot.phase = ""
+        text = self.client.get("/live").get_data(as_text=True)
+        self.assertIn('class="me-box"', text)
+        self.assertIn('href="/p/Owner/JP1"', text)
+        self.assertIn('href="/shop"', text)
+
+    def test_agent_select_in_one_screen(self):
+        """Agent select: the team beside the agents to pick, the page's lead not above them."""
+        self.app.riot.phase = "pregame"
+        text = self.client.get("/live").get_data(as_text=True)
+        self.assertIn('<div class="live-cols pregame-cols">', text)
+        self.assertIn('<section class="live-pick"', text)
+        self.assertNotIn('<p class="lead">', text)
+        self.assertNotIn('class="me-box"', text)
+        self.app.riot.phase = "ingame"
+        self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+        self.assertIn('<div class="live-cols">', self.client.get("/live").get_data(as_text=True))
+
+
+class UpdateTest(unittest.TestCase):
+    BUILD = {"commit": "a" * 40, "date": "2026-11-12"}
+    ZIP = "https://github.com/AlstRafe/valorant-project/releases/download/desktop/VALTracker-windows.zip"
+
+    def release(self, commit: str = "b" * 40, **more) -> dict:
+        return {
+            "target_commitish": commit,
+            "published_at": "2026-11-13T03:06:11Z",
+            "html_url": "https://github.com/AlstRafe/valorant-project/releases/tag/desktop",
+            "assets": [{"name": "VALTracker-windows.zip", "browser_download_url": self.ZIP}],
+        } | more
+
+    def test_a_newer_build(self):
+        self.assertEqual(
+            desktop.newer(self.BUILD, self.release()), {"commit": "b" * 40, "date": "2026-11-13", "url": self.ZIP}
+        )
+        self.assertIsNone(desktop.newer(self.BUILD, self.release("a" * 40)), "this one")
+        self.assertIsNone(desktop.newer(None, self.release()), "run from the source: nothing to compare")
+        self.assertIsNone(desktop.newer(self.BUILD, self.release("master")), "not a commit")
+        page = desktop.newer(self.BUILD, self.release(assets=[]))
+        self.assertEqual(page["url"], "https://github.com/AlstRafe/valorant-project/releases/tag/desktop")
+        elsewhere = self.release(assets=[{"name": "x.zip", "browser_download_url": "https://evil.example/x.zip"}])
+        self.assertTrue(desktop.newer(self.BUILD, elsewhere)["url"].startswith("https://github.com/"))
+        self.assertIsNone(desktop.newer(self.BUILD, self.release(assets=[], html_url="http://evil.example/")))
+
+    def test_the_builds_stamp(self):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        stamp = Path(folder.name) / "BUILD"
+        with mock.patch.object(desktop, "__file__", str(Path(folder.name) / "desktop.py")):
+            self.assertIsNone(desktop.read_build(), "no stamp: run from the source")
+            stamp.write_text("c" * 40 + " 2026-11-12", encoding="ascii")
+            self.assertEqual(desktop.read_build(), {"commit": "c" * 40, "date": "2026-11-12"})
+            stamp.write_text("not-a-commit 2026-11-12", encoding="ascii")
+            self.assertIsNone(desktop.read_build())
+
+    def test_looked_for_while_the_app_runs(self):
+        app, _, _ = make_app()
+        self.addCleanup(app._test_folder.cleanup)
+        app.config["VAL_BUILD"] = self.BUILD
+        stop = threading.Event()
+        self.addCleanup(stop.set)
+        looked = threading.Event()
+
+        def read():
+            looked.set()
+            return self.release()
+
+        with mock.patch.multiple(desktop, LOOK_FIRST=0.01, LOOK_EVERY=60):
+            desktop.look_for_updates(app, stop, read)
+            self.assertTrue(looked.wait(5))
+        for _ in range(100):
+            if app.config["VAL_UPDATE_LOOKED"]:
+                break
+            time.sleep(0.01)
+        self.assertEqual(app.config["VAL_UPDATE"]["url"], self.ZIP)
+
+    def test_not_looked_for_from_the_source(self):
+        app, _, _ = make_app()
+        self.addCleanup(app._test_folder.cleanup)
+        with mock.patch.object(threading, "Thread") as thread:
+            desktop.look_for_updates(app, threading.Event(), lambda: {})
+        thread.assert_not_called()
+
+
+class PlaceTest(unittest.TestCase):
+    """The window opens where it was left (window.json), on a screen that is still there."""
+
+    SCREENS = [(0, 0, 1920, 1080), (1920, 0, 2560, 1440)]
+
+    def setUp(self):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.folder = Path(folder.name)
+
+    def save(self, **values):
+        (self.folder / desktop.PLACE).write_text(json.dumps(values), encoding="utf-8")
+
+    def test_first_start(self):
+        self.assertEqual(desktop.placed(self.folder, self.SCREENS), {"width": 1180, "height": 860, "maximized": False})
+
+    def test_where_it_was_left(self):
+        self.save(x=2100, y=40, width=1400, height=1000, maximized=False)
+        self.assertEqual(
+            desktop.placed(self.folder, self.SCREENS),
+            {"x": 2100, "y": 40, "width": 1400, "height": 1000, "maximized": False},
+        )
+
+    def test_a_screen_unplugged_since(self):
+        self.save(x=5000, y=40, width=1400, height=1000, maximized=True)
+        found = desktop.placed(self.folder, self.SCREENS)
+        self.assertNotIn("x", found)
+        self.assertEqual((found["width"], found["maximized"]), (1400, True))
+        self.assertNotIn("x", desktop.placed(self.folder, []), "the screens not known: in the middle")
+
+    def test_nonsense_is_ignored(self):
+        self.save(x="a", y=None, width=50, height=99999, maximized="yes")
+        self.assertEqual(desktop.placed(self.folder, self.SCREENS), {"width": 1180, "height": 860, "maximized": False})
+        (self.folder / desktop.PLACE).write_text("[1, 2", encoding="utf-8")
+        self.assertEqual(desktop.placed(self.folder, self.SCREENS)["width"], 1180)
+
+    def test_read_as_the_window_closes(self):
+        class Box:
+            def __init__(self, x, y, width, height):
+                self.X, self.Y, self.Width, self.Height = x, y, width, height
+
+        class Form:
+            _scale = 1.5
+            WindowState = "FormWindowState.Maximized"
+            Bounds = Box(-12, -12, 3864, 2184)
+            RestoreBounds = Box(150, 75, 1770, 1290)
+
+        self.assertEqual(desktop.left(Form()), {"x": 100, "y": 50, "width": 1180, "height": 860, "maximized": True})
+        Form.WindowState = "Normal"
+        Form.Bounds = Box(300, 150, 1800, 1500)
+        self.assertEqual(desktop.left(Form())["width"], 1200)
+        self.assertIsNone(desktop.left(None), "no form (not Windows)")
+        Form.Bounds = Box(0, 0, 30, 30)
+        self.assertIsNone(desktop.left(Form()), "too small to be the window")
+
+        class Handlers(list):  # pywebview's events: += adds a handler
+            def __iadd__(self, handler):
+                self.append(handler)
+                return self
+
+        window = SimpleNamespace(native=Form(), events=SimpleNamespace(closing=Handlers()))
+        Form.Bounds = Box(300, 150, 1800, 1500)
+        desktop.remember(window, self.folder)
+        (closing,) = window.events.closing
+        closing()
+        saved = json.loads((self.folder / desktop.PLACE).read_text(encoding="utf-8"))
+        self.assertEqual(saved, {"x": 200, "y": 100, "width": 1200, "height": 1000, "maximized": False})
 
 
 class ServerTest(unittest.TestCase):

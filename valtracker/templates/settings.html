@@ -8,12 +8,21 @@
 {% block main %}
 <section class="hero">
 <h1>{{ t('設定') }}</h1>
-<p class="lead">{{ t('持ち主だけが見られるページです（公開の名前では、持ち主としてログインした端末だけ）。') }}</p>
+<p class="lead">{% if desktop %}{{ t('この PC の VAL Tracker の設定です。') }}{% else %}{{ t('持ち主だけが見られるページです（公開の名前では、持ち主としてログインした端末だけ）。') }}{% endif %}</p>
 {% if saved %}<p class="done" role="status">{{ saved }}</p>{% endif %}
 </section>
+{% if desktop %}
+<section class="panel" id="app" aria-labelledby="app-title">
+<h2 id="app-title">{{ t('PC アプリ') }}</h2>
+<p>{{ t('この版:') }} {% if config.VAL_BUILD %}<code>{{ config.VAL_BUILD.date }} · {{ config.VAL_BUILD.commit[:7] }}</code>{% else %}{{ t('ソースから実行中') }}{% endif %}{% if update %} — <a href="{{ update.url }}">{{ t('新しい版をダウンロード') }}</a>{% elif config.VAL_UPDATE_LOOKED %} — {{ t('最新です') }}{% endif %}</p>
+<p class="pref"><label><input type="checkbox" data-pref="val.live.switch" checked> {{ t('試合が見つかったら、自動でライブを開く') }}</label></p>
+<p class="note">{{ t('ほかのページを見ているときに試合が見つかると、このウィンドウがライブに切り替わります（ウィンドウを前に出したりはしません）。') }}</p>
+<p class="note">{{ t('設定・お気に入り・画像はこの PC の {folder} にあります。アプリを消すときは、このフォルダーも消してください。', folder=data_folder) }}</p>
+</section>
+{% endif %}
 <section class="panel" aria-labelledby="key-title">
 <h2 id="key-title">{{ t('HenrikDev API キー') }}</h2>
-<p>{{ linked(t('プレイヤーの検索と試合の取得に使います。{link}で「API Keys」→「Generate New Key」から無料で作れます。'), 'https://api.henrikdev.xyz/dashboard/', t('HenrikDev のダッシュボード')) }} {{ t('キーはこのサーバーの instance/settings.json にだけ保存し、画面には一部しか出しません。') }}</p>
+<p>{{ linked(t('プレイヤーの検索と試合の取得に使います。{link}で「API Keys」→「Generate New Key」から無料で作れます。'), 'https://api.henrikdev.xyz/dashboard/', t('HenrikDev のダッシュボード')) }} {% if desktop %}{{ t('キーはこの PC にだけ保存し、画面には一部しか出しません。') }}{% else %}{{ t('キーはこのサーバーの instance/settings.json にだけ保存し、画面には一部しか出しません。') }}{% endif %}</p>
 <p>{{ t('いまのキー:') }} {% if shown %}<code>{{ shown }}</code>{% else %}{{ t('未設定') }}{% endif %}</p>
 <form method="post" class="stack">
 <input type="hidden" name="csrf" value="{{ csrf_token() }}">

@@ -3215,4 +3215,66 @@ TEXTS = {
         "en-GB": "Each is the average of their matches this act ({a} and {b}: those this site has read).",
         "zh-TW": "各為目前賽季階段對戰（{a} 場與 {b} 場，本站已讀取的部分）的平均。",
     },
+    # The PC app (desktop.py): its own buttons, 設定's panel, the first start, a newer build
+    "今日のスキン": {"ko": "오늘의 스킨", "en-GB": "Today's skins", "zh-TW": "今日的造型"},
+    "戻る": {"ko": "뒤로", "en-GB": "Back", "zh-TW": "上一頁"},
+    "進む": {"ko": "앞으로", "en-GB": "Forward", "zh-TW": "下一頁"},
+    "読み込み直す": {"ko": "새로고침", "en-GB": "Reload", "zh-TW": "重新載入"},
+    "PC アプリの新しい版があります。": {
+        "ko": "PC 앱의 새 버전이 있습니다.",
+        "en-GB": "A new version of the PC app is out.",
+        "zh-TW": "PC 應用程式有新版本。",
+    },
+    "ダウンロード": {"ko": "다운로드", "en-GB": "Download", "zh-TW": "下載"},
+    "いまのアプリを閉じてから展開し、いまのフォルダーに上書きしてください。設定はそのまま残ります。": {
+        "ko": "지금 앱을 닫은 뒤 압축을 풀어 지금 폴더에 덮어쓰세요. 설정은 그대로 남습니다.",
+        "en-GB": "Close this app, then unzip it over the folder it is in now. Your settings stay as they are.",
+        "zh-TW": "請先關閉目前的應用程式，再解壓縮並覆蓋目前的資料夾。設定會原樣保留。",
+    },
+    "この PC の VAL Tracker の設定です。": {
+        "ko": "이 PC의 VAL Tracker 설정입니다.",
+        "en-GB": "VAL Tracker's settings on this PC.",
+        "zh-TW": "這台 PC 上 VAL Tracker 的設定。",
+    },
+    "PC アプリ": {"ko": "PC 앱", "en-GB": "PC app", "zh-TW": "PC 應用程式"},
+    "この版:": {"ko": "이 버전:", "en-GB": "This version:", "zh-TW": "此版本："},
+    "ソースから実行中": {"ko": "소스에서 실행 중", "en-GB": "running from the source", "zh-TW": "從原始碼執行中"},
+    "新しい版をダウンロード": {"ko": "새 버전 다운로드", "en-GB": "Download the new version", "zh-TW": "下載新版本"},
+    "最新です": {"ko": "최신입니다", "en-GB": "up to date", "zh-TW": "已是最新"},
+    "試合が見つかったら、自動でライブを開く": {
+        "ko": "매치가 잡히면 자동으로 라이브 열기",
+        "en-GB": "Open Live by itself when a match is found",
+        "zh-TW": "找到對戰時自動開啟即時",
+    },
+    "ほかのページを見ているときに試合が見つかると、このウィンドウがライブに切り替わります（ウィンドウを前に出したりはしません）。": {
+        "ko": "다른 페이지를 보는 중에 매치가 잡히면 이 창이 라이브로 바뀝니다(창을 앞으로 가져오지는 않습니다).",
+        "en-GB": "When a match is found while you are on another page, this window switches to Live (it is not brought to the front).",
+        "zh-TW": "在瀏覽其他頁面時找到對戰，這個視窗會切換到即時（不會把視窗移到最前面）。",
+    },
+    "設定・お気に入り・画像はこの PC の {folder} にあります。アプリを消すときは、このフォルダーも消してください。": {
+        "ko": "설정·즐겨찾기·이미지는 이 PC의 {folder}에 있습니다. 앱을 지울 때는 이 폴더도 지워 주세요.",
+        "en-GB": "Settings, favourites and pictures are kept on this PC in {folder}. Delete this folder too when you remove the app.",
+        "zh-TW": "設定、我的最愛與圖片放在這台 PC 的 {folder}。刪除應用程式時，請一併刪除這個資料夾。",
+    },
+    "キーはこの PC にだけ保存し、画面には一部しか出しません。": {
+        "ko": "키는 이 PC에만 저장되며, 화면에는 일부만 표시합니다.",
+        "en-GB": "The key is kept on this PC only, and only part of it is ever shown.",
+        "zh-TW": "金鑰只儲存在這台 PC，畫面上只顯示一部分。",
+    },
+    "Riot ID（名前#タグ）でランクと最近の試合を調べられます。☆を付けたプレイヤーはこの PC に保存され、ここに並びます。": {
+        "ko": "Riot ID(이름#태그)로 랭크와 최근 경기를 찾아볼 수 있습니다. ☆를 누른 플레이어는 이 PC에 저장되어 여기에 표시됩니다.",
+        "en-GB": "Look up anyone's rank and recent matches by Riot ID (name#tag). Players you star are kept on this PC and listed here.",
+        "zh-TW": "用 Riot ID（名稱#標籤）查詢牌位與最近的對戰。加上 ☆ 的玩家會儲存在這台 PC，並列在這裡。",
+    },
+    "はじめに: HenrikDev の API キーを入れてください。": {
+        "ko": "먼저: HenrikDev API 키를 넣어 주세요.",
+        "en-GB": "First: add a HenrikDev API key.",
+        "zh-TW": "首先：請填入 HenrikDev 的 API 金鑰。",
+    },
+    "プレイヤーの検索と戦績に使います（無料、1 分ほどで作れます）。ライブ・ショップ・所持品はキーなしで使えます。": {
+        "ko": "플레이어 검색과 전적에 씁니다(무료, 1분 정도면 만들 수 있습니다). 라이브·상점·보유 아이템은 키 없이 쓸 수 있습니다.",
+        "en-GB": "It is used to look up players and their matches (free, about a minute to make). Live, the store and your collection work without it.",
+        "zh-TW": "用於搜尋玩家與戰績（免費，約 1 分鐘即可建立）。即時、商店與收藏不需要金鑰也能使用。",
+    },
+    "設定でキーを入れる": {"ko": "설정에서 키 넣기", "en-GB": "Add the key in Settings", "zh-TW": "在設定中填入金鑰"},
 }

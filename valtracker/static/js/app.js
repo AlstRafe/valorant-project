@@ -383,6 +383,9 @@
     button.hidden = false;
     button.addEventListener("click", function () {
       var address = location.href.split("#")[0];
+      // the PC app's own address (127.0.0.1) leads nowhere for anyone else: the public site's
+      var site = document.body.getAttribute("data-public");
+      if (site) address = site + location.pathname + location.search;
       if (navigator.share) {
         navigator.share({ title: document.title, url: address }).catch(function () {});
         return;
@@ -1320,6 +1323,8 @@
     var FOUND = 60000; // closing the note when the match is found closes it for that match's agent select too
     var STOP = { nologin: true, signedout: true, badpaste: true };
     var TOLD = "val.live.told";
+    var SWITCHED = "val.live.switched";
+    var SWITCH_KEEP = 150000; // agent select (85 s) after the match is found: not switched to again in that time
     var page = document.querySelector("[data-live-phase]");
     var timer = null;
     var asking = false;
@@ -1334,8 +1339,39 @@
       }
     }
 
+    // The PC app (unless turned off in 設定): the window goes to ライブ by itself when the match is found, once a
+    // match (the owner may go back to another page during agent select). The window is not brought to the front.
+    function switchToLive(state) {
+      if (!document.body.classList.contains("app") || page) return false;
+      if (state.phase !== "found" && state.phase !== "pregame") return false;
+      if (pref("val.live.switch") === "off") return false;
+      var key = state.match || "found";
+      var was;
+      try {
+        was = JSON.parse(sessionStorage.getItem(SWITCHED) || "{}") || {};
+      } catch (e) {
+        was = {};
+      }
+      var recent = was.key === "found" && Date.now() - Number(was.at || 0) < SWITCH_KEEP;
+      var keep = function (value) {
+        try {
+          sessionStorage.setItem(SWITCHED, JSON.stringify({ key: value, at: Date.now() }));
+        } catch (e) {
+          /* not kept: switched once more at most */
+        }
+      };
+      if (was.key === key || recent) {
+        if (recent && state.match) keep(state.match);
+        return false;
+      }
+      keep(key);
+      location.assign(tab.getAttribute("href"));
+      return true;
+    }
+
     // the note from the moment the match is found (the game's 5-second count) through agent select
     function note(state) {
+      if (switchToLive(state)) return;
       var box = document.getElementById("live-alert");
       var was = told();
       var closed = was.indexOf("found@") === 0 && Date.now() - Number(was.slice(6)) < FOUND;
@@ -1454,6 +1490,72 @@
     });
   }
 
+  // A choice kept in this browser (the PC app's 設定): its value, or "" when never made.
+  function pref(key) {
+    try {
+      return localStorage.getItem(key) || "";
+    } catch (e) {
+      return "";
+    }
+  }
+  // 設定's boxes with data-pref: ticked unless turned "off", kept when changed.
+  function prefs() {
+    document.querySelectorAll("input[data-pref]").forEach(function (box) {
+      var key = box.getAttribute("data-pref");
+      box.checked = pref(key) !== "off";
+      box.addEventListener("change", function () {
+        try {
+          if (box.checked) localStorage.removeItem(key);
+          else localStorage.setItem(key, "off");
+        } catch (e) {
+          /* not kept */
+        }
+      });
+    });
+  }
+
+  // The PC app (body.app, desktop.py): its window has no browser bar and does not take the browser's keys, and a
+  // page of another site opened in it would have no way back. Back, forward and reload as buttons and keys
+  // (Alt+←, Alt+→, F5, Ctrl+R), and other sites' links open in the default browser (a new window's address goes
+  // there).
+  function desktopApp() {
+    if (!document.body.classList.contains("app")) return;
+    document.querySelectorAll("[data-go]").forEach(function (button) {
+      var go = button.getAttribute("data-go");
+      if (go === "back" && history.length < 2) button.disabled = true;
+      button.addEventListener("click", function () {
+        if (go === "back") history.back();
+        else if (go === "forward") history.forward();
+        else location.reload();
+      });
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.altKey && e.key === "ArrowLeft") history.back();
+      else if (e.altKey && e.key === "ArrowRight") history.forward();
+      else if (e.key === "F5" || ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === "r" || e.key === "R"))) {
+        location.reload();
+      } else return;
+      e.preventDefault();
+    });
+    document.addEventListener(
+      "click",
+      function (e) {
+        var link = e.target.closest ? e.target.closest("a[href]") : null;
+        if (!link || link.hasAttribute("download")) return;
+        var address;
+        try {
+          address = new URL(link.href, location.href);
+        } catch (err) {
+          return;
+        }
+        if (address.origin === location.origin || !/^https?:$/.test(address.protocol)) return;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+      },
+      true,
+    );
+  }
+
   // Phones: the tab bar at the bottom would sit on the keyboard while typing.
   function typing() {
     document.addEventListener("focusin", function (e) {
@@ -1474,6 +1576,8 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
+    desktopApp();
+    prefs();
     part();
     chosen();
     acts();

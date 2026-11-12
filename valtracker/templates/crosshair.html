@@ -41,7 +41,7 @@
 {% if code and not problem %}<form class="sens-form xh-save" id="xh-save" data-code="{{ code }}" data-saved="{{ t('保存しました') }}" hidden>
 <label><span>{{ t('名前（なくてもかまいません）') }}</span><input name="name" maxlength="30" autocomplete="off"></label>
 <button type="submit">{{ t('このブラウザに保存') }}</button>
-<button type="button" class="quiet copy" data-copy="{{ url_for('crosshair', code=code, _external=True) }}" data-done="{{ t('リンクをコピーしました') }}" hidden>{{ t('リンクをコピー') }}</button>
+<button type="button" class="quiet copy" data-copy="{{ shared_url('crosshair', code=code) }}" data-done="{{ t('リンクをコピーしました') }}" hidden>{{ t('リンクをコピー') }}</button>
 <span class="sr" role="status"></span>
 </form>{% endif %}
 </section>

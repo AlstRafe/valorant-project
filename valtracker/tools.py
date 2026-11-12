@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 from flask import Flask, current_app, g, make_response, render_template, request, url_for
 
 from valtracker import crosshair as crosshairs
-from valtracker import i18n, queues, security
+from valtracker import i18n, queues, security, shared_url
 from valtracker import shop as store
 from valtracker.activity import BANDS, ENOUGH, FEW, RANKS_ENOUGH, WINDOW_DAYS
 from valtracker.diary import store_day
@@ -491,7 +491,7 @@ def _reminder():
     start = datetime.fromtimestamp(_next_reset(now), UTC).strftime("%Y%m%dT%H%M%SZ")
     stamp = datetime.fromtimestamp(now, UTC).strftime("%Y%m%dT%H%M%SZ")
     title = _ics(_t("VALORANT のストアが入れ替わりました"))
-    about = _ics(_t("毎日の 4 つのスキンが新しくなりました。") + " " + url_for("shop", _external=True))
+    about = _ics(_t("毎日の 4 つのスキンが新しくなりました。") + " " + shared_url("shop"))
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",

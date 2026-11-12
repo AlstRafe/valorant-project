@@ -4,7 +4,10 @@ page, pictures a browser can show, one player with the longest name there can be
 made-up player (pages of them, long charts), two saved sets of the owner's loadout, a ``visitor=1`` cookie that
 shows a page as a visitor sees it, and ``/collection?loadout=none`` (Riot gives no loadout).
 
-    python tests/ui/serve.py [port, default 5077]
+    python tests/ui/serve.py [port, default 5077] [--desktop]
+
+--desktop: the pages as the PC app shows them (valtracker/desktop.py): signed in through a made-up Riot Client on
+the PC (tests/test_desktop.py's FakeClient), not with a pasted ssid.
 """
 
 import json
@@ -13,6 +16,7 @@ import os
 import random
 import struct
 import sys
+import tempfile
 import time
 import zlib
 from datetime import UTC, datetime
@@ -207,13 +211,32 @@ def seed_sets(app) -> None:
     app.config["VAL_SETS"].save(sets=sets)
 
 
+def desktop_client(folder: Path):
+    """The Riot Client of the PC app, made up: signed in, VALORANT open. Its events are not listened to, so where
+    the game is comes from the made-up Riot servers (/live?phase=...), as on the site."""
+    from test_desktop import FakeClient
+
+    from valtracker.localclient import LocalClient
+
+    lockfile = folder / "lockfile"
+    lockfile.write_text("Riot Client:1234:5555:secret:https", encoding="utf-8")
+    return LocalClient(lockfile, folder / "ShooterGame.log", ask=FakeClient())
+
+
 def main() -> None:
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 5077
+    flags = [arg for arg in sys.argv[1:] if arg.startswith("--")]
+    numbers = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
+    port = int(numbers[0]) if numbers else 5077
     helpers.PNG = _png()
     helpers.fixture = _fixture
-    app, fetch, _ = make_app()
+    local = None
+    if "--desktop" in flags:
+        client_folder = tempfile.TemporaryDirectory()
+        local = desktop_client(Path(client_folder.name))
+    app, fetch, _ = make_app(local=local)
     fetch.esports_page = True  # the matches to come from Riot's esports site, the results from HenrikDev
-    app.config["VAL_RIOT"].sign_in("ssid-1")
+    if local is None:
+        app.config["VAL_RIOT"].sign_in("ssid-1")
     seed(app.config["VAL_ACTIVITY"], time.time())
     seed_lifetime(app, time.time())
     # a few days of the owner's store, and a skin wanted that is in today's (diary.py)

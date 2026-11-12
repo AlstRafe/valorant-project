@@ -24,9 +24,11 @@
 {% block title %}{{ t('ライブ') }} · {{ site_name }}{% endblock %}
 {% block main %}
 <div data-refresh="{{ every or 20 }}"{% if desktop %} data-push="{{ url_for('live_next') }}" data-push-version="{{ push_version }}"{% endif %} data-live-phase="{{ live_state.phase if live_state else '' }}" data-live-words="{{ live_state.words if live_state else '' }}"{% if warm %} data-warm="{% for url in warm %}{{ media(url) }}{% if not loop.last %} {% endif %}{% endfor %}"{% endif %}>
-<section class="hero">
+<section class="hero{% if phase in ('pregame', 'ingame') %} sr{% endif %}">
 <h1>{{ t('ライブ') }}</h1>
-<p class="lead">{% if desktop %}{{ t('あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。この PC の Riot クライアントから直接読むので、試合が見つかるとすぐに切り替わります。') }}{% else %}{{ t('あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。PC で VALORANT を開いていれば、スマホからでも使えます。') }}{% endif %}</p>
+{#- in agent select and a match, what is happening takes the room: the team and the agents to pick in one screen
+    (what the page does is said again at the bottom, in the steps) #}
+{% if phase not in ('pregame', 'ingame') %}<p class="lead">{% if desktop %}{{ t('あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。この PC の Riot クライアントから直接読むので、試合が見つかるとすぐに切り替わります。') }}{% else %}{{ t('あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。PC で VALORANT を開いていれば、スマホからでも使えます。') }}{% endif %}</p>{% endif %}
 </section>
 {% include "_play.html" %}
 {% if not phase %}{{ steps() }}{% endif %}
@@ -39,6 +41,18 @@
 {% if last_match and phase != 'pregame' and phase != 'ingame' %}<p class="last-match"><a class="button quiet" href="{{ last_match }}">{{ t('さっきの試合を見る') }}</a> <small>{{ t('試合が終わってから数分で見られるようになります。') }}</small></p>{% endif %}
 {% if not phase %}
 <p class="note">{% if running is none %}{{ t('ゲームの状態を読めませんでした。') }}{% else %}{{ t('VALORANT を開くと、ここからキューを開始できます。エージェント選択が始まると、味方とピックがここに出ます。') }}{% endif %}</p>
+{% if account and account.linked %}
+{#- nothing to do here until the game opens: the owner's other pages, a click away (the PC app opens on this page) #}
+<section class="me-box" aria-labelledby="me-title">
+<h2 id="me-title">{{ t('自分') }}</h2>
+<ul class="me-links">
+{% if account.name %}<li><a href="{{ url_for('player', name=account.name, tag=account.tag) }}"><strong>{{ t('自分の戦績') }}</strong><small>{{ account.name }}#{{ account.tag }}</small></a></li>{% endif %}
+<li><a href="{{ url_for('shop') }}"><strong>{{ t('ショップ') }}</strong><small>{{ t('今日のスキン') }}</small></a></li>
+<li><a href="{{ url_for('progress') }}"><strong>{{ t('進み具合') }}</strong><small>{{ t('バトルパス・ミッション') }}</small></a></li>
+<li><a href="{{ url_for('collection') }}"><strong>{{ t('所持品') }}</strong><small>{{ t('スキンやカードを装備') }}</small></a></li>
+</ul>
+</section>
+{% endif %}
 {% elif phase == 'menus' %}
 {% if party %}
 <section aria-labelledby="party-title">
@@ -70,13 +84,14 @@
 {% else %}
 <p class="live-head">{% if map.image %}<img src="{{ media(map.image) }}" alt="" width="160" height="60">{% endif %}<span><strong>{{ map.name or t('マップ') }}</strong>{% if queue %} · {{ queue }}{% endif %} · {{ t('エージェント選択') if phase == 'pregame' else t('対戦中') }}{% if left %} · {{ t('残り {seconds} 秒', seconds=left) }}{% endif %}</span></p>
 {% if phase == 'pregame' %}
-<section aria-labelledby="ally-title">
+<div class="live-cols pregame-cols">
+<section class="live-ally" aria-labelledby="ally-title">
 <h2 id="ally-title">{{ t('味方') }}{% if average %} <small class="team-average">{{ t('平均 {rank}', rank=average.name) }}</small>{% endif %}</h2>
 <ul class="seats">{% for row in players %}{{ person(row) }}{% endfor %}</ul>
 {% if enemy_size %}<p class="note">{{ t('相手は {locked} / {size} 人が確定（相手の名前とエージェントは、ゲームでも試合が始まるまで出ません）', locked=enemy_locked, size=enemy_size) }}</p>{% endif %}
 </section>
 {% if picker %}
-<section aria-labelledby="pick-title">
+<section class="live-pick" aria-labelledby="pick-title">
 <h2 id="pick-title">{{ t('ピック') }}</h2>
 {% if picker.locked %}
 <p class="queue-now">{{ t('{agent} で確定しています。', agent=picker.current_name) }}</p>
@@ -90,7 +105,7 @@
 {% endif %}
 </section>
 {% endif %}
-<section aria-labelledby="comp-title">
+<section class="live-comp" aria-labelledby="comp-title">
 <h2 id="comp-title">{{ t('構成の目安') }}</h2>
 {% if missing_roles %}
 <p>{{ t('味方にまだいない役割です。') }}{% if missing_roles|length > 1 %}{{ t('上から順に埋めるのがよくある形です。') }}{% endif %}</p>
@@ -102,13 +117,16 @@
 <p>{{ t('役割はそろっています。') }}</p>
 {% endif %}
 </section>
+</div>
 {% else %}
+<div class="live-cols">
 {% for team in teams %}
 <section aria-labelledby="team-{{ loop.index }}">
 <h2 id="team-{{ loop.index }}">{{ t('味方') if team.ours else t('相手') }}{% if team.average %} <small class="team-average">{{ t('平均 {rank}', rank=team.average.name) }}</small>{% endif %}</h2>
 <ul class="seats">{% for row in team.players %}{{ person(row) }}{% endfor %}</ul>
 </section>
 {% endfor %}
+</div>
 {% endif %}
 {% endif %}
 {% if names_missing %}<p class="note">{{ t('名前を読み込めませんでした。') }}</p>{% endif %}

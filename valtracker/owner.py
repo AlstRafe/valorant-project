@@ -307,6 +307,8 @@ def register(app: Flask) -> None:
             said_ok=worked,
             live_state=live_page.state(found, current_app.config["VAL_CONTENT"], g.lang),
             last_match=_match_link(_last_match(found)),
+            # the game closed: links to the owner's other pages (the account as the settings page reads it)
+            account=riot.status() if not found.get("phase") else None,
         )
 
     @app.get("/live/state")
