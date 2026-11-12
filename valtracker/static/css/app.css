@@ -259,7 +259,7 @@ h2 {
   clip-path: inset(50%);
   white-space: nowrap;
 }
-@media (min-width: 761px) {
+@media (min-width: 761px), (max-width: 399px) {
   .app .brand span {
     position: absolute;
     width: 1px;
