@@ -333,6 +333,14 @@ class UpdaterTest(unittest.TestCase):
         with mock.patch.object(update, "writable", return_value=False):
             self.stopped("unwritable")
 
+    def test_a_new_build_that_cannot_be_started_leaves_the_app_open(self):
+        def refused(command):
+            raise OSError("blocked")
+
+        self.updater.start = refused
+        state = self.press()
+        self.assertEqual((state["state"], state["problem"], self.closed), ("failed", "nostart", []))
+
     def test_from_the_source_there_is_nothing_to_replace(self):
         self.updater.home = None
         self.assertFalse(self.updater.possible)

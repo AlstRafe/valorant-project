@@ -326,6 +326,10 @@ h2 {
   min-height: 2.25rem;
   padding: 0 0.9rem;
 }
+.update-form button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
 .update-said {
   margin: 0.4rem 0 0;
   font-weight: 700;
@@ -5608,13 +5612,14 @@ form.row {
   line-height: 1.4rem;
   text-align: center;
 }
+/* the mark in the card's colour on a full disc: a tinted disc under a mark of its own colour is too faint on paper */
 .check-ok .check-mark {
-  background: color-mix(in srgb, var(--win) 22%, transparent);
-  color: var(--win);
+  background: var(--win);
+  color: var(--card);
 }
 .check-bad .check-mark {
-  background: color-mix(in srgb, var(--loss) 22%, transparent);
-  color: var(--loss);
+  background: var(--loss);
+  color: var(--card);
 }
 .check-part .check-mark {
   background: color-mix(in srgb, var(--draw) 30%, transparent);

@@ -12,7 +12,8 @@ the PC (tests/test_desktop.py's FakeClient), not with a pasted ssid.
 --real: the game's own names and pictures (valorant-api.com is asked for real, so this needs the network) around
 the made-up players and matches: the pages as an owner sees them, for the screenshots (tests/ui/shots.py). The
 fixtures' made-up ids are swapped for the real things they stand for, and the made-up player's matches are whole
-ones (played.py: five against five, on several maps). ``?update=1`` on any address says that a newer PC app is out.
+ones (played.py: five against five, on several maps). ``?update=1`` on any address says that a newer PC app is out
+(with --desktop its button updates the made-up app: the download takes a few seconds, nothing is replaced).
 """
 
 import json
@@ -656,6 +657,49 @@ def made_up_friends(app, local, now: float) -> None:
     client.friends, client.presences = friends, presences
 
 
+def made_up_update(app, folder: Path) -> None:
+    """The app's own update (update.py), made up: this app is a built one, a newer build is out (``?update=1`` on
+    any address shows the notice), its download takes a few seconds, and nothing is really replaced or closed."""
+    import io
+    import zipfile
+
+    from valtracker import update
+
+    newest = "f" * 40
+    home = folder / "VALTracker"
+    home.mkdir(parents=True, exist_ok=True)
+    (home / update.EXE).write_bytes(b"")
+    app.config["VAL_BUILD"] = {"commit": "5c0ffee" + "0" * 33, "time": 0, "date": "2026-11-12 21:40"}
+
+    def fetch(url, target, told):
+        data = io.BytesIO()
+        with zipfile.ZipFile(data, "w") as file:
+            file.writestr(f"{update.TOP}/{update.EXE}", b"")
+            file.writestr(f"{update.TOP}/{update.STAMP}", f"{newest} 1")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data.getvalue())
+        for step in range(1, 9):
+            time.sleep(0.6)
+            told(step * 5_500_000, 44_000_000)
+
+    def close() -> None:
+        # the real app closes here and opens again as the new build; this one is ready for another try
+        import threading
+
+        threading.Timer(4.0, lambda: app.config["VAL_UPDATER"]._set("idle")).start()
+
+    app.config["VAL_UPDATER"] = update.Updater(
+        app,
+        home,
+        lambda: "",
+        close,
+        ask=lambda site: {"commit": newest, "time": int(time.time()) - 7200},
+        fetch=fetch,
+        start=lambda command: None,
+        pause=0,
+    )
+
+
 def main() -> None:
     flags = [arg for arg in sys.argv[1:] if arg.startswith("--")]
     numbers = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
@@ -696,10 +740,10 @@ def main() -> None:
     last_match(app)
     if local is not None:
         made_up_friends(app, local, time.time())
+        made_up_update(app, Path(client_folder.name))
     if "--real" in flags:
         four_offers(app)
         if local is not None:  # the settings page as the built app's on its owner's PC, not this run's temporary folder
-            app.config["VAL_BUILD"] = {"commit": "5c0ffee" + "0" * 33, "time": 0, "date": "2026-11-12 21:40"}
             app.context_processor(lambda: {"data_folder": r"C:\Users\Owner\AppData\Local\VAL Tracker"})
     inner = app.wsgi_app
     next_live: list[str] = []
@@ -709,7 +753,8 @@ def main() -> None:
             environ["homepage.visitor"] = True
         # ?update=1: a newer PC app is out (desktop.look_for_updates found one)
         newer = {"commit": "f" * 40, "date": "2026-11-13 09:00", "url": release.PAGE, "ready": True}
-        app.config["VAL_UPDATE"] = newer if "update=1" in environ.get("QUERY_STRING", "") else None
+        if environ.get("PATH_INFO", "") not in ("/app/update", "/app/update/state"):  # the update's own keep it
+            app.config["VAL_UPDATE"] = newer if "update=1" in environ.get("QUERY_STRING", "") else None
         # /live?phase=menus, queue (the menus, matchmaking), found (the match found), pregame or ingame: where the
         # owner's made-up game is (helpers.FakeRiot); none: the game is closed. A button pressed on /live (POST
         # /live/act, then /live) keeps the phase of the page it was pressed on.

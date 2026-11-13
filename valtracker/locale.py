@@ -3922,4 +3922,9 @@ TEXTS = {
         "en-GB": "It tells you when a newer version is out, and one button in the app installs it",
         "zh-TW": "有新版本時會通知，並可用應用程式內的一個按鈕更新",
     },
+    "新しい版を開けなかったので、いまの版のまま続けます。ダウンロードのページから入れ替えてください。": {
+        "ko": "새 버전을 열 수 없어 지금 버전으로 계속합니다. 다운로드 페이지에서 받아 교체해 주세요.",
+        "en-GB": "The new version could not be started, so this one carries on. Replace it from the download page.",
+        "zh-TW": "無法開啟新版本，因此繼續使用目前的版本。請從下載頁面取得後替換。",
+    },
 }

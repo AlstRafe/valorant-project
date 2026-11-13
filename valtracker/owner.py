@@ -75,6 +75,7 @@ UPDATE_FAILURES = {
     "notready": "新しい版はまだ作っている途中です。数分後にもう一度押してください。",
     "network": "ダウンロードできませんでした。少ししてからもう一度押してください。",
     "badfile": "ダウンロードしたファイルを確かめられなかったので、使いませんでした。もう一度押してください。",
+    "nostart": "新しい版を開けなかったので、いまの版のまま続けます。ダウンロードのページから入れ替えてください。",
 }
 #: The update's button: to start it, and to put a build downloaded during a match in place.
 UPDATE_BUTTONS = {"start": "いますぐ更新", "ready": "入れ替える"}

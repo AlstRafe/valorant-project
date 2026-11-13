@@ -58,7 +58,8 @@ PLAYING = ("found", "pregame", "ingame")
 class UpdateError(Exception):
     """Why the update stopped: ``kind`` is one of notbuilt (not a built app on Windows), unwritable (the app's
     folder cannot be written), playing (agent select or a match), nonewer (this is the newest), notready (the
-    newest build is still being made), network, badfile (the download is not the build the site named)."""
+    newest build is still being made), network, badfile (the download is not the build the site named), nostart
+    (the new build could not be started: this app goes on as it is)."""
 
     def __init__(self, kind: str, detail: str = ""):
         super().__init__(kind)
@@ -247,7 +248,10 @@ class Updater:
             self._set("ready")
             return
         self._set("installing")
-        self.start([str(self._new / EXE), INSTALL, str(self.home), "--wait-pid", str(self.pid)])
+        try:
+            self.start([str(self._new / EXE), INSTALL, str(self.home), "--wait-pid", str(self.pid)])
+        except OSError as error:
+            raise UpdateError("nostart", type(error).__name__) from error
         time.sleep(self.pause)  # the page reads "installing" once more before the window goes
         self.close()
 

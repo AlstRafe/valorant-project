@@ -454,10 +454,12 @@ async function main() {
         process.stderr.write(`${theme} ${lang} ${width}px\n`);
         for (const where of pages) {
           errors.length = 0;
+          // the PC app's pages wait for the Riot Client's next event (/live/next stays open for 25 s): they are
+          // looked at once loaded, not once the network is quiet
           await page
-            .goto(base + where, { waitUntil: "networkidle", timeout: 60000 })
+            .goto(base + where, { waitUntil: desktop ? "load" : "networkidle", timeout: 60000 })
             .catch((error) => errors.push(String(error).slice(0, 120)));
-          await page.waitForTimeout(live ? 400 : 200);
+          await page.waitForTimeout(desktop ? 700 : live ? 400 : 200);
           for (const item of await page.evaluate(inspect))
             add(item.kind, where, item.where, item.text, `${lang} ${width} ${theme}`);
           // a page that should work but says it could not (only the made-up nobody's page, the searches
