@@ -142,6 +142,8 @@ def create_app(
         path = outside_path(url)
         return url_for("picture", path=path) if path else ""
 
+    app.add_template_filter(content.plain, "plain")
+
     @app.context_processor
     def _page():
         lang = getattr(g, "lang", i18n.DEFAULT)

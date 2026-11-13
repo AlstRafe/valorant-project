@@ -17,7 +17,7 @@
     {
      "slot": "Ultimate",
      "displayName": "Ult",
-     "description": "大技",
+     "description": "<whitebold>大技</>を構える。<debuffred>ダメージ</>を与える。",
      "displayIcon": "https://media.valorant-api.com/agents/11111111-1111-4111-8111-111111111111/abilities/ultimate/displayicon.png"
     },
     {

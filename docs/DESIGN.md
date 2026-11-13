@@ -212,8 +212,9 @@ PD の答えの形は公開されていないので、読めなかったもの�
   ダイアログ）、閉じるときのウィンドウの位置と大きさ（`window.json`、WinForms の `RestoreBounds`。開くときは画面より
   大きくしない: 1366×768 や 150 % 表示でも収まる）を持つ。人に渡すアドレス（共有・クロスヘアのリンク・カレンダー）は
   `shared_url` で公開サイトのものに
-- 新しい版の知らせ（2026-11-13）: リポジトリは非公開なので、GitHub のリリースはログインなしだと 404（#38 の「リリースの
-  `target_commitish` と比べる」は一度も働かなかった）。代わりに公開サイトが `/app/latest` で「アプリの元になるファイル
+- 新しい版の知らせ（2026-11-13）: このときリポジトリは非公開で、GitHub のリリースはログインなしだと 404 だった（#38 の
+  「リリースの `target_commitish` と比べる」は一度も働かなかった）。同じ日の昼に公開にしたが、聞く先は公開サイトのまま
+  （GitHub の API の回数制限に関わらず、ビルドが済んだかも同じ答えでわかる）。公開サイトが `/app/latest` で「アプリの元になるファイル
   （desktop.yml の `paths`）を最後に変えたコミットとその時刻」を答える（`release.py`、VM のクローンに `git log -1 -- …`、
   5 分に 1 回まで）。desktop.yml は同じ関数でビルドに印を付ける（`python -m valtracker.release valtracker/BUILD`、
   `fetch-depth: 0`）。アプリは 2 つを比べ、サイトのほうが新しく、そのコミットから 20 分たっていれば（ビルドとリリースが
@@ -226,6 +227,19 @@ PD の答えの形は公開されていないので、読めなかったもの�
 - 試合直後の結果（2026-11-13）: 対戦中に覚えた試合 ID の match-details と competitiveupdates を PD から読み、ライブに
   プレイヤーページの試合の行と同じ形で出す（`owner._last_result`）。HenrikDev を待たず、キーも要らない。Riot の記録は全員の
   名前を持つが、出すのは自分の行だけ。12 秒おきに 8 回まで聞き（射撃場は記録がない）、読めたら通算（archive）にも入れる
+
+- タイトルバー（2026-11-13）: pywebview は枠を Windows のアプリのテーマに合わせるだけなので、ページを暗くしても枠は白の
+  ままだった。`desktop.follow_look` がページを読み込むたびにページの見た目（`<html data-theme>`、なければ OS の設定）を聞き、
+  DWM に枠の色を頼む（`DwmSetWindowAttribute` 20 と 38）。ゲームには関わらない、自分のウィンドウへの 1 回の呼び出し
+- スクリーンショット（2026-11-13、「GitHub にアプリ使用時の UI や機能などスクショ撮ってアップロード」）:
+  `tests/ui/shots.py` が Windows のランナーでアプリの本物のウィンドウ（WebView2）を開き、27 枚を `docs/screenshots/` に撮る
+  （`.github/workflows/screenshots.yml`、手動か撮り方を変えた push で動き、そのブランチにコミットする。一覧は
+  [SCREENSHOTS.md](SCREENSHOTS.md)）。`serve.py --desktop --real` は名前と絵だけ valorant-api.com の本物を使い、プレイヤーと
+  試合は `tests/ui/played.py` が丸ごと作る（5 対 5、ラウンドごとの設置・解除・キルの場所、HenrikDev v4 と Riot の記録の
+  両方の形）。ページを替えるのは `location.replace`（WebView2 は同じアドレスの `load_url` を読み直さない）、聞くのは
+  `run_js`。本物の絵で見て直したもの: アビリティの説明に混ざっていたゲームの記号（`<whitebold>…</>`、`content.plain`）、
+  ラウンドの流れの 13 ラウンド目だけ小さい箱（クラス名 `turn` が感度ページの `.turn` と重なっていた）、ランクと RR が
+  「ゴールド 3 0 RR」と 1 行に読める並び
 
 ## 段階
 

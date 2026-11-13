@@ -1,8 +1,8 @@
 """Which build of the PC app is the newest.
 
-The repository is private: GitHub answers 404 for its release to anyone not signed in, so the app cannot ask
-GitHub. The site says it instead (/app/latest), from the clone it runs from: the last commit that changed what the
-app is built from. desktop.yml stamps each build with the same answer (``python -m valtracker.release <file>``
+The site says it (/app/latest), from the clone it runs from: the last commit that changed what the app is built
+from. (When this was written the repository was private and GitHub answered 404 for its release to anyone not
+signed in; it is public since 2026-11-13, and the site is still the one asked: one small answer, no API limit.) desktop.yml stamps each build with the same answer (``python -m valtracker.release <file>``
 writes valtracker/BUILD), and the app compares the two (desktop.look_for_updates).
 """
 

@@ -1941,7 +1941,8 @@ meter {
   background: color-mix(in srgb, var(--loss) 20%, var(--card));
   color: var(--loss);
 }
-.timeline li.turn {
+/* where the teams change sides (not "turn": the sensitivity page's .turn list would style it too) */
+.timeline li.swap {
   margin-left: 0.6rem;
 }
 .timeline a {
@@ -3704,6 +3705,10 @@ code {
   color: var(--soft);
   font-size: 0.72rem;
   line-height: 1.2;
+}
+/* The rank over its RR, always: "ゴールド 3" over "0 RR" (side by side it read as "ゴールド 3 0 RR"). */
+.rank-words > span {
+  display: block;
 }
 .seat .badge {
   position: static; /* beside the name (absolute, it went to the page's corner) */

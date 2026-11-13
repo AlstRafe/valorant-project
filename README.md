@@ -27,7 +27,16 @@ python -m unittest discover -s tests
 持ち主の機能（ライブ・ショップ・所持品・進み具合）が使え、ライブは Riot クライアントの知らせで、試合が見つかった瞬間・
 ピックのたびにすぐ切り替わる。
 
-- 入れ方: GitHub の Releases →「desktop」→ `VALTracker-windows.zip` を好きな場所に展開し、`VALTracker.exe` を開く。
+| エージェント選択                                                       | 対戦中                                                   |
+| ---------------------------------------------------------------------- | -------------------------------------------------------- |
+| ![ライブ: エージェント選択](docs/screenshots/04-live-agent-select.png) | ![ライブ: 対戦中](docs/screenshots/05-live-in-match.png) |
+| **プレイヤーの戦績**                                                   | **試合**                                                 |
+| ![プレイヤーの戦績](docs/screenshots/07-player.png)                    | ![試合](docs/screenshots/13-match.png)                   |
+
+画面は全部で 27 枚を [docs/SCREENSHOTS.md](docs/SCREENSHOTS.md) に（写っているプレイヤーと試合は作りもの）。
+
+- 入れ方: GitHub の [Releases →「desktop」](https://github.com/AlstRafe/valorant-project/releases/tag/desktop) →
+  `VALTracker-windows.zip` を好きな場所に展開し、`VALTracker.exe` を開く。
   署名がないので初回は「Windows によって PC が保護されました」→「詳細情報」→「実行」。データは `%LOCALAPPDATA%\VAL Tracker`
   （HenrikDev のキーは「ツール → 設定」で一度入れる）。新しい版は同じところに上書きで展開する
 - ソースから: `python -m pip install -r requirements.txt -r requirements-desktop.txt` → `python -m valtracker.desktop`
@@ -40,9 +49,9 @@ python -m unittest discover -s tests
   この PC の中でしか開けないため）。画像やカレンダーの保存は「名前を付けて保存」が出る
 - ウィンドウの大きさと場所を覚えて、次もそこに開く（外したモニターの上だった場合は真ん中。画面より大きくは開かない）。
   開いているのにもう一度起動すると、いまのウィンドウが前に出る
-- 新しい版ができると、どのページの上にも「新しい版があります」とダウンロードのリンクが出る。リポジトリが非公開で GitHub
-  には聞けないので、公開サイトに聞く（`/val/app/latest`。起動して 1 分後と 6 時間ごとに 1 回だけ）。「設定 → PC アプリ」に
-  今の版
+- 新しい版ができると、どのページの上にも「新しい版があります」とダウンロードのリンクが出る。公開サイトに聞いて知る
+  （`/val/app/latest`。起動して 1 分後と 6 時間ごとに 1 回だけ）。「設定 → PC アプリ」に今の版
+- ウィンドウの枠（タイトルバー）は、ページのダーク / ライトに合わせる
 - ほかのページを見ているときに試合が見つかると、ウィンドウがライブに切り替わる（前には出さない。「設定 → PC アプリ」で
   止められる）。ライブはエージェント選択と対戦中、ウィンドウの幅いっぱいに全員（味方 5 人とピック、対戦中は 10 人）が
   1 画面に収まる。試合が終わるとすぐ、結果・自分の成績・RR の増減がライブに出る（ゲームのサーバーから直接読む）

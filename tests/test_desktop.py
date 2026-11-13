@@ -3,6 +3,7 @@
 import base64
 import json
 import os
+import sys
 import tempfile
 import threading
 import time
@@ -686,6 +687,57 @@ class PlaceTest(unittest.TestCase):
         closing()
         saved = json.loads((self.folder / desktop.PLACE).read_text(encoding="utf-8"))
         self.assertEqual(saved, {"x": 200, "y": 100, "width": 1200, "height": 1000, "maximized": False})
+
+
+class TitleBarTest(unittest.TestCase):
+    """The window's title bar takes the page's look (desktop.follow_look)."""
+
+    class Handlers(list):  # pywebview's events: += adds a handler
+        def __iadd__(self, handler):
+            self.append(handler)
+            return self
+
+    def window(self, answer):
+        asked = []
+
+        def evaluate_js(script):
+            asked.append(script)
+            if isinstance(answer, Exception):
+                raise answer
+            return answer
+
+        handle = SimpleNamespace(ToInt64=lambda: 4242)
+        events = SimpleNamespace(loaded=self.Handlers())
+        window = SimpleNamespace(evaluate_js=evaluate_js, native=SimpleNamespace(Handle=handle), events=events)
+        put = []
+        desktop.follow_look(window, lambda handle, look: put.append((handle, look)))
+        return window, asked, put
+
+    def test_dark_page_dark_bar(self):
+        for dark in (True, False):
+            window, asked, put = self.window(dark)
+            self.assertEqual(put, [], "nothing before a page has loaded")
+            (loaded,) = window.events.loaded
+            loaded()
+            loaded()
+            self.assertEqual(put, [(4242, dark)] * 2, "at every page")
+            self.assertEqual(asked, [desktop.IS_DARK] * 2, "one question a page")
+
+    def test_the_owners_choice_before_windows_own(self):
+        self.assertIn("data-theme", desktop.IS_DARK)
+        self.assertIn("prefers-color-scheme: dark", desktop.IS_DARK)
+        self.assertLess(desktop.IS_DARK.index("data-theme"), desktop.IS_DARK.index("prefers-color-scheme"))
+
+    def test_a_page_that_does_not_answer(self):
+        for answer in (None, "dark", RuntimeError("the window is closing")):
+            window, _, put = self.window(answer)
+            window.events.loaded[0]()
+            self.assertEqual(put, [])
+
+    def test_no_bar_to_colour_elsewhere(self):
+        if sys.platform != "win32":
+            self.assertFalse(desktop.title_bar(4242, True))
+        self.assertFalse(desktop.title_bar(0, True), "no window")
 
 
 class ServerTest(unittest.TestCase):

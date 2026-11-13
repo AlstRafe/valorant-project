@@ -992,6 +992,7 @@ def _match_page(found: dict, me: str) -> dict:
     if not any(team["players"] for team in teams):  # Deathmatch: everyone for themselves, in one table
         teams = [{"id": "", "result": None, "players": lines(None)}]
     my_team = people[mine]["team"] if mine >= 0 else ""
+    teams.sort(key=lambda team: team["id"] != my_team)  # the team of the player the visitor came from, first
     team_sizes = {team["id"]: len(team["players"]) for team in teams}
     queue = str((metadata.get("queue") or {}).get("id") or "").lower()
     half = rounds_module.HALF.get(queue, 0)
@@ -1194,8 +1195,8 @@ def register(app: Flask) -> None:
 
     @app.get("/app/latest")
     def app_latest():
-        """The newest build of the PC app, for the app's own "there is a newer one" (release.py: it cannot ask
-        GitHub, the repository is private). The site only: the app itself has no clone to read."""
+        """The newest build of the PC app, for the app's own "there is a newer one" (release.py). The site only:
+        the app itself has no clone to read."""
         found = None if current_app.config.get("VAL_LOCAL") is not None else release.latest()
         if not found:
             abort(404)

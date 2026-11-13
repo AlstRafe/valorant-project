@@ -1,0 +1,58 @@
+# The PC app's screenshots (docs/screenshots, shown in the README): the app's real window on a Windows runner, on
+# made-up players and matches with the game's real names and pictures (tests/ui/shots.py, played.py). Run by hand
+# (Actions -> Screenshots -> Run workflow, on a branch), or by a push that changes how they are taken; the pictures
+# are committed to that branch, for a pull request.
+name: Screenshots
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore:
+      - master
+    paths:
+      - "tests/ui/shots.py"
+      - "tests/ui/played.py"
+      - ".github/workflows/screenshots.yml"
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: "1"
+
+concurrency:
+  group: screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shots:
+    name: Take the app's screenshots
+    runs-on: windows-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # the pictures, committed to the branch
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements.txt -r requirements-desktop.txt pillow==12.2.0
+      - name: A screen as large as a PC's
+        shell: pwsh
+        continue-on-error: true
+        run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+      - name: The owner's clock (the matches' times read as in Japan)
+        continue-on-error: true
+        run: tzutil /s "Tokyo Standard Time"
+      - name: Take them
+        run: python tests/ui/shots.py docs/screenshots
+      - name: Commit them to the branch
+        if: always()
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots
+          if git diff --cached --quiet; then echo "No picture changed."; exit 0; fi
+          git commit -m "Screenshots of the PC app"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
