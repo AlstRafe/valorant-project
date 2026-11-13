@@ -347,6 +347,14 @@ TEXTS = {
         "en-GB": "Shown at four times its size at 1080p.",
         "zh-TW": "以 1080p 的大小放大 4 倍顯示。",
     },
+    "止まっていて、撃っていないときの見た目です。": {
+        "ko": "가만히 서서 쏘지 않을 때의 모습입니다.",
+        "en-GB": "This is how it looks while standing still and not firing.",
+        "zh-TW": "這是站著不動、沒有射擊時的樣子。",
+    },
+    "{name}の広がり": {"ko": "{name} 벌어짐", "en-GB": "{name}: spread", "zh-TW": "{name}擴散"},
+    "移動エラー": {"ko": "이동 오차", "en-GB": "Movement error", "zh-TW": "移動誤差"},
+    "射撃エラー": {"ko": "사격 오차", "en-GB": "Firing error", "zh-TW": "射擊誤差"},
     "Riot が出しているメンテナンスと障害のお知らせです（PC 版）。": {
         "ko": "Riot이 공지한 점검과 장애 소식입니다(PC 버전).",
         "en-GB": "Riot's notices about maintenance and incidents (PC).",

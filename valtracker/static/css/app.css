@@ -1965,9 +1965,17 @@ meter {
   background: color-mix(in srgb, var(--loss) 20%, var(--card));
   color: var(--loss);
 }
-/* where the teams change sides (not "turn": the sensitivity page's .turn list would style it too) */
-.timeline li.swap {
-  margin-left: 0.6rem;
+/* where the teams change sides (not "turn": the sensitivity page's .turn list would style it too): a line in
+   the gap before the round, so its box stays as wide as the others */
+.timeline li.swap::before {
+  position: absolute;
+  top: -0.1rem;
+  bottom: -0.1rem;
+  left: calc(-0.125rem - 1px);
+  width: 2px;
+  border-radius: 1px;
+  background: var(--soft);
+  content: "";
 }
 .timeline a {
   display: grid;
