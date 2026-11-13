@@ -35,6 +35,8 @@ PLAYER, MATCH = "/p/Tester/JP1", "/m/ap/aaaaaaaa-0000-4000-8000-000000000001?me=
 #: /live/act, as the owner would), so that the button that locks the pick shows.
 PICK = "[...document.querySelectorAll('.pick-grid .pick:not([disabled])')].slice(0, 3).pop().click()"
 #: The first round's kills opened, and the first agent's page from the list of agents.
+#: A crosshair code as the game copies it (a small cyan cross), for the crosshair page to draw.
+CROSSHAIR = "0%3BP%3Bc%3B5%3Bh%3B0%3B0l%3B4%3B0o%3B2%3B0a%3B1%3B0f%3B0%3B1b%3B0"
 ROUND = "document.querySelector('details.round-feed').open = true"
 AGENT = "document.querySelector('.agent-grid a').click()"
 
@@ -72,7 +74,7 @@ SHOTS = (
     ("19-agents", "/agents", WIDE, "dark", ""),
     ("20-agent", "/agents", WIDE, "dark", "go:" + AGENT),
     ("21-tools", "/tools", WIDE, "dark", ""),
-    ("22-crosshair", "/crosshair", WIDE, "dark", ""),
+    ("22-crosshair", f"/crosshair?code={CROSSHAIR}", WIDE, "dark", ""),
     ("23-servers", "/servers", WIDE, "dark", ""),
     ("24-ranks", "/ranks", WIDE, "dark", ""),
     ("25-settings-update-notice", "/settings?update=1", WIDE, "dark", ""),
@@ -177,6 +179,8 @@ def take(window, folder: Path) -> None:
         found = handle()
         if not found:
             raise RuntimeError("the app's window was not found")
+        # the runner's pointer rests in the middle of the screen: whatever is under it would look pressed
+        ctypes.WinDLL("user32").SetCursorPos(2, 2)
         size = WIDE
         for name, path, wanted, look, script in SHOTS:
             if wanted != size:

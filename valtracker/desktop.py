@@ -22,8 +22,8 @@ Made never to get in VALORANT's way:
 What a window without a browser around it needs: other sites' links open in the default browser (app.js), back,
 forward and reload are buttons and keys (app.js), saving a picture or a calendar file asks where, the window opens
 where and as large as it was left (window.json), and a newer build is told on every page (the site is asked a
-minute after the start, then every few hours: one small request. GitHub cannot be asked: the repository is
-private).
+minute after the start, then every few hours: one small request), and the title bar is as dark or light as the
+page (follow_look).
 """
 
 from __future__ import annotations
@@ -310,7 +310,7 @@ def read_build() -> dict | None:
 
 
 def _latest(site: str) -> object:
-    """What the site says the newest build is (release.py: the repository is private, GitHub would say 404)."""
+    """What the site says the newest build is (release.py)."""
     if not site.startswith("https://"):
         raise ValueError("not a site to ask")
     request = urllib.request.Request(site + LATEST, headers={"User-Agent": "VALTracker-desktop"})

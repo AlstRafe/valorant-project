@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ agent.displayName }} · {{ site_name }}{% endblock %}
-{% block description %}{{ agent.description or t('役割とアビリティの説明です。') }}{% endblock %}
+{% block description %}{{ agent.description|plain or t('役割とアビリティの説明です。') }}{% endblock %}
 {% block main %}
 <section class="agent-head">
 {% if agent.fullPortrait or agent.displayIcon %}<img class="portrait" src="{{ media(agent.fullPortrait or agent.displayIcon) }}" alt="" width="240" height="240">{% endif %}
@@ -8,14 +8,14 @@
 <p class="meta"><a href="{{ url_for('agents') }}">← {{ t('エージェント') }}</a></p>
 <h1>{{ agent.displayName }}</h1>
 {% if agent.role %}<p class="role">{% if agent.role.displayIcon %}<img src="{{ media(agent.role.displayIcon) }}" alt="" width="20" height="20">{% endif %}{{ agent.role.displayName }}</p>{% endif %}
-<p class="lead">{{ agent.description }}</p>
+<p class="lead">{{ agent.description|plain }}</p>
 </div>
 </section>
 <section aria-labelledby="ab-title">
 <h2 id="ab-title">{{ t('アビリティ') }}</h2>
 <ul class="abilities">
 {% for ability in abilities %}
-<li>{% if ability.displayIcon %}<img src="{{ media(ability.displayIcon) }}" alt="" width="40" height="40">{% endif %}<div><h3>{{ ability.displayName }}{% if ability.slot == 'Ultimate' %} <small>{{ t('アルティメット') }}</small>{% endif %}</h3><p>{{ ability.description }}</p></div></li>
+<li>{% if ability.displayIcon %}<img src="{{ media(ability.displayIcon) }}" alt="" width="40" height="40">{% endif %}<div><h3>{{ ability.displayName }}{% if ability.slot == 'Ultimate' %} <small>{{ t('アルティメット') }}</small>{% endif %}</h3><p>{{ ability.description|plain }}</p></div></li>
 {% endfor %}
 </ul>
 </section>

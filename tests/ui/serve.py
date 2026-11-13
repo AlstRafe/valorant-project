@@ -301,21 +301,26 @@ def seed(activity, now: float) -> None:
     """Matches over the last 14 days, most in the evening (Japan time), and waits between pairs of them."""
     pick = random.Random(4)
     listed = []
+
+    def evening() -> float:
+        """A start in the last 14 days: evenings busy, mornings quiet."""
+        while True:
+            hour = pick.random() * 24
+            if pick.random() < 0.15 + 0.85 * (0.5 + 0.5 * math.cos((hour - 22) / 12 * math.pi)) ** 2:
+                break
+        started = now // 86400 * 86400 - pick.randint(0, 13) * 86400 + (hour - 9) * 3600
+        return started - 86400 if started > now else started
+
     for cluster, size in SERVERS.items():
         for number in range(size):
-            while True:  # evenings busy, mornings quiet
-                hour = pick.random() * 24
-                if pick.random() < 0.15 + 0.85 * (0.5 + 0.5 * math.cos((hour - 22) / 12 * math.pi)) ** 2:
-                    break
-            started = now // 86400 * 86400 - pick.randint(0, 13) * 86400 + (hour - 9) * 3600
-            started = started - 86400 if started > now else started
+            started = evening()
             tier = pick.randint(8, 24)
             listed.append(
                 _match(f"{cluster}-{number}", started, cluster, "competitive", tier, pick if number < 60 else None)
             )
     activity.seen(listed)
     for number in range(60):
-        start = now - pick.randint(1, 13) * 86400
+        start = evening() - 3600  # at any hour, as the rest: all at this hour of the day made it the busiest
         tier = pick.choice((10, 12, 17, 18, 22, 25))
         queue = "competitive" if number % 3 else "unrated"
         wait = int(pick.gauss(150 + tier * 6, 40))
@@ -573,6 +578,9 @@ def main() -> None:
     last_match(app)
     if "--real" in flags:
         four_offers(app)
+        if local is not None:  # the settings page as the built app's on its owner's PC, not this run's temporary folder
+            app.config["VAL_BUILD"] = {"commit": "5c0ffee" + "0" * 33, "time": 0, "date": "2026-11-12 21:40"}
+            app.context_processor(lambda: {"data_folder": r"C:\Users\Owner\AppData\Local\VAL Tracker"})
     inner = app.wsgi_app
     next_live: list[str] = []
 

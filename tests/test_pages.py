@@ -362,12 +362,18 @@ class PagesTest(unittest.TestCase):
         self.assertIn("Mate", text)
         self.assertEqual(len(self.fetch.henrik_calls()), calls, "the match list had it already")
 
+    def test_a_match_begins_with_the_team_of_the_player_the_visitor_came_from(self):
+        text = self.get(f"/m/ap/{MATCH}?me=Tester%23JP1").get_data(as_text=True)
+        self.assertLess(text.index('<h2 id="team-1"><span>レッド'), text.index('<h2 id="team-2"><span>ブルー'))
+        text = self.get(f"/m/ap/{MATCH}?me=Other%23EUW").get_data(as_text=True)
+        self.assertLess(text.index('<h2 id="team-1"><span>ブルー'), text.index('<h2 id="team-2"><span>レッド'))
+
     def test_a_match_round_by_round(self):
         text = self.get(f"/m/ap/{MATCH}?me=Tester%23JP1").get_data(as_text=True)
         self.assertIn('href="/p/Tester/JP1">← Tester#JP1 の戦績', text)
         self.assertIn("平均ランク", text)
         self.assertEqual(text.count('<li class="win'), 13)  # Tester's team won 13 rounds
-        self.assertIn('<li class="win turn"', text)  # the second half begins at round 13
+        self.assertIn('<li class="win swap"', text)  # the second half begins at round 13
         self.assertIn('<use href="#end-detonate"/>', text)
         self.assertIn('<span class="cer">CLUTCH</span>', text)
         self.assertIn("レッド: エコ", text)  # 800 a player in a pistol round
@@ -421,6 +427,9 @@ class PagesTest(unittest.TestCase):
         page = self.get("/agents/11111111-1111-4111-8111-111111111111")
         self.assertEqual(page.status_code, 200)
         self.assertIn("ジェット の説明", page.get_data(as_text=True))
+        # the game's own marks in an ability's text ("<whitebold>…</>") are not shown
+        self.assertIn("<p>大技を構える。ダメージを与える。</p>", page.get_data(as_text=True))
+        self.assertNotIn("whitebold", page.get_data(as_text=True))
         self.assertEqual(self.get("/agents/nope").status_code, 404)
 
     def test_agents_in_korean_ask_for_korean(self):

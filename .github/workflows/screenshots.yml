@@ -41,6 +41,9 @@ jobs:
         shell: pwsh
         continue-on-error: true
         run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
+      - name: The owner's clock (the matches' times read as in Japan)
+        continue-on-error: true
+        run: tzutil /s "Tokyo Standard Time"
       - name: Take them
         run: python tests/ui/shots.py docs/screenshots
       - name: Commit them to the branch

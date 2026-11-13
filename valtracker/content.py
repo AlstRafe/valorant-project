@@ -23,6 +23,16 @@ MEDIA = "https://media.valorant-api.com/"
 #: Where the skins' videos are (Riot's own CDN; valorant-api.com names them): the only outside addresses a page
 #: may play from (security.CSP's media-src).
 VIDEOS = ("https://valorant.dyn.riotcdn.net/", MEDIA)
+#: The marks the game colours its own texts with (an ability's "<whitebold>…</>", "<debuffred>…</>"): they mean
+#: nothing on a page.
+MARKS = re.compile(r"</?[A-Za-z][A-Za-z0-9_]*>|</>")
+
+
+def plain(text) -> str:
+    """A text of the game (an agent's or an ability's description) without the game's own marks."""
+    return MARKS.sub("", str(text or ""))
+
+
 KINDS = {
     "agents": "/agents?isPlayableCharacter=true&language={lang}",
     "maps": "/maps?language={lang}",
