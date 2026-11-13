@@ -26,7 +26,7 @@
 {% if playing %}
 <ul class="seats">
 {% for row in playing %}
-<li class="seat friend {{ row.where }}{% if row.mine %} me{% endif %}" data-name="{{ (row.name ~ '#' ~ row.tag)|lower }}">
+<li class="seat friend{% if row.mine %} me{% endif %}" data-name="{{ (row.name ~ '#' ~ row.tag)|lower }}">
 {% if row.card %}<img src="{{ media(row.card) }}" alt="" width="40" height="40" loading="lazy">{% else %}<span class="no-agent" aria-hidden="true">{{ row.name[:1] }}</span>{% endif %}
 <span class="seat-text">
 {{ name_of(row) }}
@@ -34,7 +34,7 @@
 {%- if row.queue %}{% set _ = parts.append(row.queue) %}{% endif -%}
 {%- if row.map %}{% set _ = parts.append(row.map) %}{% endif -%}
 {%- if row.score %}{% set _ = parts.append(row.score) %}{% endif %}
-<small class="friend-where"><span class="dot {{ row.where }}" aria-hidden="true"></span>{{ parts|join(' · ') }}</small>
+<small class="friend-where"><span class="dot at-{{ row.where }}" aria-hidden="true"></span>{{ parts|join(' · ') }}</small>
 {%- set more = [] -%}
 {%- if row.party %}{% set _ = more.append(t('パーティー {count}人', count=row.party) ~ (t('（参加できます）') if row.open else '')) %}{% elif row.open %}{% set _ = more.append(t('パーティーに参加できます')) %}{% endif -%}
 {%- if row.level %}{% set _ = more.append(t('レベル {level}', level=row.level)) %}{% endif -%}
@@ -63,7 +63,7 @@
 <h2 id="friends-offline">{{ t('オフライン') }} <small>{{ offline|length }}</small></h2>
 <ul class="seats friends-small">
 {% for row in offline %}
-<li class="seat friend off" data-name="{{ (row.name ~ '#' ~ row.tag)|lower }}"><span class="seat-text">{{ name_of(row) }}
+<li class="seat friend friend-off" data-name="{{ (row.name ~ '#' ~ row.tag)|lower }}"><span class="seat-text">{{ name_of(row) }}
 <small>{% if row.last %}{{ t('最後のオンライン') }} <time datetime="{{ row.last.iso }}">{{ row.last.text }}</time>{% else %}{{ t('オフライン') }}{% endif %}{% if row.note %} · {{ row.note }}{% endif %}</small></span></li>
 {% endfor %}
 </ul>

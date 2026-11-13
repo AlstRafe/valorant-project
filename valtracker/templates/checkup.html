@@ -12,7 +12,7 @@
 <h2 id="check-{{ group.key }}">{{ t(group.name) }}</h2>
 <ul class="checks">
 {% for item in group['items'] %}
-<li class="check {{ item.state }}"><span class="check-mark" aria-hidden="true">{{ {'ok': '✓', 'part': '!', 'bad': '✕'}.get(item.state, '–') }}</span><span class="check-text"><strong>{{ t(item.name) }}</strong><span>{{ t(item.words, **item['values']) }}{% if item.state in ('bad', 'part') and item.code %} <code>{{ item.code }}</code>{% endif %}</span></span><span class="sr">{{ t('問題なし') if item.state == 'ok' else t('問題あり') if item.state in ('bad', 'part') else t('確かめていません') if item.state == 'skip' else '' }}</span></li>
+<li class="check check-{{ item.state }}"><span class="check-mark" aria-hidden="true">{{ {'ok': '✓', 'part': '!', 'bad': '✕'}.get(item.state, '–') }}</span><span class="check-text"><strong>{{ t(item.name) }}</strong><span>{{ t(item.words, **item['values']) }}{% if item.state in ('bad', 'part') and item.code %} <code>{{ item.code }}</code>{% endif %}</span></span><span class="sr">{{ t('問題なし') if item.state == 'ok' else t('問題あり') if item.state in ('bad', 'part') else t('確かめていません') if item.state == 'skip' else '' }}</span></li>
 {% endfor %}
 </ul>
 </section>

@@ -538,6 +538,124 @@ def desktop_client(folder: Path):
     return LocalClient(lockfile, folder / "ShooterGame.log", ask=FakeClient())
 
 
+def made_up_friends(app, local, now: float) -> None:
+    """The owner's friends in the made-up Riot Client (the PC app's /friends): a few in VALORANT in every place a
+    presence can name (in both shapes the game has used), one in another game, the rest offline. The cards, maps
+    and ranks are the content's own (the real ones with --real)."""
+    import base64
+
+    content = app.config["VAL_CONTENT"]
+    cards = [item["uuid"] for item in content._list("playercards", "ja") if isinstance(item, dict) and item.get("uuid")]
+    maps = sorted({str(item.get("mapUrl") or "") for item in content.map_index("ja").values()} - {""})
+    tiers = sorted(tier for tier in content.tiers("ja") if tier > 2)
+    client = local.ask
+    mine = client.presences[0]
+    party = "9a000000-0000-4000-8000-000000000001"  # the owner's (test_desktop.PARTY)
+    other = "9b000000-0000-4000-8000-000000000002"
+
+    def pick(items: list, index: int, default=""):
+        return items[index % len(items)] if items else default
+
+    playing = [
+        # name, tag, the presence's fields, whether in the shape of before 2024
+        ("Mochi", "JP1", {"sessionLoopState": "MENUS", "partyId": party, "partySize": 2, "maxPartySize": 5}, False),
+        (
+            "Kazehaya",
+            "0715",
+            {
+                "sessionLoopState": "INGAME",
+                "queueId": "competitive",
+                "partyOwnerMatchScoreAllyTeam": 9,
+                "partyOwnerMatchScoreEnemyTeam": 7,
+                "partyId": other,
+                "partySize": 3,
+                "maxPartySize": 5,
+            },
+            False,
+        ),
+        (
+            "ねこまる",
+            "neko",
+            {
+                "sessionLoopState": "INGAME",
+                "queueId": "competitive",
+                "partyOwnerMatchScoreAllyTeam": 9,
+                "partyOwnerMatchScoreEnemyTeam": 7,
+                "partyId": other,
+                "partySize": 3,
+                "maxPartySize": 5,
+            },
+            True,
+        ),
+        ("Ramune", "soda", {"sessionLoopState": "PREGAME", "queueId": "unrated", "partySize": 1}, False),
+        (
+            "Shiro",
+            "4649",
+            {"sessionLoopState": "MENUS", "partyState": "MATCHMAKING", "queueId": "swiftplay", "partySize": 2},
+            False,
+        ),
+        (
+            "Tsubame",
+            "sky",
+            {"sessionLoopState": "MENUS", "partySize": 2, "maxPartySize": 5, "partyAccessibility": "OPEN"},
+            False,
+        ),
+        ("Yuzu", "JP2", {"sessionLoopState": "INGAME", "provisioningFlow": "ShootingRange", "partySize": 1}, False),
+        ("Hinata", "sun", {"sessionLoopState": "MENUS", "isIdle": True, "partySize": 1}, False),
+    ]
+    friends, presences = [], [mine]
+    for index, (name, tag, fields, flat) in enumerate(playing):
+        puuid = f"0d0d0d0d-1111-4222-8333-{index:012d}"
+        fields = {
+            "matchMap": pick(maps, index),
+            "competitiveTier": pick(tiers, index * 3 + 9, 0),
+            "accountLevel": 40 + index * 37,
+            "playerCardId": pick(cards, index),
+            **fields,
+        }
+        if flat:
+            data = fields
+        else:
+            match = ("sessionLoopState", "queueId", "matchMap", "provisioningFlow")
+            player = ("competitiveTier", "accountLevel", "playerCardId")
+            data = {
+                "isValid": True,
+                "matchPresenceData": {key: fields[key] for key in match if key in fields},
+                "playerPresenceData": {key: fields[key] for key in player if key in fields},
+                "partyPresenceData": {
+                    key: value for key, value in fields.items() if key.startswith(("party", "maxParty"))
+                },
+                "isIdle": bool(fields.get("isIdle")),
+            }
+            # the scores stay at the top, as the game writes them
+            data |= {key: value for key, value in fields.items() if key.startswith("partyOwnerMatchScore")}
+        friends.append(
+            {"puuid": puuid, "game_name": name, "game_tag": tag, "note": "高校の友だち" if index == 4 else ""}
+        )
+        presences.append(
+            {
+                "puuid": puuid,
+                "product": "valorant",
+                "state": "away" if fields.get("isIdle") else "chat",
+                "private": base64.b64encode(json.dumps(data).encode()).decode(),
+            }
+        )
+    friends.append({"puuid": "0e0e0e0e-1111-4222-8333-000000000001", "game_name": "Lemon", "game_tag": "LoL"})
+    presences.append({"puuid": friends[-1]["puuid"], "product": "league_of_legends", "state": "chat"})
+    gone = ("Aoi#blue", "Sora#1203", "Kuro#9999", "Minato#port", "Rin#JP7", "Haru#0401", "Nagi#calm", "Tora#8888")
+    for index, riot_id in enumerate(gone):
+        name, _, tag = riot_id.partition("#")
+        friends.append(
+            {
+                "puuid": f"0f0f0f0f-1111-4222-8333-{index:012d}",
+                "game_name": name,
+                "game_tag": tag,
+                "last_online_ts": int((now - 3600 * (2 + index * index * 9)) * 1000),
+            }
+        )
+    client.friends, client.presences = friends, presences
+
+
 def main() -> None:
     flags = [arg for arg in sys.argv[1:] if arg.startswith("--")]
     numbers = [arg for arg in sys.argv[1:] if not arg.startswith("--")]
@@ -576,6 +694,8 @@ def main() -> None:
     seed_sets(app)
     full_lobby(app)
     last_match(app)
+    if local is not None:
+        made_up_friends(app, local, time.time())
     if "--real" in flags:
         four_offers(app)
         if local is not None:  # the settings page as the built app's on its owner's PC, not this run's temporary folder

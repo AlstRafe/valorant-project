@@ -6,10 +6,12 @@
 // faint to see where they are (WCAG 1.4.11). Every page in every language
 // at the widths the site is designed for (docs/CONVENTIONS.md).
 //
-//   node tests/ui/audit.js <base, e.g. http://127.0.0.1:5077> [--live] [--quick]
+//   node tests/ui/audit.js <base, e.g. http://127.0.0.1:5077> [--live] [--quick] [--desktop]
 //
 // --live: the real site (fewer pages at once, follows the leaderboard to a real player and match). Exit code 1
 // when something is found, with one line per problem and where it shows.
+// --desktop: only the pages the PC app has and the site has not, or shows differently (the server run with
+// tests/ui/serve.py --desktop).
 "use strict";
 
 const { chromium } = require("playwright");
@@ -17,6 +19,9 @@ const { chromium } = require("playwright");
 const [base, ...flags] = process.argv.slice(2);
 const live = flags.includes("--live");
 const quick = flags.includes("--quick");
+const desktop = flags.includes("--desktop");
+// The PC app's own pages: the friends, the checkup, its settings, and where they are linked from.
+const DESKTOP_PAGES = ["/friends", "/checkup", "/settings", "/help", "/"];
 const WIDTHS = [360, 760, 1000, 1440];
 const LANGS = quick ? ["ja", "en-GB"] : ["ja", "ko", "en-GB", "zh-TW"];
 const THEMES = live || quick ? ["light"] : ["light", "dark"];
@@ -425,7 +430,7 @@ async function main() {
     }
     problems.get(key).seen.add(at);
   };
-  let pages = live ? PAGES : PAGES.concat(MADE_UP);
+  let pages = desktop ? DESKTOP_PAGES : live ? PAGES : PAGES.concat(MADE_UP);
   for (const theme of THEMES) {
     for (const lang of LANGS) {
       for (const width of WIDTHS) {
@@ -474,7 +479,7 @@ async function main() {
       }
     }
   }
-  if (!live) await livePage(browser);
+  if (!live && !desktop) await livePage(browser);
   await browser.close();
   for (const [kind, where, what, text] of early) add(kind, where, what, text, "once");
   console.log("\n--- all problems, and everywhere they show ---");

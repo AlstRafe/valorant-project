@@ -5514,12 +5514,12 @@ code {
 .friends-small .seat {
   padding: 0.45rem 0.8rem;
 }
-.friend.off strong a {
+.friend-off strong a {
   color: var(--soft);
 }
 .friend-where {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.4rem;
 }
 .seat-text .friend-where {
@@ -5529,22 +5529,33 @@ code {
   flex: none;
   width: 0.55rem;
   height: 0.55rem;
+  margin-top: 0.42em; /* beside the first line when the words take two */
   border-radius: 50%;
   background: var(--win);
 }
-.friend-where .dot.ingame,
-.friend-where .dot.pregame,
-.friend-where .dot.found {
+.friend-where .at-ingame,
+.friend-where .at-pregame,
+.friend-where .at-found {
   background: var(--accent);
 }
-.friend-where .dot.queue,
-.friend-where .dot.custom,
-.friend-where .dot.range {
+.friend-where .at-queue,
+.friend-where .at-custom,
+.friend-where .at-range {
   background: var(--draw);
 }
-.friend-where .dot.away {
+.friend-where .at-away {
   background: transparent;
   box-shadow: inset 0 0 0 2px var(--soft);
+}
+
+/* The PC app's own choices on the settings page, and the checkup's buttons: side by side, wrapping. */
+.app-prefs .row,
+form.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
 }
 
 /* The PC app's checkup (checkup.html): each thing the app reads, with whether it could be read. */
@@ -5577,15 +5588,15 @@ code {
   line-height: 1.4rem;
   text-align: center;
 }
-.check.ok .check-mark {
+.check-ok .check-mark {
   background: color-mix(in srgb, var(--win) 22%, transparent);
   color: var(--win);
 }
-.check.bad .check-mark {
+.check-bad .check-mark {
   background: color-mix(in srgb, var(--loss) 22%, transparent);
   color: var(--loss);
 }
-.check.part .check-mark {
+.check-part .check-mark {
   background: color-mix(in srgb, var(--draw) 30%, transparent);
   color: var(--ink);
 }
@@ -5599,8 +5610,8 @@ code {
   color: var(--soft);
   font-size: 0.9rem;
 }
-.check.bad .check-text > span,
-.check.part .check-text > span {
+.check-bad .check-text > span,
+.check-part .check-text > span {
   color: var(--ink);
 }
 .report {

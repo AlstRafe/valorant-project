@@ -357,7 +357,8 @@ class LocalClient:
             kept = self._friends
             if kept is not None and kept[1] == door and self.clock() - kept[0] < FRIENDS_KEEP:
                 return kept[2]
-            me = (self._tokens or {}).get("puuid", "")
+        signed = self.signed_in()  # who the owner is (kept: asked of the client once an hour)
+        me = signed[1]["puuid"] if signed else ""
         try:
             listed, present = self._get(door, "/chat/v4/friends"), self._get(door, "/chat/v4/presences")
         except LocalError:

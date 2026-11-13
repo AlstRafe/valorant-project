@@ -5,6 +5,7 @@ import base64
 import json
 import re
 import tempfile
+import threading
 import time
 import unittest
 from datetime import UTC, datetime
@@ -287,7 +288,7 @@ class AlertTest(unittest.TestCase):
         self.alert = pc.Alert(self.settings, self.folder, lambda: 42, self.windows, wait=lambda seconds: True)
 
     def settle(self):
-        for thread in list(mock.threading.enumerate()):
+        for thread in list(threading.enumerate()):
             if thread.name == "alert":
                 thread.join(5)
 
