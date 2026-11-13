@@ -11,8 +11,8 @@ the PC (tests/test_desktop.py's FakeClient), not with a pasted ssid.
 
 --real: the game's own names and pictures (valorant-api.com is asked for real, so this needs the network) around
 the made-up players and matches: the pages as an owner sees them, for the screenshots (tests/ui/shots.py). The
-fixtures' made-up ids are swapped for the real things they stand for. ``?update=1`` on any address says that a
-newer PC app is out.
+fixtures' made-up ids are swapped for the real things they stand for, and the made-up player's matches are whole
+ones (played.py: five against five, on several maps). ``?update=1`` on any address says that a newer PC app is out.
 """
 
 import json
@@ -32,6 +32,7 @@ sys.path[:0] = [str(TESTS), str(TESTS.parent)]
 os.environ["VAL_HENRIK_KEY"] = ""
 
 import helpers  # noqa: E402
+import played  # noqa: E402
 from helpers import make_app  # noqa: E402
 
 from valtracker import release  # noqa: E402
@@ -58,9 +59,15 @@ REAL_SKINS = {
 #: --real: more skins for the day's store (it has four), and who plays what in the made-up lobby.
 REAL_STORE = ("Oni Phantom", "Ion Sheriff", "Glitchpop Frenzy")
 REAL_LOBBY = ("Jett", "Omen", "Killjoy", "Sage", "Raze", "Viper", "Cypher", "Breach", "Reyna", "Skye")
-#: --real: made-up id -> real id (real_ids), and the real things found by their English names.
+#: --real: the maps the made-up matches are played on (those of these that the game has now), and what the made-up
+#: player plays and how often.
+REAL_MAPS = ("Ascent", "Haven", "Bind", "Lotus", "Sunset", "Split", "Icebox", "Pearl", "Abyss", "Breeze", "Corrode")
+REAL_MINE = (("Jett", 5), ("Reyna", 2), ("Omen", 2), ("Sova", 1))
+#: --real: made-up id -> real id (real_ids), the real things found by their English names (maps: a list of
+#: valorant-api.com's), and the fixtures that are made anew (made_up_record).
 SWAP: dict[str, str] = {}
-FOUND: dict[str, dict] = {"agents": {}, "skins": {}}
+FOUND: dict = {"agents": {}, "skins": {}, "weapons": {}, "maps": []}
+MADE: dict[str, bytes] = {}
 
 
 def real(made_up: str) -> str:
@@ -85,7 +92,15 @@ def real_ids(fetch) -> None:
     made = json.loads(helpers.fixture("content_collection.json"))
     agents = FOUND["agents"] = {item["displayName"]: item["uuid"] for item in ask("agents?isPlayableCharacter=true")}
     SWAP[JETT], SWAP[SOVA] = agents["Jett"], agents["Sova"]
-    skins = FOUND["skins"] = {skin["displayName"]: skin for weapon in ask("weapons") for skin in weapon["skins"]}
+    arsenal = ask("weapons")
+    FOUND["weapons"] = {weapon["displayName"]: weapon["uuid"] for weapon in arsenal}
+    skins = FOUND["skins"] = {skin["displayName"]: skin for weapon in arsenal for skin in weapon["skins"]}
+    # the maps of five against five: they have sites, a minimap and named places
+    maps = {item["displayName"]: item for item in ask("maps") if item.get("callouts") and item.get("displayIcon")}
+    sited = {name: item for name, item in maps.items() if "Sites" in str(item.get("tacticalDescription"))} or maps
+    FOUND["maps"] = [sited[name] for name in REAL_MAPS if name in sited][:7] or list(sited.values())[:7]
+    if not FOUND["maps"]:
+        raise SystemExit("--real: valorant-api.com names no map with a minimap and named places")
     for weapon in made["weapons"]:
         for skin in weapon["skins"]:
             true = skins.get(REAL_SKINS.get(skin["uuid"], ""))
@@ -142,10 +157,70 @@ def real_ids(fetch) -> None:
         true = contract(kind, relation)
         if true:
             SWAP[f"c0000000-0000-4000-8000-{number:012d}"] = true["uuid"]
+    places = ", ".join(item["displayName"] for item in FOUND["maps"])
     print(f"--real: {len(SWAP)} made-up ids stand for real ones; the act: {current.get('displayName')}", flush=True)
+    print(f"--real: the made-up matches are played on {places}", flush=True)
+
+
+def _mine(pick) -> str:
+    """--real: the agent the made-up player plays in a match."""
+    known = [item for item in REAL_MINE if item[0] in FOUND["agents"]] or [(sorted(FOUND["agents"])[0], 1)]
+    return pick.choices([name for name, _ in known], [often for _, often in known])[0]
+
+
+def made_up_record(now: float) -> int:
+    """--real: what HenrikDev answers about the made-up player (MADE): twelve whole matches of the last days
+    (played.py) and the RR that each competitive one moved, ending at the rank of henrik_mmr.json. Returns the
+    player's rating before the oldest of them (seed_lifetime goes on from there)."""
+    pick = random.Random(11)
+    current = json.loads(_fixture("henrik_mmr.json"))["data"]["current"]
+    elo = current["elo"]
+    matches, history = [], []
+    for number, hours in enumerate((0.8, 1.7, 2.6, 21.5, 22.4, 23.3, 45.9, 46.8, 70.2, 71.1, 94.6, 119.3)):
+        queue = "unrated" if number in (4, 9) else "competitive"
+        victory = number == 0 or pick.random() < 0.55
+        found = played.match(
+            pick,
+            f"aaaaaaaa-0000-4000-8000-{number + 1:012d}",
+            now - hours * 3600,
+            pick.choice(FOUND["maps"]),
+            FOUND["agents"],
+            FOUND["weapons"],
+            won=victory,
+            mine=_mine(pick),
+            mate=pick.random() < 0.6,
+            queue=queue,
+        )
+        matches.append(found)
+        if queue != "competitive":
+            continue
+        change = current["last_change"] if number == 0 else pick.randint(16, 26) if victory else -pick.randint(12, 22)
+        history.append(
+            {
+                "currenttier": elo // 100 + 3,
+                "currenttierpatched": "",
+                "images": {},
+                "match_id": found["metadata"]["match_id"],
+                "map": found["metadata"]["map"],
+                "season_id": "s2",
+                "ranking_in_tier": elo % 100,
+                "mmr_change_to_last_game": change,
+                "elo": elo,
+                "date": "",
+                "date_raw": int(now - hours * 3600),
+            }
+        )
+        elo -= change
+    MADE["henrik_matches.json"] = json.dumps({"status": 200, "data": matches}).encode()
+    MADE["henrik_mmr_history.json"] = json.dumps(
+        {"status": 200, "name": "Tester", "tag": "JP1", "data": history}
+    ).encode()
+    return elo
 
 
 def _fixture(name: str, original=helpers.fixture) -> bytes:
+    if name in MADE:
+        return MADE[name]
     data = original(name)
     if name == "henrik_matches.json":
         longest, tag = LONGEST
@@ -154,7 +229,13 @@ def _fixture(name: str, original=helpers.fixture) -> bytes:
     if SWAP and not name.startswith("content_"):
         text = data.decode("utf-8")
         # the names that test the pages (the longest there can be, one with HTML in it) read as ordinary ones
-        for odd, plain in ((LONGEST[0], "Hikari"), (LONGEST[1], "JP2"), ("<b>Foe</b>", "Kaze")):
+        ordinary = (
+            (LONGEST[0], "Hikari"),
+            (LONGEST[1], "JP2"),
+            ("<b>Foe</b>", "Kaze"),
+            ("Teammate", played.MATE_NAME[0]),
+        )
+        for odd, plain in ordinary:
             text = text.replace(odd, plain)
         for made_up, true in SWAP.items():
             text = text.replace(made_up, true).replace(made_up.upper(), true.upper())
@@ -243,36 +324,69 @@ def seed(activity, now: float) -> None:
         activity.seen([first, second], f"player-{number}")
 
 
-def seed_lifetime(app, now: float) -> None:
+def seed_lifetime(app, now: float, rating: int = 0) -> None:
     """The made-up player's lifetime (archive.py): 60 more of their matches over two years, 25 stored lines older
-    than those (no rounds) and the RR of 80 competitive matches, so the lifetime page has pages and long charts."""
+    than those (no rounds) and the RR of 80 competitive matches, so the lifetime page has pages and long charts.
+    --real (``rating``: theirs before the latest matches, made_up_record): whole matches, the RR as they went."""
     from valtracker import henrik
 
     pick = random.Random(7)
-    base = henrik._slim_matches(json.loads(helpers.fixture("henrik_matches.json"))["data"])
-    matches, changes, elo = [], {}, 1650
-    for number in range(60):
-        match = json.loads(json.dumps(base[number % len(base)]))
-        started = now - (number + 1) * 11 * 86400 - pick.randint(0, 80000)
-        match["metadata"]["match_id"] = f"dddddddd-0000-4000-8000-{number:012d}"
-        match["metadata"]["started_at"] = datetime.fromtimestamp(started, UTC).isoformat()
-        for player in match["players"]:
-            player["stats"]["kills"] = pick.randint(6, 30)
-            player["stats"]["deaths"] = pick.randint(8, 22)
-        matches.append(match)
-    for number in range(80):
-        change = pick.choice((-1, 1)) * pick.randint(12, 28)
-        elo += change
-        changes[f"dddddddd-0000-4000-8000-{number:012d}"] = {
-            "change": change,
-            "tier": elo // 100 + 3,
-            "rr": elo % 100,
-            "elo": elo,
-            "at": int(now - (number + 1) * 8 * 86400),
-        }
+    matches, changes, elo = [], {}, rating or 1650
+    if rating:
+        whole = []
+        for number in range(60):
+            started = now - (number + 1) * 11 * 86400 - pick.randint(0, 80000)
+            queue = "unrated" if number % 6 == 5 else "competitive"
+            found = played.match(
+                pick,
+                f"dddddddd-0000-4000-8000-{number:012d}",
+                started,
+                pick.choice(FOUND["maps"]),
+                FOUND["agents"],
+                FOUND["weapons"],
+                won=pick.random() < 0.54,
+                mine=_mine(pick),
+                mate=pick.random() < 0.5,
+                queue=queue,
+            )
+            whole.append(found)
+            if queue == "competitive":  # newest first: the rating after each match, then the one before it
+                change = pick.randint(16, 26) if played.is_win(found) else -pick.randint(12, 22)
+                at = int(started)
+                changes[found["metadata"]["match_id"]] = {
+                    "change": change,
+                    "tier": elo // 100 + 3,
+                    "rr": elo % 100,
+                    "elo": elo,
+                    "at": at,
+                }
+                elo -= change
+        matches = henrik._slim_matches(whole)
+    else:
+        base = henrik._slim_matches(json.loads(helpers.fixture("henrik_matches.json"))["data"])
+        for number in range(60):
+            match = json.loads(json.dumps(base[number % len(base)]))
+            started = now - (number + 1) * 11 * 86400 - pick.randint(0, 80000)
+            match["metadata"]["match_id"] = f"dddddddd-0000-4000-8000-{number:012d}"
+            match["metadata"]["started_at"] = datetime.fromtimestamp(started, UTC).isoformat()
+            for player in match["players"]:
+                player["stats"]["kills"] = pick.randint(6, 30)
+                player["stats"]["deaths"] = pick.randint(8, 22)
+            matches.append(match)
+        for number in range(80):
+            change = pick.choice((-1, 1)) * pick.randint(12, 28)
+            elo += change
+            changes[f"dddddddd-0000-4000-8000-{number:012d}"] = {
+                "change": change,
+                "tier": elo // 100 + 3,
+                "rr": elo % 100,
+                "elo": elo,
+                "at": int(now - (number + 1) * 8 * 86400),
+            }
     lines = []
     for number in range(25):
         started = now - (700 + number * 9) * 86400
+        place = pick.choice(FOUND["maps"]) if rating else {}
         lines.append(
             {
                 "id": f"eeeeeeee-0000-4000-8000-{number:012d}",
@@ -281,11 +395,11 @@ def seed_lifetime(app, now: float) -> None:
                 "at": int(started),
                 "queue": "competitive",
                 "cluster": "Tokyo",
-                "map": "Ascent",
-                "map_id": "7eaecc1b-4337-bbf6-6ab9-04b8f06b3319",
+                "map": place.get("displayName", "Ascent"),
+                "map_id": place.get("uuid", "7eaecc1b-4337-bbf6-6ab9-04b8f06b3319"),
                 "us": 13,
                 "them": pick.randint(3, 11) if number % 3 else 14,
-                "agent": real(JETT),
+                "agent": FOUND["agents"][_mine(pick)] if rating else real(JETT),
                 "tier": 14,
                 "won": bool(number % 3),
                 "rounds": 24,
@@ -372,12 +486,21 @@ def full_lobby(app) -> None:
 
 def last_match(app) -> None:
     """Riot's record of the match the owner is in on /live?phase=ingame: once it is "over" (/live?phase=menus, or
-    the game closed), /live shows its result (owner._last_result)."""
+    the game closed), /live shows its result (owner._last_result). --real: a whole match (played.py), on the map
+    and with the agent of the match that /live?phase=ingame shows."""
     pd = app.riot.pd
     match_id = pd["coregame"]["MatchID"].lower()
-    record = json.dumps(pd["matches"]["bbbbbbbb-0000-4000-8000-000000000001"]).replace(pd["player"], helpers.PUUID)
-    record = json.loads(record)
-    record["matchInfo"] |= {"matchId": match_id, "gameStartMillis": int(time.time() - 2400) * 1000}
+    if FOUND["maps"]:
+        place = next((item for item in FOUND["maps"] if item["displayName"] == "Ascent"), FOUND["maps"][0])
+        how = {"won": True, "mine": "Sova", "queue": "competitive"}
+        found = played.match(
+            random.Random(5), match_id, time.time() - 2400, place, FOUND["agents"], FOUND["weapons"], **how
+        )
+        record = played.to_pd(found, place, real("aaaaaaaa-1111-4222-8333-000000000000"), helpers.PUUID)
+    else:
+        record = json.dumps(pd["matches"]["bbbbbbbb-0000-4000-8000-000000000001"]).replace(pd["player"], helpers.PUUID)
+        record = json.loads(record)
+        record["matchInfo"] |= {"matchId": match_id, "gameStartMillis": int(time.time() - 2400) * 1000}
     pd["matches"][match_id] = record
     pd["player"] = helpers.PUUID
     pd["updates"]["Matches"][0]["MatchID"] = match_id
@@ -416,6 +539,7 @@ def main() -> None:
     port = int(numbers[0]) if numbers else 5077
     helpers.PNG = _png()
     helpers.fixture = _fixture
+    rating = 0
     if "--real" in flags:
         from valtracker import net
 
@@ -427,6 +551,7 @@ def main() -> None:
 
         helpers.FakeFetch = RealPictures
         real_ids(net.fetch)
+        rating = made_up_record(time.time())
     local = None
     if "--desktop" in flags:
         client_folder = tempfile.TemporaryDirectory()
@@ -436,7 +561,7 @@ def main() -> None:
     if local is None:
         app.config["VAL_RIOT"].sign_in("ssid-1")
     seed(app.config["VAL_ACTIVITY"], time.time())
-    seed_lifetime(app, time.time())
+    seed_lifetime(app, time.time(), rating)
     # a few days of the owner's store, and a skin wanted that is in today's (diary.py)
     diary = app.config["VAL_DIARY"]
     for back in range(1, 4):

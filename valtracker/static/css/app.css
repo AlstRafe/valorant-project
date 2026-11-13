@@ -3705,6 +3705,10 @@ code {
   font-size: 0.72rem;
   line-height: 1.2;
 }
+/* The rank and its RR each keep to one line: "アセンダント 1" over "47 RR", never "アセンダント 1 47" over "RR". */
+.rank-words > span {
+  display: inline-block;
+}
 .seat .badge {
   position: static; /* beside the name (absolute, it went to the page's corner) */
   margin-left: 0.3rem;

@@ -418,6 +418,52 @@ def remember(window, folder: Path) -> None:
     window.events.closing += closing
 
 
+#: Whether the page is dark now: the owner's choice with the header's button (<html data-theme>, theme.py), else
+#: Windows' own setting.
+IS_DARK = (
+    "(function(){var t=document.documentElement.getAttribute('data-theme');"
+    "return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches})()"
+)
+
+
+def title_bar(handle: int, dark: bool) -> bool:
+    """The window's title bar dark or light (Windows 10 of 2020 and later; an older one keeps its own). Whether
+    Windows took it."""
+    if sys.platform != "win32" or not handle:
+        return False
+    try:
+        dwm = ctypes.WinDLL("dwmapi")
+        dwm.DwmSetWindowAttribute.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_void_p, ctypes.c_uint]
+        dwm.DwmSetWindowAttribute.restype = ctypes.c_long
+
+        def put(what: int, value: int) -> bool:
+            number = ctypes.c_int(value)
+            return dwm.DwmSetWindowAttribute(handle, what, ctypes.byref(number), ctypes.sizeof(number)) == 0
+
+        took = put(20, int(dark))  # DWMWA_USE_IMMERSIVE_DARK_MODE
+        put(38, 2 if dark else 1)  # DWMWA_SYSTEMBACKDROP_TYPE, as pywebview sets it with Windows' own look
+        return took
+    except (OSError, AttributeError):
+        return False
+
+
+def follow_look(window, put=title_bar) -> None:
+    """The title bar takes the page's look, at every page: pywebview gives it Windows' own, which is not the
+    page's once the owner has picked dark or light with the header's button (a dark page under a white bar).
+    One question to the page as it has loaded, nothing in between."""
+
+    def loaded():
+        try:
+            dark = window.evaluate_js(IS_DARK)
+            handle = int(window.native.Handle.ToInt64())
+        except Exception:  # noqa: BLE001 - the window is closing, or it is not a WinForms one
+            return
+        if isinstance(dark, bool):
+            put(handle, dark)
+
+    window.events.loaded += loaded
+
+
 def _screens(webview) -> list[tuple[int, int, int, int]]:
     try:
         return [(screen.x, screen.y, screen.width, screen.height) for screen in webview.screens]
@@ -455,6 +501,7 @@ def window(url: str, folder: Path, close_after: float = 0) -> bool:
         text_select=True,
     )
     remember(shown, folder)
+    follow_look(shown)
 
     def close_later():
         time.sleep(close_after)

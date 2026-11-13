@@ -1,5 +1,5 @@
 # The PC app's screenshots (docs/screenshots, shown in the README): the app's real window on a Windows runner, on
-# made-up players and matches with the game's real names and pictures (tests/ui/shots.py). Run by hand
+# made-up players and matches with the game's real names and pictures (tests/ui/shots.py, played.py). Run by hand
 # (Actions -> Screenshots -> Run workflow, on a branch), or by a push that changes how they are taken; the pictures
 # are committed to that branch, for a pull request.
 name: Screenshots
@@ -11,6 +11,7 @@ on:
       - master
     paths:
       - "tests/ui/shots.py"
+      - "tests/ui/played.py"
       - ".github/workflows/screenshots.yml"
 
 permissions:
