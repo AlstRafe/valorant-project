@@ -3287,4 +3287,644 @@ TEXTS = {
         "zh-TW": "用於搜尋玩家與戰績（免費，約 1 分鐘即可建立）。即時、商店與收藏不需要金鑰也能使用。",
     },
     "設定でキーを入れる": {"ko": "설정에서 키 넣기", "en-GB": "Add the key in Settings", "zh-TW": "在設定中填入金鑰"},
+    "PC アプリの設定を保存しました。": {
+        "ko": "PC 앱 설정을 저장했습니다.",
+        "en-GB": "The PC app's settings are saved.",
+        "zh-TW": "已儲存 PC 應用程式的設定。",
+    },
+    "PC アプリをダウンロード（GitHub）": {
+        "ko": "PC 앱 다운로드(GitHub)",
+        "en-GB": "Download the PC app (GitHub)",
+        "zh-TW": "下載 PC 應用程式（GitHub）",
+    },
+    "Riot のサーバー": {
+        "ko": "Riot 서버",
+        "en-GB": "Riot's servers",
+        "zh-TW": "Riot 的伺服器",
+    },
+    "Riot のサーバーとほかの取得元も確かめる": {
+        "ko": "Riot 서버와 다른 출처도 확인하기",
+        "en-GB": "Check Riot's servers and the other sources too",
+        "zh-TW": "也檢查 Riot 的伺服器與其他來源",
+    },
+    "Riot のサーバーなどに 10 回ほど小さく問い合わせます（数秒かかります）。試合中でも押せますが、メニューにいるときがおすすめです。": {
+        "ko": "Riot 서버 등에 작은 요청을 10번 정도 보냅니다(몇 초 걸립니다). 경기 중에도 누를 수 있지만 메뉴에 있을 때를 권합니다.",
+        "en-GB": "This sends about ten small requests to Riot's servers and the other sources (a few seconds). You can press it during a match, but the menu is the better moment.",
+        "zh-TW": "會向 Riot 的伺服器等送出約 10 次小型請求（需要幾秒）。對戰中也能按，但建議在選單時進行。",
+    },
+    "Riot クライアント": {
+        "ko": "Riot 클라이언트",
+        "en-GB": "Riot Client",
+        "zh-TW": "Riot 用戶端",
+    },
+    "Riot クライアントが開いていないので、フレンドを読めません。Riot クライアントか VALORANT を開くと、ここに出ます。": {
+        "ko": "Riot 클라이언트가 켜져 있지 않아 친구를 읽을 수 없습니다. Riot 클라이언트나 VALORANT를 켜면 여기에 나옵니다.",
+        "en-GB": "The Riot Client isn't open, so your friends can't be read. Open the Riot Client or VALORANT and they appear here.",
+        "zh-TW": "Riot 用戶端沒有開啟，無法讀取好友。開啟 Riot 用戶端或 VALORANT 後就會顯示在這裡。",
+    },
+    "Riot クライアントのサインインをそのまま使うので、何も貼らずに自分のライブ・所持品・ストアが開きます": {
+        "ko": "Riot 클라이언트의 로그인을 그대로 쓰므로 아무것도 붙여 넣지 않고 내 라이브·컬렉션·상점이 열립니다",
+        "en-GB": "It uses the Riot Client's sign-in, so your Live, collection and store open with nothing to paste",
+        "zh-TW": "直接使用 Riot 用戶端的登入，不必貼上任何東西就能開啟自己的即時、收藏與商店",
+    },
+    "VALORANT そのものには触れません。ゲームの上に何も出さず、キーも送らず、ゲームより低い優先度で動きます。": {
+        "ko": "VALORANT 자체에는 손대지 않습니다. 게임 위에 아무것도 띄우지 않고, 키도 보내지 않으며, 게임보다 낮은 우선순위로 동작합니다.",
+        "en-GB": "It never touches VALORANT itself: nothing is drawn over the game, no keys are sent, and it runs at a lower priority than the game.",
+        "zh-TW": "不會碰觸 VALORANT 本身：不在遊戲上顯示任何東西、不送出按鍵，並以低於遊戲的優先順序執行。",
+    },
+    "VALORANT にいる": {
+        "ko": "VALORANT 접속 중",
+        "en-GB": "In VALORANT",
+        "zh-TW": "在 VALORANT 中",
+    },
+    "VALORANT の起動": {
+        "ko": "VALORANT 실행",
+        "en-GB": "VALORANT running",
+        "zh-TW": "VALORANT 的啟動",
+    },
+    "VALORANT は開いていますが、自分の居場所が届いていません": {
+        "ko": "VALORANT는 켜져 있지만 내 위치 정보가 오지 않았습니다",
+        "en-GB": "VALORANT is open, but where you are has not arrived",
+        "zh-TW": "VALORANT 已開啟，但尚未收到自己的所在位置",
+    },
+    "VALORANT を開くと確かめられます": {
+        "ko": "VALORANT를 켜면 확인할 수 있습니다",
+        "en-GB": "Can be checked once VALORANT is open",
+        "zh-TW": "開啟 VALORANT 後即可檢查",
+    },
+    "Windows ではないので、何もしていません": {
+        "ko": "Windows가 아니어서 아무것도 하지 않습니다",
+        "en-GB": "Not Windows, so nothing is done",
+        "zh-TW": "不是 Windows，因此沒有進行任何設定",
+    },
+    "Windows の起動と一緒に、最小化して開く": {
+        "ko": "Windows 시작 시 최소화해서 열기",
+        "en-GB": "Open minimised when Windows starts",
+        "zh-TW": "隨 Windows 啟動並最小化開啟",
+    },
+    "Windows の起動と一緒に、最小化して開けます": {
+        "ko": "Windows 시작 시 최소화된 상태로 열 수 있습니다",
+        "en-GB": "It can open minimised when Windows starts",
+        "zh-TW": "可以隨 Windows 啟動並最小化開啟",
+    },
+    "Windows の起動に登録できませんでした。": {
+        "ko": "Windows 시작 프로그램에 등록하지 못했습니다.",
+        "en-GB": "It could not be set to start with Windows.",
+        "zh-TW": "無法登錄為隨 Windows 啟動。",
+    },
+    "Windows 用のアプリは、このサイトと同じページを PC の中で開きます。VALORANT を遊ぶ PC で使うと、サイトではできないことができます。": {
+        "ko": "Windows용 앱은 이 사이트와 같은 페이지를 PC 안에서 엽니다. VALORANT를 하는 PC에서 쓰면 사이트에서는 할 수 없는 일을 할 수 있습니다.",
+        "en-GB": "The Windows app opens the same pages as this site on your PC. On the PC you play VALORANT on, it can do things the site cannot.",
+        "zh-TW": "Windows 版應用程式會在 PC 內開啟與本網站相同的頁面。在玩 VALORANT 的 PC 上使用，可以做到網站做不到的事。",
+    },
+    "{count} 人": {
+        "ko": "{count}명",
+        "en-GB": "{count}",
+        "zh-TW": "{count} 人",
+    },
+    "{date} · {commit}": {
+        "ko": "{date} · {commit}",
+        "en-GB": "{date} · {commit}",
+        "zh-TW": "{date} · {commit}",
+    },
+    "{region} / {shard}": {
+        "ko": "{region} / {shard}",
+        "en-GB": "{region} / {shard}",
+        "zh-TW": "{region} / {shard}",
+    },
+    "{where}（{shape}）": {
+        "ko": "{where}({shape})",
+        "en-GB": "{where} ({shape})",
+        "zh-TW": "{where}（{shape}）",
+    },
+    "いま VALORANT にいるフレンドはいません。": {
+        "ko": "지금 VALORANT에 접속한 친구가 없습니다.",
+        "en-GB": "No friends are in VALORANT right now.",
+        "zh-TW": "目前沒有好友在 VALORANT 中。",
+    },
+    "いまどこにいるか": {
+        "ko": "지금 어디에 있는지",
+        "en-GB": "Where they are now",
+        "zh-TW": "現在在哪裡",
+    },
+    "いまのゲーム（ライブ）": {
+        "ko": "지금의 게임(라이브)",
+        "en-GB": "The game right now (Live)",
+        "zh-TW": "目前的遊戲（即時）",
+    },
+    "いまの形": {
+        "ko": "현재 형식",
+        "en-GB": "current shape",
+        "zh-TW": "目前的格式",
+    },
+    "うまく動かないときは、これをコピーして知らせてください。名前・ID・トークンは入っていません。": {
+        "ko": "잘 동작하지 않으면 이것을 복사해서 알려 주세요. 이름·ID·토큰은 들어 있지 않습니다.",
+        "en-GB": "When something does not work, copy this and send it. It holds no names, ids or tokens.",
+        "zh-TW": "無法正常運作時，請複製這段內容回報。其中不含名稱、ID 或權杖。",
+    },
+    "この PC の Riot クライアント": {
+        "ko": "이 PC의 Riot 클라이언트",
+        "en-GB": "The Riot Client on this PC",
+        "zh-TW": "這台 PC 的 Riot 用戶端",
+    },
+    "この PC の分だけ確かめ直す": {
+        "ko": "이 PC 쪽만 다시 확인",
+        "en-GB": "Check this PC's part again",
+        "zh-TW": "只重新檢查這台 PC 的部分",
+    },
+    "このアプリが読むものを一つずつ確かめます。ページが空のままのときに、どこが読めていないかがわかります。VALORANT そのものには触れません。": {
+        "ko": "이 앱이 읽는 것을 하나씩 확인합니다. 페이지가 비어 있을 때 어디를 읽지 못하는지 알 수 있습니다. VALORANT 자체에는 손대지 않습니다.",
+        "en-GB": "Each thing this app reads is checked in turn. When a page stays empty, this shows what could not be read. VALORANT itself is never touched.",
+        "zh-TW": "逐一檢查這個應用程式讀取的項目。頁面一直空白時，可以知道是哪裡讀不到。不會碰觸 VALORANT 本身。",
+    },
+    "この版": {
+        "ko": "이 버전",
+        "en-GB": "This version",
+        "zh-TW": "此版本",
+    },
+    "ぜんぶ確かめる": {
+        "ko": "전부 확인",
+        "en-GB": "Check everything",
+        "zh-TW": "全部檢查",
+    },
+    "つながっていません（数秒おきにつなぎ直します）": {
+        "ko": "연결되어 있지 않습니다(몇 초마다 다시 연결합니다)",
+        "en-GB": "Not connected (it reconnects every few seconds)",
+        "zh-TW": "尚未連線（每隔幾秒會重新連線）",
+    },
+    "つながりました": {
+        "ko": "연결되었습니다",
+        "en-GB": "Reached",
+        "zh-TW": "已連線",
+    },
+    "つながりません": {
+        "ko": "연결되지 않습니다",
+        "en-GB": "Could not be reached",
+        "zh-TW": "無法連線",
+    },
+    "ほかでオンライン": {
+        "ko": "다른 곳에서 온라인",
+        "en-GB": "Online elsewhere",
+        "zh-TW": "在其他地方上線",
+    },
+    "ほかでオンライン {count} 人": {
+        "ko": "다른 곳에서 온라인 {count}명",
+        "en-GB": "{count} online elsewhere",
+        "zh-TW": "在其他地方上線 {count} 人",
+    },
+    "ほかのアプリを見ていても、試合が見つかるとタスクバーのボタンで知らせます（音も選べます）": {
+        "ko": "다른 앱을 보고 있어도 매치가 잡히면 작업 표시줄 버튼으로 알려 줍니다(소리도 고를 수 있습니다)",
+        "en-GB": "While you are in another program, a match found lights its taskbar button (a sound is optional)",
+        "zh-TW": "即使正在看其他應用程式，找到對戰時也會以工作列按鈕通知（也可選擇音效）",
+    },
+    "ほかのアプリを見ているときだけ知らせます。VALORANT が前にあるときは何もしません（ゲームが自分で知らせます）。ウィンドウを前に出すことも、ゲームの上に何かを出すこともありません。": {
+        "ko": "다른 앱을 보고 있을 때만 알립니다. VALORANT가 앞에 있을 때는 아무것도 하지 않습니다(게임이 직접 알려 줍니다). 창을 앞으로 가져오거나 게임 위에 무언가를 띄우지 않습니다.",
+        "en-GB": "You are told only while another program is in front. Nothing happens while VALORANT is in front (the game tells you itself). The window is never brought to the front and nothing is drawn over the game.",
+        "zh-TW": "只在你看著其他應用程式時通知。VALORANT 在最前面時什麼都不做（遊戲會自己通知）。不會把視窗移到最前面，也不會在遊戲上顯示任何東西。",
+    },
+    "ほかのプレイヤーの検索（HenrikDev）": {
+        "ko": "다른 플레이어 검색(HenrikDev)",
+        "en-GB": "Looking up other players (HenrikDev)",
+        "zh-TW": "搜尋其他玩家（HenrikDev）",
+    },
+    "ほかの取得元": {
+        "ko": "다른 출처",
+        "en-GB": "Other sources",
+        "zh-TW": "其他來源",
+    },
+    "まだわかりません（VALORANT を開くと決まります。それまでは ap として読みます）": {
+        "ko": "아직 알 수 없습니다(VALORANT를 켜면 정해집니다. 그때까지는 ap로 읽습니다)",
+        "en-GB": "Not known yet (set once VALORANT is open; read as ap until then)",
+        "zh-TW": "尚未得知（開啟 VALORANT 後才會確定，在那之前以 ap 讀取）",
+    },
+    "もう一度確かめる": {
+        "ko": "다시 확인",
+        "en-GB": "Check again",
+        "zh-TW": "再檢查一次",
+    },
+    "アプリ": {
+        "ko": "앱",
+        "en-GB": "The app",
+        "zh-TW": "應用程式",
+    },
+    "エージェント {agents}・マップ {maps}": {
+        "ko": "요원 {agents}·맵 {maps}",
+        "en-GB": "{agents} agents, {maps} maps",
+        "zh-TW": "特務 {agents}・地圖 {maps}",
+    },
+    "オフライン": {
+        "ko": "오프라인",
+        "en-GB": "Offline",
+        "zh-TW": "離線",
+    },
+    "カスタムゲームの準備中": {
+        "ko": "사용자 설정 게임 준비 중",
+        "en-GB": "Setting up a custom game",
+        "zh-TW": "自訂對戰準備中",
+    },
+    "キーがありません（設定に入れると、ほかのプレイヤーを検索できます）": {
+        "ko": "키가 없습니다(설정에 넣으면 다른 플레이어를 검색할 수 있습니다)",
+        "en-GB": "No key (add one in Settings to look up other players)",
+        "zh-TW": "沒有金鑰（在設定中填入後即可搜尋其他玩家）",
+    },
+    "クライアントからの知らせ": {
+        "ko": "클라이언트의 알림",
+        "en-GB": "Events from the client",
+        "zh-TW": "用戶端的通知",
+    },
+    "ゲームのサーバー": {
+        "ko": "게임 서버",
+        "en-GB": "The game's server",
+        "zh-TW": "遊戲伺服器",
+    },
+    "ゲームを優先する設定": {
+        "ko": "게임을 우선하는 설정",
+        "en-GB": "Giving way to the game",
+        "zh-TW": "讓遊戲優先的設定",
+    },
+    "サインイン": {
+        "ko": "로그인",
+        "en-GB": "Sign-in",
+        "zh-TW": "登入",
+    },
+    "サインインしています": {
+        "ko": "로그인되어 있습니다",
+        "en-GB": "Signed in",
+        "zh-TW": "已登入",
+    },
+    "サインインを読めません（Riot クライアントでサインインしているか確かめてください）": {
+        "ko": "로그인 정보를 읽을 수 없습니다(Riot 클라이언트에 로그인되어 있는지 확인해 주세요)",
+        "en-GB": "The sign-in could not be read (check that you are signed in to the Riot Client)",
+        "zh-TW": "無法讀取登入狀態（請確認是否已登入 Riot 用戶端）",
+    },
+    "ストア": {
+        "ko": "상점",
+        "en-GB": "Store",
+        "zh-TW": "商店",
+    },
+    "ダウンロードした VALTracker.exe で使えます。": {
+        "ko": "다운로드한 VALTracker.exe에서 쓸 수 있습니다.",
+        "en-GB": "Available in the downloaded VALTracker.exe.",
+        "zh-TW": "可在下載的 VALTracker.exe 中使用。",
+    },
+    "データのフォルダー": {
+        "ko": "데이터 폴더",
+        "en-GB": "Data folder",
+        "zh-TW": "資料夾",
+    },
+    "パーティー {count}人": {
+        "ko": "파티 {count}명",
+        "en-GB": "Party of {count}",
+        "zh-TW": "隊伍 {count} 人",
+    },
+    "パーティーに参加できます": {
+        "ko": "파티에 참가할 수 있습니다",
+        "en-GB": "Party open to join",
+        "zh-TW": "可以加入隊伍",
+    },
+    "フレンド": {
+        "ko": "친구",
+        "en-GB": "Friends",
+        "zh-TW": "好友",
+    },
+    "フレンド {total} 人": {
+        "ko": "친구 {total}명",
+        "en-GB": "{total} friends",
+        "zh-TW": "好友 {total} 人",
+    },
+    "フレンドがいません。VALORANT でフレンドを追加すると、ここに出ます。": {
+        "ko": "친구가 없습니다. VALORANT에서 친구를 추가하면 여기에 나옵니다.",
+        "en-GB": "No friends yet. Friends you add in VALORANT appear here.",
+        "zh-TW": "還沒有好友。在 VALORANT 中加入好友後就會顯示在這裡。",
+    },
+    "フレンドがいまどこにいるかを、この PC の Riot クライアントのフレンド一覧から読んでいます。PC アプリだけの機能です。": {
+        "ko": "친구가 지금 어디에 있는지를 이 PC의 Riot 클라이언트 친구 목록에서 읽습니다. PC 앱에만 있는 기능입니다.",
+        "en-GB": "Where your friends are right now, read from the friends list of the Riot Client on this PC. Only the PC app has this.",
+        "zh-TW": "從這台 PC 的 Riot 用戶端好友名單讀取好友現在在哪裡。這是 PC 應用程式專屬的功能。",
+    },
+    "フレンドがいまどこにいるか（メニュー・マッチング中・対戦中とスコア・パーティーの人数）がわかります": {
+        "ko": "친구가 지금 어디에 있는지(메뉴·매칭 중·경기 중과 점수·파티 인원)를 알 수 있습니다",
+        "en-GB": "It shows where your friends are right now (the menu, matchmaking, in a match with its score, and their party's size)",
+        "zh-TW": "可以知道好友現在在哪裡（選單、配對中、對戰中與比分、隊伍人數）",
+    },
+    "フレンド一覧": {
+        "ko": "친구 목록",
+        "en-GB": "Friends list",
+        "zh-TW": "好友名單",
+    },
+    "ページが空のままのときは、{link}でどこが読めていないかを確かめられます。": {
+        "ko": "페이지가 비어 있을 때는 {link}에서 어디를 읽지 못하는지 확인할 수 있습니다.",
+        "en-GB": "When a page stays empty, {link} shows what could not be read.",
+        "zh-TW": "頁面一直空白時，可以在{link}檢查是哪裡讀不到。",
+    },
+    "一部だけ読めました（読めなかったもの: {missing}）": {
+        "ko": "일부만 읽었습니다(읽지 못한 것: {missing})",
+        "en-GB": "Read in part (not read: {missing})",
+        "zh-TW": "只讀到一部分（未讀到：{missing}）",
+    },
+    "以前の形": {
+        "ko": "이전 형식",
+        "en-GB": "older shape",
+        "zh-TW": "舊的格式",
+    },
+    "優先度を下げられませんでした": {
+        "ko": "우선순위를 낮추지 못했습니다",
+        "en-GB": "The priority could not be lowered",
+        "zh-TW": "無法降低優先順序",
+    },
+    "同じパーティー": {
+        "ko": "같은 파티",
+        "en-GB": "Your party",
+        "zh-TW": "同一隊伍",
+    },
+    "名前と画像（valorant-api.com）": {
+        "ko": "이름과 이미지(valorant-api.com)",
+        "en-GB": "Names and pictures (valorant-api.com)",
+        "zh-TW": "名稱與圖片（valorant-api.com）",
+    },
+    "問題あり": {
+        "ko": "문제 있음",
+        "en-GB": "Problem",
+        "zh-TW": "有問題",
+    },
+    "問題なし": {
+        "ko": "문제 없음",
+        "en-GB": "Fine",
+        "zh-TW": "沒有問題",
+    },
+    "報告": {
+        "ko": "보고서",
+        "en-GB": "Report",
+        "zh-TW": "報告",
+    },
+    "報告をコピー": {
+        "ko": "보고서 복사",
+        "en-GB": "Copy the report",
+        "zh-TW": "複製報告",
+    },
+    "射撃場": {
+        "ko": "사격장",
+        "en-GB": "The Range",
+        "zh-TW": "靶場",
+    },
+    "待っています（これまでに 居場所 {presences} 回・起動 {sessions} 回・試合の知らせ {pushes} 回）": {
+        "ko": "기다리는 중입니다(지금까지 위치 {presences}회·실행 {sessions}회·경기 알림 {pushes}회)",
+        "en-GB": "Listening (so far: {presences} presence, {sessions} launch and {pushes} match events)",
+        "zh-TW": "等待中（目前為止：所在位置 {presences} 次・啟動 {sessions} 次・對戰通知 {pushes} 次）",
+    },
+    "持っているエージェント": {
+        "ko": "보유한 요원",
+        "en-GB": "Agents you own",
+        "zh-TW": "擁有的特務",
+    },
+    "新しい版の確認（VAL Tracker のサイト）": {
+        "ko": "새 버전 확인(VAL Tracker 사이트)",
+        "en-GB": "Looking for a newer version (the VAL Tracker site)",
+        "zh-TW": "檢查新版本（VAL Tracker 網站）",
+    },
+    "書き込めます": {
+        "ko": "쓸 수 있습니다",
+        "en-GB": "Writable",
+        "zh-TW": "可以寫入",
+    },
+    "書き込めません": {
+        "ko": "쓸 수 없습니다",
+        "en-GB": "Not writable",
+        "zh-TW": "無法寫入",
+    },
+    "最後のオンライン": {
+        "ko": "마지막 접속",
+        "en-GB": "Last online",
+        "zh-TW": "上次上線",
+    },
+    "有効です（アプリの優先度を下げて、CPU とメモリーをゲームに譲っています）": {
+        "ko": "켜져 있습니다(앱의 우선순위를 낮춰 CPU와 메모리를 게임에 양보합니다)",
+        "en-GB": "On (the app runs at a lower priority and leaves the CPU and memory to the game)",
+        "zh-TW": "已啟用（降低應用程式的優先順序，把 CPU 與記憶體讓給遊戲）",
+    },
+    "知らせを試しました（タスクバーのボタンが光り、音がオンなら鳴ります）。": {
+        "ko": "알림을 시험했습니다(작업 표시줄 버튼이 빛나고, 소리가 켜져 있으면 울립니다).",
+        "en-GB": "The alert was tried (the taskbar button lights up, and the sound plays when it is on).",
+        "zh-TW": "已測試通知（工作列按鈕會亮起，音效開啟時會播放）。",
+    },
+    "知らせを試す": {
+        "ko": "알림 시험하기",
+        "en-GB": "Try the alert",
+        "zh-TW": "測試通知",
+    },
+    "知らない形の居場所です（報告をコピーして知らせてください）": {
+        "ko": "알 수 없는 형식의 위치 정보입니다(보고서를 복사해서 알려 주세요)",
+        "en-GB": "Where you are came in a shape this app does not know (please copy the report and send it)",
+        "zh-TW": "所在位置的格式無法辨識（請複製報告並回報）",
+    },
+    "確かめていません": {
+        "ko": "확인하지 않음",
+        "en-GB": "Not checked",
+        "zh-TW": "尚未檢查",
+    },
+    "自分の RR の動き": {
+        "ko": "내 RR 변동",
+        "en-GB": "Your RR changes",
+        "zh-TW": "自己的 RR 變動",
+    },
+    "自分の居場所": {
+        "ko": "내 위치",
+        "en-GB": "Where you are",
+        "zh-TW": "自己的所在位置",
+    },
+    "自分の試合の履歴": {
+        "ko": "내 경기 기록",
+        "en-GB": "Your match history",
+        "zh-TW": "自己的對戰紀錄",
+    },
+    "診断": {
+        "ko": "진단",
+        "en-GB": "Checkup",
+        "zh-TW": "診斷",
+    },
+    "診断を開く": {
+        "ko": "진단 열기",
+        "en-GB": "Open the checkup",
+        "zh-TW": "開啟診斷",
+    },
+    "試合が見つかったら、タスクバーのボタンを光らせる": {
+        "ko": "매치가 잡히면 작업 표시줄 버튼을 빛나게 하기",
+        "en-GB": "Light the taskbar button when a match is found",
+        "zh-TW": "找到對戰時讓工作列按鈕亮起",
+    },
+    "試合が見つかったら、短い音を鳴らす": {
+        "ko": "매치가 잡히면 짧은 소리 내기",
+        "en-GB": "Play a short sound when a match is found",
+        "zh-TW": "找到對戰時播放短音效",
+    },
+    "試合が見つかった瞬間に、ライブに切り替わります": {
+        "ko": "매치가 잡히는 순간 라이브로 바뀝니다",
+        "en-GB": "It switches to Live the moment a match is found",
+        "zh-TW": "找到對戰的瞬間就會切換到即時",
+    },
+    "読めないものがあるときに、どこが読めていないかを「診断」で確かめられます": {
+        "ko": "읽지 못하는 것이 있을 때 어디를 읽지 못하는지 '진단'에서 확인할 수 있습니다",
+        "en-GB": "When something cannot be read, the checkup shows what it is",
+        "zh-TW": "有東西讀不到時，可以用「診斷」檢查是哪裡讀不到",
+    },
+    "読めました": {
+        "ko": "읽었습니다",
+        "en-GB": "Read",
+        "zh-TW": "已讀取",
+    },
+    "読めました（{where}）": {
+        "ko": "읽었습니다({where})",
+        "en-GB": "Read ({where})",
+        "zh-TW": "已讀取（{where}）",
+    },
+    "読めません": {
+        "ko": "읽을 수 없습니다",
+        "en-GB": "Could not be read",
+        "zh-TW": "無法讀取",
+    },
+    "進み具合（パスと契約）": {
+        "ko": "진행 상황(패스와 계약)",
+        "en-GB": "Progress (passes and contracts)",
+        "zh-TW": "進度（通行證與合約）",
+    },
+    "開いています（サーバー: {shard}）": {
+        "ko": "켜져 있습니다(서버: {shard})",
+        "en-GB": "Open (server: {shard})",
+        "zh-TW": "已開啟（伺服器：{shard}）",
+    },
+    "開いていません。Riot クライアントか VALORANT を開いてから、もう一度確かめてください。": {
+        "ko": "켜져 있지 않습니다. Riot 클라이언트나 VALORANT를 켠 뒤 다시 확인해 주세요.",
+        "en-GB": "Not open. Open the Riot Client or VALORANT, then check again.",
+        "zh-TW": "沒有開啟。請開啟 Riot 用戶端或 VALORANT 後再檢查一次。",
+    },
+    "開いていません（開くと、居場所とライブも確かめられます）": {
+        "ko": "켜져 있지 않습니다(켜면 위치와 라이브도 확인할 수 있습니다)",
+        "en-GB": "Not open (once it is, where you are and Live can be checked too)",
+        "zh-TW": "沒有開啟（開啟後也能檢查所在位置與即時）",
+    },
+    "離席中": {
+        "ko": "자리 비움",
+        "en-GB": "Away",
+        "zh-TW": "離開",
+    },
+    "（参加できます）": {
+        "ko": "(참가 가능)",
+        "en-GB": " (open to join)",
+        "zh-TW": "（可加入）",
+    },
+    "いますぐ更新": {
+        "ko": "지금 업데이트",
+        "en-GB": "Update now",
+        "zh-TW": "立即更新",
+    },
+    "いまの版が最新です。": {
+        "ko": "지금 버전이 최신입니다.",
+        "en-GB": "This is the newest version.",
+        "zh-TW": "目前已是最新版本。",
+    },
+    "アプリのフォルダーに書き込めないので、ここからは更新できません。ダウンロードのページから入れ替えてください。": {
+        "ko": "앱 폴더에 쓸 수 없어 여기서는 업데이트할 수 없습니다. 다운로드 페이지에서 받아 교체해 주세요.",
+        "en-GB": "The app's folder cannot be written, so it cannot update from here. Replace it from the download page.",
+        "zh-TW": "無法寫入應用程式的資料夾，因此不能從這裡更新。請從下載頁面取得後替換。",
+    },
+    "ダウンロードした VALTracker.exe でだけ更新できます。": {
+        "ko": "다운로드한 VALTracker.exe에서만 업데이트할 수 있습니다.",
+        "en-GB": "Only the downloaded VALTracker.exe can update itself.",
+        "zh-TW": "只有下載的 VALTracker.exe 才能更新。",
+    },
+    "ダウンロードしたファイルを確かめられなかったので、使いませんでした。もう一度押してください。": {
+        "ko": "다운로드한 파일을 확인할 수 없어 사용하지 않았습니다. 다시 눌러 주세요.",
+        "en-GB": "The downloaded file could not be verified, so it was not used. Press again.",
+        "zh-TW": "無法確認下載的檔案，因此沒有使用。請再按一次。",
+    },
+    "ダウンロードできました。試合が終わったら「入れ替える」を押してください。": {
+        "ko": "다운로드했습니다. 경기가 끝나면 '교체'를 눌러 주세요.",
+        "en-GB": "Downloaded. Press “Install” once the match is over.",
+        "zh-TW": "下載完成。對戰結束後請按「替換」。",
+    },
+    "ダウンロードできませんでした。少ししてからもう一度押してください。": {
+        "ko": "다운로드하지 못했습니다. 잠시 후 다시 눌러 주세요.",
+        "en-GB": "The download did not work. Press again in a little while.",
+        "zh-TW": "下載失敗。請稍後再按一次。",
+    },
+    "ダウンロードのページ": {
+        "ko": "다운로드 페이지",
+        "en-GB": "Download page",
+        "zh-TW": "下載頁面",
+    },
+    "ダウンロード中… {percent}%": {
+        "ko": "다운로드 중… {percent}%",
+        "en-GB": "Downloading… {percent}%",
+        "zh-TW": "下載中… {percent}%",
+    },
+    "ボタンを押すと、新しい版をダウンロードして入れ替え、アプリを開き直します（1 分ほど）。設定はそのまま残ります。": {
+        "ko": "버튼을 누르면 새 버전을 다운로드해 교체하고 앱을 다시 엽니다(1분 정도). 설정은 그대로 남습니다.",
+        "en-GB": "The button downloads the new version, puts it in place and opens the app again (about a minute). Your settings stay.",
+        "zh-TW": "按下按鈕後，會下載新版本並替換，然後重新開啟應用程式（約 1 分鐘）。設定會保留。",
+    },
+    "入れ替えます。アプリが数秒閉じて、新しい版で開き直ります。": {
+        "ko": "교체합니다. 앱이 몇 초 동안 닫혔다가 새 버전으로 다시 열립니다.",
+        "en-GB": "Installing. The app closes for a few seconds and opens again as the new version.",
+        "zh-TW": "正在替換。應用程式會關閉幾秒，然後以新版本重新開啟。",
+    },
+    "入れ替える": {
+        "ko": "교체",
+        "en-GB": "Install",
+        "zh-TW": "替換",
+    },
+    "新しい版があります。上の「いますぐ更新」で更新できます。": {
+        "ko": "새 버전이 있습니다. 위의 '지금 업데이트'로 업데이트할 수 있습니다.",
+        "en-GB": "A newer version is out. “Update now” above installs it.",
+        "zh-TW": "有新版本。可以用上方的「立即更新」更新。",
+    },
+    "新しい版があります（上のボタンで更新できます）": {
+        "ko": "새 버전이 있습니다(위의 버튼으로 업데이트할 수 있습니다)",
+        "en-GB": "a newer version is out (the button above installs it)",
+        "zh-TW": "有新版本（可以用上方的按鈕更新）",
+    },
+    "新しい版があるか確かめられませんでした。少ししてからもう一度押してください。": {
+        "ko": "새 버전이 있는지 확인하지 못했습니다. 잠시 후 다시 눌러 주세요.",
+        "en-GB": "Could not check for a newer version. Press again in a little while.",
+        "zh-TW": "無法確認是否有新版本。請稍後再按一次。",
+    },
+    "新しい版に更新しました。": {
+        "ko": "새 버전으로 업데이트했습니다.",
+        "en-GB": "Updated to the new version.",
+        "zh-TW": "已更新為新版本。",
+    },
+    "新しい版はまだ作っている途中です。数分後にもう一度押してください。": {
+        "ko": "새 버전을 아직 만드는 중입니다. 몇 분 뒤에 다시 눌러 주세요.",
+        "en-GB": "The new version is still being built. Press again in a few minutes.",
+        "zh-TW": "新版本仍在製作中。請幾分鐘後再按一次。",
+    },
+    "新しい版を作っている途中です。数分後にもう一度確かめてください。": {
+        "ko": "새 버전을 만드는 중입니다. 몇 분 뒤에 다시 확인해 주세요.",
+        "en-GB": "A new version is being built. Check again in a few minutes.",
+        "zh-TW": "新版本正在製作中。請幾分鐘後再檢查一次。",
+    },
+    "新しい版を確かめています…": {
+        "ko": "새 버전을 확인하는 중…",
+        "en-GB": "Checking for the new version…",
+        "zh-TW": "正在確認新版本…",
+    },
+    "新しい版を確かめる": {
+        "ko": "새 버전 확인",
+        "en-GB": "Check for a newer version",
+        "zh-TW": "檢查新版本",
+    },
+    "試合が終わってから更新できます（ダウンロードがゲームの回線を使わないように）。": {
+        "ko": "경기가 끝난 뒤에 업데이트할 수 있습니다(다운로드가 게임의 회선을 쓰지 않도록).",
+        "en-GB": "You can update once the match is over (so the download does not take the game's connection).",
+        "zh-TW": "對戰結束後才能更新（避免下載佔用遊戲的網路）。",
+    },
+    "新しい版が出ると知らせ、アプリの中のボタン 1 つで更新できます": {
+        "ko": "새 버전이 나오면 알려 주고, 앱 안의 버튼 하나로 업데이트할 수 있습니다",
+        "en-GB": "It tells you when a newer version is out, and one button in the app installs it",
+        "zh-TW": "有新版本時會通知，並可用應用程式內的一個按鈕更新",
+    },
+    "新しい版を開けなかったので、いまの版のまま続けます。ダウンロードのページから入れ替えてください。": {
+        "ko": "새 버전을 열 수 없어 지금 버전으로 계속합니다. 다운로드 페이지에서 받아 교체해 주세요.",
+        "en-GB": "The new version could not be started, so this one carries on. Replace it from the download page.",
+        "zh-TW": "無法開啟新版本，因此繼續使用目前的版本。請從下載頁面取得後替換。",
+    },
 }

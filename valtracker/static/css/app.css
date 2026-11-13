@@ -313,6 +313,30 @@ h2 {
   margin-top: 0.2rem;
   color: var(--soft);
 }
+/* The built app's own update: the button beside the words, how far it is below. */
+.update-form {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+.update-form button {
+  min-height: 2.25rem;
+  padding: 0 0.9rem;
+}
+.update-form button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.update-said {
+  margin: 0.4rem 0 0;
+  font-weight: 700;
+}
+.update-said.failed {
+  color: var(--loss);
+}
 
 /* The light/dark button and the language menu: the same as on every site of this host (portal.css). */
 .theme {
@@ -5486,4 +5510,144 @@ code {
 }
 .clutch .sides dt {
   min-width: 2.5rem;
+}
+
+/* The PC app's friends (friends.html): who is in VALORANT and where, who is elsewhere at Riot, who is away. */
+.friends {
+  margin-top: 1.2rem;
+}
+.friends h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+.friends h2 small,
+.friends-count {
+  color: var(--soft);
+  font-weight: 400;
+}
+.friends-count {
+  margin: 0.8rem 0 0;
+  font-size: 0.9rem;
+}
+.friends .seats {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+}
+.friends .friends-small {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+}
+.friends-small .seat {
+  padding: 0.45rem 0.8rem;
+}
+.friend-off strong a {
+  color: var(--soft);
+}
+.friend-where {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+.seat-text .friend-where {
+  color: var(--ink);
+}
+.friend-where .dot {
+  flex: none;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: 0.42em; /* beside the first line when the words take two */
+  border-radius: 50%;
+  background: var(--win);
+}
+.friend-where .at-ingame,
+.friend-where .at-pregame,
+.friend-where .at-found {
+  background: var(--accent);
+}
+.friend-where .at-queue,
+.friend-where .at-custom,
+.friend-where .at-range {
+  background: var(--draw);
+}
+.friend-where .at-away {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--soft);
+}
+
+/* The PC app's own choices on the settings page, and the checkup's buttons: side by side, wrapping. */
+.app-prefs .row,
+form.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+
+/* The PC app's checkup (checkup.html): each thing the app reads, with whether it could be read. */
+.checks {
+  display: grid;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.check {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--rule);
+}
+.check:first-child {
+  border-top: 0;
+}
+.check-mark {
+  flex: none;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: var(--rule);
+  color: var(--soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4rem;
+  text-align: center;
+}
+/* the mark in the card's colour on a full disc: a tinted disc under a mark of its own colour is too faint on paper */
+.check-ok .check-mark {
+  background: var(--win);
+  color: var(--card);
+}
+.check-bad .check-mark {
+  background: var(--loss);
+  color: var(--card);
+}
+.check-part .check-mark {
+  background: color-mix(in srgb, var(--draw) 30%, transparent);
+  color: var(--ink);
+}
+.check-text {
+  display: grid;
+  flex: 1;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.check-text > span {
+  color: var(--soft);
+  font-size: 0.9rem;
+}
+.check-bad .check-text > span,
+.check-part .check-text > span {
+  color: var(--ink);
+}
+.report {
+  max-height: 16rem;
+  margin: 0.6rem 0;
+  padding: 0.7rem 0.9rem;
+  overflow: auto;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--paper);
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

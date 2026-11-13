@@ -34,6 +34,7 @@
 {% if me.linked and me.name %}<li><a href="{{ url_for('player', name=me.name, tag=me.tag) }}"><strong>{{ t('自分の戦績') }}</strong><small>{{ me.name }}#{{ me.tag }}</small></a></li>{% endif %}
 <li><a href="{{ url_for('live') }}"><strong>{{ t('ライブ') }}</strong><small data-live-text>{{ t('キュー開始・ピックと確定') }}</small></a></li>
 <li><a href="{{ url_for('progress') }}"><strong>{{ t('進み具合') }}</strong><small>{{ t('バトルパス・ミッション') }}</small></a></li>
+{% if desktop %}<li><a href="{{ url_for('friends') }}"><strong>{{ t('フレンド') }}</strong><small>{{ t('いまどこにいるか') }}</small></a></li>{% endif %}
 <li><a href="{{ url_for('collection') }}"><strong>{{ t('所持品') }}</strong><small>{{ t('スキンやカードを装備') }}</small></a></li>
 </ul>
 {% if not me.linked %}<p class="note">{{ t('Riot アカウントを設定で連携すると、自分の戦績・ライブ・進み具合・所持品をここから開けます。') }} <a href="{{ url_for('settings') }}#riot">{{ t('設定で Riot と連携する') }}</a></p>{% endif %}

@@ -26,13 +26,14 @@ from flask import (
 
 from valtracker import archive as archive_module
 from valtracker import collection as owned_items
-from valtracker import heatmap, i18n, release, score, security, stats
+from valtracker import heatmap, i18n, pc, release, score, security, stats
 from valtracker import rounds as rounds_module
 from valtracker.activity import BANDS, LINE_QUEUES, LINE_STATS, RANKS_ENOUGH
 from valtracker.henrik import FRESH_AFTER, MODES, NAME, REGIONS, HenrikError, shows_rr, split_riot_id
 from valtracker.media import kind as media_kind
 from valtracker.pdmatch import MODE_TYPES
 from valtracker.riot import AUTHORIZE, RiotError
+from valtracker.update import UpdateError
 
 #: HenrikDev's queue ids -> what the game calls them (translated in locale.py).
 QUEUES = {
@@ -1250,6 +1251,7 @@ def register(app: Flask) -> None:
     def settings():
         security.owner_only()
         store, riot = current_app.config["VAL_SETTINGS"], current_app.config["VAL_RIOT"]
+        autostart = current_app.config["VAL_AUTOSTART"]
         saved = riot_problem = riot_detail = ""
         if request.method == "POST":
             do = request.form.get("do")
@@ -1267,6 +1269,30 @@ def register(app: Flask) -> None:
             elif do == "riot_off":
                 riot.sign_out()
                 saved = _t("Riot アカウントとの連携を解除しました。")
+            elif do == "look" and current_app.config["VAL_UPDATER"] is not None:
+                # the PC app: ask the site now whether a newer build is out (update.py)
+                try:
+                    found = current_app.config["VAL_UPDATER"].look()
+                except UpdateError:
+                    riot_problem = _t("新しい版があるか確かめられませんでした。少ししてからもう一度押してください。")
+                else:
+                    if found and found["ready"]:
+                        saved = _t("新しい版があります。上の「いますぐ更新」で更新できます。")
+                    elif found:
+                        saved = _t("新しい版を作っている途中です。数分後にもう一度確かめてください。")
+                    else:
+                        saved = _t("いまの版が最新です。")
+            elif do in ("app", "alert_test") and current_app.config["VAL_LOCAL"] is not None:
+                # the PC app's own choices (pc.py): the match-found alert, the start with Windows
+                store.save(**{key: request.form.get(key) == "on" for key in pc.DEFAULTS})
+                saved = _t("PC アプリの設定を保存しました。")
+                if autostart is not None and autostart.possible:
+                    wanted = request.form.get("autostart") == "on"
+                    if not autostart.set(wanted):
+                        saved, riot_problem = "", _t("Windows の起動に登録できませんでした。")
+                if do == "alert_test" and current_app.config["VAL_ALERT"] is not None:
+                    current_app.config["VAL_ALERT"]("found", always=True)
+                    saved = _t("知らせを試しました（タスクバーのボタンが光り、音がオンなら鳴ります）。")
             else:
                 key = request.form.get("henrik_key", "").strip()
                 if key:
@@ -1285,6 +1311,11 @@ def register(app: Flask) -> None:
             riot_problem=riot_problem,
             riot_detail=riot_detail,
             riot_link=AUTHORIZE,
+            pc=pc.chosen(store),
+            autostart={
+                "possible": autostart is not None and autostart.possible,
+                "on": autostart is not None and autostart.on(),
+            },
         )
 
     from valtracker import compare, owner, seasons, skinlib, tools, world

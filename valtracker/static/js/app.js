@@ -1229,19 +1229,86 @@
     });
   }
 
+  // The PC app updates itself (update.py): the button is sent in the background and the notice says how far the
+  // update is, asked every second while it goes, until the app closes to open again as the new build. Without a
+  // script the button sends the form and the settings page says it.
+  function updating() {
+    var box = document.querySelector("[data-update]");
+    if (!box || !window.fetch) return;
+    var form = box.querySelector("form");
+    var button = form ? form.querySelector("button") : null;
+    var said = box.querySelector("[data-update-said]");
+    var timer = null;
+    function show(found) {
+      if (!found) return;
+      if (said) {
+        said.textContent = found.words || "";
+        said.hidden = !found.words;
+        said.classList.toggle("failed", !!found.failed);
+      }
+      if (button) {
+        button.disabled = !!found.busy;
+        if (found.button) button.textContent = found.button;
+      }
+      clearTimeout(timer);
+      if (found.busy) timer = setTimeout(ask, 1000);
+    }
+    function read(answer) {
+      return answer.ok ? answer.json() : null;
+    }
+    function ask() {
+      fetch(box.getAttribute("data-update"), {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        cache: "no-store",
+      })
+        .then(read)
+        .then(show)
+        .catch(function () {
+          // the app is closing to open again as the new build: nothing more to ask
+        });
+    }
+    if (form)
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        if (button) button.disabled = true;
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: { Accept: "application/json" },
+          credentials: "same-origin",
+        })
+          .then(read)
+          .then(function (found) {
+            if (found) show(found);
+            else location.reload(); // a refusal (the form's token is old): the page as it is now
+          })
+          .catch(function () {
+            if (button) button.disabled = false;
+          });
+      });
+    if (box.hasAttribute("data-busy")) ask();
+  }
+
   // The owner's collection lists every item of a tab at once: the names are narrowed as they are typed.
   function finder() {
     var input = document.getElementById("find");
     if (!input) return;
     input.parentNode.hidden = false;
-    input.addEventListener("input", function () {
+    function narrow() {
       var words = input.value.trim().toLowerCase();
       document.querySelectorAll("[data-name]").forEach(function (item) {
         item.hidden = words !== "" && item.getAttribute("data-name").indexOf(words) < 0;
       });
       document.querySelectorAll("[data-group]").forEach(function (group) {
-        group.hidden = !group.querySelector("[data-name]:not([hidden])");
+        // a group with nothing to narrow (an empty one says so itself) stays
+        group.hidden = words !== "" && !group.querySelector("[data-name]:not([hidden])");
       });
+    }
+    input.addEventListener("input", narrow);
+    // a list read again in the background (the PC app's friends) stays narrowed
+    document.addEventListener("val:refreshed", function () {
+      if (input.value.trim()) narrow();
     });
   }
 
@@ -1598,6 +1665,7 @@
     teams();
     night();
     refresh();
+    updating();
     readAgain();
     toTop();
     liveWatch();

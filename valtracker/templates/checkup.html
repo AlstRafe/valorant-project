@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{#- The PC app only: whether each thing the app reads can be read on this PC right now (checkup.py), and a report
+    of it to paste (statuses and shapes: no name, no id, no token). #}
+{% block title %}{{ t('診断') }} · {{ site_name }}{% endblock %}
+{% block main %}
+<section class="hero">
+<h1>{{ t('診断') }}</h1>
+<p class="lead">{{ t('このアプリが読むものを一つずつ確かめます。ページが空のままのときに、どこが読めていないかがわかります。VALORANT そのものには触れません。') }}</p>
+</section>
+{% for group in groups %}
+<section class="panel checkup" aria-labelledby="check-{{ group.key }}">
+<h2 id="check-{{ group.key }}">{{ t(group.name) }}</h2>
+<ul class="checks">
+{% for item in group['items'] %}
+<li class="check check-{{ item.state }}"><span class="check-mark" aria-hidden="true">{{ {'ok': '✓', 'part': '!', 'bad': '✕'}.get(item.state, '–') }}</span><span class="check-text"><strong>{{ t(item.name) }}</strong><span>{{ t(item.words, **item['values']) }}{% if item.state in ('bad', 'part') and item.code %} <code>{{ item.code }}</code>{% endif %}</span></span><span class="sr">{{ t('問題なし') if item.state == 'ok' else t('問題あり') if item.state in ('bad', 'part') else t('確かめていません') if item.state == 'skip' else '' }}</span></li>
+{% endfor %}
+</ul>
+</section>
+{% endfor %}
+<section class="panel" aria-labelledby="check-more">
+<h2 id="check-more">{% if far %}{{ t('もう一度確かめる') }}{% else %}{{ t('Riot のサーバーとほかの取得元も確かめる') }}{% endif %}</h2>
+<p class="note">{{ t('Riot のサーバーなどに 10 回ほど小さく問い合わせます（数秒かかります）。試合中でも押せますが、メニューにいるときがおすすめです。') }}</p>
+<form method="post" class="row">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<button type="submit">{% if far %}{{ t('もう一度確かめる') }}{% else %}{{ t('ぜんぶ確かめる') }}{% endif %}</button>
+<a class="button quiet" href="{{ url_for('checkup') }}">{{ t('この PC の分だけ確かめ直す') }}</a>
+</form>
+</section>
+<section class="panel" aria-labelledby="check-report">
+<h2 id="check-report">{{ t('報告') }}</h2>
+<p class="note">{{ t('うまく動かないときは、これをコピーして知らせてください。名前・ID・トークンは入っていません。') }}</p>
+<pre class="report" tabindex="0">{{ report }}</pre>
+<p><button type="button" class="quiet copy" data-copy="{{ report }}" data-done="{{ t('コピーしました') }}" hidden>{{ t('報告をコピー') }}</button></p>
+</section>
+{% endblock %}

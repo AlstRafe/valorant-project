@@ -14,9 +14,19 @@
 {% if desktop %}
 <section class="panel" id="app" aria-labelledby="app-title">
 <h2 id="app-title">{{ t('PC アプリ') }}</h2>
-<p>{{ t('この版:') }} {% if config.VAL_BUILD %}<code>{{ config.VAL_BUILD.date }} · {{ config.VAL_BUILD.commit[:7] }}</code>{% else %}{{ t('ソースから実行中') }}{% endif %}{% if update %} — <a href="{{ update.url }}">{{ t('新しい版をダウンロード') }}</a>{% elif config.VAL_UPDATE_LOOKED %} — {{ t('最新です') }}{% endif %}</p>
+<p>{{ t('この版:') }} {% if config.VAL_BUILD %}<code>{{ config.VAL_BUILD.date }} · {{ config.VAL_BUILD.commit[:7] }}</code>{% else %}{{ t('ソースから実行中') }}{% endif %}{% if update and updating and updating.possible %} — {{ t('新しい版があります（上のボタンで更新できます）') }}{% elif update %} — <a href="{{ update.url }}">{{ t('新しい版をダウンロード') }}</a>{% elif config.VAL_UPDATE_LOOKED %} — {{ t('最新です') }}{% endif %}</p>
 <p class="pref"><label><input type="checkbox" data-pref="val.live.switch" checked> {{ t('試合が見つかったら、自動でライブを開く') }}</label></p>
 <p class="note">{{ t('ほかのページを見ているときに試合が見つかると、このウィンドウがライブに切り替わります（ウィンドウを前に出したりはしません）。') }}</p>
+<form method="post" class="app-prefs">
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<p class="pref"><label><input type="checkbox" name="alert_flash"{% if pc.alert_flash %} checked{% endif %}> {{ t('試合が見つかったら、タスクバーのボタンを光らせる') }}</label></p>
+<p class="pref"><label><input type="checkbox" name="alert_sound"{% if pc.alert_sound %} checked{% endif %}> {{ t('試合が見つかったら、短い音を鳴らす') }}</label></p>
+<p class="note">{{ t('ほかのアプリを見ているときだけ知らせます。VALORANT が前にあるときは何もしません（ゲームが自分で知らせます）。ウィンドウを前に出すことも、ゲームの上に何かを出すこともありません。') }}</p>
+<p class="pref"><label><input type="checkbox" name="autostart"{% if autostart.on %} checked{% endif %}{% if not autostart.possible %} disabled{% endif %}> {{ t('Windows の起動と一緒に、最小化して開く') }}</label></p>
+{% if not autostart.possible %}<p class="note">{{ t('ダウンロードした VALTracker.exe で使えます。') }}</p>{% endif %}
+<div class="row"><button type="submit" name="do" value="app">{{ t('保存') }}</button><button type="submit" name="do" value="alert_test" class="quiet">{{ t('知らせを試す') }}</button>{% if config.VAL_BUILD %}<button type="submit" name="do" value="look" class="quiet">{{ t('新しい版を確かめる') }}</button>{% endif %}</div>
+</form>
+<p class="note">{{ linked(t('ページが空のままのときは、{link}でどこが読めていないかを確かめられます。'), url_for('checkup'), t('診断'), false) }}</p>
 <p class="note">{{ t('設定・お気に入り・画像はこの PC の {folder} にあります。アプリを消すときは、このフォルダーも消してください。', folder=data_folder) }}</p>
 </section>
 {% endif %}

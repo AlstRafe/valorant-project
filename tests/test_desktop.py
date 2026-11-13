@@ -62,6 +62,8 @@ class FakeClient:
             },
         }
         self.presences = [presence("MENUS"), presence("INGAME", puuid=FRIEND)]
+        #: The owner's friends list, as the client's chat gives it.
+        self.friends = [{"puuid": FRIEND, "game_name": "Tomo", "game_tag": "JP2", "last_online_ts": 0}]
 
     def __call__(self, door, path):
         self.asked.append(path)
@@ -77,6 +79,8 @@ class FakeClient:
             return 200, self.sessions
         if path == "/chat/v4/presences":
             return 200, {"presences": self.presences}
+        if path == "/chat/v4/friends":
+            return 200, {"friends": self.friends}
         return 404, None
 
 
