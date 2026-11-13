@@ -225,6 +225,25 @@ class ToolsTest(unittest.TestCase):
         self.assertIsNone(default["ads"])
         self.assertEqual(len(crosshair.shapes(default["primary"])), 16, "8 lines and their outlines")
 
+    def test_what_makes_a_crosshair_move_is_known(self):
+        """The movement and firing errors are the game's own settings, not ones the site does not know."""
+        found = crosshair.parse("0;P;h;0;f;0;m;1;0l;4;0o;2;0a;1;0m;1;0f;0;0s;0.5;0e;2;1m;0;1f;0;1s;1;1e;1;s;0")
+        self.assertEqual(found["unknown"], [])
+        about = crosshair.describe(found["primary"])
+        self.assertEqual((about["inner"]["moving"], about["inner"]["firing"]), (True, False))
+        self.assertEqual((about["outer"]["moving"], about["outer"]["firing"]), (False, False))
+        self.assertFalse(about["fade"])
+        rest = crosshair.describe(crosshair.parse("0")["primary"])
+        self.assertEqual((rest["inner"]["moving"], rest["inner"]["firing"]), (False, True), "the game's default")
+        self.assertEqual((rest["outer"]["moving"], rest["outer"]["firing"]), (True, True))
+        self.assertEqual(
+            len(crosshair.shapes(found["primary"])), 8, "drawn at rest: 4 inner and 4 outer lines, no outlines"
+        )
+        text = self.page("/crosshair?code=0;P;c;5;h;0;0l;4;0o;2;0a;1;0f;0;1b;0")
+        self.assertIn("射撃エラー オフ", text)
+        self.assertNotIn("まだ知らない設定", text)
+        self.assertIn("撃っていないときの見た目", text)
+
     def test_presets_read_back(self):
         for name, settings in crosshair.PRESETS.items():
             with self.subTest(name=name):

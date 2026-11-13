@@ -4,6 +4,11 @@ SVG, here on the server, so a code can be seen and checked before it is pasted i
 A code is ``0;P;c;5;h;0;0l;4;...``: a version, then ``P`` (primary), ``A`` (aim down sights) and ``S`` (sniper
 scope) sections of key;value pairs. A key that is not given keeps the game's default; one we do not know is kept
 and listed as it is. Lines are in the game's pixels at 1080p.
+
+The drawing is the crosshair at rest (standing still, not firing). What makes it move in the game is read too and
+told in the page's table: each ring's movement error (``0m``, ``1m``) and firing error (``0f``, ``1f``) with their
+multipliers (``0s``, ``0e``, ``1s``, ``1e``), the fade while firing (``f``), the firing error's offset taken from
+the crosshair's (``m``) and whether a watched player's crosshair is shown (``s``).
 """
 
 from __future__ import annotations
@@ -26,6 +31,9 @@ PRIMARY = {
     "d": 0,
     "z": 2,
     "a": 1.0,
+    "f": 1,
+    "s": 1,
+    "m": 0,
     "0b": 1,
     "0t": 2,
     "0l": 6,
@@ -33,6 +41,10 @@ PRIMARY = {
     "0g": 0,
     "0o": 3,
     "0a": 0.8,
+    "0m": 0,
+    "0f": 1,
+    "0s": 1,
+    "0e": 1,
     "1b": 1,
     "1t": 2,
     "1l": 2,
@@ -40,6 +52,10 @@ PRIMARY = {
     "1g": 0,
     "1o": 10,
     "1a": 0.35,
+    "1m": 1,
+    "1f": 1,
+    "1s": 1,
+    "1e": 1,
 }
 SNIPER = {"c": 7, "u": "", "d": 1, "s": 1.0, "o": 0.75}
 SECTIONS = {"P": "primary", "A": "ads", "S": "sniper"}
@@ -198,6 +214,7 @@ def describe(settings: dict) -> dict:
         "dot": (_int(settings.get("d")), _size(settings.get("z"), 1, 6), _float(settings.get("a"), 1.0)),
         "inner": _ring(settings, "0"),
         "outer": _ring(settings, "1"),
+        "fade": bool(_int(settings.get("f"))),
     }
 
 
@@ -209,6 +226,9 @@ def _ring(settings: dict, ring: str) -> dict:
         "vertical": _size(settings.get(ring + "v"), 0, 20) if _int(settings.get(ring + "g")) else None,
         "thickness": _size(settings.get(ring + "t"), 0, 10),
         "offset": _size(settings.get(ring + "o"), 0, 20),
+        # whether the lines move apart in the game: while walking, and while firing
+        "moving": bool(_int(settings.get(ring + "m"))),
+        "firing": bool(_int(settings.get(ring + "f"))),
     }
 
 

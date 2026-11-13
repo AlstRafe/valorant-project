@@ -36,7 +36,7 @@
 {% if ads is not none %}{{ draw(ads, t('覗き込み')) }}{% endif %}
 {{ draw(sniper, t('スナイパーのスコープ'), sniper=True) }}
 </div>
-<p class="note">{{ t('1080p での大きさを 4 倍にしています。') }}{% if code and not problem %} <button type="button" class="quiet copy" data-copy="{{ code }}" data-done="{{ t('コピーしました') }}">{{ t('コードをコピー') }}</button>{% endif %}</p>
+<p class="note">{{ t('1080p での大きさを 4 倍にしています。') }} {{ t('止まっていて、撃っていないときの見た目です。') }}{% if code and not problem %} <button type="button" class="quiet copy" data-copy="{{ code }}" data-done="{{ t('コピーしました') }}">{{ t('コードをコピー') }}</button>{% endif %}</p>
 {% if unknown %}<p class="note">{{ t('このサイトがまだ知らない設定（そのまま残ります）') }}: <code>{{ unknown|join(', ') }}</code></p>{% endif %}
 {% if code and not problem %}<form class="sens-form xh-save" id="xh-save" data-code="{{ code }}" data-saved="{{ t('保存しました') }}" hidden>
 <label><span>{{ t('名前（なくてもかまいません）') }}</span><input name="name" maxlength="30" autocomplete="off"></label>
@@ -64,6 +64,7 @@
 <div><dt>{{ t('センタードット') }}</dt><dd>{% if about.dot[0] %}{{ t('オン') }} · {{ t('太さ') }} {{ about.dot[1]|int }} · {{ t('不透明度') }} {{ about.dot[2] }}{% else %}{{ t('オフ') }}{% endif %}</dd></div>
 {% for key, name in (('inner', t('内側のライン')), ('outer', t('外側のライン'))) %}{% set ring = about[key] %}
 <div><dt>{{ name }}</dt><dd>{% if ring.on %}{{ t('長さ') }} {{ ring.length|int }}{% if ring.vertical is not none %} / {{ ring.vertical|int }}{% endif %} · {{ t('太さ') }} {{ ring.thickness|int }} · {{ t('間隔') }} {{ ring.offset|int }} · {{ t('不透明度') }} {{ ring.opacity }}{% else %}{{ t('オフ') }}{% endif %}</dd></div>
+{% if ring.on %}<div><dt>{{ t('{name}の広がり', name=name) }}</dt><dd>{{ t('移動エラー') }} {{ t('オン') if ring.moving else t('オフ') }} · {{ t('射撃エラー') }} {{ t('オン') if ring.firing else t('オフ') }}</dd></div>{% endif %}
 {% endfor %}
 </dl>
 </section>
