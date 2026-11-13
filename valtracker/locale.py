@@ -3812,4 +3812,114 @@ TEXTS = {
         "en-GB": " (open to join)",
         "zh-TW": "（可加入）",
     },
+    "いますぐ更新": {
+        "ko": "지금 업데이트",
+        "en-GB": "Update now",
+        "zh-TW": "立即更新",
+    },
+    "いまの版が最新です。": {
+        "ko": "지금 버전이 최신입니다.",
+        "en-GB": "This is the newest version.",
+        "zh-TW": "目前已是最新版本。",
+    },
+    "アプリのフォルダーに書き込めないので、ここからは更新できません。ダウンロードのページから入れ替えてください。": {
+        "ko": "앱 폴더에 쓸 수 없어 여기서는 업데이트할 수 없습니다. 다운로드 페이지에서 받아 교체해 주세요.",
+        "en-GB": "The app's folder cannot be written, so it cannot update from here. Replace it from the download page.",
+        "zh-TW": "無法寫入應用程式的資料夾，因此不能從這裡更新。請從下載頁面取得後替換。",
+    },
+    "ダウンロードした VALTracker.exe でだけ更新できます。": {
+        "ko": "다운로드한 VALTracker.exe에서만 업데이트할 수 있습니다.",
+        "en-GB": "Only the downloaded VALTracker.exe can update itself.",
+        "zh-TW": "只有下載的 VALTracker.exe 才能更新。",
+    },
+    "ダウンロードしたファイルを確かめられなかったので、使いませんでした。もう一度押してください。": {
+        "ko": "다운로드한 파일을 확인할 수 없어 사용하지 않았습니다. 다시 눌러 주세요.",
+        "en-GB": "The downloaded file could not be verified, so it was not used. Press again.",
+        "zh-TW": "無法確認下載的檔案，因此沒有使用。請再按一次。",
+    },
+    "ダウンロードできました。試合が終わったら「入れ替える」を押してください。": {
+        "ko": "다운로드했습니다. 경기가 끝나면 '교체'를 눌러 주세요.",
+        "en-GB": "Downloaded. Press “Install” once the match is over.",
+        "zh-TW": "下載完成。對戰結束後請按「替換」。",
+    },
+    "ダウンロードできませんでした。少ししてからもう一度押してください。": {
+        "ko": "다운로드하지 못했습니다. 잠시 후 다시 눌러 주세요.",
+        "en-GB": "The download did not work. Press again in a little while.",
+        "zh-TW": "下載失敗。請稍後再按一次。",
+    },
+    "ダウンロードのページ": {
+        "ko": "다운로드 페이지",
+        "en-GB": "Download page",
+        "zh-TW": "下載頁面",
+    },
+    "ダウンロード中… {percent}%": {
+        "ko": "다운로드 중… {percent}%",
+        "en-GB": "Downloading… {percent}%",
+        "zh-TW": "下載中… {percent}%",
+    },
+    "ボタンを押すと、新しい版をダウンロードして入れ替え、アプリを開き直します（1 分ほど）。設定はそのまま残ります。": {
+        "ko": "버튼을 누르면 새 버전을 다운로드해 교체하고 앱을 다시 엽니다(1분 정도). 설정은 그대로 남습니다.",
+        "en-GB": "The button downloads the new version, puts it in place and opens the app again (about a minute). Your settings stay.",
+        "zh-TW": "按下按鈕後，會下載新版本並替換，然後重新開啟應用程式（約 1 分鐘）。設定會保留。",
+    },
+    "入れ替えます。アプリが数秒閉じて、新しい版で開き直ります。": {
+        "ko": "교체합니다. 앱이 몇 초 동안 닫혔다가 새 버전으로 다시 열립니다.",
+        "en-GB": "Installing. The app closes for a few seconds and opens again as the new version.",
+        "zh-TW": "正在替換。應用程式會關閉幾秒，然後以新版本重新開啟。",
+    },
+    "入れ替える": {
+        "ko": "교체",
+        "en-GB": "Install",
+        "zh-TW": "替換",
+    },
+    "新しい版があります。上の「いますぐ更新」で更新できます。": {
+        "ko": "새 버전이 있습니다. 위의 '지금 업데이트'로 업데이트할 수 있습니다.",
+        "en-GB": "A newer version is out. “Update now” above installs it.",
+        "zh-TW": "有新版本。可以用上方的「立即更新」更新。",
+    },
+    "新しい版があります（上のボタンで更新できます）": {
+        "ko": "새 버전이 있습니다(위의 버튼으로 업데이트할 수 있습니다)",
+        "en-GB": "a newer version is out (the button above installs it)",
+        "zh-TW": "有新版本（可以用上方的按鈕更新）",
+    },
+    "新しい版があるか確かめられませんでした。少ししてからもう一度押してください。": {
+        "ko": "새 버전이 있는지 확인하지 못했습니다. 잠시 후 다시 눌러 주세요.",
+        "en-GB": "Could not check for a newer version. Press again in a little while.",
+        "zh-TW": "無法確認是否有新版本。請稍後再按一次。",
+    },
+    "新しい版に更新しました。": {
+        "ko": "새 버전으로 업데이트했습니다.",
+        "en-GB": "Updated to the new version.",
+        "zh-TW": "已更新為新版本。",
+    },
+    "新しい版はまだ作っている途中です。数分後にもう一度押してください。": {
+        "ko": "새 버전을 아직 만드는 중입니다. 몇 분 뒤에 다시 눌러 주세요.",
+        "en-GB": "The new version is still being built. Press again in a few minutes.",
+        "zh-TW": "新版本仍在製作中。請幾分鐘後再按一次。",
+    },
+    "新しい版を作っている途中です。数分後にもう一度確かめてください。": {
+        "ko": "새 버전을 만드는 중입니다. 몇 분 뒤에 다시 확인해 주세요.",
+        "en-GB": "A new version is being built. Check again in a few minutes.",
+        "zh-TW": "新版本正在製作中。請幾分鐘後再檢查一次。",
+    },
+    "新しい版を確かめています…": {
+        "ko": "새 버전을 확인하는 중…",
+        "en-GB": "Checking for the new version…",
+        "zh-TW": "正在確認新版本…",
+    },
+    "新しい版を確かめる": {
+        "ko": "새 버전 확인",
+        "en-GB": "Check for a newer version",
+        "zh-TW": "檢查新版本",
+    },
+    "試合が終わってから更新できます（ダウンロードがゲームの回線を使わないように）。": {
+        "ko": "경기가 끝난 뒤에 업데이트할 수 있습니다(다운로드가 게임의 회선을 쓰지 않도록).",
+        "en-GB": "You can update once the match is over (so the download does not take the game's connection).",
+        "zh-TW": "對戰結束後才能更新（避免下載佔用遊戲的網路）。",
+    },
+    "新しい版が出ると知らせ、アプリの中のボタン 1 つで更新できます": {
+        "ko": "새 버전이 나오면 알려 주고, 앱 안의 버튼 하나로 업데이트할 수 있습니다",
+        "en-GB": "It tells you when a newer version is out, and one button in the app installs it",
+        "zh-TW": "有新版本時會通知，並可用應用程式內的一個按鈕更新",
+    },
 }

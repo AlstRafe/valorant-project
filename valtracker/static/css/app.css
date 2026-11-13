@@ -313,6 +313,26 @@ h2 {
   margin-top: 0.2rem;
   color: var(--soft);
 }
+/* The built app's own update: the button beside the words, how far it is below. */
+.update-form {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+.update-form button {
+  min-height: 2.25rem;
+  padding: 0 0.9rem;
+}
+.update-said {
+  margin: 0.4rem 0 0;
+  font-weight: 700;
+}
+.update-said.failed {
+  color: var(--loss);
+}
 
 /* The light/dark button and the language menu: the same as on every site of this host (portal.css). */
 .theme {

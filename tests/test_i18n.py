@@ -10,7 +10,14 @@ from valtracker.collection import TABS
 from valtracker.compare import LINES
 from valtracker.live import STATE_WORDS
 from valtracker.locale import TEXTS
-from valtracker.owner import EQUIP_FAILURES, EQUIP_SAID, LIVE_SAID
+from valtracker.owner import (
+    EQUIP_FAILURES,
+    EQUIP_SAID,
+    LIVE_SAID,
+    UPDATE_BUTTONS,
+    UPDATE_FAILURES,
+    UPDATE_SAID,
+)
 from valtracker.skinlib import LEVEL_ITEMS
 from valtracker.tools import CLOCKS, PARTY_WORDS, REGION_NAMES
 from valtracker.views import BUYS, CLUSTERS, ENDINGS, FAILURES, LOBBY_LABELS, QUEUES, RIOT_FAILURES
@@ -53,6 +60,7 @@ def used_texts() -> set[str]:
     found.update(EQUIP_SAID.values())
     found.update(EQUIP_FAILURES.values())
     found.update(words for words, _ in LIVE_SAID.values())
+    found.update((*UPDATE_SAID.values(), *UPDATE_FAILURES.values(), *UPDATE_BUTTONS.values()))
     found.update(checkup.TEXTS)  # the PC app's checkup, and where a friend is (friends.WORDS)
     found.add("{state}（{map}）")
     return found

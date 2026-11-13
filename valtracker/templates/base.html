@@ -42,7 +42,14 @@
 </div>
 </header>
 <main id="main">
-{% if update %}<p class="app-update" role="status"><strong>{{ t('PC アプリの新しい版があります。') }}</strong> <a href="{{ update.url }}">{{ t('ダウンロード') }}</a> <small>{{ t('いまのアプリを閉じてから展開し、いまのフォルダーに上書きしてください。設定はそのまま残ります。') }}</small></p>{% endif %}
+{#- the PC app: a newer build is out. The built app replaces itself at a press of the button (update.py); the
+    source, or a folder that cannot be written, is told where to download it. #}
+{% if update and updating and updating.possible %}<div class="app-update" role="status" data-update="{{ url_for('app_update_state') }}"{% if updating.busy %} data-busy{% endif %}><strong>{{ t('PC アプリの新しい版があります。') }}</strong>
+<form method="post" action="{{ url_for('app_update') }}" class="update-form"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button type="submit"{% if updating.busy %} disabled{% endif %}>{{ updating.button }}</button> <a href="{{ update.url }}">{{ t('ダウンロードのページ') }}</a></form>
+<p class="update-said{% if updating.failed %} failed{% endif %}" data-update-said{% if not updating.words %} hidden{% endif %}>{{ updating.words }}</p>
+<small>{{ t('ボタンを押すと、新しい版をダウンロードして入れ替え、アプリを開き直します（1 分ほど）。設定はそのまま残ります。') }}</small></div>
+{% elif update %}<p class="app-update" role="status"><strong>{{ t('PC アプリの新しい版があります。') }}</strong> <a href="{{ update.url }}">{{ t('ダウンロード') }}</a> <small>{{ t('いまのアプリを閉じてから展開し、いまのフォルダーに上書きしてください。設定はそのまま残ります。') }}</small></p>
+{% elif updated %}<p class="app-update" role="status"><strong>{{ t('新しい版に更新しました。') }}</strong>{% if config.VAL_BUILD %} <small>{{ config.VAL_BUILD.date }} · {{ config.VAL_BUILD.commit[:7] }}</small>{% endif %}</p>{% endif %}
 {% block main %}{% endblock %}
 </main>
 <a class="to-top" href="#main" title="{{ t('上へ戻る') }}" aria-label="{{ t('上へ戻る') }}" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></a>

@@ -33,6 +33,7 @@ from valtracker.henrik import FRESH_AFTER, MODES, NAME, REGIONS, HenrikError, sh
 from valtracker.media import kind as media_kind
 from valtracker.pdmatch import MODE_TYPES
 from valtracker.riot import AUTHORIZE, RiotError
+from valtracker.update import UpdateError
 
 #: HenrikDev's queue ids -> what the game calls them (translated in locale.py).
 QUEUES = {
@@ -1268,6 +1269,19 @@ def register(app: Flask) -> None:
             elif do == "riot_off":
                 riot.sign_out()
                 saved = _t("Riot アカウントとの連携を解除しました。")
+            elif do == "look" and current_app.config["VAL_UPDATER"] is not None:
+                # the PC app: ask the site now whether a newer build is out (update.py)
+                try:
+                    found = current_app.config["VAL_UPDATER"].look()
+                except UpdateError:
+                    riot_problem = _t("新しい版があるか確かめられませんでした。少ししてからもう一度押してください。")
+                else:
+                    if found and found["ready"]:
+                        saved = _t("新しい版があります。上の「いますぐ更新」で更新できます。")
+                    elif found:
+                        saved = _t("新しい版を作っている途中です。数分後にもう一度確かめてください。")
+                    else:
+                        saved = _t("いまの版が最新です。")
             elif do in ("app", "alert_test") and current_app.config["VAL_LOCAL"] is not None:
                 # the PC app's own choices (pc.py): the match-found alert, the start with Windows
                 store.save(**{key: request.form.get(key) == "on" for key in pc.DEFAULTS})

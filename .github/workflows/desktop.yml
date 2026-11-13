@@ -101,6 +101,39 @@ jobs:
           else { Stop-Process -Id $second.Id -Force; "Opened twice: THE WINDOW WAS NOT FOUND (the second start waits in its message box)." }
           Get-Content "$env:VAL_DESKTOP_HOME\desktop.log"
           if (-not $app.WaitForExit(60000)) { Stop-Process -Id $app.Id -Force }
+      # the update's last step, on a real Windows: the new build takes the place of a running, older one once that
+      # has closed, leaves the owner's other files alone, and opens the app again (here: only to check its pages)
+      - name: The app replaces itself (update.py)
+        shell: pwsh
+        run: |
+          $env:VAL_DESKTOP_HOME = "$env:RUNNER_TEMP\vt-update"
+          $env:VAL_UPDATE_THEN = "--check"
+          $old = "$env:RUNNER_TEMP\installed\VALTracker"
+          $new = "$env:RUNNER_TEMP\staged\VALTracker"
+          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\installed", "$env:RUNNER_TEMP\staged" | Out-Null
+          Copy-Item dist\VALTracker $old -Recurse
+          Copy-Item dist\VALTracker $new -Recurse
+          Set-Content "$old\_internal\valtracker\BUILD" "0000000000000000000000000000000000000000 1" -NoNewline -Encoding ascii
+          Set-Content "$old\mine.txt" "the owner's own file"
+          $app = Start-Process "$old\VALTracker.exe" -ArgumentList "--close-after", "25" -PassThru
+          Start-Sleep -Seconds 10
+          $swap = Start-Process "$new\VALTracker.exe" -ArgumentList "--install-over", "`"$old`"", "--wait-pid", $app.Id -PassThru
+          # the old app closes by itself (its window, after 25 s); one that cannot open a window here is ended
+          if (-not $app.WaitForExit(40000)) { Stop-Process -Id $app.Id -Force; "The old app was ended by hand." }
+          if (-not $swap.WaitForExit(150000)) { Stop-Process -Id $swap.Id -Force; "The new build did not finish."; exit 1 }
+          # the app opened after it checks its pages and ends
+          $left = 90
+          while ($left -gt 0 -and (Get-Process VALTracker -ErrorAction SilentlyContinue)) { Start-Sleep -Seconds 3; $left -= 3 }
+          Get-Process VALTracker -ErrorAction SilentlyContinue | Stop-Process -Force
+          Get-ChildItem "$env:VAL_DESKTOP_HOME\*.log" | ForEach-Object { "--- $($_.Name)"; Get-Content $_ }
+          $stamp = Get-Content "$old\_internal\valtracker\BUILD" -Raw
+          $wanted = Get-Content valtracker\BUILD -Raw
+          if ($stamp -ne $wanted) { "NOT REPLACED: the app's folder still holds $stamp"; exit 1 }
+          if (-not (Test-Path "$old\mine.txt")) { "A FILE OF THE OWNER'S WAS REMOVED"; exit 1 }
+          if ((Test-Path "$old\_internal.old") -or (Test-Path "$old\VALTracker.exe.old")) { "THE OLD BUILD WAS LEFT BEHIND"; exit 1 }
+          if (-not (Select-String -Path "$env:VAL_DESKTOP_HOME\update.log" -Pattern "replaced" -Quiet)) { "NO WORD OF IT IN update.log"; exit 1 }
+          if (-not (Select-String -Path "$env:VAL_DESKTOP_HOME\desktop.log" -Pattern "ok  200 /settings" -Quiet)) { "THE UPDATED APP DID NOT ANSWER ITS PAGES"; exit 1 }
+          "Replaced, the owner's file kept, the updated app answers its pages."
       - name: Zip
         shell: pwsh
         run: Compress-Archive -Path dist\VALTracker -DestinationPath VALTracker-windows.zip

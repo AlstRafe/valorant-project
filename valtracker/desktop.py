@@ -28,8 +28,8 @@ minute after the start, then every few hours: one small request), and the title 
 page (follow_look).
 
 What the site cannot do and the app does: the owner's friends and where each is (friends.py), a match found told
-while another program is in front, and starting with Windows, minimised (pc.py), and a checkup of everything the
-app reads on this PC (checkup.py).
+while another program is in front, and starting with Windows, minimised (pc.py), a checkup of everything the
+app reads on this PC (checkup.py), and updating itself when the owner presses the button (update.py).
 """
 
 from __future__ import annotations
@@ -46,8 +46,8 @@ import urllib.request
 import webbrowser
 from pathlib import Path
 
-from valtracker import NAME, create_app, pc, release
-from valtracker.localclient import LocalClient
+from valtracker import NAME, create_app, pc, release, update
+from valtracker.localclient import LocalClient, moment
 
 #: The window's engine is told: no graphics card, no animations (the site's prefers-reduced-motion rules).
 BROWSER_ARGUMENTS = "--disable-gpu --force-prefers-reduced-motion --disable-features=ElasticOverscroll"
@@ -571,6 +571,27 @@ def _output(folder: Path) -> None:
         sys.stdout = sys.stderr = log
 
 
+def _install_over(target: str, pid: int) -> int:
+    """The new build's part of an update (update.install_over), with what it did written to update.log in the
+    app's data folder (the .exe has no console; the app's own log is the running app's)."""
+    folder = data_folder()
+    folder.mkdir(parents=True, exist_ok=True)
+    try:
+        log = open(folder / "update.log", "a", encoding="utf-8", buffering=1)  # noqa: SIM115 - for this run
+    except OSError:
+        log = None
+
+    def write(words: str) -> None:
+        if log is not None:
+            log.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {words}\n")
+
+    try:
+        return update.install_over(Path(target), pid, log=write)
+    finally:
+        if log is not None:
+            log.close()
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="VALTracker", description="VAL Tracker を PC のアプリとして開く")
     parser.add_argument("--port", type=int, default=0, help="the server's port (0: any free one)")
@@ -578,7 +599,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--check", action="store_true", help="start, check that the pages answer, stop")
     parser.add_argument("--close-after", type=float, default=0, help="close the window after this many seconds")
     parser.add_argument(pc.MINIMISED, action="store_true", help="open in the taskbar (the start with Windows)")
+    parser.add_argument(update.INSTALL, metavar="FOLDER", help="put this build in place of the app in FOLDER")
+    parser.add_argument("--wait-pid", type=int, default=0, help="with --install-over: the app to wait for")
+    parser.add_argument(update.UPDATED, action="store_true", help="the app was just updated (the page says so)")
     args = parser.parse_args(argv)
+    if args.install_over:
+        # the new build, started by the app that downloaded it (update.py): it takes the app's place and ends
+        return _install_over(args.install_over, args.wait_pid)
     if not args.check and not first():
         # opened twice: the window already there comes back (minimised, or behind other windows)
         if not show_running():
@@ -601,11 +628,25 @@ def main(argv: list[str] | None = None) -> int:
     )
     local.listen(alert)
     app.config["VAL_AUTOSTART"] = pc.Autostart.here()
+    # the app updates itself when the owner presses the button (update.py)
+    stopping = threading.Event()
+
+    def where() -> str:
+        seen = local.presence()
+        return moment(seen) if seen and seen.get("running") else ""
+
+    def close() -> None:
+        stopping.set()
+        if shown:
+            shown[0].destroy()
+
+    app.config["VAL_UPDATER"] = update.Updater(app, update.running_home(), where, close)
+    app.config["VAL_UPDATED"] = bool(args.updated)
     server, base = serve(app, args.port)
     local.start()
-    stopping = threading.Event()
     if not args.check:
         look_for_updates(app, stopping)
+        update.clean(folder, update.running_home())
     print(f"{NAME}: {base}/ (data: {folder})", flush=True)
     try:
         if args.check:
@@ -617,8 +658,8 @@ def main(argv: list[str] | None = None) -> int:
                 tell(IN_BROWSER)
                 return 0
             print("Ctrl+C で終わります。", flush=True)
-            while True:
-                time.sleep(3600)
+            while not stopping.wait(3600):
+                pass
     except KeyboardInterrupt:
         pass
     finally:

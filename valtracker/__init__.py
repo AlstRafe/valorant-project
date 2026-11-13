@@ -72,6 +72,9 @@ def create_app(
     app.config["VAL_CALM"] = []
     app.config["VAL_ALERT"] = None
     app.config["VAL_AUTOSTART"] = None
+    # the PC app updating itself (update.py), and whether it was just updated (said once)
+    app.config["VAL_UPDATER"] = None
+    app.config["VAL_UPDATED"] = False
     app.config["VAL_RIOT"] = Riot(instance, send, app.config["VAL_CONTENT"].client_version, local=local)
     app.config["VAL_DIARY"] = Diary(instance)
     # the owner's saved loadouts (owner.py: the collection's sets)
@@ -149,8 +152,17 @@ def create_app(
 
     app.add_template_filter(content.plain, "plain")
 
+    def _updated_once() -> bool:
+        """Whether the app was just updated: true for the first page drawn after it, then no more."""
+        if not app.config["VAL_UPDATED"] or request.endpoint in ("static", "media", "picture"):
+            return False
+        app.config["VAL_UPDATED"] = False
+        return True
+
     @app.context_processor
     def _page():
+        from valtracker.owner import update_state
+
         lang = getattr(g, "lang", i18n.DEFAULT)
         return {
             "lang": lang,
@@ -173,6 +185,9 @@ def create_app(
             "update": app.config["VAL_UPDATE"],
             "data_folder": app.instance_path if local is not None else "",
             "app_page": release.PAGE,
+            # the PC app updating itself (update.py): how far it is, and whether it was just updated (said once)
+            "updating": update_state() if local is not None else None,
+            "updated": _updated_once(),
         }
 
     from valtracker import views
