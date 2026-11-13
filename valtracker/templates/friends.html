@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{#- The PC app only: the owner's friends as the Riot Client on this PC lists them (friends.py). The list is read
+    again every few seconds while the page is in view (refresh in app.js); the box to narrow it stays as typed. #}
+{% macro name_of(row) -%}
+<strong><a href="{{ url_for('player', name=row.name, tag=row.tag) }}">{{ row.name }}<span class="tag">#{{ row.tag }}</span></a>{% if row.mine %} <span class="badge">{{ t('同じパーティー') }}</span>{% endif %}</strong>
+{%- endmacro %}
+{% block title %}{{ t('フレンド') }} · {{ site_name }}{% endblock %}
+{% block main %}
+<section class="hero">
+<h1>{{ t('フレンド') }}</h1>
+<p class="lead">{{ t('フレンドがいまどこにいるかを、この PC の Riot クライアントのフレンド一覧から読んでいます。PC アプリだけの機能です。') }}</p>
+</section>
+{% include "_play.html" %}
+{% if closed %}
+<p class="problem" role="alert">{{ t('Riot クライアントが開いていないので、フレンドを読めません。Riot クライアントか VALORANT を開くと、ここに出ます。') }}</p>
+<p><a class="button quiet" href="{{ url_for('checkup') }}">{{ t('診断を開く') }}</a></p>
+<div data-refresh="10"></div>
+{% else %}
+{% if total %}<p class="find" hidden><label for="find" class="sr">{{ t('名前で絞り込む') }}</label><input id="find" type="search" placeholder="{{ t('名前で絞り込む') }}" autocomplete="off" spellcheck="false" enterkeyhint="search"></p>{% endif %}
+<div data-refresh="10">
+<p class="friends-count">{{ t('フレンド {total} 人', total=total) }} · VALORANT {{ t('{count} 人', count=playing|length) }} · {{ t('ほかでオンライン {count} 人', count=online|length) }}</p>
+{% if not total %}<p class="empty">{{ t('フレンドがいません。VALORANT でフレンドを追加すると、ここに出ます。') }}</p>{% endif %}
+{% if total %}
+<section class="friends" aria-labelledby="friends-playing" data-group>
+<h2 id="friends-playing">{{ t('VALORANT にいる') }} <small>{{ playing|length }}</small></h2>
+{% if playing %}
+<ul class="seats">
+{% for row in playing %}
+<li class="seat friend {{ row.where }}{% if row.mine %} me{% endif %}" data-name="{{ (row.name ~ '#' ~ row.tag)|lower }}">
+{% if row.card %}<img src="{{ media(row.card) }}" alt="" width="40" height="40" loading="lazy">{% else %}<span class="no-agent" aria-hidden="true">{{ row.name[:1] }}</span>{% endif %}
+<span class="seat-text">
+{{ name_of(row) }}
+{%- set parts = [t(row.words)] -%}
+{%- if row.queue %}{% set _ = parts.append(row.queue) %}{% endif -%}
+{%- if row.map %}{% set _ = parts.append(row.map) %}{% endif -%}
+{%- if row.score %}{% set _ = parts.append(row.score) %}{% endif %}
+<small class="friend-where"><span class="dot {{ row.where }}" aria-hidden="true"></span>{{ parts|join(' · ') }}</small>
+{%- set more = [] -%}
+{%- if row.party %}{% set _ = more.append(t('パーティー {count}人', count=row.party) ~ (t('（参加できます）') if row.open else '')) %}{% elif row.open %}{% set _ = more.append(t('パーティーに参加できます')) %}{% endif -%}
+{%- if row.level %}{% set _ = more.append(t('レベル {level}', level=row.level)) %}{% endif -%}
+{%- if row.note %}{% set _ = more.append(row.note) %}{% endif %}
+{% if more %}<small>{{ more|join(' · ') }}</small>{% endif %}
+</span>
+{% if row.rank %}<span class="seat-rank">{% if row.rank.icon %}<img src="{{ media(row.rank.icon) }}" alt="" width="28" height="28" loading="lazy">{% endif %}<span class="rank-words"><span>{{ row.rank.name }}</span></span></span>{% endif %}
+</li>
+{% endfor %}
+</ul>
+{% else %}<p class="empty">{{ t('いま VALORANT にいるフレンドはいません。') }}</p>{% endif %}
+</section>
+{% if online %}
+<section class="friends" aria-labelledby="friends-online" data-group>
+<h2 id="friends-online">{{ t('ほかでオンライン') }} <small>{{ online|length }}</small></h2>
+<ul class="seats friends-small">
+{% for row in online %}
+<li class="seat friend" data-name="{{ (row.name ~ '#' ~ row.tag)|lower }}"><span class="seat-text">{{ name_of(row) }}
+<small>{{ row.product }}{% if row.away %} · {{ t('離席中') }}{% endif %}{% if row.note %} · {{ row.note }}{% endif %}</small></span></li>
+{% endfor %}
+</ul>
+</section>
+{% endif %}
+{% if offline %}
+<section class="friends" aria-labelledby="friends-offline" data-group>
+<h2 id="friends-offline">{{ t('オフライン') }} <small>{{ offline|length }}</small></h2>
+<ul class="seats friends-small">
+{% for row in offline %}
+<li class="seat friend off" data-name="{{ (row.name ~ '#' ~ row.tag)|lower }}"><span class="seat-text">{{ name_of(row) }}
+<small>{% if row.last %}{{ t('最後のオンライン') }} <time datetime="{{ row.last.iso }}">{{ row.last.text }}</time>{% else %}{{ t('オフライン') }}{% endif %}{% if row.note %} · {{ row.note }}{% endif %}</small></span></li>
+{% endfor %}
+</ul>
+</section>
+{% endif %}
+{% endif %}
+</div>
+{% endif %}
+{% endblock %}

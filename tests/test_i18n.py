@@ -5,7 +5,7 @@ import re
 import unittest
 from pathlib import Path
 
-from valtracker import crosshair, i18n
+from valtracker import checkup, crosshair, i18n
 from valtracker.collection import TABS
 from valtracker.compare import LINES
 from valtracker.live import STATE_WORDS
@@ -53,6 +53,7 @@ def used_texts() -> set[str]:
     found.update(EQUIP_SAID.values())
     found.update(EQUIP_FAILURES.values())
     found.update(words for words, _ in LIVE_SAID.values())
+    found.update(checkup.TEXTS)  # the PC app's checkup, and where a friend is (friends.WORDS)
     found.add("{state}（{map}）")
     return found
 

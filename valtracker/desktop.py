@@ -16,7 +16,9 @@ Made never to get in VALORANT's way:
 - the window draws without the graphics card and without animations: the GPU stays the game's;
 - it waits for the Riot Client's events instead of asking every second, and a hidden or minimised window asks
   nothing at all;
-- it never brings itself to the front (that would take a full-screen game out of focus);
+- it never brings itself to the front (that would take a full-screen game out of focus): a match found while
+  the owner is in another program lights its taskbar button, and nothing at all while the game is in front
+  (pc.py);
 - the site's background work (looking at more players for the busy-hour estimates) is off.
 
 What a window without a browser around it needs: other sites' links open in the default browser (app.js), back,
@@ -24,6 +26,10 @@ forward and reload are buttons and keys (app.js), saving a picture or a calendar
 where and as large as it was left (window.json), and a newer build is told on every page (the site is asked a
 minute after the start, then every few hours: one small request), and the title bar is as dark or light as the
 page (follow_look).
+
+What the site cannot do and the app does: the owner's friends and where each is (friends.py), a match found told
+while another program is in front, and starting with Windows, minimised (pc.py), and a checkup of everything the
+app reads on this PC (checkup.py).
 """
 
 from __future__ import annotations
@@ -40,7 +46,7 @@ import urllib.request
 import webbrowser
 from pathlib import Path
 
-from valtracker import NAME, create_app, release
+from valtracker import NAME, create_app, pc, release
 from valtracker.localclient import LocalClient
 
 #: The window's engine is told: no graphics card, no animations (the site's prefers-reduced-motion rules).
@@ -464,6 +470,14 @@ def follow_look(window, put=title_bar) -> None:
     window.events.loaded += loaded
 
 
+def window_handle(shown) -> int:
+    """The window's handle (Windows'), 0 while there is none (no window yet, or not a WinForms one)."""
+    try:
+        return int(shown.native.Handle.ToInt64())
+    except Exception:  # noqa: BLE001 - no window, another platform, or it is closing
+        return 0
+
+
 def _screens(webview) -> list[tuple[int, int, int, int]]:
     try:
         return [(screen.x, screen.y, screen.width, screen.height) for screen in webview.screens]
@@ -471,9 +485,10 @@ def _screens(webview) -> list[tuple[int, int, int, int]]:
         return []
 
 
-def window(url: str, folder: Path, close_after: float = 0) -> bool:
+def window(url: str, folder: Path, close_after: float = 0, minimized: bool = False, made=None) -> bool:
     """Shows ``url`` in the app's window until it is closed: False when there is no window to be had (no
-    pywebview, or Windows without WebView2), and the default browser is used instead."""
+    pywebview, or Windows without WebView2), and the default browser is used instead. ``minimized``: it opens in
+    the taskbar (the start with Windows); ``made(window)``: told of the window once it is there."""
     os.environ.setdefault("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", BROWSER_ARGUMENTS)
     try:
         import webview
@@ -495,13 +510,16 @@ def window(url: str, folder: Path, close_after: float = 0) -> bool:
         height=start["height"],
         x=start.get("x"),
         y=start.get("y"),
-        maximized=start["maximized"],
+        maximized=start["maximized"] and not minimized,
+        minimized=minimized,
         min_size=SMALLEST,
         background_color="#f6f4ef" if light_windows() else "#161513",  # the site's paper
         text_select=True,
     )
     remember(shown, folder)
     follow_look(shown)
+    if made is not None:
+        made(shown)
 
     def close_later():
         time.sleep(close_after)
@@ -522,6 +540,8 @@ def check(base: str) -> int:
         ("/live/state", 200, None),
         ("/live/next?after=-1", 200, None),
         ("/settings", 200, None),
+        ("/friends", 200, None),
+        ("/checkup", 200, None),
         ("/tools", 200, None),
         ("/", 403, "rebound.example"),
     ):
@@ -557,6 +577,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--browser", action="store_true", help="open in the default browser, not a window")
     parser.add_argument("--check", action="store_true", help="start, check that the pages answer, stop")
     parser.add_argument("--close-after", type=float, default=0, help="close the window after this many seconds")
+    parser.add_argument(pc.MINIMISED, action="store_true", help="open in the taskbar (the start with Windows)")
     args = parser.parse_args(argv)
     if not args.check and not first():
         # opened twice: the window already there comes back (minimised, or behind other windows)
@@ -566,11 +587,20 @@ def main(argv: list[str] | None = None) -> int:
     folder = data_folder()
     folder.mkdir(parents=True, exist_ok=True)
     _output(folder)  # after the check above: the running app's log is not emptied
-    print(f"{NAME}: {', '.join(calm()) or 'no Windows priorities (not Windows)'}", flush=True)
+    calmed = calm()
+    print(f"{NAME}: {', '.join(calmed) or 'no Windows priorities (not Windows)'}", flush=True)
     os.environ.setdefault("VAL_COLLECT_SECONDS", "0")  # the busy-hour collector: the site's work, not the PC's
     local = LocalClient()
     app = create_app(instance=folder, local=local)
     app.config["VAL_BUILD"] = read_build()
+    app.config["VAL_CALM"] = calmed
+    # a match found while another program is in front: the taskbar button lights up (pc.py)
+    shown: list = []
+    app.config["VAL_ALERT"] = alert = pc.Alert(
+        app.config["VAL_SETTINGS"], folder, lambda: window_handle(shown[0]) if shown else 0, pc.windows()
+    )
+    local.listen(alert)
+    app.config["VAL_AUTOSTART"] = pc.Autostart.here()
     server, base = serve(app, args.port)
     local.start()
     stopping = threading.Event()
@@ -581,7 +611,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.check:
             return check(base)
         keep_window_low(stopping)
-        if args.browser or not window(base + FIRST_PAGE, folder, args.close_after):
+        if args.browser or not window(base + FIRST_PAGE, folder, args.close_after, args.minimized, shown.append):
             webbrowser.open(base + FIRST_PAGE)
             if getattr(sys, "frozen", False):  # no console to stop it from: the box's OK does
                 tell(IN_BROWSER)

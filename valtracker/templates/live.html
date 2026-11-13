@@ -40,6 +40,7 @@
 {% if problem %}
 <p class="problem" role="alert">{{ problem }}{% if detail %} <code>{{ detail }}</code>{% endif %}</p>
 {% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">{{ t('設定で Riot と連携する') }}</a></p>{% endif %}
+{% if desktop %}<p><a class="button quiet" href="{{ url_for('checkup') }}">{{ t('診断を開く') }}</a></p>{% endif %}
 {% else %}
 <p class="game-state{% if playing %} sr{% endif %}"><span class="dot {{ 'on' if running else 'off' }}" aria-hidden="true"></span>VALORANT: {% if phase == 'pregame' %}{{ t('エージェント選択') }}{% elif phase == 'ingame' %}{{ t('対戦中') }}{% elif phase == 'menus' %}{{ t('マッチング中') if party and party.state == 'matchmaking' else t('メニュー') }}{% elif running %}{{ t('開いています') }}{% elif running is none %}{{ t('わかりません') }}{% else %}{{ t('開いていません') }}{% endif %}</p>
 {% if last_result and not playing %}

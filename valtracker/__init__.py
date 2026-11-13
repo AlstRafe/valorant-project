@@ -14,7 +14,7 @@ from pathlib import Path
 
 from flask import Flask, current_app, g, request, url_for
 
-from valtracker import content, i18n, net, paths, security, theme
+from valtracker import content, i18n, net, paths, release, security, theme
 from valtracker.activity import COLLECT_SECONDS, Activity, Collector
 from valtracker.archive import FILL_SECONDS, Archive, Filler
 from valtracker.cache import TTLCache
@@ -67,6 +67,11 @@ def create_app(
     app.config["VAL_UPDATE"] = None
     app.config["VAL_UPDATE_LOOKED"] = 0.0  # when the release was last looked at (0: not yet)
     app.config["VAL_BUILD"] = None  # the built app's {"commit", "date"} (desktop.py), None when run from source
+    # the PC app (desktop.py): what was done to give way to the game, the match-found alert and the start with
+    # Windows (pc.py)
+    app.config["VAL_CALM"] = []
+    app.config["VAL_ALERT"] = None
+    app.config["VAL_AUTOSTART"] = None
     app.config["VAL_RIOT"] = Riot(instance, send, app.config["VAL_CONTENT"].client_version, local=local)
     app.config["VAL_DIARY"] = Diary(instance)
     # the owner's saved loadouts (owner.py: the collection's sets)
@@ -167,6 +172,7 @@ def create_app(
             "shared_url": shared_url,
             "update": app.config["VAL_UPDATE"],
             "data_folder": app.instance_path if local is not None else "",
+            "app_page": release.PAGE,
         }
 
     from valtracker import views

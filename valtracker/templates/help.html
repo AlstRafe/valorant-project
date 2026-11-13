@@ -12,6 +12,7 @@
 <a href="#hidden">{{ t('名前を隠しているプレイヤー') }}</a>
 <a href="#numbers">{{ t('数字の見かた') }}</a>
 <a href="#sources">{{ t('データの出どころ') }}</a>
+<a href="#app">{{ t('PC アプリ') }}</a>
 </nav>
 </section>
 
@@ -63,5 +64,20 @@
 <li>{{ t('プレイヤーのランクと試合：HenrikDev API') }}</li>
 <li>{{ t('エージェント・武器・スキンの名前と画像：valorant-api.com') }}</li>
 </ul>
+</section>
+
+<section class="help" id="app" aria-labelledby="app-title">
+<h2 id="app-title">{{ t('PC アプリ') }}</h2>
+<p>{{ t('Windows 用のアプリは、このサイトと同じページを PC の中で開きます。VALORANT を遊ぶ PC で使うと、サイトではできないことができます。') }}</p>
+<ul>
+<li>{{ t('Riot クライアントのサインインをそのまま使うので、何も貼らずに自分のライブ・所持品・ストアが開きます') }}</li>
+<li>{{ t('試合が見つかった瞬間に、ライブに切り替わります') }}</li>
+<li>{{ t('フレンドがいまどこにいるか（メニュー・マッチング中・対戦中とスコア・パーティーの人数）がわかります') }}</li>
+<li>{{ t('ほかのアプリを見ていても、試合が見つかるとタスクバーのボタンで知らせます（音も選べます）') }}</li>
+<li>{{ t('Windows の起動と一緒に、最小化して開けます') }}</li>
+<li>{{ t('読めないものがあるときに、どこが読めていないかを「診断」で確かめられます') }}</li>
+</ul>
+<p>{{ t('VALORANT そのものには触れません。ゲームの上に何も出さず、キーも送らず、ゲームより低い優先度で動きます。') }}</p>
+{% if not desktop %}<p><a class="button quiet" href="{{ app_page }}" rel="noopener noreferrer" target="_blank">{{ t('PC アプリをダウンロード（GitHub）') }}</a></p>{% endif %}
 </section>
 {% endblock %}

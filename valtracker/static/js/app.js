@@ -1234,14 +1234,20 @@
     var input = document.getElementById("find");
     if (!input) return;
     input.parentNode.hidden = false;
-    input.addEventListener("input", function () {
+    function narrow() {
       var words = input.value.trim().toLowerCase();
       document.querySelectorAll("[data-name]").forEach(function (item) {
         item.hidden = words !== "" && item.getAttribute("data-name").indexOf(words) < 0;
       });
       document.querySelectorAll("[data-group]").forEach(function (group) {
-        group.hidden = !group.querySelector("[data-name]:not([hidden])");
+        // a group with nothing to narrow (an empty one says so itself) stays
+        group.hidden = words !== "" && !group.querySelector("[data-name]:not([hidden])");
       });
+    }
+    input.addEventListener("input", narrow);
+    // a list read again in the background (the PC app's friends) stays narrowed
+    document.addEventListener("val:refreshed", function () {
+      if (input.value.trim()) narrow();
     });
   }
 

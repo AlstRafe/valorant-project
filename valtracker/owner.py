@@ -5,7 +5,10 @@
   queue: POST /live/act), agent select (pick and lock an agent) or the match;
 - POST /collection/equip: wear a skin (one of its variants), a buddy on a weapon, a card, a title, or a spray or a
   flex on the wheel, as the game's collection does;
-- POST /collection/sets: save the whole loadout as a set (instance/loadout_sets.json), wear one again, or delete it.
+- POST /collection/sets: save the whole loadout as a set (instance/loadout_sets.json), wear one again, or delete it;
+- /friends (the PC app only): the owner's friends and where each is, as the Riot Client on this PC lists them
+  (friends.py);
+- /checkup (the PC app only): whether each thing the app reads can be read on this PC right now (checkup.py).
 """
 
 from __future__ import annotations
@@ -17,9 +20,11 @@ from datetime import datetime
 
 from flask import Flask, abort, current_app, g, jsonify, redirect, render_template, request, session, url_for
 
+from valtracker import checkup as checkup_page
 from valtracker import collection as owned_items
+from valtracker import friends as friends_page
+from valtracker import i18n, pdmatch, security
 from valtracker import live as live_page
-from valtracker import pdmatch, security
 from valtracker import progress as progress_page
 from valtracker.activity import LINE_QUEUES
 from valtracker.collection import CHARM, STARTERS
@@ -404,6 +409,43 @@ def register(app: Flask) -> None:
         answer = jsonify({"version": local.wait(after, PUSH_WAIT)})
         answer.headers["Cache-Control"] = "no-store"
         return answer
+
+    @app.get("/friends")
+    def friends():
+        """The PC app only: the owner's friends as the Riot Client on this PC lists them, read again every few
+        seconds while the page is in view (two local reads, nothing asked of the game or of Riot's servers)."""
+        security.owner_only()
+        local = current_app.config["VAL_LOCAL"]
+        if local is None:
+            abort(404)
+        found = local.friends()
+        if found is None:
+            return render_template("friends.html", closed=True)
+        content = current_app.config["VAL_CONTENT"]
+        look = {"tiers": content.tiers(g.lang), "maps": content.map_index(g.lang), "queue_name": _queue_name}
+
+        def when(moment: datetime) -> dict:
+            moment = moment.astimezone(JST)
+            return {"iso": moment.isoformat(), "text": i18n.when(g.lang, moment)}
+
+        return render_template("friends.html", closed=False, **friends_page.rows(found, look, time.time(), when))
+
+    @app.route("/checkup", methods=["GET", "POST"])
+    def checkup():
+        """The PC app only: what the app can read on this PC right now, thing by thing, and a report of it without
+        a name, an id or a token in it (to paste where help is asked). The Riot Client's part is read as the page
+        opens (local reads); Riot's servers and the other sources only when the owner presses the button."""
+        security.owner_only()
+        local = current_app.config["VAL_LOCAL"]
+        if local is None:
+            abort(404)
+        groups = checkup_page.run(current_app, far=request.method == "POST", lang=g.lang)
+        return render_template(
+            "checkup.html",
+            groups=groups,
+            far=request.method == "POST",
+            report=checkup_page.report(groups, current_app.config.get("VAL_BUILD")),
+        )
 
     @app.post("/live/act")
     def live_act():

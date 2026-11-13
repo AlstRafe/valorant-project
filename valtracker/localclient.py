@@ -8,7 +8,10 @@ API its own window uses. From it come
 - that account's Riot ID, and from VALORANT's launch its shard, its party server and the client's version,
 - events, through one websocket: the owner's presence (the menus, matchmaking, the match found, agent select, the
   match), VALORANT opening or closing, and Riot's pushes about the party, agent select and the match. /live is
-  read again the moment one comes (``wait``), and nothing is asked while nothing happens.
+  read again the moment one comes (``wait``), and nothing is asked while nothing happens,
+- the owner's friends and where each of them is, as the client's own window lists them (``friends``),
+- and, for the checkup page, whether each of these could be read (``examine``: statuses and shapes, nothing
+  personal).
 
 Nothing here touches VALORANT itself: no reading or writing of its process or memory, nothing drawn over it, no
 keys pressed. Its log is read once (only for the server's name, when the launch does not say). Every field is read
@@ -54,6 +57,11 @@ WAITING = 3
 EARLY = 300
 #: How much of VALORANT's log is read for the server's name (the address is in its first few kB).
 LOG_BYTES = 2 * 1024 * 1024
+#: The friends list is kept this long (seconds): the page asks again every few seconds while it is open.
+FRIENDS_KEEP = 5.0
+#: The moments of the owner's game a listener is told of (``listen``): the match found (the game's five-second
+#: count), or agent select when that was missed.
+TOLD = ("found", "pregame")
 _UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 _GLZ = re.compile(rb"https://glz-([a-z]+)-1\.([a-z]+)\.a\.pvp\.net")
 _SHARDS = ("ap", "kr", "eu", "na", "pbe")
@@ -188,6 +196,22 @@ def where(item: dict) -> dict:
     }
 
 
+def moment(seen: dict | None) -> str:
+    """Where a presence (``where``) says the owner's game is: "found" (the match found, before agent select),
+    "pregame", "ingame", "queue" (matchmaking), "menus", or "" (not known)."""
+    if not seen:
+        return ""
+    if seen["loop"] == "PREGAME":
+        return "pregame"
+    if seen["loop"] == "INGAME":
+        return "ingame"
+    if seen["party_state"] == "MATCHMADE_GAME_STARTING":
+        return "found"
+    if seen["party_state"] == "MATCHMAKING":
+        return "queue"
+    return "menus" if seen["loop"] == "MENUS" else ""
+
+
 def launched(sessions) -> dict:
     """The client's open games (product-session's external sessions) -> ``{"running": whether VALORANT is open,
     "shard", "version": the client's version (release-...)}`` (the shard from its launch arguments)."""
@@ -244,6 +268,12 @@ class LocalClient:
         #: The owner's presence (where), while VALORANT is open.
         self._seen: dict | None = None
         self._listening = False
+        #: The events heard since the app started, by kind (the checkup page: are the client's events coming?).
+        self.heard = {"presences": 0, "sessions": 0, "pushes": 0}
+        #: Told when the owner's match is found (``listen``): moment -> None, each in the listening thread.
+        self._listeners: list = []
+        #: The friends as last read: (when, the door, {"friends", "presences"}).
+        self._friends: tuple[float, tuple[int, str], dict] | None = None
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -310,6 +340,99 @@ class LocalClient:
                 if ticket in self._waiting:
                     self._waiting.remove(ticket)
             return self.version
+
+    def listen(self, told) -> None:
+        """``told(moment)`` is called when the owner's match is found ("found"; "pregame" when agent select is the
+        first the client says of it), once a match, from the listening thread: it must not wait."""
+        self._listeners.append(told)
+
+    def friends(self) -> dict | None:
+        """The owner's friends and the presences the client holds (theirs and the owner's), as the client gives
+        them: ``{"friends": [...], "presences": [...], "me": the owner's puuid}``. None when the client is closed
+        or does not answer. Two small local reads, kept FRIENDS_KEEP seconds."""
+        door = read_lockfile(self.lockfile)
+        if door is None:
+            return None
+        with self._lock:
+            kept = self._friends
+            if kept is not None and kept[1] == door and self.clock() - kept[0] < FRIENDS_KEEP:
+                return kept[2]
+            me = (self._tokens or {}).get("puuid", "")
+        try:
+            listed, present = self._get(door, "/chat/v4/friends"), self._get(door, "/chat/v4/presences")
+        except LocalError:
+            return None
+        found = {
+            "friends": [item for item in (listed or {}).get("friends") or [] if isinstance(item, dict)]
+            if isinstance(listed, dict)
+            else [],
+            "presences": [item for item in (present or {}).get("presences") or [] if isinstance(item, dict)]
+            if isinstance(present, dict)
+            else [],
+            "me": me,
+        }
+        with self._lock:
+            self._friends = (self.clock(), door, found)
+        return found
+
+    def examine(self) -> dict:
+        """What the client answers right now, for the checkup page: each read's status and the shape of its answer.
+        No token, name or id is in it. ``{"lockfile": bool}`` alone when the client is closed."""
+        door = read_lockfile(self.lockfile)
+        found: dict = {"lockfile": door is not None, "log": logged_server(self.log)}
+        with self._lock:
+            found["listening"], found["heard"] = self._listening, dict(self.heard)
+        if door is None:
+            return found
+        status, value = self.ask(door, "/entitlements/v1/token")
+        value = value if isinstance(value, dict) else {}
+        puuid = str(value.get("subject") or "").lower()
+        found["token"] = {
+            "status": status,
+            "access": bool(value.get("accessToken")),
+            "entitlements": bool(value.get("token")),
+            "subject": bool(_UUID.match(puuid)),
+        }
+        status, value = self.ask(door, "/chat/v1/session")
+        value = value if isinstance(value, dict) else {}
+        found["chat"] = {
+            "status": status,
+            "name": bool(value.get("game_name")) and bool(value.get("game_tag")),
+            "mine": bool(puuid) and str(value.get("puuid") or "").lower() == puuid,
+            "state": str(value.get("state") or "")[:24],
+        }
+        status, value = self.ask(door, "/product-session/v1/external-sessions")
+        sessions = value if isinstance(value, dict) else {}
+        products = sorted(
+            {str(item.get("productId") or "")[:24] for item in sessions.values() if isinstance(item, dict)}
+        )
+        found["sessions"] = {"status": status, "products": products[:8], **launched(sessions)}
+        status, value = self.ask(door, "/chat/v4/presences")
+        presences = value.get("presences") if isinstance(value, dict) else None
+        presences = [item for item in presences or [] if isinstance(item, dict)]
+        mine = next(
+            (
+                item
+                for item in presences
+                if str(item.get("puuid") or "").lower() == puuid
+                and str(item.get("product") or "").lower() == "valorant"
+            ),
+            None,
+        )
+        private = _private(mine.get("private")) if mine else {}
+        seen = where(mine) if mine else None
+        found["presence"] = {
+            "status": status,
+            "count": len(presences),
+            "mine": mine is not None,
+            "shape": "nested" if "matchPresenceData" in private else "flat" if "sessionLoopState" in private else "",
+            "keys": sorted(str(key)[:40] for key in private)[:40],
+            "loop": seen["loop"][:24] if seen else "",
+            "party_state": seen["party_state"][:40] if seen else "",
+            "party": bool(seen and seen["party"]),
+            "queue": seen["queue"][:40] if seen else "",
+        }
+        return found
 
     def start(self) -> None:
         if self._thread is None:
@@ -404,6 +527,19 @@ class LocalClient:
             self.version += 1
             self._changed.notify_all()
 
+    def _tell(self, was: dict | None, seen: dict | None) -> None:
+        """The listeners hear of a match found: when the presence goes from the menus or matchmaking to the match
+        found or agent select (not from one to the other, and not when the app only now learns where the game
+        is)."""
+        before, now = moment(was), moment(seen)
+        if now not in TOLD or before not in ("menus", "queue"):
+            return
+        for told in self._listeners:
+            try:
+                told(now)
+            except Exception:  # noqa: BLE001, S112 - a listener's own trouble must not end the listening
+                continue
+
     def _look_again(self, door: tuple[int, str]) -> None:
         """Reads the game's launch and the owner's presence (when connecting, and now and then)."""
         game = self._read_game(door)
@@ -413,9 +549,11 @@ class LocalClient:
             changed = (game, seen) != (self._game, self._seen)
             if game.get("shard") and self._game and game["shard"] != self._game.get("shard"):
                 self._server = None
+            was = self._seen
             self._game, self._seen = game, seen
         if changed:
             self._changed_now()
+            self._tell(was, seen)
 
     def handle(self, door: tuple[int, str], text: str) -> None:
         """One message of the websocket: ``[8, event, {"data", "eventType", "uri"}]``."""
@@ -430,15 +568,21 @@ class LocalClient:
         if event == PRESENCES:
             with self._lock:
                 puuid = (self._tokens or {}).get("puuid", "")
+            self.heard["presences"] += 1
             seen = self._mine(data.get("presences"), puuid) if puuid else None
             if seen is None:
-                return  # a friend's presence
+                with self._lock:
+                    self._friends = None  # a friend's presence: the friends page reads the list again
+                return
             with self._lock:
                 changed = seen != self._seen
+                was = self._seen
                 self._seen = seen
             if changed:
                 self._changed_now()
+                self._tell(was, seen)
         elif event == SESSIONS:
+            self.heard["sessions"] += 1
             game = self._read_game(door)
             with self._lock:
                 changed = game != self._game
@@ -450,6 +594,7 @@ class LocalClient:
         elif event == MESSAGES:
             said = f"{payload.get('uri') or ''} {data.get('service') or ''} {data.get('resource') or ''}"
             if any(word in said for word in PUSHED):
+                self.heard["pushes"] += 1
                 self._changed_now()
 
     def _listen(self) -> None:
@@ -491,5 +636,6 @@ class LocalClient:
         with self._lock:
             was = self._listening or self._game is not None
             self._listening, self._game, self._seen, self._server = False, None, None, None
+            self._friends = None
         if was:
             self._changed_now()
