@@ -16,26 +16,26 @@ TEXTS = {
     "自動": {"ko": "자동", "en-GB": "auto", "zh-TW": "自動"},
     "オフ": {"ko": "끔", "en-GB": "off", "zh-TW": "關"},
     "オン": {"ko": "켬", "en-GB": "on", "zh-TW": "開"},
-    "本文へ移動": {"ko": "본문으로 이동", "en-GB": "Skip to content", "zh-TW": "跳到主要內容"},
+    "本文へスキップ": {"ko": "본문으로 이동", "en-GB": "Skip to content", "zh-TW": "跳到主要內容"},
     "メニュー": {"ko": "메뉴", "en-GB": "Menu", "zh-TW": "選單"},
     "検索": {"ko": "검색", "en-GB": "Search", "zh-TW": "搜尋"},
     "エージェント": {"ko": "요원", "en-GB": "Agents", "zh-TW": "特務"},
     "設定": {"ko": "설정", "en-GB": "Settings", "zh-TW": "設定"},
     "サイト一覧へ戻る": {"ko": "사이트 목록으로 돌아가기", "en-GB": "Back to all sites", "zh-TW": "回到網站列表"},
-    "VALORANT のプレイヤーのランクと最近の試合、エージェントの能力を、スマホでもすぐ見られるトラッカー。": {
-        "ko": "VALORANT 플레이어의 랭크와 최근 경기, 요원의 스킬을 스마트폰에서도 바로 볼 수 있는 트래커.",
-        "en-GB": "A VALORANT tracker for players' ranks and recent matches, and what each agent can do, quick to read on a phone.",
-        "zh-TW": "在手機上也能馬上查看 VALORANT 玩家的牌位、近期對戰與特務技能的戰績查詢工具。",
+    "VALORANT の戦績トラッカー。ランク、試合履歴、エージェント、ショップ、クロスヘア。": {
+        "ko": "VALORANT 전적 트래커. 랭크, 경기 기록, 요원, 상점, 조준선.",
+        "en-GB": "A VALORANT tracker: ranks, match history, agents, the store and crosshairs.",
+        "zh-TW": "VALORANT 戰績查詢：牌位、對戰紀錄、特務、商店、準星。",
     },
     "VAL Tracker は Riot Games の承認を受けたものではなく、Riot Games や VALORANT の制作・運営に関わる人の見解を示すものではありません。VALORANT と Riot Games は Riot Games, Inc. の商標または登録商標です。": {
         "ko": "VAL Tracker는 Riot Games의 승인을 받지 않았으며, Riot Games 또는 VALORANT의 제작·운영에 관여하는 사람의 견해를 반영하지 않습니다. VALORANT와 Riot Games는 Riot Games, Inc.의 상표 또는 등록 상표입니다.",
         "en-GB": "VAL Tracker isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing VALORANT. VALORANT and Riot Games are trademarks or registered trademarks of Riot Games, Inc.",
         "zh-TW": "VAL Tracker 未經 Riot Games 認可，亦不代表 Riot Games 或任何正式參與 VALORANT 製作、營運人員的觀點與意見。VALORANT 與 Riot Games 為 Riot Games, Inc. 的商標或註冊商標。",
     },
-    "ニュースとサーバー状況は Riot Games の公式サイト、戦績は HenrikDev API、ゲームの名前と画像は valorant-api.com から取得しています。": {
-        "ko": "뉴스와 서버 상태는 Riot Games 공식 사이트에서, 전적은 HenrikDev API에서, 게임의 이름과 이미지는 valorant-api.com에서 가져옵니다.",
-        "en-GB": "News and server status come from Riot Games' own sites; match data from the HenrikDev API; the game's names and pictures from valorant-api.com.",
-        "zh-TW": "新聞與伺服器狀態來自 Riot Games 官方網站，戰績來自 HenrikDev API，遊戲中的名稱與圖片來自 valorant-api.com。",
+    "データ提供: Riot Games 公式サイト、HenrikDev API、valorant-api.com": {
+        "ko": "데이터 출처: Riot Games 공식 사이트, HenrikDev API, valorant-api.com",
+        "en-GB": "Data: Riot Games' official sites, the HenrikDev API and valorant-api.com",
+        "zh-TW": "資料來源：Riot Games 官方網站、HenrikDev API、valorant-api.com",
     },
     "Riot ストア": {
         "ko": "Riot 스토어",
@@ -43,27 +43,18 @@ TEXTS = {
         "zh-TW": "Riot 商店",
     },
     # A player's page while its rank and matches are on the way
-    "ランクと最近の試合を読み込んでいます…": {
-        "ko": "랭크와 최근 경기를 불러오는 중…",
-        "en-GB": "Loading the rank and recent matches…",
-        "zh-TW": "正在載入牌位與近期對戰…",
-    },
+    "戦績を読み込み中…": {"ko": "전적 불러오는 중…", "en-GB": "Loading stats…", "zh-TW": "正在載入戰績…"},
     "読み込めませんでした。": {"ko": "불러오지 못했습니다.", "en-GB": "Couldn't load them.", "zh-TW": "無法載入。"},
-    "もう一度読み込む": {"ko": "다시 불러오기", "en-GB": "Try again", "zh-TW": "重新載入"},
-    "ランクと最近の試合を見る": {
-        "ko": "랭크와 최근 경기 보기",
-        "en-GB": "Show the rank and recent matches",
-        "zh-TW": "查看牌位與近期對戰",
-    },
+    "戦績を見る": {"ko": "전적 보기", "en-GB": "See the stats", "zh-TW": "查看戰績"},
     # Errors
     "エラー {status}": {"ko": "오류 {status}", "en-GB": "Error {status}", "zh-TW": "錯誤 {status}"},
     "ページが見つかりません": {"ko": "페이지를 찾을 수 없습니다", "en-GB": "Page not found", "zh-TW": "找不到這個頁面"},
-    "アドレスが変わったか、なくなった可能性があります。": {
-        "ko": "주소가 바뀌었거나 페이지가 없어졌을 수 있습니다.",
-        "en-GB": "The address may have changed, or the page may no longer exist.",
-        "zh-TW": "網址可能已變更，或頁面已不存在。",
+    "URL が変わったか、削除された可能性があります。": {
+        "ko": "주소가 바뀌었거나 삭제되었을 수 있습니다.",
+        "en-GB": "The address may have changed, or the page is gone.",
+        "zh-TW": "網址可能已變更或被移除。",
     },
-    "{name} のトップへ": {"ko": "{name} 첫 화면으로", "en-GB": "{name} home", "zh-TW": "前往 {name} 首頁"},
+    "{name} トップ": {"ko": "{name} 첫 화면으로", "en-GB": "{name} home", "zh-TW": "前往 {name} 首頁"},
     "この操作はできませんでした。": {
         "ko": "이 작업을 할 수 없었습니다.",
         "en-GB": "That could not be done.",
@@ -74,50 +65,50 @@ TEXTS = {
         "en-GB": "Player search is not ready yet.",
         "zh-TW": "戰績搜尋仍在準備中。",
     },
-    "戦績を取得できませんでした。時間をおいてもう一度どうぞ。": {
-        "ko": "전적을 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.",
-        "en-GB": "The match data could not be fetched. Please try again later.",
+    "戦績を取得できませんでした。しばらくしてからお試しください。": {
+        "ko": "전적을 불러오지 못했습니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "Couldn't load the stats. Try again shortly.",
         "zh-TW": "無法取得戰績，請稍後再試。",
     },
-    "プレイヤーが見つかりませんでした。名前とタグを確かめてください。": {
-        "ko": "플레이어를 찾지 못했습니다. 이름과 태그를 확인해 주세요.",
-        "en-GB": "No player was found. Please check the name and tag.",
-        "zh-TW": "找不到這位玩家，請確認名稱與標籤。",
+    "プレイヤーが見つかりません。名前とタグを確認してください。": {
+        "ko": "플레이어를 찾을 수 없습니다. 이름과 태그를 확인하세요.",
+        "en-GB": "Player not found. Check the name and tag.",
+        "zh-TW": "找不到玩家，請確認名稱與標籤。",
     },
-    "混み合っています。少し待ってからもう一度どうぞ。": {
-        "ko": "요청이 많습니다. 잠시 후 다시 시도해 주세요.",
-        "en-GB": "It is busy just now. Please wait a moment and try again.",
-        "zh-TW": "目前使用人數較多，請稍候再試。",
+    "混雑しています。少し待ってからお試しください。": {
+        "ko": "요청이 많습니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "Busy right now. Try again in a moment.",
+        "zh-TW": "目前流量較大，請稍後再試。",
     },
-    "戦績のサービスから答えがありませんでした。時間をおいてもう一度どうぞ。": {
-        "ko": "전적 서비스에서 응답이 없었습니다. 잠시 후 다시 시도해 주세요.",
-        "en-GB": "The match data service did not answer. Please try again later.",
-        "zh-TW": "戰績服務沒有回應，請稍後再試。",
+    "戦績サーバーが応答しません。しばらくしてからお試しください。": {
+        "ko": "전적 서버가 응답하지 않습니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "The stats service isn't answering. Try again shortly.",
+        "zh-TW": "戰績伺服器沒有回應，請稍後再試。",
     },
     # Search and favourites (top)
-    "プレイヤーを探す": {"ko": "플레이어 찾기", "en-GB": "Find a player", "zh-TW": "搜尋玩家"},
-    "Riot ID（名前#タグ）でランクと最近の試合を調べられます。☆を付けたプレイヤーはこのブラウザに保存され、ここに並びます。": {
-        "ko": "Riot ID(이름#태그)로 랭크와 최근 경기를 찾아볼 수 있습니다. ☆를 누른 플레이어는 이 브라우저에 저장되어 여기에 표시됩니다.",
-        "en-GB": "Look up a rank and recent matches by Riot ID (name#tag). Players you star are saved in this browser and listed here.",
-        "zh-TW": "用 Riot ID（名稱#標籤）查詢牌位與近期對戰。加上 ☆ 的玩家會儲存在這個瀏覽器，並列在這裡。",
+    "プレイヤー検索": {"ko": "플레이어 검색", "en-GB": "Find a player", "zh-TW": "搜尋玩家"},
+    "Riot ID でランクと戦績を検索できます。": {
+        "ko": "Riot ID로 랭크와 전적을 검색합니다.",
+        "en-GB": "Look up anyone's rank and matches by Riot ID.",
+        "zh-TW": "輸入 Riot ID 查詢牌位與戰績。",
     },
     "Riot ID": {"ko": "Riot ID", "en-GB": "Riot ID", "zh-TW": "Riot ID"},
     "名前#タグ": {"ko": "이름#태그", "en-GB": "Name#tag", "zh-TW": "名稱#標籤"},
-    "「名前#タグ」の形で入れてください（例: Name#JP1）。": {
-        "ko": "“이름#태그” 형식으로 입력해 주세요(예: Name#KR1).",
-        "en-GB": "Please enter it as “name#tag” (for example Name#EUW).",
-        "zh-TW": "請以「名稱#標籤」的格式輸入（例如 Name#TW1）。",
+    "「名前#タグ」の形式で入力してください（例: Name#JP1）。": {
+        "ko": "'이름#태그' 형식으로 입력하세요(예: Name#JP1).",
+        "en-GB": "Use the form Name#Tag, e.g. Name#JP1.",
+        "zh-TW": "請以「名稱#標籤」格式輸入（例如 Name#JP1）。",
     },
     "お気に入り": {"ko": "즐겨찾기", "en-GB": "Favourites", "zh-TW": "我的最愛"},
-    "まだありません。プレイヤーのページで ☆ を押すと、ここに並びます。": {
-        "ko": "아직 없습니다. 플레이어 페이지에서 ☆를 누르면 여기에 표시됩니다.",
-        "en-GB": "None yet. Press ☆ on a player's page to list them here.",
-        "zh-TW": "目前還沒有。在玩家頁面按下 ☆，就會列在這裡。",
+    "プレイヤーページの ☆ で追加できます。": {
+        "ko": "플레이어 페이지의 ☆로 추가합니다.",
+        "en-GB": "Add players with the ☆ on their page.",
+        "zh-TW": "在玩家頁面按 ☆ 即可加入。",
     },
-    "お気に入りを使うには JavaScript を有効にしてください。": {
-        "ko": "즐겨찾기를 쓰려면 JavaScript를 켜 주세요.",
-        "en-GB": "Favourites need JavaScript to be turned on.",
-        "zh-TW": "要使用我的最愛，請啟用 JavaScript。",
+    "お気に入りには JavaScript が必要です。": {
+        "ko": "즐겨찾기에는 JavaScript가 필요합니다.",
+        "en-GB": "Favourites need JavaScript.",
+        "zh-TW": "我的最愛需要啟用 JavaScript。",
     },
     "最近見たプレイヤー": {"ko": "최근 본 플레이어", "en-GB": "Recently viewed", "zh-TW": "最近查看的玩家"},
     "まだありません。": {"ko": "아직 없습니다.", "en-GB": "None yet.", "zh-TW": "目前還沒有。"},
@@ -141,10 +132,10 @@ TEXTS = {
     "{games}試合": {"ko": "{games}경기", "en-GB": "{games} played", "zh-TW": "{games} 場"},
     "{wins}勝": {"ko": "{wins}승", "en-GB": "{wins} won", "zh-TW": "{wins} 勝"},
     "最近の試合": {"ko": "최근 경기", "en-GB": "Recent matches", "zh-TW": "近期對戰"},
-    "最近の試合が見つかりませんでした。": {
-        "ko": "최근 경기를 찾지 못했습니다.",
-        "en-GB": "No recent matches were found.",
-        "zh-TW": "找不到近期對戰。",
+    "最近の試合がありません。": {
+        "ko": "최근 경기가 없습니다.",
+        "en-GB": "No recent matches.",
+        "zh-TW": "沒有近期對戰。",
     },
     "リーダーボード": {"ko": "리더보드", "en-GB": "Leaderboard", "zh-TW": "排行榜"},
     "ランク決定まであと {count} 試合": {
@@ -154,10 +145,10 @@ TEXTS = {
     },
     "アクトランク": {"ko": "액트 랭크", "en-GB": "Act rank", "zh-TW": "賽季階段牌位"},
     "アクト": {"ko": "액트", "en-GB": "Act", "zh-TW": "賽季階段"},
-    "{act} のアクトランク：上位 {count} 勝のランク": {
-        "ko": "{act} 액트 랭크: 상위 {count}승의 랭크",
-        "en-GB": "{act} act rank: the ranks of the best {count} wins",
-        "zh-TW": "{act} 賽季階段牌位：前 {count} 場勝利的牌位",
+    "{act} のアクトランク（上位 {count} 勝）": {
+        "ko": "{act} 액트 랭크(상위 {count}승)",
+        "en-GB": "Act rank for {act} (best {count} wins)",
+        "zh-TW": "{act} 的賽季階段牌位（最高 {count} 勝）",
     },
     "最終ランク": {"ko": "최종 랭크", "en-GB": "Final rank", "zh-TW": "最終牌位"},
     "デスマッチなどは除く": {
@@ -192,10 +183,10 @@ TEXTS = {
         "en-GB": "{rr} RR to {rank}",
         "zh-TW": "距離 {rank} 還差 {rr} RR",
     },
-    "平均 +{gain} なら約 {wins} 勝": {
-        "ko": "평균 +{gain}이면 약 {wins}승",
+    "平均 +{gain} で約 {wins} 勝": {
+        "ko": "평균 +{gain} 기준 약 {wins}승",
         "en-GB": "about {wins} wins at +{gain} each",
-        "zh-TW": "以平均 +{gain} 計約需 {wins} 勝",
+        "zh-TW": "平均 +{gain} 約需 {wins} 勝",
     },
     "RR の推移": {"ko": "RR 변화", "en-GB": "RR over time", "zh-TW": "RR 走勢"},
     "コンペティティブ {count} 試合": {
@@ -203,19 +194,19 @@ TEXTS = {
         "en-GB": "{count} competitive matches",
         "zh-TW": "競技模式 {count} 場",
     },
-    "このページの中": {"ko": "이 페이지 안", "en-GB": "On this page", "zh-TW": "本頁內容"},
+    "ページ内リンク": {"ko": "이 페이지 안", "en-GB": "On this page", "zh-TW": "本頁內容"},
     "概要": {"ko": "개요", "en-GB": "Overview", "zh-TW": "概覽"},
     "マップ": {"ko": "맵", "en-GB": "Maps", "zh-TW": "地圖"},
     "武器": {"ko": "무기", "en-GB": "Weapons", "zh-TW": "武器"},
     "パーティ": {"ko": "파티", "en-GB": "Party", "zh-TW": "隊伍"},
-    "キル・アシスト・生存・トレードされたラウンドの割合": {
-        "ko": "킬·어시스트·생존·트레이드 중 하나를 한 라운드의 비율",
-        "en-GB": "Share of rounds with a kill, an assist, survival or a trade",
-        "zh-TW": "有擊殺、助攻、存活或被換掉的回合比例",
+    "キル・アシスト・生存・トレードがあったラウンドの割合": {
+        "ko": "킬·어시스트·생존·트레이드가 있었던 라운드 비율",
+        "en-GB": "Rounds with a kill, assist, survival or trade",
+        "zh-TW": "有擊殺、助攻、存活或換命的回合比例",
     },
-    "与えたダメージ − 受けたダメージ（1 ラウンドあたり）": {
-        "ko": "가한 피해 − 받은 피해 (라운드당)",
-        "en-GB": "Damage dealt − damage taken, per round",
+    "与ダメージ − 被ダメージ（1 ラウンドあたり）": {
+        "ko": "준 피해량 − 받은 피해량(라운드당)",
+        "en-GB": "Damage dealt minus taken, per round",
         "zh-TW": "造成傷害 − 承受傷害（每回合）",
     },
     "ファーストキル / デス": {"ko": "퍼스트 킬 / 데스", "en-GB": "First kills / deaths", "zh-TW": "首殺 / 首死"},
@@ -228,15 +219,10 @@ TEXTS = {
         "en-GB": "{hours} h {minutes} min",
         "zh-TW": "{hours} 小時 {minutes} 分",
     },
-    "同じ試合のプレイヤーと比べて": {
+    "同じ試合のプレイヤーとの比較": {
         "ko": "같은 경기의 플레이어와 비교",
         "en-GB": "Against the same lobbies",
         "zh-TW": "與同場玩家相比",
-    },
-    "同じ試合に出た他のプレイヤーの平均との比較です。": {
-        "ko": "같은 경기에 나온 다른 플레이어들의 평균과 비교합니다.",
-        "en-GB": "Set beside the average of everyone else in the same matches.",
-        "zh-TW": "與同場其他玩家的平均相比。",
     },
     "指標": {"ko": "지표", "en-GB": "Measure", "zh-TW": "指標"},
     "本人": {"ko": "본인", "en-GB": "Player", "zh-TW": "本人"},
@@ -261,21 +247,15 @@ TEXTS = {
     "マップ別": {"ko": "맵별", "en-GB": "By map", "zh-TW": "依地圖"},
     "武器別キル": {"ko": "무기별 킬", "en-GB": "Kills by weapon", "zh-TW": "各武器擊殺"},
     "{count}キル": {"ko": "{count}킬", "en-GB": "{count} kills", "zh-TW": "{count} 殺"},
-    "一緒にパーティを組んだプレイヤー": {
-        "ko": "함께 파티를 맺은 플레이어",
-        "en-GB": "Played in a party with",
-        "zh-TW": "一起組隊的玩家",
-    },
+    "よく組むプレイヤー": {"ko": "자주 함께한 플레이어", "en-GB": "Played with", "zh-TW": "常一起組隊的玩家"},
     # A match: the rounds, the parties, the duels, the kills
     "{name} の戦績": {"ko": "{name}의 전적", "en-GB": "{name}'s matches", "zh-TW": "{name} 的戰績"},
     "平均ランク": {"ko": "평균 랭크", "en-GB": "Average rank", "zh-TW": "平均牌位"},
     "ラウンドの流れ": {"ko": "라운드 흐름", "en-GB": "Round by round", "zh-TW": "回合走勢"},
     "ラウンド {number}": {"ko": "라운드 {number}", "en-GB": "Round {number}", "zh-TW": "第 {number} 回合"},
     "{site} サイト": {"ko": "{site} 사이트", "en-GB": "site {site}", "zh-TW": "{site} 點"},
-    "勝ったラウンド": {"ko": "이긴 라운드", "en-GB": "Rounds won", "zh-TW": "勝利回合"},
-    "負けたラウンド": {"ko": "진 라운드", "en-GB": "Rounds lost", "zh-TW": "落敗回合"},
-    "レッドの勝ち": {"ko": "레드 승리", "en-GB": "Red won", "zh-TW": "紅隊勝"},
-    "ブルーの勝ち": {"ko": "블루 승리", "en-GB": "Blue won", "zh-TW": "藍隊勝"},
+    "取ったラウンド": {"ko": "이긴 라운드", "en-GB": "Rounds won", "zh-TW": "勝利回合"},
+    "落としたラウンド": {"ko": "진 라운드", "en-GB": "Rounds lost", "zh-TW": "落敗回合"},
     "全員倒した": {"ko": "전멸", "en-GB": "Eliminated", "zh-TW": "全數殲滅"},
     "スパイク解除": {"ko": "스파이크 해체", "en-GB": "Spike defused", "zh-TW": "輻能核心已拆除"},
     "スパイク爆発": {"ko": "스파이크 폭발", "en-GB": "Spike detonated", "zh-TW": "輻能核心引爆"},
@@ -289,23 +269,21 @@ TEXTS = {
     "ファーストデス": {"ko": "퍼스트 데스", "en-GB": "First deaths", "zh-TW": "首死"},
     "3 キル以上のラウンド": {"ko": "3킬 이상 라운드", "en-GB": "Rounds of 3 kills or more", "zh-TW": "3 殺以上的回合"},
     "パーティ {number}": {"ko": "파티 {number}", "en-GB": "Party {number}", "zh-TW": "隊伍 {number}"},
-    "番号の印は一緒にパーティを組んだプレイヤーです。": {
-        "ko": "번호 표시는 함께 파티를 맺은 플레이어입니다.",
-        "en-GB": "Players with the same numbered mark queued together.",
-        "zh-TW": "相同編號標記的玩家是一起組隊的。",
+    "同じ番号は同じパーティです。": {
+        "ko": "같은 번호는 같은 파티입니다.",
+        "en-GB": "Same number, same party.",
+        "zh-TW": "相同號碼代表同一隊伍。",
     },
     "{name} の対面成績": {"ko": "{name}의 맞대결 성적", "en-GB": "{name}'s duels", "zh-TW": "{name} 的對槍戰績"},
-    "倒した": {"ko": "처치", "en-GB": "Kills", "zh-TW": "擊殺"},
-    "倒された": {"ko": "피격 사망", "en-GB": "Deaths", "zh-TW": "被擊殺"},
-    "左が倒した数、右が倒された数です。": {
-        "ko": "왼쪽이 처치한 수, 오른쪽이 처치당한 수입니다.",
+    "左がキル、右がデス。": {
+        "ko": "왼쪽이 킬, 오른쪽이 데스.",
         "en-GB": "Kills on the left, deaths on the right.",
-        "zh-TW": "左邊是擊殺數，右邊是被擊殺數。",
+        "zh-TW": "左為擊殺，右為死亡。",
     },
-    "上のラウンドを押すと、そのラウンドのキルが開きます。": {
-        "ko": "위의 라운드를 누르면 그 라운드의 킬이 열립니다.",
+    "上のラウンドを選ぶと、そのキルが開きます。": {
+        "ko": "위의 라운드를 누르면 해당 킬이 열립니다.",
         "en-GB": "Pick a round above to open its kills.",
-        "zh-TW": "點選上方的回合，就會展開該回合的擊殺。",
+        "zh-TW": "點上方的回合可展開該回合的擊殺。",
     },
     "ラウンドごとのキル": {"ko": "라운드별 킬", "en-GB": "Kills round by round", "zh-TW": "各回合擊殺"},
     # A match
@@ -329,71 +307,63 @@ TEXTS = {
     "スカーミッシュ": {"ko": "스커미시", "en-GB": "Skirmish", "zh-TW": "小規模戰鬥"},
     "スノーボールファイト": {"ko": "눈싸움", "en-GB": "Snowball Fight", "zh-TW": "雪球大戰"},
     # Agents
-    "役割とアビリティの説明です。": {
-        "ko": "역할과 스킬 설명입니다.",
-        "en-GB": "Each agent's role and abilities.",
-        "zh-TW": "各特務的定位與技能說明。",
+    "VALORANT の全エージェントのロールとアビリティ。": {
+        "ko": "VALORANT 모든 요원의 역할군과 스킬.",
+        "en-GB": "Every VALORANT agent's role and abilities.",
+        "zh-TW": "VALORANT 所有特務的定位與技能。",
     },
-    "エージェントの一覧を取得できませんでした。時間をおいてもう一度どうぞ。": {
-        "ko": "요원 목록을 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.",
-        "en-GB": "The list of agents could not be fetched. Please try again later.",
+    "エージェント一覧を取得できませんでした。しばらくしてからお試しください。": {
+        "ko": "요원 목록을 불러오지 못했습니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "Couldn't load the agents. Try again shortly.",
         "zh-TW": "無法取得特務列表，請稍後再試。",
     },
     "アビリティ": {"ko": "스킬", "en-GB": "Abilities", "zh-TW": "技能"},
     "アルティメット": {"ko": "궁극기", "en-GB": "Ultimate", "zh-TW": "絕招"},
     # the tools (tools.py): the leaderboard, the server status, crosshairs, the store
-    "1080p での大きさを 4 倍にしています。": {
-        "ko": "1080p 기준 크기를 4배로 확대했습니다.",
-        "en-GB": "Shown at four times its size at 1080p.",
-        "zh-TW": "以 1080p 的大小放大 4 倍顯示。",
+    "1080p の 4 倍で表示。": {
+        "ko": "1080p 기준 4배로 표시.",
+        "en-GB": "Shown at four times its 1080p size.",
+        "zh-TW": "以 1080p 的 4 倍大小顯示。",
     },
-    "止まっていて、撃っていないときの見た目です。": {
-        "ko": "가만히 서서 쏘지 않을 때의 모습입니다.",
-        "en-GB": "This is how it looks while standing still and not firing.",
-        "zh-TW": "這是站著不動、沒有射擊時的樣子。",
+    "静止・非射撃時の見た目です。": {
+        "ko": "정지·비사격 상태의 모습입니다.",
+        "en-GB": "Standing still, not firing.",
+        "zh-TW": "靜止且未射擊時的樣子。",
     },
     "{name}の広がり": {"ko": "{name} 벌어짐", "en-GB": "{name}: spread", "zh-TW": "{name}擴散"},
     "移動エラー": {"ko": "이동 오차", "en-GB": "Movement error", "zh-TW": "移動誤差"},
     "射撃エラー": {"ko": "사격 오차", "en-GB": "Firing error", "zh-TW": "射擊誤差"},
-    "Riot が出しているメンテナンスと障害のお知らせです（PC 版）。": {
-        "ko": "Riot이 공지한 점검과 장애 소식입니다(PC 버전).",
-        "en-GB": "Riot's notices about maintenance and incidents (PC).",
-        "zh-TW": "Riot 發布的維護與異常公告（PC 版）。",
+    "Riot 公式のメンテナンス・障害情報（PC 版）。": {
+        "ko": "Riot 공식 점검·장애 정보(PC판).",
+        "en-GB": "Riot's own maintenance and incident notices (PC).",
+        "zh-TW": "Riot 官方的維護與異常資訊（PC 版）。",
     },
-    "Riot が数分ごとに更新します。": {
-        "ko": "Riot이 몇 분마다 갱신합니다.",
-        "en-GB": "Riot updates it every few minutes.",
-        "zh-TW": "Riot 每隔幾分鐘更新一次。",
-    },
+    "数分ごとに更新": {"ko": "몇 분마다 갱신", "en-GB": "refreshed every few minutes", "zh-TW": "每幾分鐘更新"},
     "{first}〜{last} 位": {"ko": "{first}~{last}위", "en-GB": "{first}–{last}", "zh-TW": "第 {first}～{last} 名"},
     "{place} 位から": {"ko": "{place}위부터", "en-GB": "from #{place}", "zh-TW": "第 {place} 名起"},
-    "{region} では、いまメンテナンスも障害もありません。": {
+    "{region} は現在、メンテナンス・障害ともにありません。": {
         "ko": "{region}에는 현재 점검도 장애도 없습니다.",
         "en-GB": "No maintenance or incidents in {region} right now.",
-        "zh-TW": "{region}目前沒有維護或異常。",
+        "zh-TW": "{region} 目前沒有維護或異常。",
     },
     "{rr} RR から": {"ko": "{rr} RR부터", "en-GB": "from {rr} RR", "zh-TW": "{rr} RR 起"},
-    "いまのバンドルと値段。": {
-        "ko": "현재 번들과 가격.",
-        "en-GB": "Today's bundles and their prices.",
-        "zh-TW": "目前的組合包與價格。",
-    },
+    "販売中のバンドル": {"ko": "판매 중인 번들", "en-GB": "Bundles on sale now", "zh-TW": "販售中的組合包"},
     "いまはありません。": {"ko": "지금은 없습니다.", "en-GB": "None right now.", "zh-TW": "目前沒有。"},
-    "いまストアに並んでいるバンドルと、その値段（VALORANT ポイント）です。": {
-        "ko": "지금 상점에 있는 번들과 가격(VALORANT 포인트)입니다.",
-        "en-GB": "The bundles in the store now, and their prices in VALORANT Points.",
-        "zh-TW": "目前商店中的組合包及其價格（VALORANT 點數）。",
+    "販売中のバンドルと価格（VP）。": {
+        "ko": "판매 중인 번들과 가격(VP).",
+        "en-GB": "Bundles on sale now, with prices in VP.",
+        "zh-TW": "販售中的組合包與價格（VP）。",
     },
     "お知らせ": {"ko": "공지", "en-GB": "Notice", "zh-TW": "公告"},
-    "お知らせは Riot が書いたものを、その言語のものがなければ英語で出しています。": {
-        "ko": "공지는 Riot이 작성한 것이며, 이 언어로 된 것이 없으면 영어로 표시합니다.",
-        "en-GB": "Notices are Riot's own words, in English when Riot has none in this language.",
-        "zh-TW": "公告為 Riot 原文，若沒有此語言版本則顯示英文。",
+    "この言語の告知がない場合は英語で表示します。": {
+        "ko": "이 언어의 공지가 없으면 영어로 표시합니다.",
+        "en-GB": "Notices without a version in this language are shown in English.",
+        "zh-TW": "若無此語言的公告，則以英文顯示。",
     },
-    "このサイトがまだ知らない設定（そのまま残ります）": {
-        "ko": "이 사이트가 아직 모르는 설정(그대로 유지됩니다)",
-        "en-GB": "Settings this site doesn't know yet (they're kept as they are)",
-        "zh-TW": "本站尚不認識的設定（會原樣保留）",
+    "未対応の設定（コードには残ります）": {
+        "ko": "지원하지 않는 설정(코드에는 유지)",
+        "en-GB": "Settings this site doesn't know yet (kept in the code)",
+        "zh-TW": "尚未支援的設定（仍保留在代碼中）",
     },
     "このページにはプレイヤーがいません。": {
         "ko": "이 페이지에는 플레이어가 없습니다.",
@@ -403,63 +373,59 @@ TEXTS = {
     "ほか {count} 件": {"ko": "외 {count}건", "en-GB": "and {count} more", "zh-TW": "另有 {count} 則"},
     "まだ誰もいません。": {"ko": "아직 아무도 없습니다.", "en-GB": "Nobody yet.", "zh-TW": "目前還沒有人。"},
     # The leaderboard: looking a player up, and Riot's own list
-    "ランキングでプレイヤーを探す": {
+    "ランキング内を検索": {
         "ko": "리더보드에서 플레이어 찾기",
         "en-GB": "Find a player on the leaderboard",
         "zh-TW": "在排行榜中尋找玩家",
     },
-    "名前#タグ で順位を探す": {
+    "名前#タグ で順位を検索": {
         "ko": "이름#태그로 순위 찾기",
         "en-GB": "Name#Tag to find a place",
         "zh-TW": "輸入名稱#標籤查名次",
     },
-    "「名前#タグ」の形で入れてください。": {
-        "ko": "「이름#태그」 형식으로 입력해 주세요.",
-        "en-GB": "Type it as Name#Tag.",
-        "zh-TW": "請以「名稱#標籤」的格式輸入。",
+    "「名前#タグ」の形式で入力してください。": {
+        "ko": "'이름#태그' 형식으로 입력하세요.",
+        "en-GB": "Use the form Name#Tag.",
+        "zh-TW": "請以「名稱#標籤」格式輸入。",
     },
-    "「{q}」はこの地域のランキングにいません。名前を隠している人は名前では探せません。": {
-        "ko": "「{q}」은(는) 이 지역 리더보드에 없습니다. 이름을 숨긴 사람은 이름으로 찾을 수 없습니다.",
-        "en-GB": "{q} is not on this region's leaderboard. Players who hide their name cannot be found by it.",
-        "zh-TW": "「{q}」不在此地區的排行榜上。隱藏名稱的玩家無法用名稱找到。",
+    "「{q}」はこの地域のランキングにいません。非公開のプレイヤーは名前で検索できません。": {
+        "ko": "'{q}'은(는) 이 지역 리더보드에 없습니다. 비공개 플레이어는 이름으로 찾을 수 없습니다.",
+        "en-GB": "'{q}' isn't on this region's leaderboard. Hidden players can't be found by name.",
+        "zh-TW": "「{q}」不在此地區的排行榜上。未公開的玩家無法用名稱搜尋。",
     },
     "ランキング全体に戻る": {
         "ko": "리더보드 전체로 돌아가기",
         "en-GB": "Back to the whole leaderboard",
         "zh-TW": "回到完整排行榜",
     },
-    "ゲームのランキングを Riot から直接読んでいます。": {
-        "ko": "게임의 리더보드를 Riot에서 직접 읽어 옵니다.",
-        "en-GB": "Read straight from the game's own leaderboard at Riot.",
-        "zh-TW": "直接從 Riot 讀取遊戲內的排行榜。",
-    },
-    "よく使われる型": {"ko": "자주 쓰이는 형태", "en-GB": "Common styles", "zh-TW": "常見樣式"},
+    "Riot 公式データ": {"ko": "Riot 공식 데이터", "en-GB": "Straight from Riot.", "zh-TW": "Riot 官方資料"},
+    "定番のクロスヘア": {"ko": "인기 조준선", "en-GB": "Popular crosshairs", "zh-TW": "常用準星"},
     "アジア太平洋": {"ko": "아시아 태평양", "en-GB": "Asia Pacific", "zh-TW": "亞太地區"},
     "クロスヘア": {"ko": "조준선", "en-GB": "Crosshair", "zh-TW": "準星"},
     "クロスヘアのコード": {"ko": "조준선 코드", "en-GB": "Crosshair code", "zh-TW": "準星代碼"},
-    "クロスヘアのコードではありませんでした。ゲームの「コピー」で出たものをそのまま貼ってください。": {
-        "ko": "조준선 코드가 아닙니다. 게임에서 '복사'로 얻은 코드를 그대로 붙여 넣어 주세요.",
-        "en-GB": "That isn't a crosshair code. Paste the code exactly as the game's Copy button gives it.",
-        "zh-TW": "這不是準星代碼。請直接貼上遊戲中「複製」得到的代碼。",
+    "クロスヘアコードとして読み取れません。ゲームでコピーしたものをそのまま貼ってください。": {
+        "ko": "조준선 코드로 읽을 수 없습니다. 게임에서 복사한 코드를 그대로 붙여 넣으세요.",
+        "en-GB": "That isn't a crosshair code. Paste it exactly as the game copied it.",
+        "zh-TW": "無法讀取為準星代碼，請直接貼上遊戲複製的內容。",
     },
-    "ゲームで「プロファイルのコードを読み込む」に貼ると使えます。": {
-        "ko": "게임의 '프로필 코드 가져오기'에 붙여 넣으면 사용할 수 있습니다.",
-        "en-GB": "Paste it into Import Profile Code in the game to use it.",
-        "zh-TW": "在遊戲的「匯入設定檔代碼」貼上即可使用。",
+    "ゲームの「プロファイルのコードを読み込む」に貼り付けて使えます。": {
+        "ko": "게임의 '프로필 코드 가져오기'에 붙여 넣어 사용합니다.",
+        "en-GB": "In the game, paste it under 'Import profile code'.",
+        "zh-TW": "貼到遊戲的「匯入設定檔代碼」即可使用。",
     },
-    "ゲームの「設定 → クロスヘア → プロファイルのコードをコピー」で出たコードを貼ると、ゲームでの見た目を暗い所と明るい所で確かめられます。": {
-        "ko": "게임의 '설정 → 조준선 → 프로필 코드 복사'로 얻은 코드를 붙여 넣으면 어두운 곳과 밝은 곳에서 어떻게 보이는지 확인할 수 있습니다.",
-        "en-GB": "Paste the code from Settings → Crosshair → Copy Profile Code in the game to see how it looks against dark and bright walls.",
-        "zh-TW": "貼上遊戲中「設定 → 準星 → 複製設定檔代碼」得到的代碼，即可確認在暗處與亮處的樣子。",
+    "クロスヘアコードを貼ると、ゲームでの見た目をプレビューできます。": {
+        "ko": "조준선 코드를 붙여 넣으면 게임에서의 모습을 미리 볼 수 있습니다.",
+        "en-GB": "Paste a crosshair code to see how it looks in the game.",
+        "zh-TW": "貼上準星代碼，預覽在遊戲中的樣子。",
     },
     "ゲームの初期設定": {"ko": "게임 기본값", "en-GB": "Game default", "zh-TW": "遊戲預設"},
     "コピー": {"ko": "복사", "en-GB": "Copy", "zh-TW": "複製"},
     "コピーしました": {"ko": "복사했습니다", "en-GB": "Copied", "zh-TW": "已複製"},
     "コードをコピー": {"ko": "코드 복사", "en-GB": "Copy code", "zh-TW": "複製代碼"},
-    "コードを貼ると形と色が見られます。よく使われる型からコピーも。": {
-        "ko": "코드를 붙여 넣으면 모양과 색을 볼 수 있습니다. 자주 쓰이는 형태도 복사할 수 있어요.",
-        "en-GB": "Paste a code to see its shape and colour, or copy a common style.",
-        "zh-TW": "貼上代碼即可查看形狀與顏色，也能複製常見樣式。",
+    "コードのプレビューと定番クロスヘア": {
+        "ko": "코드 미리보기와 인기 조준선",
+        "en-GB": "Preview a code, or copy a popular one",
+        "zh-TW": "預覽代碼與常用準星",
     },
     "サーバー状況": {"ko": "서버 상태", "en-GB": "Server status", "zh-TW": "伺服器狀態"},
     "シアン": {"ko": "청록색", "en-GB": "Cyan", "zh-TW": "青色"},
@@ -473,16 +439,12 @@ TEXTS = {
     "ブラジル": {"ko": "브라질", "en-GB": "Brazil", "zh-TW": "巴西"},
     "ページ": {"ko": "페이지", "en-GB": "Pages", "zh-TW": "頁面"},
     "メンテナンス": {"ko": "점검", "en-GB": "Maintenance", "zh-TW": "維護"},
-    "メンテナンスと障害のお知らせ。": {
-        "ko": "점검과 장애 공지.",
-        "en-GB": "Maintenance and incident notices.",
-        "zh-TW": "維護與異常公告。",
-    },
+    "メンテナンス・障害情報": {"ko": "점검·장애 정보", "en-GB": "Maintenance and incidents", "zh-TW": "維護與異常資訊"},
     "ヨーロッパ": {"ko": "유럽", "en-GB": "Europe", "zh-TW": "歐洲"},
     "ラテンアメリカ": {"ko": "라틴 아메리카", "en-GB": "Latin America", "zh-TW": "拉丁美洲"},
     "ランキング": {"ko": "리더보드", "en-GB": "Leaderboard", "zh-TW": "排行榜"},
     "ランキングを見る": {"ko": "리더보드 보기", "en-GB": "See the leaderboard", "zh-TW": "查看排行榜"},
-    "ランキングを読み込んでいます…": {
+    "ランキングを読み込み中…": {
         "ko": "리더보드를 불러오는 중…",
         "en-GB": "Loading the leaderboard…",
         "zh-TW": "正在載入排行榜…",
@@ -491,20 +453,20 @@ TEXTS = {
     "ランクに必要な RR": {"ko": "랭크에 필요한 RR", "en-GB": "RR needed for each rank", "zh-TW": "各牌位所需 RR"},
     "不透明度": {"ko": "불투명도", "en-GB": "Opacity", "zh-TW": "不透明度"},
     "予定": {"ko": "예정", "en-GB": "Scheduled", "zh-TW": "預定"},
-    "今のアクトのランクマッチ上位（イモータル以上）です。名前を押すと戦績が見られます。": {
-        "ko": "현재 막의 경쟁전 상위권(불멸 이상)입니다. 이름을 누르면 전적을 볼 수 있습니다.",
-        "en-GB": "The top of this act's competitive ladder (Immortal and up). Tap a name to see their matches.",
-        "zh-TW": "本幕競技模式的頂尖玩家（神話以上）。點名字即可查看戰績。",
+    "今アクトのコンペティティブ上位（イモータル以上）。": {
+        "ko": "이번 액트 경쟁전 상위(불멸 이상).",
+        "en-GB": "This act's top Competitive players (Immortal and up).",
+        "zh-TW": "本賽季階段競技模式的頂尖玩家（神話以上）。",
     },
     "内側のライン": {"ko": "내부 선", "en-GB": "Inner lines", "zh-TW": "內線"},
     "前の 50 人": {"ko": "이전 50명", "en-GB": "Previous 50", "zh-TW": "前 50 名"},
     "北米": {"ko": "북미", "en-GB": "North America", "zh-TW": "北美"},
     "十字と点": {"ko": "십자와 점", "en-GB": "Cross and dot", "zh-TW": "十字加圓點"},
     "地域": {"ko": "지역", "en-GB": "Region", "zh-TW": "地區"},
-    "地域ごとの上位プレイヤーと、レディアントに必要な RR。": {
-        "ko": "지역별 상위 플레이어와 레디언트에 필요한 RR.",
-        "en-GB": "The top players of each region, and the RR Radiant takes.",
-        "zh-TW": "各地區頂尖玩家，以及成為輻能戰魂所需的 RR。",
+    "地域別の上位プレイヤー": {
+        "ko": "지역별 상위 플레이어",
+        "en-GB": "Top players by region",
+        "zh-TW": "各地區的頂尖玩家",
     },
     "外側のライン": {"ko": "외부 선", "en-GB": "Outer lines", "zh-TW": "外線"},
     "太さ": {"ko": "두께", "en-GB": "Thickness", "zh-TW": "粗細"},
@@ -518,21 +480,21 @@ TEXTS = {
         "en-GB": "{hours} h {minutes} min left",
         "zh-TW": "剩餘 {hours} 小時 {minutes} 分",
     },
-    "毎日入れ替わる 4 つのスキンとナイトマーケットは人ごとに違うため、ゲームの中でだけ見られます。": {
-        "ko": "매일 바뀌는 스킨 4개와 야시장은 사람마다 달라서 게임 안에서만 볼 수 있습니다.",
-        "en-GB": "The four daily skins and the Night Market differ for everyone, so only the game can show yours.",
-        "zh-TW": "每日輪替的 4 款造型與夜市因人而異，只能在遊戲中查看。",
+    "デイリーの 4 スキンとナイトマーケットは人によって違うため、ここには表示されません。": {
+        "ko": "매일 바뀌는 스킨 4개와 야시장은 사람마다 달라 여기에는 표시되지 않습니다.",
+        "en-GB": "The four daily skins and the Night Market differ per player, so they aren't shown here.",
+        "zh-TW": "每日 4 款造型與夜市因人而異，因此不會顯示在這裡。",
     },
     "注目のバンドル": {"ko": "추천 번들", "en-GB": "Featured bundles", "zh-TW": "精選組合包"},
     "白": {"ko": "흰색", "en-GB": "White", "zh-TW": "白色"},
-    "終わりました": {"ko": "종료됨", "en-GB": "Ended", "zh-TW": "已結束"},
+    "終了": {"ko": "종료", "en-GB": "Ended", "zh-TW": "已結束"},
     "緑": {"ko": "초록색", "en-GB": "Green", "zh-TW": "綠色"},
     "緑黄": {"ko": "황록색", "en-GB": "Green yellow", "zh-TW": "綠黃色"},
     "縁取り": {"ko": "외곽선", "en-GB": "Outlines", "zh-TW": "外框"},
     "色": {"ko": "색", "en-GB": "Colour", "zh-TW": "顏色"},
     "表示": {"ko": "보기", "en-GB": "Show", "zh-TW": "顯示"},
-    "見た目": {"ko": "모양", "en-GB": "How it looks", "zh-TW": "外觀"},
-    "覗き込み": {"ko": "정조준", "en-GB": "Aim down sights", "zh-TW": "瞄準"},
+    "プレビュー": {"ko": "미리보기", "en-GB": "Preview", "zh-TW": "預覽"},
+    "ADS": {"ko": "정조준", "en-GB": "Aim down sights", "zh-TW": "瞄準"},
     "設定を開く": {"ko": "설정 열기", "en-GB": "Open the settings", "zh-TW": "開啟設定"},
     "赤": {"ko": "빨간색", "en-GB": "Red", "zh-TW": "紅色"},
     "通常": {"ko": "기본", "en-GB": "Primary", "zh-TW": "主要"},
@@ -548,161 +510,129 @@ TEXTS = {
     "今日": {"ko": "오늘", "en-GB": "Today", "zh-TW": "今天"},
     "{count} 試合": {"ko": "{count}경기", "en-GB": "{count} matches", "zh-TW": "{count} 場"},
     "サーバー": {"ko": "서버", "en-GB": "Server", "zh-TW": "伺服器"},
-    "いまの勝率と増減なら約 {matches} 試合": {
-        "ko": "지금 승률과 RR 변동이면 약 {matches}경기",
-        "en-GB": "about {matches} matches at your current win rate and RR",
-        "zh-TW": "以目前勝率與 RR 增減約需 {matches} 場",
+    "今のペースで約 {matches} 試合": {
+        "ko": "지금 추세로 약 {matches}경기",
+        "en-GB": "about {matches} matches at this pace",
+        "zh-TW": "照目前節奏約 {matches} 場",
     },
-    "いまの勝率と増減だと横ばい（平均 −{loss}）": {
-        "ko": "지금 승률과 RR 변동이면 제자리 (평균 −{loss})",
-        "en-GB": "no progress at your current win rate and RR (−{loss} on average)",
-        "zh-TW": "以目前勝率與 RR 增減會停滯（平均 −{loss}）",
+    "今のペースでは横ばい（平均 −{loss}）": {
+        "ko": "지금 추세로는 제자리(평균 −{loss})",
+        "en-GB": "flat at this pace (−{loss} on average)",
+        "zh-TW": "照目前節奏持平（平均 −{loss}）",
     },
-    "{act} の終わりまであと {days} 日": {
+    "{act} 終了まであと {days} 日": {
         "ko": "{act} 종료까지 {days}일",
         "en-GB": "{act} ends in {days} days",
-        "zh-TW": "{act} 還有 {days} 天結束",
+        "zh-TW": "{act} 還剩 {days} 天",
     },
-    "{act} の終わりまであと {hours} 時間": {
+    "{act} 終了まであと {hours} 時間": {
         "ko": "{act} 종료까지 {hours}시간",
-        "en-GB": "{act} ends in {hours} hours",
-        "zh-TW": "{act} 還有 {hours} 小時結束",
+        "en-GB": "{act} ends in {hours} h",
+        "zh-TW": "{act} 還剩 {hours} 小時",
     },
-    "毎日のスキンの次の入れ替わり": {
-        "ko": "일일 스킨 다음 교체",
-        "en-GB": "Daily skins change next",
-        "zh-TW": "每日造型下次更換",
-    },
-    "サーバーの混み具合": {"ko": "서버 혼잡도", "en-GB": "Server traffic", "zh-TW": "伺服器擁擠度"},
-    "時間ごとの試合の多さと、次の試合までの目安。": {
-        "ko": "시간대별 경기 수와 다음 경기까지의 대략적인 시간.",
-        "en-GB": "When matches are busiest, and roughly how long until the next one.",
-        "zh-TW": "各時段的對戰多寡，與到下一場的大約時間。",
+    "次のストア更新": {"ko": "다음 상점 갱신", "en-GB": "Next daily reset", "zh-TW": "下次商店更新"},
+    "サーバーの混雑状況": {"ko": "서버 혼잡도", "en-GB": "Server traffic", "zh-TW": "伺服器擁擠度"},
+    "時間帯別の混雑と待ち時間の目安": {
+        "ko": "시간대별 혼잡도와 대기 시간",
+        "en-GB": "Busy hours and typical waits",
+        "zh-TW": "各時段的熱門程度與等待時間",
     },
     "マップとパーティー": {"ko": "맵과 파티", "en-GB": "Maps and parties", "zh-TW": "地圖與隊伍"},
-    "いま出るマップと、一緒にランクに行けるか。": {
-        "ko": "지금 나오는 맵과, 함께 경쟁전을 할 수 있는지.",
-        "en-GB": "The maps in rotation, and who can queue ranked together.",
-        "zh-TW": "目前輪替的地圖，以及能否一起排競技。",
+    "マッププールとランク差の制限": {
+        "ko": "맵 로테이션과 랭크 차이 제한",
+        "en-GB": "Map pool and rank-gap limits",
+        "zh-TW": "地圖池與牌位差距限制",
     },
-    "感度の換算": {"ko": "감도 변환", "en-GB": "Sensitivity converter", "zh-TW": "靈敏度換算"},
-    "ほかのゲームの感度と、振り向きの長さ。": {
-        "ko": "다른 게임의 감도와 360° 회전 거리.",
-        "en-GB": "Other games' sensitivity, and your cm/360.",
-        "zh-TW": "其他遊戲的靈敏度，與轉身一圈的距離。",
+    "感度変換": {"ko": "감도 변환", "en-GB": "Sensitivity converter", "zh-TW": "靈敏度換算"},
+    "他ゲームからの変換と振り向き距離": {
+        "ko": "다른 게임 감도 변환과 360° 거리",
+        "en-GB": "Convert from other games; cm per 360°",
+        "zh-TW": "其他遊戲換算與 360° 距離",
     },
-    "中国大陸版（无畏契约）は別のサーバーで動いていて、戦績を外から読む方法が公開されていないため、そのアカウントは調べられません。クロスヘア、感度の換算、エージェントの能力はどちらの版でも使えます。": {
-        "ko": "중국 본토판(无畏契约)은 별도 서버에서 운영되고 전적을 외부에서 읽는 방법이 공개되어 있지 않아, 그 계정은 조회할 수 없습니다. 크로스헤어, 감도 변환, 요원 능력은 두 버전 모두에서 쓸 수 있습니다.",
-        "en-GB": "The mainland China version (无畏契约) runs on separate servers with no public way to read its match history, so its accounts can't be looked up. The crosshair, sensitivity converter and agents' abilities work for both versions.",
-        "zh-TW": "中國大陸版（無畏契約）在另一套伺服器上運作，且沒有公開的方式從外部讀取戰績，因此無法查詢其帳號。準星、靈敏度換算與特務技能在兩個版本都能使用。",
+    "中国大陸版（无畏契约）は戦績が公開されていないため検索できません。クロスヘアと感度変換は使えます。": {
+        "ko": "중국 본토판(无畏契约)은 전적이 공개되지 않아 검색할 수 없습니다. 조준선과 감도 변환은 쓸 수 있습니다.",
+        "en-GB": "Mainland China accounts (无畏契约) can't be looked up: their match data isn't public. Crosshairs and the sensitivity converter still work.",
+        "zh-TW": "中國大陸版（无畏契约）的戰績未公開，無法查詢。準星與靈敏度換算仍可使用。",
     },
-    "中国大陸版（无畏契约）のアカウントは？": {
-        "ko": "중국 본토판(无畏契约) 계정은?",
-        "en-GB": "Playing the mainland China version (无畏契约)?",
-        "zh-TW": "中國大陸版（無畏契約）的帳號呢？",
+    "中国大陸版（无畏契约）について": {
+        "ko": "중국 본토판(无畏契约) 안내",
+        "en-GB": "About the mainland China version (无畏契约)",
+        "zh-TW": "關於中國大陸版（无畏契约）",
     },
-    "サーバーごとに、どの時間に試合が多いかと、次の試合が始まるまでの時間です。": {
-        "ko": "서버별로 어느 시간대에 경기가 많은지와, 다음 경기가 시작되기까지의 시간입니다.",
-        "en-GB": "For each server: the hours with the most matches, and how long until the next match starts.",
-        "zh-TW": "各伺服器在哪些時段對戰最多，以及到下一場開始的時間。",
+    "サーバー別の混雑する時間帯と待ち時間の推定。": {
+        "ko": "서버별 혼잡 시간대와 대기 시간 추정.",
+        "en-GB": "Estimated busy hours per server, and the wait until the next match.",
+        "zh-TW": "各伺服器熱門時段與等待時間的推估。",
     },
-    "Riot は接続人数も待ち時間も公開していません。ここの数はこのサイトが見た試合（ここ 14 日、{count} 試合）から出した目安です。": {
-        "ko": "Riot은 접속자 수도 대기 시간도 공개하지 않습니다. 여기 숫자는 이 사이트가 본 경기(최근 14일, {count}경기)로 낸 추정치입니다.",
-        "en-GB": "Riot doesn't publish player counts or queue times. These figures are estimates from the matches this site has seen (last 14 days, {count} matches).",
-        "zh-TW": "Riot 沒有公開線上人數與排隊時間。這裡的數字是根據本站看過的對戰（近 14 天，{count} 場）推估的。",
+    "Riot は接続人数や待ち時間を公開していません。直近 14 日に当サイトで集計した {count} 試合からの推定値です。": {
+        "ko": "Riot는 접속자 수나 대기 시간을 공개하지 않습니다. 최근 14일 동안 이 사이트가 집계한 {count}경기로 추정한 값입니다.",
+        "en-GB": "Riot doesn't publish player counts or queue times. These are estimates from {count} matches this site collected over the last 14 days.",
+        "zh-TW": "Riot 未公開上線人數與等待時間。此為依近 14 天本站統計的 {count} 場對戰推估。",
     },
-    "この地域の試合はまだ集まっていません。誰かの戦績が見られるたびに増えていきます。": {
-        "ko": "이 지역의 경기는 아직 모이지 않았습니다. 누군가의 전적이 조회될 때마다 늘어납니다.",
-        "en-GB": "No matches from this region yet. They build up each time someone's history is viewed.",
-        "zh-TW": "這個地區的對戰還沒有累積。每當有人查看戰績就會增加。",
+    "この地域のデータがまだ足りません。": {
+        "ko": "이 지역의 데이터가 아직 부족합니다.",
+        "en-GB": "Not enough data for this region yet.",
+        "zh-TW": "此地區的資料還不夠。",
     },
-    "いつもこの時間は混んでいる": {
-        "ko": "평소 이 시간엔 붐빔",
-        "en-GB": "Usually busy at this hour",
-        "zh-TW": "這個時段通常很擠",
-    },
-    "いつもこの時間は空いている": {
-        "ko": "평소 이 시간엔 한산함",
+    "この時間帯は混雑": {"ko": "이 시간대는 혼잡", "en-GB": "Usually busy at this hour", "zh-TW": "此時段通常熱門"},
+    "この時間帯は空いている": {
+        "ko": "이 시간대는 한산",
         "en-GB": "Usually quiet at this hour",
-        "zh-TW": "這個時段通常很空",
+        "zh-TW": "此時段通常冷清",
     },
-    "いつもこの時間はふつう": {
-        "ko": "평소 이 시간엔 보통",
-        "en-GB": "Usually average at this hour",
-        "zh-TW": "這個時段通常普通",
+    "この時間帯は普通": {"ko": "이 시간대는 보통", "en-GB": "Usually average at this hour", "zh-TW": "此時段通常普通"},
+    "現地時間（{zone}）": {"ko": "현지 시간({zone})", "en-GB": "your time ({zone})", "zh-TW": "當地時間（{zone}）"},
+    "データ不足": {"ko": "데이터 부족", "en-GB": "Not enough data", "zh-TW": "資料不足"},
+    "{count} 試合たまると時間帯の傾向を表示します。": {
+        "ko": "{count}경기가 모이면 시간대별 경향을 표시합니다.",
+        "en-GB": "Busy and quiet hours show once there are {count} matches.",
+        "zh-TW": "累積 {count} 場後會顯示各時段的趨勢。",
     },
-    "あなたの時間（{zone}）": {
-        "ko": "내 시간({zone})",
-        "en-GB": "your time ({zone})",
-        "zh-TW": "你的時間（{zone}）",
+    "試合時間": {"ko": "경기 시간", "en-GB": "Match length", "zh-TW": "對戰時間"},
+    "開始から終了まで（分:秒）。": {
+        "ko": "시작부터 종료까지(분:초).",
+        "en-GB": "From start to finish (min:sec).",
+        "zh-TW": "從開始到結束（分:秒）。",
     },
-    "まだ試合が少ない": {
-        "ko": "아직 경기가 적음",
-        "en-GB": "Too few matches yet",
-        "zh-TW": "對戰還太少",
-    },
-    "{count} 試合集まったら、混む時間と空いている時間を出します。": {
-        "ko": "{count}경기가 모이면 붐비는 시간과 한가한 시간을 보여 줍니다.",
-        "en-GB": "Busy and quiet hours show once {count} matches are in.",
-        "zh-TW": "收集到 {count} 場後，會顯示熱門與冷門時段。",
-    },
-    "1 試合の長さ": {
-        "ko": "한 경기의 길이",
-        "en-GB": "How long a match lasts",
-        "zh-TW": "一場對戰的長度",
-    },
-    "試合が始まってから終わるまで（分:秒）。予定を立てるときの目安に。": {
-        "ko": "경기 시작부터 끝까지(분:초). 일정을 짤 때 참고하세요.",
-        "en-GB": "From the start of a match to its end (min:sec), for planning your evening.",
-        "zh-TW": "從對戰開始到結束（分:秒），安排時間時可參考。",
-    },
-    "{server} の時間ごとの試合の割合（{clock}）": {
+    "{server} の時間帯別の試合数（{clock}）": {
         "ko": "{server}의 시간대별 경기 비율 ({clock})",
         "en-GB": "Share of {server}'s matches by hour ({clock})",
         "zh-TW": "{server} 各時段的對戰比例（{clock}）",
     },
-    "いまの時間: {share}%": {
+    "現在の時間帯: {share}%": {
         "ko": "지금 시간: {share}%",
         "en-GB": "This hour: {share}%",
         "zh-TW": "目前時段：{share}%",
     },
-    "時刻は{clock}です。濃い棒がいまの時間。": {
-        "ko": "시각은 {clock}입니다. 진한 막대가 지금 시간.",
-        "en-GB": "Times are in {clock}. The bold bar is the current hour.",
-        "zh-TW": "時間為{clock}。深色長條是目前時段。",
+    "時刻は{clock}。濃い棒が現在の時間帯。": {
+        "ko": "시간은 {clock}. 진한 막대가 현재 시간대.",
+        "en-GB": "Hours are in {clock}. The dark bar is now.",
+        "zh-TW": "時間為{clock}，深色長條為目前時段。",
     },
     "日本時間": {"ko": "일본 시간", "en-GB": "Japan time", "zh-TW": "日本時間"},
     "韓国時間": {"ko": "한국 시간", "en-GB": "Korea time", "zh-TW": "韓國時間"},
     "台湾時間": {"ko": "대만 시간", "en-GB": "Taiwan time", "zh-TW": "台灣時間"},
     "協定世界時（UTC）": {"ko": "협정 세계시(UTC)", "en-GB": "UTC", "zh-TW": "世界協調時間（UTC）"},
-    "次の試合が始まるまで": {
+    "次の試合までの時間": {
         "ko": "다음 경기가 시작되기까지",
         "en-GB": "Until the next match starts",
         "zh-TW": "到下一場開始",
     },
     "中央値": {"ko": "중앙값", "en-GB": "Median", "zh-TW": "中位數"},
-    "いちばん混む: {hour} 時台": {
-        "ko": "가장 붐빔: {hour}시대",
-        "en-GB": "Busiest: {hour}:00",
-        "zh-TW": "最擁擠：{hour} 點",
-    },
-    "空いている: {start}〜{end} 時": {
+    "ピーク: {hour} 時台": {"ko": "피크: {hour}시대", "en-GB": "Peak: {hour}:00", "zh-TW": "尖峰：{hour} 點"},
+    "閑散: {start}〜{end} 時": {
         "ko": "한산: {start}~{end}시",
         "en-GB": "Quiet: {start}:00–{end}:00",
         "zh-TW": "較空：{start}～{end} 點",
     },
     "Riot ID をコピーしました": {"ko": "Riot ID를 복사했습니다", "en-GB": "Riot ID copied", "zh-TW": "已複製 Riot ID"},
-    "Riot ID をコピー（ゲームのフレンド追加に）": {
-        "ko": "Riot ID 복사 (게임에서 친구 추가용)",
-        "en-GB": "Copy the Riot ID (to add them as a friend in the game)",
-        "zh-TW": "複製 Riot ID（在遊戲中加好友用）",
-    },
-    "この地域のメンテナンス・障害のお知らせ": {
+    "Riot ID をコピー": {"ko": "Riot ID 복사", "en-GB": "Copy Riot ID", "zh-TW": "複製 Riot ID"},
+    "この地域のメンテナンス・障害情報": {
         "ko": "이 지역의 점검·장애 공지",
         "en-GB": "Maintenance and incidents in this region",
         "zh-TW": "這個地區的維護與異常公告",
     },
-    "ほかにできること": {"ko": "그 밖에 할 수 있는 것", "en-GB": "More to do", "zh-TW": "其他功能"},
+    "その他の機能": {"ko": "다른 기능", "en-GB": "More", "zh-TW": "其他功能"},
     "{player} のランク・RR・最近の試合・エージェント別の成績。": {
         "ko": "{player}의 랭크·RR·최근 경기·요원별 성적.",
         "en-GB": "{player}'s rank, RR, recent matches and stats by agent.",
@@ -713,38 +643,38 @@ TEXTS = {
     "ロール": {"ko": "역할", "en-GB": "Role", "zh-TW": "角色"},
     "非公開": {"ko": "비공개", "en-GB": "Hidden", "zh-TW": "未公開"},
     "{count} 件": {"ko": "{count}건", "en-GB": "{count} samples", "zh-TW": "{count} 筆"},
-    "同じ人が続けて遊んだ 2 試合の、前の試合の終わりから次の始まりまでです。マッチングに加えてエージェント選択と読み込みの時間も入っています。": {
-        "ko": "같은 사람이 연달아 한 두 경기에서, 앞 경기가 끝나고 다음 경기가 시작되기까지입니다. 매칭에 더해 요원 선택과 로딩 시간도 들어 있습니다.",
-        "en-GB": "From the end of one match to the start of the next, for two matches someone played back to back. It includes agent select and loading as well as the queue.",
-        "zh-TW": "同一人連續玩的兩場中，從前一場結束到下一場開始的時間。除了配對，也包含選擇特務與載入的時間。",
+    "連続した 2 試合の間隔です。マッチング・エージェント選択・ロード時間を含みます。": {
+        "ko": "연속된 두 경기 사이의 간격입니다. 매칭·요원 선택·로딩 시간을 포함합니다.",
+        "en-GB": "The gap between two matches in a row: queue, agent select and loading together.",
+        "zh-TW": "連續兩場對戰之間的間隔，包含配對、特務選擇與載入時間。",
     },
-    "まだ数が足りません（{few} 件から出します）。": {
-        "ko": "아직 수가 부족합니다 ({few}건부터 표시합니다).",
-        "en-GB": "Not enough yet (shown from {few} samples).",
-        "zh-TW": "數量還不夠（{few} 筆以上才顯示）。",
+    "データ不足（{few} 件から表示）。": {
+        "ko": "데이터 부족({few}건부터 표시).",
+        "en-GB": "Not enough data yet (shown from {few}).",
+        "zh-TW": "資料不足（滿 {few} 筆後顯示）。",
     },
-    "いまどのモードでどのマップが出るかと、誰とならコンペティティブに一緒に行けるかを、ゲームの設定から読んでいます。": {
-        "ko": "지금 어느 모드에 어떤 맵이 나오는지와, 누구와 함께 경쟁전에 갈 수 있는지를 게임 설정에서 읽어 옵니다.",
-        "en-GB": "Which maps each mode plays right now, and who can queue Competitive together, read from the game's own settings.",
-        "zh-TW": "從遊戲設定讀取目前各模式會出現哪些地圖，以及能和誰一起排競技模式。",
+    "現在のマッププールと、コンペティティブのパーティー制限。": {
+        "ko": "현재 맵 로테이션과 경쟁전 파티 제한.",
+        "en-GB": "The current map pool, and who can queue Competitive together.",
+        "zh-TW": "目前的地圖池與競技模式的組隊限制。",
     },
-    "いまはゲームの設定を読めません。時間をおいてもう一度どうぞ。": {
-        "ko": "지금은 게임 설정을 읽을 수 없습니다. 잠시 후 다시 시도해 주세요.",
-        "en-GB": "The game's settings can't be read right now. Please try again later.",
-        "zh-TW": "目前無法讀取遊戲設定。請稍後再試。",
+    "ゲームの設定を取得できません。しばらくしてからお試しください。": {
+        "ko": "게임 설정을 불러올 수 없습니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "The game's settings can't be loaded right now. Try again shortly.",
+        "zh-TW": "目前無法取得遊戲設定，請稍後再試。",
     },
-    "一緒に行けるか確かめる": {
-        "ko": "함께 갈 수 있는지 확인",
-        "en-GB": "Check if you can queue together",
-        "zh-TW": "確認能否一起排",
+    "パーティーを組めるか確認": {
+        "ko": "파티 가능 여부 확인",
+        "en-GB": "Can we queue together?",
+        "zh-TW": "確認能否組隊",
     },
     "{n} 人目": {"ko": "{n}번째", "en-GB": "Player {n}", "zh-TW": "第 {n} 人"},
     "未ランク": {"ko": "언랭크", "en-GB": "Unranked", "zh-TW": "未定級"},
-    "確かめる": {"ko": "확인", "en-GB": "Check", "zh-TW": "確認"},
-    "ランクごとの決まり": {"ko": "랭크별 규칙", "en-GB": "Rules by rank", "zh-TW": "各牌位的規則"},
-    "いちばん低い人": {"ko": "가장 낮은 사람", "en-GB": "Lowest player", "zh-TW": "最低的人"},
-    "一緒に行ける上限": {"ko": "함께 갈 수 있는 상한", "en-GB": "Highest allowed", "zh-TW": "可同排的上限"},
-    "いま出るマップ": {"ko": "지금 나오는 맵", "en-GB": "Maps in rotation", "zh-TW": "目前輪替的地圖"},
+    "確認": {"ko": "확인", "en-GB": "Check", "zh-TW": "確認"},
+    "ランクごとの制限": {"ko": "랭크별 제한", "en-GB": "Limits per rank", "zh-TW": "各牌位的限制"},
+    "最も低いランク": {"ko": "가장 낮은 랭크", "en-GB": "Lowest rank", "zh-TW": "最低牌位"},
+    "組める上限": {"ko": "함께할 수 있는 상한", "en-GB": "Highest allowed", "zh-TW": "可組隊的上限"},
+    "現在のマッププール": {"ko": "현재 맵 로테이션", "en-GB": "Map pool now", "zh-TW": "目前的地圖池"},
     "{count} マップ": {"ko": "맵 {count}개", "en-GB": "{count} maps", "zh-TW": "{count} 張地圖"},
     "パーティー {low}〜{high} 人": {
         "ko": "파티 {low}~{high}명",
@@ -752,64 +682,60 @@ TEXTS = {
         "zh-TW": "隊伍 {low}～{high} 人",
     },
     "{sizes} 人は不可": {"ko": "{sizes}명은 불가", "en-GB": "not {sizes}", "zh-TW": "{sizes} 人不可"},
-    "ゲームの設定を読んだ時刻": {
-        "ko": "게임 설정을 읽은 시각",
-        "en-GB": "Settings read at",
-        "zh-TW": "讀取遊戲設定的時間",
-    },
-    "{size} 人のパーティーではコンペティティブに行けません。": {
-        "ko": "{size}명 파티로는 경쟁전에 갈 수 없습니다.",
+    "取得時刻": {"ko": "불러온 시각", "en-GB": "Read at", "zh-TW": "取得時間"},
+    "{size} 人パーティーではコンペティティブに参加できません。": {
+        "ko": "{size}인 파티로는 경쟁전에 참가할 수 없습니다.",
         "en-GB": "A party of {size} can't queue Competitive.",
-        "zh-TW": "{size} 人的隊伍無法排競技模式。",
+        "zh-TW": "{size} 人隊伍無法參加競技模式。",
     },
-    "{rank} 以上の人がいるパーティーは {size} 人まで（5 人なら行けます）。": {
-        "ko": "{rank} 이상이 있는 파티는 {size}명까지 (5명이면 가능).",
-        "en-GB": "A party with anyone {rank} or higher can have up to {size} players (or a full five).",
-        "zh-TW": "有 {rank} 以上的隊伍最多 {size} 人（5 人則可以）。",
+    "{rank} 以上を含むパーティーは {size} 人まで（5 人は可）。": {
+        "ko": "{rank} 이상이 있는 파티는 {size}명까지(5명은 가능).",
+        "en-GB": "A party with {rank} or above can have up to {size} players (five is fine).",
+        "zh-TW": "隊伍中有 {rank} 以上時最多 {size} 人（5 人可）。",
     },
-    "{rank} 以上の人がいるパーティーは {size} 人までです。": {
+    "{rank} 以上を含むパーティーは {size} 人までです。": {
         "ko": "{rank} 이상이 있는 파티는 {size}명까지입니다.",
-        "en-GB": "A party with anyone {rank} or higher can have up to {size} players.",
-        "zh-TW": "有 {rank} 以上的隊伍最多 {size} 人。",
+        "en-GB": "A party with {rank} or above can have up to {size} players.",
+        "zh-TW": "隊伍中有 {rank} 以上時最多 {size} 人。",
     },
-    "5 人ならランクの差に関係なく行けます。": {
-        "ko": "5명이면 랭크 차이와 상관없이 갈 수 있습니다.",
-        "en-GB": "A full five can queue whatever the rank gap.",
-        "zh-TW": "5 人隊伍不論牌位差距都能排。",
+    "5 人パーティーはランク差に関係なく参加できます。": {
+        "ko": "5인 파티는 랭크 차이와 관계없이 참가할 수 있습니다.",
+        "en-GB": "A party of five can queue whatever the rank gap.",
+        "zh-TW": "5 人隊伍不受牌位差距限制。",
     },
-    "ランクの付いていない人は、ここでは確かめられません。": {
-        "ko": "랭크가 없는 사람은 여기서 확인할 수 없습니다.",
+    "未ランクのプレイヤーは判定できません。": {
+        "ko": "언랭크 플레이어는 판정할 수 없습니다.",
         "en-GB": "Unranked players can't be checked here.",
-        "zh-TW": "未定級的人無法在這裡確認。",
+        "zh-TW": "無法判定未定級的玩家。",
     },
-    "行けます。{low} がいるパーティーは {top} まで一緒に行けます。": {
-        "ko": "갈 수 있습니다. {low}가 있는 파티는 {top}까지 함께 갈 수 있습니다.",
-        "en-GB": "You can. A party with {low} in it can go with up to {top}.",
-        "zh-TW": "可以。有 {low} 的隊伍最高可和 {top} 一起排。",
+    "組めます。{low} と組めるのは {top} までです。": {
+        "ko": "파티를 맺을 수 있습니다. {low}와(과) 함께할 수 있는 건 {top}까지입니다.",
+        "en-GB": "Yes. With {low} in the party the limit is {top}.",
+        "zh-TW": "可以組隊。與 {low} 組隊最高到 {top}。",
     },
-    "行けません。{low} がいるパーティーは {top} まで（{high} は離れすぎています）。": {
-        "ko": "갈 수 없습니다. {low}가 있는 파티는 {top}까지입니다 ({high}는 차이가 너무 큽니다).",
-        "en-GB": "You can't. A party with {low} in it can only go with up to {top} ({high} is too far apart).",
-        "zh-TW": "不行。有 {low} 的隊伍最高只到 {top}（{high} 差距太大）。",
+    "組めません。{low} と組めるのは {top} まで（{high} はランク差が大きすぎます）。": {
+        "ko": "파티를 맺을 수 없습니다. {low}와(과) 함께할 수 있는 건 {top}까지({high}는 랭크 차이가 너무 큽니다).",
+        "en-GB": "No. With {low} in the party the limit is {top} ({high} is too far apart).",
+        "zh-TW": "無法組隊。與 {low} 組隊最高到 {top}（{high} 差距過大）。",
     },
-    "このランクの決まりが Riot の設定にありませんでした。": {
-        "ko": "이 랭크의 규칙이 Riot 설정에 없었습니다.",
-        "en-GB": "Riot's settings have no rule for this rank.",
-        "zh-TW": "Riot 的設定中沒有這個牌位的規則。",
+    "このランクの制限データがありません。": {
+        "ko": "이 랭크의 제한 데이터가 없습니다.",
+        "en-GB": "No limit data for this rank.",
+        "zh-TW": "沒有此牌位的限制資料。",
     },
-    "ほかのゲームの感度を VALORANT に（その逆も）。マウスの DPI を変えたときの感度と、振り向きに要る長さも出します。": {
-        "ko": "다른 게임의 감도를 VALORANT로 (반대로도). 마우스 DPI를 바꿀 때의 감도와 360° 회전 거리도 냅니다.",
-        "en-GB": "Turn another game's sensitivity into VALORANT's (or the other way round), with the sensitivity for a new mouse DPI and your cm/360.",
-        "zh-TW": "把其他遊戲的靈敏度換成 VALORANT 的（反之亦可）。也會算出更換滑鼠 DPI 後的靈敏度，與轉身一圈所需的距離。",
+    "他ゲームと VALORANT の感度を相互変換。DPI 変更後の感度と振り向き距離も計算します。": {
+        "ko": "다른 게임과 VALORANT의 감도를 서로 변환합니다. DPI 변경 후의 감도와 360° 거리도 계산합니다.",
+        "en-GB": "Convert sensitivity between VALORANT and other games, with the value for a new DPI and the distance for a full turn.",
+        "zh-TW": "在其他遊戲與 VALORANT 之間換算靈敏度，並計算更換 DPI 後的數值與 360° 距離。",
     },
     "ゲーム": {"ko": "게임", "en-GB": "Game", "zh-TW": "遊戲"},
     "感度": {"ko": "감도", "en-GB": "Sensitivity", "zh-TW": "靈敏度"},
     "新しい DPI（任意）": {"ko": "새 DPI (선택)", "en-GB": "New DPI (optional)", "zh-TW": "新的 DPI（選填）"},
-    "換算する": {"ko": "변환", "en-GB": "Convert", "zh-TW": "換算"},
-    "数を入れてください。": {"ko": "숫자를 입력해 주세요.", "en-GB": "Please enter numbers.", "zh-TW": "請輸入數字。"},
-    "感度は 0 より大きく、DPI は 50〜64000 で入れてください。": {
-        "ko": "감도는 0보다 크게, DPI는 50~64000으로 입력해 주세요.",
-        "en-GB": "Sensitivity must be above 0, and DPI between 50 and 64000.",
+    "変換": {"ko": "변환", "en-GB": "Convert", "zh-TW": "換算"},
+    "数値を入力してください。": {"ko": "숫자를 입력하세요.", "en-GB": "Enter a number.", "zh-TW": "請輸入數字。"},
+    "感度は 0 より大きい値、DPI は 50〜64000 で入力してください。": {
+        "ko": "감도는 0보다 큰 값, DPI는 50~64000으로 입력하세요.",
+        "en-GB": "Sensitivity must be above 0 and DPI between 50 and 64000.",
         "zh-TW": "靈敏度須大於 0，DPI 請輸入 50～64000。",
     },
     "同じ振り向きになる感度": {
@@ -823,10 +749,10 @@ TEXTS = {
         "en-GB": "VALORANT sensitivity at {dpi} DPI",
         "zh-TW": "DPI {dpi} 時的 VALORANT 靈敏度",
     },
-    "視野角（FOV）は揃えていません。腰だめの感度です。": {
-        "ko": "시야각(FOV)은 맞추지 않았습니다. 비조준 감도입니다.",
-        "en-GB": "Field of view isn't matched. These are hip-fire sensitivities.",
-        "zh-TW": "未對齊視野（FOV），為腰射靈敏度。",
+    "腰だめ時の感度です（FOV 差は補正していません）。": {
+        "ko": "지향 사격 기준 감도입니다(FOV 차이는 보정하지 않습니다).",
+        "en-GB": "Hip-fire sensitivity; differences in FOV aren't corrected.",
+        "zh-TW": "為腰射靈敏度（未修正 FOV 差異）。",
     },
     "東京": {"ko": "도쿄", "en-GB": "Tokyo", "zh-TW": "東京"},
     "香港": {"ko": "홍콩", "en-GB": "Hong Kong", "zh-TW": "香港"},
@@ -853,15 +779,15 @@ TEXTS = {
     "マイアミ": {"ko": "마이애미", "en-GB": "Miami", "zh-TW": "邁阿密"},
     "サンティアゴ": {"ko": "산티아고", "en-GB": "Santiago", "zh-TW": "聖地牙哥"},
     "サンパウロ": {"ko": "상파울루", "en-GB": "São Paulo", "zh-TW": "聖保羅"},
-    "Riot が出している VALORANT のニュースとパッチノートです。種類で絞ったり、言葉で探したりできます。": {
-        "ko": "Riot이 올린 VALORANT 뉴스와 패치 노트입니다. 종류로 거르거나 단어로 찾을 수 있습니다.",
-        "en-GB": "Riot's VALORANT news and patch notes. Filter them by kind or search for a word.",
-        "zh-TW": "Riot 發布的 VALORANT 新聞與更新說明。可依類別篩選，或用關鍵字搜尋。",
+    "VALORANT 公式のニュースとパッチノート。": {
+        "ko": "VALORANT 공식 뉴스와 패치 노트.",
+        "en-GB": "Official VALORANT news and patch notes.",
+        "zh-TW": "VALORANT 官方新聞與更新公告。",
     },
-    "VCT などの大会の日程と結果、いま行われている試合のスコアです。好きなチームに印をつけられます。": {
-        "ko": "VCT 등 대회의 일정과 결과, 진행 중인 경기의 점수입니다. 좋아하는 팀에 표시할 수 있습니다.",
-        "en-GB": "The schedule and results of VCT and other events, and the score of matches being played. Star your teams.",
-        "zh-TW": "VCT 等賽事的賽程與結果，以及進行中比賽的比分。可以替喜歡的隊伍加上標記。",
+    "VCT などの大会の日程・結果・ライブスコア。": {
+        "ko": "VCT 등 대회의 일정·결과·실시간 스코어.",
+        "en-GB": "Schedule, results and live scores for VCT and other events.",
+        "zh-TW": "VCT 等賽事的賽程、賽果與即時比分。",
     },
     "eスポーツ": {
         "ko": "e스포츠",
@@ -873,30 +799,26 @@ TEXTS = {
         "en-GB": "{count} live",
         "zh-TW": "{count} 場進行中",
     },
-    "{team} に印をつける": {
-        "ko": "{team} 표시하기",
-        "en-GB": "Star {team}",
-        "zh-TW": "標記 {team}",
+    "{team} をお気に入りに追加": {
+        "ko": "{team} 즐겨찾기에 추가",
+        "en-GB": "Follow {team}",
+        "zh-TW": "將 {team} 加入我的最愛",
     },
-    "{team} の印を外す": {
-        "ko": "{team} 표시 해제",
-        "en-GB": "Unstar {team}",
-        "zh-TW": "取消標記 {team}",
+    "{team} をお気に入りから外す": {
+        "ko": "{team} 즐겨찾기 해제",
+        "en-GB": "Unfollow {team}",
+        "zh-TW": "將 {team} 移出我的最愛",
     },
-    "「{words}」に合うニュースはありませんでした。": {
-        "ko": "「{words}」에 맞는 뉴스가 없습니다.",
-        "en-GB": "No news matches “{words}”.",
+    "「{words}」に一致するニュースはありません。": {
+        "ko": "'{words}'에 해당하는 뉴스가 없습니다.",
+        "en-GB": "No news matches '{words}'.",
         "zh-TW": "沒有符合「{words}」的新聞。",
     },
-    "いまのパッチ": {
-        "ko": "현재 패치",
-        "en-GB": "Current patch",
-        "zh-TW": "目前版本",
-    },
-    "これからの試合はまだ出ていません。": {
-        "ko": "아직 예정된 경기가 없습니다.",
-        "en-GB": "No matches to come are listed yet.",
-        "zh-TW": "目前還沒有接下來的比賽。",
+    "現在のパッチ": {"ko": "현재 패치", "en-GB": "Current patch", "zh-TW": "目前版本"},
+    "予定されている試合はありません。": {
+        "ko": "예정된 경기가 없습니다.",
+        "en-GB": "No upcoming matches.",
+        "zh-TW": "沒有即將進行的比賽。",
     },
     "アップデート": {
         "ko": "업데이트",
@@ -913,60 +835,43 @@ TEXTS = {
         "en-GB": "News",
         "zh-TW": "新聞",
     },
-    "ニュースはまだありません。": {
-        "ko": "아직 뉴스가 없습니다.",
-        "en-GB": "No news yet.",
-        "zh-TW": "目前沒有新聞。",
-    },
-    "ニュースを探す": {
-        "ko": "뉴스 검색",
-        "en-GB": "Search the news",
-        "zh-TW": "搜尋新聞",
-    },
+    "ニュースはありません。": {"ko": "뉴스가 없습니다.", "en-GB": "No news.", "zh-TW": "沒有新聞。"},
+    "ニュースを検索": {"ko": "뉴스 검색", "en-GB": "Search the news", "zh-TW": "搜尋新聞"},
     "パッチノート": {
         "ko": "패치 노트",
         "en-GB": "Patch notes",
         "zh-TW": "更新說明",
     },
-    "パッチノートとお知らせ。種類と言葉で探せます。": {
-        "ko": "패치 노트와 공지. 종류와 단어로 찾을 수 있습니다.",
-        "en-GB": "Patch notes and announcements, by kind or word.",
-        "zh-TW": "更新說明與公告，可依類別或關鍵字搜尋。",
+    "パッチノートと公式ニュース": {
+        "ko": "패치 노트와 공식 뉴스",
+        "en-GB": "Patch notes and official news",
+        "zh-TW": "更新公告與官方新聞",
     },
     "例: パッチ、エージェント": {
         "ko": "예: 패치, 요원",
         "en-GB": "e.g. patch, agent",
         "zh-TW": "例：更新、特務",
     },
-    "印をつけたチームだけ": {
-        "ko": "표시한 팀만",
-        "en-GB": "Starred teams only",
-        "zh-TW": "只看已標記的隊伍",
-    },
+    "お気に入りチームのみ": {"ko": "즐겨찾는 팀만", "en-GB": "My teams only", "zh-TW": "只看我的最愛隊伍"},
     "大会": {
         "ko": "대회",
         "en-GB": "Event",
         "zh-TW": "賽事",
     },
-    "大会の日程・結果・試合中のスコア。好きなチームに印も。": {
-        "ko": "대회 일정·결과·진행 중 점수. 좋아하는 팀 표시도.",
-        "en-GB": "Event schedule, results and live scores. Star your teams.",
-        "zh-TW": "賽事賽程、結果與即時比分，也能標記隊伍。",
-    },
-    "探す": {
-        "ko": "찾기",
-        "en-GB": "Search",
-        "zh-TW": "搜尋",
+    "大会の日程・結果・ライブスコア": {
+        "ko": "대회 일정·결과·실시간 스코어",
+        "en-GB": "Schedule, results and live scores",
+        "zh-TW": "賽程、賽果與即時比分",
     },
     "日程": {
         "ko": "일정",
         "en-GB": "Schedule",
         "zh-TW": "賽程",
     },
-    "時刻はあなたの端末の時計で出しています。スコアは数分ごとに新しくなります。": {
-        "ko": "시각은 사용자 기기의 시계 기준입니다. 점수는 몇 분마다 새로 고쳐집니다.",
-        "en-GB": "Times are in your device's clock. Scores refresh every few minutes.",
-        "zh-TW": "時間依你裝置的時鐘顯示。比分每隔幾分鐘更新。",
+    "時刻は端末のタイムゾーンで表示。スコアは数分ごとに更新されます。": {
+        "ko": "시간은 기기의 시간대 기준. 스코어는 몇 분마다 갱신됩니다.",
+        "en-GB": "Times are in your device's time zone. Scores refresh every few minutes.",
+        "zh-TW": "時間依裝置時區顯示，比分每幾分鐘更新。",
     },
     "種類": {
         "ko": "종류",
@@ -983,10 +888,10 @@ TEXTS = {
         "en-GB": "No results yet.",
         "zh-TW": "目前還沒有結果。",
     },
-    "記事は Riot の公式サイト（playvalorant.com）で開きます。": {
-        "ko": "기사는 Riot 공식 사이트(playvalorant.com)에서 열립니다.",
-        "en-GB": "Articles open on Riot's own site (playvalorant.com).",
-        "zh-TW": "文章會在 Riot 官方網站（playvalorant.com）開啟。",
+    "記事は公式サイト（playvalorant.com）で開きます。": {
+        "ko": "기사는 공식 사이트(playvalorant.com)에서 열립니다.",
+        "en-GB": "Articles open on the official site (playvalorant.com).",
+        "zh-TW": "文章會在官方網站（playvalorant.com）開啟。",
     },
     "試合の動画": {
         "ko": "경기 영상",
@@ -1003,15 +908,15 @@ TEXTS = {
         "en-GB": "Dev",
         "zh-TW": "開發",
     },
-    "VALORANT の武器スキンを全部。武器・ティア・名前で探して、バリエーションやレベルごとの動画を見られます。": {
-        "ko": "VALORANT의 모든 무기 스킨. 무기·등급·이름으로 찾고, 변형과 레벨별 영상을 볼 수 있습니다.",
-        "en-GB": "Every VALORANT weapon skin. Find them by weapon, tier or name, and watch each variant's and level's video.",
-        "zh-TW": "VALORANT 的所有武器造型。可依武器、等級、名稱搜尋，並觀看各款式與等級的影片。",
+    "VALORANT の全武器スキン。動画とバリエーションを確認できます。": {
+        "ko": "VALORANT의 모든 무기 스킨. 영상과 변형을 확인할 수 있습니다.",
+        "en-GB": "Every VALORANT weapon skin, with videos and variants.",
+        "zh-TW": "VALORANT 所有武器造型，可查看影片與變體。",
     },
-    "{count} 人が評価しました（3 人から平均を出します）": {
-        "ko": "{count}명이 평가했습니다 (3명부터 평균을 냅니다)",
-        "en-GB": "{count} rated so far (the average shows from 3)",
-        "zh-TW": "已有 {count} 人評分（滿 3 人才顯示平均）",
+    "{count} 人が評価（平均は 3 人から表示）": {
+        "ko": "{count}명이 평가(평균은 3명부터 표시)",
+        "en-GB": "{count} ratings (the average shows from three)",
+        "zh-TW": "{count} 人評價（滿 3 人後顯示平均）",
     },
     "{count} 人の評価": {
         "ko": "{count}명의 평가",
@@ -1023,7 +928,7 @@ TEXTS = {
         "en-GB": "{found} of {total}",
         "zh-TW": "{found} 款（共 {total} 款）",
     },
-    "{name} のバリエーション、レベルごとの演出と動画、同じシリーズのスキン。": {
+    "{name} のバリエーション、レベル別の演出と動画、同シリーズのスキン。": {
         "ko": "{name}의 변형, 레벨별 효과와 영상, 같은 시리즈의 스킨.",
         "en-GB": "{name}: its variants, what each level adds with videos, and the rest of its series.",
         "zh-TW": "{name} 的款式、各等級的效果與影片，以及同系列的造型。",
@@ -1038,39 +943,39 @@ TEXTS = {
         "en-GB": "Your rating",
         "zh-TW": "你的評分",
     },
-    "いまは評価が多すぎます。時間をおいてもう一度どうぞ。": {
-        "ko": "지금은 평가가 너무 많습니다. 잠시 후 다시 시도해 주세요.",
-        "en-GB": "Too many ratings just now. Please try again later.",
-        "zh-TW": "目前評分太多，請稍後再試。",
+    "評価が集中しています。しばらくしてからお試しください。": {
+        "ko": "평가가 몰리고 있습니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "Too many ratings right now. Try again shortly.",
+        "zh-TW": "目前評價過多，請稍後再試。",
     },
     "すべての武器": {
         "ko": "모든 무기",
         "en-GB": "All weapons",
         "zh-TW": "所有武器",
     },
-    "ほかに {count} 件あります。武器やティアで絞り込んでください。": {
-        "ko": "{count}개가 더 있습니다. 무기나 등급으로 좁혀 주세요.",
+    "ほか {count} 件。武器やティアで絞り込めます。": {
+        "ko": "그 밖에 {count}개. 무기나 등급으로 좁힐 수 있습니다.",
         "en-GB": "{count} more. Narrow it down by weapon or tier.",
-        "zh-TW": "還有 {count} 款，請用武器或等級縮小範圍。",
+        "zh-TW": "還有 {count} 筆，可用武器或等級篩選。",
     },
     "まだ評価はありません。": {
         "ko": "아직 평가가 없습니다.",
         "en-GB": "No ratings yet.",
         "zh-TW": "目前還沒有評分。",
     },
-    "アカウントは要りません。このブラウザで 1 スキンに 1 つ、あとから変えられます。": {
-        "ko": "계정은 필요 없습니다. 이 브라우저에서 스킨 하나에 하나, 나중에 바꿀 수 있습니다.",
-        "en-GB": "No account needed. One rating per skin from this browser, and you can change it later.",
-        "zh-TW": "不需要帳號。這個瀏覽器每款造型可評一次，之後也能更改。",
+    "ログイン不要。1 スキンにつき 1 回、あとから変更できます。": {
+        "ko": "로그인 불필요. 스킨당 한 번, 나중에 바꿀 수 있습니다.",
+        "en-GB": "No account needed. One rating per skin, and you can change it later.",
+        "zh-TW": "不需登入。每款造型可評價一次，之後可以修改。",
     },
     "シリーズ: {name}": {
         "ko": "시리즈: {name}",
         "en-GB": "Series: {name}",
         "zh-TW": "系列：{name}",
     },
-    "スキンの一覧を読み込めませんでした。時間をおいてもう一度どうぞ。": {
-        "ko": "스킨 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
-        "en-GB": "The list of skins could not be loaded. Please try again later.",
+    "スキン一覧を読み込めませんでした。しばらくしてからお試しください。": {
+        "ko": "스킨 목록을 불러오지 못했습니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "Couldn't load the skins. Try again shortly.",
         "zh-TW": "無法載入造型列表，請稍後再試。",
     },
     "スキン図鑑": {
@@ -1108,28 +1013,23 @@ TEXTS = {
         "en-GB": "e.g. Prime",
         "zh-TW": "例：Prime",
     },
-    "全スキンのバリエーションとレベルの動画、みんなの評価。": {
-        "ko": "모든 스킨의 변형과 레벨 영상, 모두의 평가.",
-        "en-GB": "Every skin's variants and level videos, rated by visitors.",
-        "zh-TW": "所有造型的款式與等級影片，還有大家的評分。",
+    "全スキンの動画・バリエーション・評価": {
+        "ko": "모든 스킨의 영상·변형·평가",
+        "en-GB": "Every skin: videos, variants, ratings",
+        "zh-TW": "所有造型的影片、變體與評價",
     },
     "動画 {count}": {
         "ko": "영상 {count}",
         "en-GB": "{count} videos",
         "zh-TW": "影片 {count}",
     },
-    "動画は Riot のサーバーから、再生したときだけ読み込みます。": {
-        "ko": "영상은 Riot 서버에서, 재생할 때만 불러옵니다.",
-        "en-GB": "Videos come from Riot's servers, and load only when you press play.",
-        "zh-TW": "影片來自 Riot 的伺服器，只在播放時才載入。",
-    },
     "動画を見る": {
         "ko": "영상 보기",
         "en-GB": "Watch the video",
         "zh-TW": "觀看影片",
     },
-    "合うスキンはありませんでした。": {
-        "ko": "맞는 스킨이 없습니다.",
+    "該当するスキンがありません。": {
+        "ko": "해당하는 스킨이 없습니다.",
         "en-GB": "No skins match.",
         "zh-TW": "沒有符合的造型。",
     },
@@ -1143,16 +1043,7 @@ TEXTS = {
         "en-GB": "Name",
         "zh-TW": "名稱",
     },
-    "名前・絵・動画は valorant-api.com と Riot から。": {
-        "ko": "이름·그림·영상은 valorant-api.com과 Riot에서.",
-        "en-GB": "Names, pictures and videos from valorant-api.com and Riot.",
-        "zh-TW": "名稱、圖片與影片來自 valorant-api.com 與 Riot。",
-    },
-    "基本の見た目": {
-        "ko": "기본 외형",
-        "en-GB": "Base look",
-        "zh-TW": "基本外觀",
-    },
+    "基本スキン": {"ko": "기본 외형", "en-GB": "Base look", "zh-TW": "基本外觀"},
     "星 {count}": {
         "ko": "별 {count}개",
         "en-GB": "{count} stars",
@@ -1173,21 +1064,9 @@ TEXTS = {
         "en-GB": "Top-rated skins",
         "zh-TW": "高評分造型",
     },
-    "評価を受け付けました。": {
-        "ko": "평가를 받았습니다.",
-        "en-GB": "Thanks, your rating is in.",
-        "zh-TW": "已收到你的評分。",
-    },
-    "評価を変える": {
-        "ko": "평가 바꾸기",
-        "en-GB": "Change rating",
-        "zh-TW": "更改評分",
-    },
-    "評価を送る": {
-        "ko": "평가 보내기",
-        "en-GB": "Send rating",
-        "zh-TW": "送出評分",
-    },
+    "評価しました。": {"ko": "평가했습니다.", "en-GB": "Rating saved.", "zh-TW": "已送出評價。"},
+    "評価を変更": {"ko": "평가 바꾸기", "en-GB": "Change rating", "zh-TW": "更改評分"},
+    "評価する": {"ko": "평가하기", "en-GB": "Rate", "zh-TW": "評價"},
     "エフェクト": {
         "ko": "이펙트",
         "en-GB": "VFX",
@@ -1243,111 +1122,78 @@ TEXTS = {
         "en-GB": "Transformation",
         "zh-TW": "變形",
     },
-    "VALORANT のストアが入れ替わりました": {
-        "ko": "VALORANT 상점이 바뀌었습니다",
-        "en-GB": "The VALORANT store has changed",
+    "VALORANT のストアが更新されました": {
+        "ko": "VALORANT 상점이 갱신되었습니다",
+        "en-GB": "The VALORANT store has reset",
         "zh-TW": "VALORANT 商店已更新",
     },
-    "毎日の 4 つのスキンが新しくなりました。": {
-        "ko": "매일 바뀌는 스킨 4개가 새로 나왔습니다.",
-        "en-GB": "Today's four skins are in.",
-        "zh-TW": "每日的 4 款造型已更新。",
+    "デイリーの 4 スキンが入れ替わりました。": {
+        "ko": "매일 바뀌는 스킨 4개가 교체되었습니다.",
+        "en-GB": "Your four daily skins have changed.",
+        "zh-TW": "每日 4 款造型已更換。",
     },
     "VALORANT のストア": {
         "ko": "VALORANT 상점",
         "en-GB": "VALORANT store",
         "zh-TW": "VALORANT 商店",
     },
-    "入れ替わりをカレンダーに入れる（毎日の通知）": {
-        "ko": "교체 시각을 캘린더에 추가 (매일 알림)",
-        "en-GB": "Add the daily change to your calendar (a reminder every day)",
-        "zh-TW": "把更新時間加入行事曆（每天提醒）",
+    "ストア更新をカレンダーに追加": {
+        "ko": "상점 갱신을 캘린더에 추가",
+        "en-GB": "Add the daily reset to your calendar",
+        "zh-TW": "將商店更新時間加入行事曆",
     },
-    "使用率と勝率": {
-        "ko": "픽률과 승률",
-        "en-GB": "Pick and win rates",
-        "zh-TW": "選用率與勝率",
+    "ピック率と勝率": {"ko": "픽률과 승률", "en-GB": "Pick and win rates", "zh-TW": "選用率與勝率"},
+    "エージェント別のピック率と勝率（当サイト集計）。": {
+        "ko": "요원별 픽률과 승률(이 사이트 집계).",
+        "en-GB": "Pick and win rate per agent, from matches this site has collected.",
+        "zh-TW": "各特務的選用率與勝率（本站統計）。",
     },
-    "使用率と勝率を見る": {
-        "ko": "픽률과 승률 보기",
-        "en-GB": "See pick and win rates",
-        "zh-TW": "查看選用率與勝率",
+    "直近 {days} 日・{count} 試合の集計": {
+        "ko": "최근 {days}일·{count}경기 집계",
+        "en-GB": "From {count} matches over the last {days} days",
+        "zh-TW": "近 {days} 天、{count} 場的統計",
     },
-    "エージェントがどれくらい選ばれ、選んだチームがどれくらい勝っているか。このサイトが見た試合からの目安です。": {
-        "ko": "요원이 얼마나 선택되고, 선택한 팀이 얼마나 이기는지. 이 사이트가 본 경기에서 낸 추정치입니다.",
-        "en-GB": "How often each agent is picked and how often the team that picked it wins: an estimate from the matches this site has seen.",
-        "zh-TW": "各特務被選用的頻率，以及選用的隊伍勝率。這是從本站看到的對戰得出的估計。",
+    "集計できる試合がまだ足りません。": {
+        "ko": "집계할 경기가 아직 부족합니다.",
+        "en-GB": "Not enough matches yet.",
+        "zh-TW": "可統計的對戰還不夠。",
     },
-    "直近 {days} 日に見た {count} 試合から": {
-        "ko": "최근 {days}일 동안 본 {count}경기 기준",
-        "en-GB": "From {count} matches seen in the last {days} days",
-        "zh-TW": "取自最近 {days} 天看到的 {count} 場對戰",
+    "並び順": {"ko": "정렬", "en-GB": "Sort", "zh-TW": "排序"},
+    "ピック率順": {"ko": "픽률순", "en-GB": "By pick rate", "zh-TW": "依選用率"},
+    "勝率順": {"ko": "승률순", "en-GB": "By win rate", "zh-TW": "依勝率"},
+    "ピック率": {"ko": "픽률", "en-GB": "Pick rate", "zh-TW": "選用率"},
+    "ピック率はそのエージェントを選んだチームの割合。{few} 試合未満は勝率を表示しません。": {
+        "ko": "픽률은 해당 요원을 고른 팀의 비율. {few}경기 미만은 승률을 표시하지 않습니다.",
+        "en-GB": "Pick rate is the share of teams that picked the agent. No win rate under {few} matches.",
+        "zh-TW": "選用率是選了該特務的隊伍比例。不足 {few} 場不顯示勝率。",
     },
-    "まだ試合が足りません。見られた試合が増えると出ます。": {
-        "ko": "아직 경기가 부족합니다. 본 경기가 늘면 표시됩니다.",
-        "en-GB": "Not enough matches yet. The numbers show as more are seen.",
-        "zh-TW": "對戰數量還不夠，看到的對戰變多後就會顯示。",
-    },
-    "並べ方": {
-        "ko": "정렬",
-        "en-GB": "Sort",
-        "zh-TW": "排序",
-    },
-    "使用率の高い順": {
-        "ko": "픽률 높은 순",
-        "en-GB": "Most picked",
-        "zh-TW": "選用率高到低",
-    },
-    "勝率の高い順": {
-        "ko": "승률 높은 순",
-        "en-GB": "Highest win rate",
-        "zh-TW": "勝率高到低",
-    },
-    "使用率": {
-        "ko": "픽률",
-        "en-GB": "Pick rate",
-        "zh-TW": "選用率",
-    },
-    "使用率はチームのうちそのエージェントを選んだ割合、勝率はそのチームが勝った割合です。{few} 試合より少ないものは勝率を出していません。": {
-        "ko": "픽률은 그 요원을 고른 팀의 비율, 승률은 그 팀이 이긴 비율입니다. {few}경기보다 적으면 승률을 표시하지 않습니다.",
-        "en-GB": "Pick rate is the share of teams that picked the agent; win rate is how often those teams won. Win rates from fewer than {few} matches are not shown.",
-        "zh-TW": "選用率是選了該特務的隊伍比例，勝率是這些隊伍獲勝的比例。少於 {few} 場的不顯示勝率。",
-    },
-    "2 人のランクと最近の試合の成績を並べて見られます。": {
-        "ko": "두 플레이어의 랭크와 최근 경기 성적을 나란히 볼 수 있습니다.",
-        "en-GB": "See two players' ranks and recent match numbers side by side.",
-        "zh-TW": "並排查看兩位玩家的牌位與近期對戰成績。",
+    "2 人の戦績を並べて比較": {
+        "ko": "두 플레이어의 전적 비교",
+        "en-GB": "Two players side by side",
+        "zh-TW": "並排比較兩名玩家的戰績",
     },
     "{a} と {b} の比較": {
         "ko": "{a}와 {b} 비교",
         "en-GB": "{a} compared with {b}",
         "zh-TW": "{a} 與 {b} 的比較",
     },
-    "{count} 項目で上": {
-        "ko": "{count}개 항목에서 우위",
-        "en-GB": "Ahead on {count}",
-        "zh-TW": "{count} 項領先",
-    },
+    "{count} 項目で優勢": {"ko": "{count}개 항목에서 우위", "en-GB": "Ahead on {count}", "zh-TW": "{count} 項領先"},
     "このブラウザに保存": {
         "ko": "이 브라우저에 저장",
         "en-GB": "Save in this browser",
         "zh-TW": "儲存在此瀏覽器",
     },
-    "このブラウザの中だけに保存されます。ほかの端末へはリンクをコピーして送ってください。": {
-        "ko": "이 브라우저 안에만 저장됩니다. 다른 기기에는 링크를 복사해서 보내 주세요.",
-        "en-GB": "Saved in this browser only. To use one on another device, copy its link and send it there.",
-        "zh-TW": "只會儲存在此瀏覽器中。要在其他裝置使用，請複製連結傳過去。",
+    "保存先はこのブラウザだけです。": {
+        "ko": "이 브라우저에만 저장됩니다.",
+        "en-GB": "Saved in this browser only.",
+        "zh-TW": "只儲存在此瀏覽器。",
     },
-    "それぞれ最近の試合（多くて {count} 試合）の平均です。試合の数が少ないと、たまたまの差が大きく出ます。": {
-        "ko": "각자 최근 경기(최대 {count}경기)의 평균입니다. 경기 수가 적으면 우연한 차이가 크게 나타납니다.",
-        "en-GB": "Each is the average of that player's recent matches (up to {count}). With only a few matches, chance makes the gaps look bigger.",
-        "zh-TW": "各自為近期對戰（最多 {count} 場）的平均。場數少時，偶然造成的差距會比較大。",
+    "直近の試合（最大 {count} 試合）の平均。": {
+        "ko": "최근 경기(최대 {count}경기) 평균.",
+        "en-GB": "Averages over recent matches (up to {count}).",
+        "zh-TW": "近期對戰（最多 {count} 場）的平均。",
     },
-    "ほかのプレイヤーと比べる": {
-        "ko": "다른 플레이어와 비교",
-        "en-GB": "Compare with another player",
-        "zh-TW": "與其他玩家比較",
-    },
+    "比較する": {"ko": "비교하기", "en-GB": "Compare", "zh-TW": "比較"},
     "アカウントレベル": {
         "ko": "계정 레벨",
         "en-GB": "Account level",
@@ -1358,11 +1204,7 @@ TEXTS = {
         "en-GB": "Player {number}",
         "zh-TW": "玩家 {number}",
     },
-    "プレイヤーを比べる": {
-        "ko": "플레이어 비교",
-        "en-GB": "Compare players",
-        "zh-TW": "比較玩家",
-    },
+    "プレイヤー比較": {"ko": "플레이어 비교", "en-GB": "Compare players", "zh-TW": "玩家比較"},
     "リンクをコピー": {
         "ko": "링크 복사",
         "en-GB": "Copy link",
@@ -1383,11 +1225,7 @@ TEXTS = {
         "en-GB": "Unnamed",
         "zh-TW": "未命名",
     },
-    "名前（なくてもかまいません）": {
-        "ko": "이름(없어도 됩니다)",
-        "en-GB": "Name (optional)",
-        "zh-TW": "名稱（可留空）",
-    },
+    "名前（任意）": {"ko": "이름(선택)", "en-GB": "Name (optional)", "zh-TW": "名稱（選填）"},
     "左右を入れ替える": {
         "ko": "좌우 바꾸기",
         "en-GB": "Swap sides",
@@ -1398,26 +1236,14 @@ TEXTS = {
         "en-GB": "Save as a picture",
         "zh-TW": "將戰績存成圖片",
     },
-    "比べる": {
-        "ko": "비교",
-        "en-GB": "Compare",
-        "zh-TW": "比較",
-    },
-    "消す": {
-        "ko": "삭제",
-        "en-GB": "Remove",
-        "zh-TW": "刪除",
-    },
+    "比較": {"ko": "비교", "en-GB": "Compare", "zh-TW": "比較"},
+    "削除": {"ko": "삭제", "en-GB": "Delete", "zh-TW": "刪除"},
     "項目": {
         "ko": "항목",
         "en-GB": "Item",
         "zh-TW": "項目",
     },
-    "（上）": {
-        "ko": "(우위)",
-        "en-GB": "(ahead)",
-        "zh-TW": "（領先）",
-    },
+    "（優勢）": {"ko": "(우위)", "en-GB": "(ahead)", "zh-TW": "（領先）"},
     "平均キル": {
         "ko": "평균 킬",
         "en-GB": "Kills per match",
@@ -1433,20 +1259,20 @@ TEXTS = {
         "en-GB": "Matches",
         "zh-TW": "場數",
     },
-    "eスポーツの日程を読み込めませんでした。時間をおいてもう一度どうぞ。": {
-        "ko": "e스포츠 일정을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
-        "en-GB": "The esports schedule could not be loaded. Please try again later.",
+    "eスポーツの日程を読み込めませんでした。しばらくしてからお試しください。": {
+        "ko": "e스포츠 일정을 불러오지 못했습니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "Couldn't load the esports schedule. Try again shortly.",
         "zh-TW": "無法載入電競賽程，請稍後再試。",
     },
-    "この言語の記事が読めなかったため、英語の記事を出しています。": {
-        "ko": "이 언어의 기사를 불러오지 못해 영어 기사를 표시합니다.",
-        "en-GB": "News in this language could not be loaded, so the English news is shown.",
-        "zh-TW": "無法載入此語言的文章，因此顯示英文文章。",
+    "この言語の記事を取得できないため、英語版を表示しています。": {
+        "ko": "이 언어의 기사를 불러올 수 없어 영어판을 표시합니다.",
+        "en-GB": "Articles in this language couldn't be loaded, so these are in English.",
+        "zh-TW": "無法取得此語言的文章，目前顯示英文版。",
     },
-    "結果はいま読み込めません。Riot の公式サイトで見られます。": {
-        "ko": "지금은 결과를 불러올 수 없습니다. Riot 공식 사이트에서 볼 수 있습니다.",
-        "en-GB": "Results can't be loaded right now. They are on Riot's official site.",
-        "zh-TW": "目前無法載入比賽結果，可在 Riot 官方網站查看。",
+    "結果を取得できません。公式サイトで確認できます。": {
+        "ko": "결과를 불러올 수 없습니다. 공식 사이트에서 확인할 수 있습니다.",
+        "en-GB": "Results can't be loaded right now. They're on the official site.",
+        "zh-TW": "目前無法取得賽果，可到官方網站查看。",
     },
     "公式サイトで結果を見る": {
         "ko": "공식 사이트에서 결과 보기",
@@ -1459,15 +1285,15 @@ TEXTS = {
         "zh-TW": "拿手：{agent}（{games} 場 {rate}%）",
     },
     "ランクの分布": {"ko": "랭크 분포", "en-GB": "Rank distribution", "zh-TW": "牌位分布"},
-    "コンペティティブでどのランクがどれくらいいるか、各ランクが上位何 % か。このサイトが見た試合からの目安です。": {
-        "ko": "경쟁전에서 각 랭크가 얼마나 있는지, 각 랭크가 상위 몇 %인지. 이 사이트가 본 경기에서 낸 추정치입니다.",
-        "en-GB": "How many players are at each rank in Competitive, and what top % each rank is. An estimate from the matches this site has seen.",
-        "zh-TW": "競技模式中各牌位有多少人、各牌位是前百分之幾。依本站看過的對戰估算。",
+    "コンペティティブのランク別人数比と上位 %（当サイト集計の推定値）。": {
+        "ko": "경쟁전 랭크별 비율과 상위 %(이 사이트 집계 추정치).",
+        "en-GB": "Share of Competitive players at each rank, estimated from matches this site has collected.",
+        "zh-TW": "競技模式各牌位的人數比例與前 %（本站統計的推估值）。",
     },
-    "Riot はランクの分布を公開していません。ここ {days} 日にこのサイトが見たコンペティティブの試合の、1 試合 1 人ずつの {count} 人分から数えています（たくさん遊ぶ人ほど多く数えられます）。": {
-        "ko": "Riot은 랭크 분포를 공개하지 않습니다. 최근 {days}일 동안 이 사이트가 본 경쟁전 경기의 경기당 1인씩 {count}명분으로 셉니다(많이 플레이하는 사람일수록 많이 셉니다).",
-        "en-GB": "Riot doesn't publish the rank distribution. This counts {count} player lines (one per player per match) from the Competitive matches this site has seen in the last {days} days, so players who play more count more.",
-        "zh-TW": "Riot 未公開牌位分布。這裡以本站近 {days} 天看過的競技對戰中、每場每人一筆的 {count} 筆資料計算（玩得越多的人算得越多）。",
+    "Riot はランク分布を公開していません。直近 {days} 日に当サイトで集計したコンペティティブの {count} 人分から推定しています。プレイ回数の多い人ほど多く数えられます。": {
+        "ko": "Riot는 랭크 분포를 공개하지 않습니다. 최근 {days}일 동안 이 사이트가 집계한 경쟁전 {count}명분으로 추정합니다. 많이 플레이하는 사람일수록 많이 집계됩니다.",
+        "en-GB": "Riot doesn't publish the rank distribution. This is estimated from {count} players in Competitive matches this site collected over the last {days} days; people who play more are counted more.",
+        "zh-TW": "Riot 未公開牌位分布。此為依近 {days} 天本站統計的競技模式 {count} 人次推估，玩得越多的人被計入越多次。",
     },
     "割合": {"ko": "비율", "en-GB": "Share", "zh-TW": "比例"},
     "上位": {"ko": "상위", "en-GB": "Top", "zh-TW": "前"},
@@ -1477,10 +1303,10 @@ TEXTS = {
         "en-GB": "Distribution of every rank",
         "zh-TW": "所有牌位的分布",
     },
-    "どのランクがどれくらいいて、上位何 % か。": {
-        "ko": "각 랭크가 얼마나 있고 상위 몇 %인지.",
-        "en-GB": "How many are at each rank, and what top % it is.",
-        "zh-TW": "各牌位有多少人、是前百分之幾。",
+    "ランク別の人数比と上位 %": {
+        "ko": "랭크별 비율과 상위 %",
+        "en-GB": "Share of players per rank",
+        "zh-TW": "各牌位的人數比例與前 %",
     },
     "この地域で上位 {share}%": {
         "ko": "이 지역 상위 {share}%",
@@ -1492,25 +1318,25 @@ TEXTS = {
         "en-GB": "Official schedule",
         "zh-TW": "在官方網站查看賽程",
     },
-    "いまは日程を読み込めないため、{time} に読み込んだものを出しています。スコアや試合中の印は古いかもしれません。": {
-        "ko": "지금은 일정을 불러올 수 없어 {time}에 불러온 일정을 보여 줍니다. 점수와 경기 중 표시는 오래되었을 수 있습니다.",
-        "en-GB": "The schedule cannot be loaded right now, so this is the one loaded at {time}. Scores and live marks may be out of date.",
-        "zh-TW": "目前無法載入賽程，因此顯示 {time} 載入的賽程。比分與進行中的標示可能已過時。",
+    "日程を取得できないため、{time} 時点のデータを表示しています。": {
+        "ko": "일정을 불러올 수 없어 {time} 기준 데이터를 표시합니다.",
+        "en-GB": "The schedule can't be loaded right now; this is from {time}.",
+        "zh-TW": "目前無法取得賽程，顯示的是 {time} 的資料。",
     },
     "VAL スコア": {
         "ko": "VAL 스코어",
         "en-GB": "VAL Score",
         "zh-TW": "VAL 分數",
     },
-    "VAL スコア（同じランク帯と比べた 1000 点満点）": {
-        "ko": "VAL 스코어 (같은 랭크대와 비교한 1000점 만점)",
-        "en-GB": "VAL Score (out of 1000, against the same ranks)",
-        "zh-TW": "VAL 分數（與同牌位相比，滿分 1000）",
+    "VAL スコア（同ランク帯比、1000 点満点）": {
+        "ko": "VAL 스코어(같은 랭크대 대비, 1000점 만점)",
+        "en-GB": "VAL Score (out of 1,000, against the same ranks)",
+        "zh-TW": "VAL 分數（與同牌位段相比，滿分 1000）",
     },
-    "{count} 試合の平均。{band}のプレイヤーの {lines} 試合分と比べた位置です。": {
-        "ko": "{count}경기 평균. {band} 플레이어 {lines}경기분과 비교한 위치입니다.",
-        "en-GB": "Average of {count} matches, against {lines} match lines of {band} players.",
-        "zh-TW": "{count} 場比賽的平均。與 {band} 玩家的 {lines} 場數據相比的位置。",
+    "{count} 試合の平均。{band}の {lines} 試合分と比較。": {
+        "ko": "{count}경기 평균. {band} {lines}경기분과 비교.",
+        "en-GB": "Average of {count} matches, against {lines} games at {band}.",
+        "zh-TW": "{count} 場平均，與{band}的 {lines} 場相比。",
     },
     "すべてのランク": {
         "ko": "모든 랭크",
@@ -1522,11 +1348,7 @@ TEXTS = {
         "en-GB": "Score",
         "zh-TW": "分數",
     },
-    "スコアの出し方": {
-        "ko": "스코어 계산 방법",
-        "en-GB": "How the score is worked out",
-        "zh-TW": "分數的計算方式",
-    },
+    "スコアの算出方法": {"ko": "스코어 계산 방식", "en-GB": "How the score works", "zh-TW": "分數怎麼算"},
     "スコアの推移": {
         "ko": "스코어 추이",
         "en-GB": "Score over time",
@@ -1547,10 +1369,10 @@ TEXTS = {
         "en-GB": "oldest first",
         "zh-TW": "由舊到新",
     },
-    "同じランク帯の中での ACS（30%）・KAST（25%）・DDΔ（25%）の位置と、勝ったか（20%）を 1000 点満点にしたものです。真ん中の成績で半分勝つと 500 点ほど。S は 800 点から、A は 650、B は 500、C は 350 から。比べる試合はこのサイトが見た試合（名前は持ちません）です。": {
-        "ko": "같은 랭크대 안에서의 ACS(30%)·KAST(25%)·DDΔ(25%)의 위치와 승리 여부(20%)를 1000점 만점으로 나타낸 것입니다. 중간 성적으로 절반을 이기면 500점 정도. S는 800점부터, A는 650, B는 500, C는 350부터. 비교하는 경기는 이 사이트가 본 경기입니다(이름은 저장하지 않습니다).",
-        "en-GB": "Where your ACS (30%), KAST (25%) and DDΔ (25%) stand among players of the same ranks, and whether you won (20%), out of 1000. Middling numbers and half the games won make about 500. S from 800, A from 650, B from 500, C from 350. The matches compared are the ones this site has seen (no names are kept).",
-        "zh-TW": "在同牌位中的 ACS（30%）、KAST（25%）、DDΔ（25%）位置，加上是否獲勝（20%），換算成滿分 1000。中等成績、贏一半約 500 分。S 從 800 分起，A 從 650，B 從 500，C 從 350。比較的比賽是本網站看過的比賽（不保存名字）。",
+    "同ランク帯での ACS（30%）・KAST（25%）・DDΔ（25%）の順位と勝敗（20%）から算出。平均的な成績で勝率 50% なら約 500 点。S は 800〜、A は 650〜、B は 500〜、C は 350〜。比較対象は当サイトで集計した試合です（名前は保存しません）。": {
+        "ko": "같은 랭크대에서의 ACS(30%)·KAST(25%)·DDΔ(25%) 순위와 승패(20%)로 계산합니다. 평균적인 성적에 승률 50%면 약 500점. S는 800~, A는 650~, B는 500~, C는 350~. 비교 대상은 이 사이트가 집계한 경기입니다(이름은 저장하지 않습니다).",
+        "en-GB": "From where your ACS (30%), KAST (25%) and DDΔ (25%) rank among the same ranks, plus the result (20%). Average numbers and a 50% win rate give about 500. S from 800, A from 650, B from 500, C from 350. Compared against matches this site has collected (no names kept).",
+        "zh-TW": "依同牌位段的 ACS（30%）、KAST（25%）、DDΔ（25%）排名與勝負（20%）計算。表現中等、勝率 50% 約 500 分。S 為 800 以上，A 為 650 以上，B 為 500 以上，C 為 350 以上。比較對象是本站統計的對戰（不保存名稱）。",
     },
     "評価 {grade}": {
         "ko": "등급 {grade}",
@@ -1559,29 +1381,29 @@ TEXTS = {
     },
     # A player's seasons (seasons.py)
     "シーズン別の成績": {"ko": "시즌별 성적", "en-GB": "Season stats", "zh-TW": "各賽季戰績"},
-    "アクトごとの勝率・K/D・HS率・ADR・ACS と、前のアクトからの変化。": {
-        "ko": "액트별 승률·K/D·헤드샷 비율·ADR·ACS와 이전 액트 대비 변화.",
-        "en-GB": "Each act's win rate, K/D, HS%, ADR and ACS, and the change from the act before.",
-        "zh-TW": "每個賽季階段的勝率、K/D、爆頭率、ADR、ACS，以及與上一個階段相比的變化。",
+    "アクトごとの成績と、前アクトからの変化（取得できた試合のみ）。": {
+        "ko": "액트별 성적과 이전 액트 대비 변화(불러온 경기만).",
+        "en-GB": "Stats per act and the change from the act before, from the matches that could be read.",
+        "zh-TW": "各賽季階段的成績與相較前一階段的變化（僅限已取得的對戰）。",
     },
-    "Riot は過去のアクトの成績を公開していないので、HenrikDev（非公式の API）が保存している試合から数えています。全部の試合ではありません（ここでは {count} 試合）。": {
-        "ko": "Riot은 지난 액트의 성적을 공개하지 않아, HenrikDev(비공식 API)가 저장한 경기로 셉니다. 모든 경기는 아닙니다(여기서는 {count}경기).",
-        "en-GB": "Riot does not publish past acts' numbers, so these count the matches HenrikDev (an unofficial API) has stored: not every match ({count} here).",
-        "zh-TW": "Riot 沒有公開過去賽季階段的戰績，因此這裡以 HenrikDev（非官方 API）保存的比賽計算，並非全部比賽（這裡共 {count} 場）。",
+    "Riot は過去アクトの成績を公開していないため、HenrikDev（非公式 API）に残っている試合から集計しています。全試合ではありません（今回は {count} 試合）。": {
+        "ko": "Riot는 지난 액트의 성적을 공개하지 않아 HenrikDev(비공식 API)에 남아 있는 경기로 집계합니다. 전체 경기는 아닙니다(이번에는 {count}경기).",
+        "en-GB": "Riot doesn't publish stats for past acts, so these come from the matches HenrikDev (an unofficial API) still holds. Not every match is there ({count} here).",
+        "zh-TW": "Riot 未公開過去賽季階段的成績，因此以 HenrikDev（非官方 API）保存的對戰統計，並非全部對戰（此處為 {count} 場）。",
     },
-    "このモードの試合はまだ保存されていません。": {
-        "ko": "이 모드의 경기는 아직 저장되지 않았습니다.",
-        "en-GB": "No matches of this mode are stored yet.",
-        "zh-TW": "這個模式的比賽還沒有被保存。",
+    "このモードの試合データがありません。": {
+        "ko": "이 모드의 경기 데이터가 없습니다.",
+        "en-GB": "No matches kept for this mode.",
+        "zh-TW": "沒有此模式的對戰資料。",
     },
-    "前のアクトから": {"ko": "이전 액트 대비", "en-GB": "from the act before", "zh-TW": "與上一個階段相比"},
+    "前アクト比": {"ko": "이전 액트 대비", "en-GB": "from the act before", "zh-TW": "與上一個階段相比"},
     "このアクトの最高ランク": {
         "ko": "이 액트의 최고 랭크",
         "en-GB": "Best rank this act",
         "zh-TW": "這個階段的最高牌位",
     },
-    "よく使ったエージェント": {"ko": "많이 쓴 요원", "en-GB": "Most played agents", "zh-TW": "常用特務"},
-    "保存されている全部": {"ko": "저장된 전체", "en-GB": "All stored", "zh-TW": "全部已保存"},
+    "使用エージェント": {"ko": "많이 쓴 요원", "en-GB": "Most played agents", "zh-TW": "常用特務"},
+    "全期間": {"ko": "전체 기간", "en-GB": "All time", "zh-TW": "全部期間"},
     # Where a player's kills and deaths happened (heatmap.py, _heat.html)
     "キルとデスの場所": {"ko": "킬과 데스 위치", "en-GB": "Kills and deaths on the map", "zh-TW": "擊殺與陣亡位置"},
     "{name} のキルとデスの場所": {
@@ -1589,15 +1411,15 @@ TEXTS = {
         "en-GB": "Where {name} got kills and died",
         "zh-TW": "{name} 的擊殺與陣亡位置",
     },
-    "緑の点はキルを取ったときに立っていた場所、赤の点は倒された場所です（最近の試合の分）。": {
-        "ko": "초록 점은 킬을 했을 때 서 있던 위치, 빨간 점은 죽은 위치입니다(최근 경기).",
-        "en-GB": "Green dots: where the player stood for a kill. Red dots: where they died (recent matches).",
-        "zh-TW": "綠點是擊殺時所站的位置，紅點是陣亡的位置（最近的比賽）。",
+    "緑はキルした位置、赤はデスした位置（最近の試合）。": {
+        "ko": "초록은 킬한 위치, 빨강은 사망한 위치(최근 경기).",
+        "en-GB": "Green: where you got kills. Red: where you died (recent matches).",
+        "zh-TW": "綠點是擊殺時的位置，紅點是陣亡位置（近期對戰）。",
     },
-    "緑の点はキルを取ったときに立っていた場所、赤の点は倒された場所です。線はそのとき相手がいた場所へ伸びています。": {
-        "ko": "초록 점은 킬을 했을 때 서 있던 위치, 빨간 점은 죽은 위치입니다. 선은 그때 상대가 있던 위치로 이어집니다.",
-        "en-GB": "Green dots: where the player stood for a kill. Red dots: where they died. Each line runs to where the other player was.",
-        "zh-TW": "綠點是擊殺時所站的位置，紅點是陣亡的位置。線條連到當時對手所在的位置。",
+    "緑はキルした位置、赤はデスした位置。線の先が相手の位置です。": {
+        "ko": "초록은 킬한 위치, 빨강은 사망한 위치. 선 끝이 상대의 위치입니다.",
+        "en-GB": "Green: where you got kills. Red: where you died. Lines point to the other player.",
+        "zh-TW": "綠點是擊殺時的位置，紅點是陣亡位置，線的另一端是對手所在處。",
     },
     "攻撃と防衛": {"ko": "공격과 수비", "en-GB": "Attack and defence", "zh-TW": "進攻與防守"},
     "キルとデス": {"ko": "킬과 데스", "en-GB": "Kills and deaths", "zh-TW": "擊殺與陣亡"},
@@ -1605,7 +1427,7 @@ TEXTS = {
     "デス": {"ko": "데스", "en-GB": "Deaths", "zh-TW": "陣亡"},
     "場所": {"ko": "위치", "en-GB": "Place", "zh-TW": "位置"},
     "キルした場所": {"ko": "킬한 위치", "en-GB": "Kill", "zh-TW": "擊殺位置"},
-    "倒された場所": {"ko": "죽은 위치", "en-GB": "Death", "zh-TW": "陣亡位置"},
+    "デスした場所": {"ko": "죽은 위치", "en-GB": "Death", "zh-TW": "陣亡位置"},
     "ラウンド最初": {"ko": "라운드 첫 교전", "en-GB": "first of the round", "zh-TW": "回合首次交火"},
     "{map} のキル {kills}、デス {deaths}": {
         "ko": "{map} 킬 {kills}, 데스 {deaths}",
@@ -1617,214 +1439,169 @@ TEXTS = {
         "en-GB": "{kills} K, {deaths} D",
         "zh-TW": "{kills} 殺 {deaths} 死",
     },
-    "{place} で負けやすい（{kills}キル {deaths}デス）。入り方やスキルの使い方を変えてみる場所です。": {
-        "ko": "{place}에서 자주 집니다({kills}킬 {deaths}데스). 진입 방법이나 스킬 사용을 바꿔 볼 만한 곳입니다.",
-        "en-GB": "Loses most duels at {place} ({kills} kills, {deaths} deaths): a place to try another way in, or abilities first.",
-        "zh-TW": "在 {place} 容易輸掉對槍（{kills} 殺 {deaths} 死）。可以換個進點方式或先用技能。",
+    "{place} でデスが多い（{kills}キル {deaths}デス）": {
+        "ko": "{place}에서 데스가 많음({kills}킬 {deaths}데스)",
+        "en-GB": "You die a lot at {place} ({kills} kills, {deaths} deaths)",
+        "zh-TW": "在 {place} 陣亡偏多（{kills} 殺 {deaths} 死）",
     },
     "試合の前に": {"ko": "경기 전에", "en-GB": "Before a match", "zh-TW": "對戰之前"},
     "プレイヤーとランク": {"ko": "플레이어와 랭크", "en-GB": "Players and ranks", "zh-TW": "玩家與牌位"},
     "ニュースと大会": {"ko": "뉴스와 대회", "en-GB": "News and tournaments", "zh-TW": "新聞與賽事"},
     "スキンとショップ": {"ko": "스킨과 상점", "en-GB": "Skins and the store", "zh-TW": "造型與商店"},
-    "エージェントごとの選ばれる割合と勝率。": {
-        "ko": "요원별 픽률과 승률.",
-        "en-GB": "How often each agent is picked, and how often it wins.",
-        "zh-TW": "各特務的選用率與勝率。",
+    "エージェント別のピック率と勝率": {
+        "ko": "요원별 픽률과 승률",
+        "en-GB": "Pick and win rate per agent",
+        "zh-TW": "各特務的選用率與勝率",
     },
-    "{minutes} 分前のデータ": {
-        "ko": "{minutes}분 전 데이터",
-        "en-GB": "Data from {minutes} min ago",
-        "zh-TW": "{minutes} 分鐘前的資料",
+    "{minutes} 分前に更新": {
+        "ko": "{minutes}분 전 갱신",
+        "en-GB": "Updated {minutes} min ago",
+        "zh-TW": "{minutes} 分鐘前更新",
     },
-    "いま読んだデータ": {
-        "ko": "방금 읽은 데이터",
-        "en-GB": "Data read just now",
-        "zh-TW": "剛讀取的資料",
+    "たった今更新": {"ko": "방금 갱신", "en-GB": "Updated just now", "zh-TW": "剛剛更新"},
+    "更新中…": {"ko": "갱신 중…", "en-GB": "Refreshing…", "zh-TW": "更新中…"},
+    "データを更新": {"ko": "전적 갱신", "en-GB": "Refresh", "zh-TW": "更新資料"},
+    "ページの先頭へ": {"ko": "맨 위로", "en-GB": "Back to top", "zh-TW": "回到頂端"},
+    "ヘルプ": {"ko": "도움말", "en-GB": "Help", "zh-TW": "說明"},
+    "用語集": {"ko": "용어 설명", "en-GB": "Glossary", "zh-TW": "名詞解釋"},
+    "キル / デス / アシスト。KD はキル ÷ デス。": {
+        "ko": "킬 / 데스 / 어시스트. KD는 킬 ÷ 데스.",
+        "en-GB": "Kills / deaths / assists. KD is kills ÷ deaths.",
+        "zh-TW": "擊殺 / 死亡 / 助攻。KD 為擊殺 ÷ 死亡。",
     },
-    "読み直しています…": {
-        "ko": "다시 읽는 중…",
-        "en-GB": "Reading again…",
-        "zh-TW": "重新讀取中…",
+    "平均戦闘スコア。ゲーム内のスコアボードと同じ数字。": {
+        "ko": "평균 전투 점수. 게임 점수판과 같은 수치.",
+        "en-GB": "Average combat score, the same number as the in-game scoreboard.",
+        "zh-TW": "平均戰鬥評分，與遊戲計分板相同。",
     },
-    "最新にする": {
-        "ko": "최신으로",
-        "en-GB": "Refresh",
-        "zh-TW": "更新",
-    },
-    "上へ戻る": {
-        "ko": "맨 위로",
-        "en-GB": "Back to top",
-        "zh-TW": "回到頂端",
-    },
-    "使い方・よくある質問": {
-        "ko": "사용법·자주 묻는 질문",
-        "en-GB": "Help and FAQ",
-        "zh-TW": "使用說明與常見問題",
-    },
-    "数字の見かた": {
-        "ko": "숫자 보는 법",
-        "en-GB": "What the numbers mean",
-        "zh-TW": "數字的意思",
-    },
-    "倒した数・倒された数・アシストの数。KD は倒した数 ÷ 倒された数で、1.0 より上なら倒された数より多く倒しています。": {
-        "ko": "킬·데스·어시스트 수. KD는 킬 ÷ 데스로, 1.0보다 높으면 죽은 것보다 더 많이 처치한 것입니다.",
-        "en-GB": "Kills, deaths and assists. KD is kills ÷ deaths: above 1.0 means more kills than deaths.",
-        "zh-TW": "擊殺、死亡與助攻數。KD 是擊殺 ÷ 死亡，高於 1.0 代表擊殺比死亡多。",
-    },
-    "平均戦闘スコア。ダメージ・キル・アシストなどから出る 1 ラウンドあたりの点数で、ゲームの試合結果と同じ数字です。": {
-        "ko": "평균 전투 점수. 피해량·킬·어시스트 등으로 계산한 라운드당 점수로, 게임의 경기 결과와 같은 숫자입니다.",
-        "en-GB": "Average combat score: points per round from damage, kills, assists and more, the same number as the game's scoreboard.",
-        "zh-TW": "平均戰鬥分數。由傷害、擊殺、助攻等算出的每回合分數，與遊戲對戰結果的數字相同。",
-    },
-    "1 ラウンドあたりに与えたダメージ。": {
-        "ko": "라운드당 입힌 피해량.",
+    "1 ラウンドあたりの与ダメージ。": {
+        "ko": "라운드당 준 피해량.",
         "en-GB": "Damage dealt per round.",
         "zh-TW": "每回合造成的傷害。",
     },
-    "当てた弾のうち、頭に当たった割合。": {
-        "ko": "맞힌 탄 중 머리에 맞은 비율.",
-        "en-GB": "Of the shots that hit, the share that hit the head.",
-        "zh-TW": "命中的子彈中，打中頭部的比例。",
+    "命中弾のうちヘッドショットの割合。": {
+        "ko": "명중탄 중 헤드샷 비율.",
+        "en-GB": "Share of hits that were headshots.",
+        "zh-TW": "命中子彈中的爆頭比例。",
     },
-    "キル・アシスト・生き残り・トレード（倒された直後に味方が倒し返した）のどれかがあったラウンドの割合。": {
-        "ko": "킬·어시스트·생존·트레이드(죽은 직후 아군이 복수) 중 하나가 있었던 라운드의 비율.",
-        "en-GB": "Share of rounds with a kill, an assist, survival or a trade (a team-mate killed your killer straight after).",
-        "zh-TW": "有擊殺、助攻、存活或被換掉（陣亡後隊友立刻擊殺對手）其中之一的回合比例。",
+    "キル、アシスト、生存、トレード（デス直後に味方が取り返す）のいずれかがあったラウンドの割合。": {
+        "ko": "킬, 어시스트, 생존, 트레이드(사망 직후 아군이 되갚음) 중 하나라도 있었던 라운드의 비율.",
+        "en-GB": "Rounds with a kill, an assist, a survival or a trade (a teammate avenges you straight away).",
+        "zh-TW": "有擊殺、助攻、存活或被換命（陣亡後隊友立刻補掉對手）的回合比例。",
     },
-    "1 ラウンドあたりの「与えたダメージ − 受けたダメージ」。プラスなら、受けたより多くのダメージを与えています。": {
-        "ko": "라운드당 '입힌 피해 − 받은 피해'. 플러스면 받은 것보다 더 많은 피해를 입힌 것입니다.",
-        "en-GB": "Damage dealt minus damage taken, per round. Above zero means you dealt more than you took.",
-        "zh-TW": "每回合的「造成傷害 − 受到傷害」。正數代表造成的傷害比受到的多。",
+    "1 ラウンドあたりの与ダメージ − 被ダメージ。": {
+        "ko": "라운드당 준 피해량 − 받은 피해량.",
+        "en-GB": "Damage dealt minus damage taken, per round.",
+        "zh-TW": "每回合造成傷害 − 承受傷害。",
     },
-    "ラウンドで最初に敵を倒した回数と、最初に倒された回数。": {
-        "ko": "라운드에서 가장 먼저 적을 처치한 횟수와 가장 먼저 죽은 횟수.",
-        "en-GB": "How often you got the first kill of a round, and how often you were the first to die.",
-        "zh-TW": "在回合中最先擊殺敵人的次數，與最先陣亡的次數。",
+    "ラウンド最初のキルを取った回数 / 取られた回数。": {
+        "ko": "라운드 첫 킬을 낸 횟수 / 당한 횟수.",
+        "en-GB": "Times you got a round's first kill / were its first death.",
+        "zh-TW": "回合首殺次數 / 首先陣亡次數。",
     },
-    "チームで自分だけが残ったラウンドを勝った回数。1v3 なら 3 人を相手に勝っています。": {
-        "ko": "팀에서 혼자 남은 라운드를 이긴 횟수. 1v3이면 3명을 상대로 이긴 것입니다.",
-        "en-GB": "Rounds won as the last one alive on your team. 1v3 means you beat three.",
-        "zh-TW": "隊上只剩自己時贏下回合的次數。1v3 代表一人對三人獲勝。",
+    "最後の 1 人になってから取ったラウンド数。1v3 は相手が 3 人。": {
+        "ko": "혼자 남은 뒤 이긴 라운드 수. 1v3은 상대가 3명.",
+        "en-GB": "Rounds won as the last one alive. 1v3 means against three.",
+        "zh-TW": "只剩自己時拿下的回合數。1v3 即對手 3 人。",
     },
-    "ランクレーティング。コンペティティブで勝つと増え、負けると減り、100 になると次のランクに上がります。": {
-        "ko": "랭크 레이팅. 경쟁전에서 이기면 오르고 지면 내려가며, 100이 되면 다음 랭크로 올라갑니다.",
-        "en-GB": "Rank rating. It goes up when you win a competitive match and down when you lose; at 100 you move up a rank.",
-        "zh-TW": "牌位積分。競技模式贏了會增加、輸了會減少，到 100 就升上下一個牌位。",
+    "ランクレーティング。コンペティティブの勝敗で増減し、100 で昇格。": {
+        "ko": "랭크 레이팅. 경쟁전 승패에 따라 오르내리며 100이 되면 승급.",
+        "en-GB": "Rank Rating. Moves with Competitive results; 100 promotes you.",
+        "zh-TW": "牌位積分。依競技模式勝負增減，滿 100 晉級。",
     },
-    "このサイトの 1000 点満点の評価。同じランク帯の人と比べた ACS・KAST・DDΔ と、勝ったかどうかから出します。": {
-        "ko": "이 사이트의 1000점 만점 평가. 같은 랭크대와 비교한 ACS·KAST·DDΔ와 승리 여부로 계산합니다.",
-        "en-GB": "This site's rating out of 1000, from ACS, KAST and DDΔ against players of the same rank, and whether you won.",
-        "zh-TW": "本站滿分 1000 的評分，由與同牌位玩家相比的 ACS、KAST、DDΔ 以及是否獲勝算出。",
+    "当サイト独自の評価（1000 点満点）。同ランク帯と比べた ACS・KAST・DDΔ と勝敗から算出。": {
+        "ko": "이 사이트의 자체 평가(1000점 만점). 같은 랭크대와 비교한 ACS·KAST·DDΔ와 승패로 계산.",
+        "en-GB": "This site's own rating out of 1,000: ACS, KAST and DDΔ against the same ranks, plus the result.",
+        "zh-TW": "本站自訂評分（滿分 1000），依同牌位段的 ACS、KAST、DDΔ 與勝負計算。",
     },
-    "同じランク帯の試合の中での位置。上位 10% なら、10 人に 1 人の成績です。": {
-        "ko": "같은 랭크대 경기 중에서의 위치. 상위 10%면 10명 중 1명꼴의 성적입니다.",
-        "en-GB": "Where you stand among matches at the same rank. Top 10% means one player in ten does this well.",
-        "zh-TW": "在同牌位對戰中的位置。前 10% 代表十人中只有一人有這樣的成績。",
+    "同ランク帯の中での順位。上位 10% は 10 人中 1 位相当。": {
+        "ko": "같은 랭크대 안에서의 순위. 상위 10%는 10명 중 1등 수준.",
+        "en-GB": "Standing among the same ranks. Top 10% is the best one in ten.",
+        "zh-TW": "在同牌位段中的排名。前 10% 相當於 10 人中的第 1 名。",
     },
-    "VAL Tracker の使い方：Riot ID の探し方、見つからないとき、データの新しさ、数字の意味。": {
-        "ko": "VAL Tracker 사용법: Riot ID 찾기, 검색되지 않을 때, 데이터의 최신성, 숫자의 의미.",
-        "en-GB": "How to use VAL Tracker: finding a Riot ID, when a player is not found, how new the data is, what the numbers mean.",
-        "zh-TW": "VAL Tracker 使用說明：如何找到 Riot ID、找不到時、資料的新舊、數字的意思。",
+    "VAL Tracker のヘルプ。Riot ID の確認方法、見つからない場合、データの更新、用語集。": {
+        "ko": "VAL Tracker 도움말. Riot ID 확인 방법, 찾을 수 없을 때, 데이터 갱신, 용어 설명.",
+        "en-GB": "Help for VAL Tracker: finding a Riot ID, players that can't be found, how fresh the data is, and a glossary.",
+        "zh-TW": "VAL Tracker 說明：如何查看 Riot ID、找不到玩家時、資料更新、名詞解釋。",
     },
     "目次": {
         "ko": "목차",
         "en-GB": "Contents",
         "zh-TW": "目錄",
     },
-    "Riot ID の見つけ方": {
-        "ko": "Riot ID 찾는 법",
-        "en-GB": "Finding a Riot ID",
-        "zh-TW": "如何找到 Riot ID",
+    "Riot ID の確認方法": {"ko": "Riot ID 확인 방법", "en-GB": "Finding a Riot ID", "zh-TW": "如何查看 Riot ID"},
+    "見つからない場合": {"ko": "찾을 수 없을 때", "en-GB": "Player not found?", "zh-TW": "找不到玩家時"},
+    "データの更新": {"ko": "데이터 갱신", "en-GB": "How fresh the data is", "zh-TW": "資料更新"},
+    "データ提供元": {"ko": "데이터 출처", "en-GB": "Data sources", "zh-TW": "資料來源"},
+    "Riot ID（名前#タグ）で検索します。例: Name#JP1。全角の # でも検索できます。": {
+        "ko": "Riot ID(이름#태그)로 검색합니다. 예: Name#JP1.",
+        "en-GB": "Search by Riot ID (Name#Tag), e.g. Name#JP1.",
+        "zh-TW": "以 Riot ID（名稱#標籤）搜尋，例如 Name#JP1。全形的 # 也可以。",
     },
-    "見つからないとき": {
-        "ko": "검색되지 않을 때",
-        "en-GB": "When a player is not found",
-        "zh-TW": "找不到時",
+    "☆ を押したプレイヤーはお気に入りに、開いたプレイヤーは履歴に残ります。保存先はこのブラウザだけです。": {
+        "ko": "☆를 누른 플레이어는 즐겨찾기에, 열어 본 플레이어는 기록에 남습니다. 이 브라우저에만 저장됩니다.",
+        "en-GB": "Players you star go to Favourites; players you open stay in Recently viewed. Both live in this browser only.",
+        "zh-TW": "按 ☆ 的玩家會加入我的最愛，看過的玩家會留在紀錄中。兩者都只儲存在此瀏覽器。",
     },
-    "データの新しさ": {
-        "ko": "데이터의 최신성",
-        "en-GB": "How new the data is",
-        "zh-TW": "資料的新舊",
+    "自分の Riot ID は、ゲームのフレンド一覧の一番上か、account.riotgames.com の「Riot ID」で確認できます。": {
+        "ko": "내 Riot ID는 게임 친구 목록 맨 위나 account.riotgames.com의 'Riot ID'에서 확인할 수 있습니다.",
+        "en-GB": "Your own Riot ID is at the top of the in-game friends list, or under 'Riot ID' at account.riotgames.com.",
+        "zh-TW": "自己的 Riot ID 顯示在遊戲好友列表最上方，也可在 account.riotgames.com 的「Riot ID」查看。",
     },
-    "名前を隠しているプレイヤー": {
-        "ko": "이름을 숨긴 플레이어",
-        "en-GB": "Players who hide their name",
-        "zh-TW": "隱藏名稱的玩家",
+    "同じ試合にいたプレイヤーは、試合ページから開けます。": {
+        "ko": "같은 경기에 있던 플레이어는 경기 페이지에서 열 수 있습니다.",
+        "en-GB": "Anyone from a match can be opened from that match's page.",
+        "zh-TW": "同場對戰的玩家可從對戰頁面開啟。",
     },
-    "データの出どころ": {
-        "ko": "데이터 출처",
-        "en-GB": "Where the data comes from",
-        "zh-TW": "資料來源",
+    "タグは必須です。名前だけでは検索できません。": {
+        "ko": "태그는 필수입니다. 이름만으로는 검색할 수 없습니다.",
+        "en-GB": "The tag is required; a name alone can't be searched.",
+        "zh-TW": "標籤為必填，只有名稱無法搜尋。",
     },
-    "検索に Riot ID（名前#タグ）を入れます。例: Name#JP1。# やタグは全角で打ってもかまいません。": {
-        "ko": "검색에 Riot ID(이름#태그)를 입력합니다. 예: Name#JP1. #나 태그는 전각으로 입력해도 됩니다.",
-        "en-GB": "Type a Riot ID (name#tag) in the search, for example Name#JP1. Full-width # and tag letters work too.",
-        "zh-TW": "在搜尋中輸入 Riot ID（名稱#標籤），例如 Name#JP1。# 和標籤用全形輸入也可以。",
+    "0 と O、1 と l と I などの打ち間違いに注意してください。": {
+        "ko": "0과 O, 1과 l과 I 같은 오타에 주의하세요.",
+        "en-GB": "Watch for look-alikes: 0 and O, 1, l and I.",
+        "zh-TW": "請留意 0 與 O、1 與 l 與 I 等容易打錯的字。",
     },
-    "プレイヤーのページで ☆ を押すとお気に入りに入り、検索の画面に並びます。見たプレイヤーは「最近見たプレイヤー」に残ります。どちらもこのブラウザだけに保存されます。": {
-        "ko": "플레이어 페이지에서 ☆를 누르면 즐겨찾기에 추가되어 검색 화면에 표시됩니다. 본 플레이어는 '최근 본 플레이어'에 남습니다. 둘 다 이 브라우저에만 저장됩니다.",
-        "en-GB": 'Press ☆ on a player\'s page to add them to your favourites on the search page. Players you open stay under "Recently viewed". Both are kept only in this browser.',
-        "zh-TW": "在玩家頁面按 ☆ 就會加入最愛，顯示在搜尋畫面。看過的玩家會留在「最近看過的玩家」。兩者都只存在這個瀏覽器。",
+    "名前を変更した場合は、新しい Riot ID で検索してください。": {
+        "ko": "이름을 바꿨다면 새 Riot ID로 검색하세요.",
+        "en-GB": "After a name change, search for the new Riot ID.",
+        "zh-TW": "若改過名稱，請用新的 Riot ID 搜尋。",
     },
-    "自分の Riot ID は、VALORANT のメイン画面右のフレンド一覧の一番上に出ています。Riot のアカウント管理ページ（account.riotgames.com）の「Riot ID」でも見られます。": {
-        "ko": "내 Riot ID는 VALORANT 메인 화면 오른쪽 친구 목록 맨 위에 나옵니다. Riot 계정 관리 페이지(account.riotgames.com)의 'Riot ID'에서도 볼 수 있습니다.",
-        "en-GB": "Your own Riot ID is at the top of the friends list on the right of VALORANT's main screen. It is also under \"Riot ID\" on Riot's account page (account.riotgames.com).",
-        "zh-TW": "自己的 Riot ID 顯示在 VALORANT 主畫面右側好友列表的最上方，也可以在 Riot 帳號管理頁面（account.riotgames.com）的「Riot ID」查看。",
+    "長期間プレイしていないアカウントは、試合が表示されないことがあります。": {
+        "ko": "오랫동안 플레이하지 않은 계정은 경기가 표시되지 않을 수 있습니다.",
+        "en-GB": "Accounts that haven't played for a long time may show no matches.",
+        "zh-TW": "長時間未遊玩的帳號可能不會顯示對戰。",
     },
-    "フレンドの Riot ID はフレンド一覧に出ています。試合で一緒になった人は、このサイトの試合のページから開けます。": {
-        "ko": "친구의 Riot ID는 친구 목록에 나옵니다. 경기에서 함께한 사람은 이 사이트의 경기 페이지에서 열 수 있습니다.",
-        "en-GB": "Friends' Riot IDs are in your friends list. Players from your matches can be opened from this site's match pages.",
-        "zh-TW": "好友的 Riot ID 顯示在好友列表。在對戰中遇到的人，可以從本站的對戰頁面打開。",
-    },
-    "タグを入れたか確かめてください。名前だけでは探せません。": {
-        "ko": "태그를 입력했는지 확인하세요. 이름만으로는 찾을 수 없습니다.",
-        "en-GB": "Check that you typed the tag: a name alone cannot be searched.",
-        "zh-TW": "請確認是否輸入了標籤。只有名稱無法搜尋。",
-    },
-    "打ち間違いがないか確かめてください（0 と O、1 と l と I など）。": {
-        "ko": "오타가 없는지 확인하세요(0과 O, 1과 l과 I 등).",
-        "en-GB": "Check for typos (0 and O; 1, l and I).",
-        "zh-TW": "請確認是否打錯字（0 與 O、1 與 l 與 I 等）。",
-    },
-    "名前やタグを変えたばかりなら、新しい Riot ID で探してください。": {
-        "ko": "이름이나 태그를 막 바꿨다면 새 Riot ID로 찾으세요.",
-        "en-GB": "If the name or tag was changed recently, search for the new Riot ID.",
-        "zh-TW": "如果剛改過名稱或標籤，請用新的 Riot ID 搜尋。",
-    },
-    "しばらく遊んでいないアカウントは、最近の試合が出ないことがあります。": {
-        "ko": "한동안 플레이하지 않은 계정은 최근 경기가 나오지 않을 수 있습니다.",
-        "en-GB": "An account that has not played for a while may show no recent matches.",
-        "zh-TW": "一段時間沒玩的帳號，可能不會顯示最近的對戰。",
-    },
-    "中国大陸版（无畏契约）のアカウントは調べられません。": {
-        "ko": "중국 본토판(无畏契约) 계정은 조회할 수 없습니다.",
-        "en-GB": "Accounts on the mainland China version (无畏契约) cannot be looked up.",
+    "中国大陸版（无畏契约）のアカウントは検索できません。": {
+        "ko": "중국 본토판(无畏契约) 계정은 검색할 수 없습니다.",
+        "en-GB": "Mainland China accounts (无畏契约) can't be looked up.",
         "zh-TW": "無法查詢中國大陸版（无畏契约）的帳號。",
     },
-    "試合が終わってから、ここに出るまで数分かかることがあります。": {
-        "ko": "경기가 끝난 뒤 여기에 나오기까지 몇 분 걸릴 수 있습니다.",
-        "en-GB": "A match can take a few minutes to show here after it ends.",
-        "zh-TW": "對戰結束後，可能要幾分鐘才會出現在這裡。",
+    "試合結果の反映には数分かかることがあります。": {
+        "ko": "경기 결과가 반영되기까지 몇 분 걸릴 수 있습니다.",
+        "en-GB": "A finished match can take a few minutes to appear.",
+        "zh-TW": "對戰結果可能需要幾分鐘才會顯示。",
     },
-    "ページをすぐ出すために、同じプレイヤーのランクは 5 分、試合は 3 分のあいだ覚えておきます。プレイヤーのページの「最新にする」で読み直せます（1 分に 1 回まで）。": {
-        "ko": "페이지를 빨리 보여 주기 위해 같은 플레이어의 랭크는 5분, 경기는 3분 동안 기억합니다. 플레이어 페이지의 '최신으로'로 다시 읽을 수 있습니다(1분에 1번까지).",
-        "en-GB": "To show pages quickly, a player's rank is kept for 5 minutes and their matches for 3. \"Refresh\" on the player's page reads them again (once a minute at most).",
-        "zh-TW": "為了讓頁面快速顯示，同一位玩家的牌位會保留 5 分鐘、對戰保留 3 分鐘。可以用玩家頁面的「更新」重新讀取（每分鐘最多 1 次）。",
+    "ランクは 5 分、試合は 3 分キャッシュされます。プレイヤーページの「データを更新」ですぐ取得し直せます（1 分に 1 回）。": {
+        "ko": "랭크는 5분, 경기는 3분 동안 캐시됩니다. 플레이어 페이지의 '전적 갱신'으로 바로 다시 불러올 수 있습니다(1분에 1회).",
+        "en-GB": "Ranks are cached for 5 minutes and matches for 3. 'Refresh' on a player's page reloads them at once (once a minute).",
+        "zh-TW": "牌位快取 5 分鐘，對戰快取 3 分鐘。玩家頁面的「更新資料」可立即重新取得（每分鐘一次）。",
     },
-    "ゲームの設定で名前を隠している人は、試合の中で「非公開のプレイヤー」と出ます。このサイトはその人の名前・カード・記録を出さず、ランキングでも名前では探せません。": {
-        "ko": "게임 설정에서 이름을 숨긴 사람은 경기 안에서 '비공개 플레이어'로 나옵니다. 이 사이트는 그 사람의 이름·카드·기록을 보여 주지 않으며, 랭킹에서도 이름으로 찾을 수 없습니다.",
-        "en-GB": 'Players who hide their name in the game\'s settings show as "Hidden player" in matches. This site never shows their name, card or records, and they cannot be found by name on the leaderboard.',
-        "zh-TW": "在遊戲設定中隱藏名稱的人，在對戰中會顯示為「未公開的玩家」。本站不會顯示其名稱、卡片或紀錄，在排行榜上也無法用名稱搜尋。",
+    "ゲームの設定で名前を非公開にしているプレイヤーは、名前・カード・戦績を表示しません。ランキングでも名前では検索できません。": {
+        "ko": "게임 설정에서 이름을 비공개로 한 플레이어는 이름·카드·전적을 표시하지 않습니다. 리더보드에서도 이름으로 검색할 수 없습니다.",
+        "en-GB": "Players who hide their name in the game's settings have no name, card or stats shown here, and can't be found by name on the leaderboard.",
+        "zh-TW": "在遊戲設定中隱藏名稱的玩家，本站不會顯示其名稱、卡面與戰績，在排行榜上也無法用名稱搜尋。",
     },
     "ニュース・パッチノート・サーバー状況：Riot Games の公式サイト": {
         "ko": "뉴스·패치 노트·서버 상태: Riot Games 공식 사이트",
         "en-GB": "News, patch notes and server status: Riot Games' official sites",
         "zh-TW": "新聞、更新說明、伺服器狀態：Riot Games 官方網站",
     },
-    "ランキング：読めるときはゲームのデータ（Riot）から、読めないときは HenrikDev API から": {
-        "ko": "랭킹: 읽을 수 있을 때는 게임 데이터(Riot)에서, 읽을 수 없을 때는 HenrikDev API에서",
-        "en-GB": "Leaderboard: from the game's own data (Riot) when it can be read, otherwise from the HenrikDev API",
-        "zh-TW": "排行榜：能讀取時來自遊戲資料（Riot），無法讀取時來自 HenrikDev API",
+    "ランキング：Riot（取得できない場合は HenrikDev API）": {
+        "ko": "리더보드: Riot(불러올 수 없을 때는 HenrikDev API)",
+        "en-GB": "Leaderboard: Riot (the HenrikDev API when Riot can't be read)",
+        "zh-TW": "排行榜：Riot（無法取得時改用 HenrikDev API）",
     },
     "プレイヤーのランクと試合：HenrikDev API": {
         "ko": "플레이어의 랭크와 경기: HenrikDev API",
@@ -1836,31 +1613,19 @@ TEXTS = {
         "en-GB": "Names and pictures of agents, weapons and skins: valorant-api.com",
         "zh-TW": "特務、武器、造型的名稱與圖片：valorant-api.com",
     },
-    "タグ（# のあと）も入れてください。例: {example}": {
-        "ko": "태그(# 뒤)도 입력하세요. 예: {example}",
-        "en-GB": "Add the tag too (after the #), for example {example}",
-        "zh-TW": "請也輸入標籤（# 之後），例如 {example}",
+    "タグも入力してください。例: {example}": {
+        "ko": "태그도 입력하세요. 예: {example}",
+        "en-GB": "Add the tag too, e.g. {example}",
+        "zh-TW": "請一併輸入標籤，例如：{example}",
     },
-    "タグの見つけ方": {
-        "ko": "태그 찾는 법",
-        "en-GB": "Finding the tag",
-        "zh-TW": "如何找到標籤",
+    "タグの確認方法": {"ko": "태그 찾는 법", "en-GB": "Finding the tag", "zh-TW": "如何找到標籤"},
+    "最近見た「{name}」:": {
+        "ko": "최근 본 '{name}':",
+        "en-GB": "Recently viewed '{name}':",
+        "zh-TW": "最近查看的「{name}」：",
     },
-    "このブラウザで見た「{name}」:": {
-        "ko": "이 브라우저에서 본 '{name}':",
-        "en-GB": '"{name}" seen in this browser:',
-        "zh-TW": "在這個瀏覽器看過的「{name}」：",
-    },
-    "倒した数 − 倒された数。": {
-        "ko": "킬 − 데스.",
-        "en-GB": "Kills minus deaths.",
-        "zh-TW": "擊殺 − 死亡。",
-    },
-    "「{id}」を探す": {
-        "ko": "'{id}' 찾기",
-        "en-GB": "Search for {id}",
-        "zh-TW": "搜尋「{id}」",
-    },
+    "キル − デス。": {"ko": "킬 − 데스.", "en-GB": "Kills minus deaths.", "zh-TW": "擊殺 − 死亡。"},
+    "「{id}」で検索": {"ko": "'{id}' 찾기", "en-GB": "Search for {id}", "zh-TW": "搜尋「{id}」"},
     "期間": {
         "ko": "기간",
         "en-GB": "Period",
@@ -1881,36 +1646,32 @@ TEXTS = {
         "en-GB": "Lifetime · {count} matches",
         "zh-TW": "生涯 {count} 場",
     },
-    "{since} からの {count} 試合を数えています。": {
-        "ko": "{since}부터 {count}경기를 집계했습니다.",
-        "en-GB": "Counting {count} matches since {since}.",
-        "zh-TW": "統計自 {since} 起的 {count} 場比賽。",
+    "{since} からの {count} 試合を集計": {
+        "ko": "{since}부터 {count}경기 집계",
+        "en-GB": "{count} matches since {since}",
+        "zh-TW": "統計自 {since} 起的 {count} 場",
     },
-    "まだ数えられる試合がありません。": {
-        "ko": "아직 집계할 경기가 없습니다.",
+    "集計できる試合がまだありません。": {
+        "ko": "집계할 경기가 아직 없습니다.",
         "en-GB": "No matches to count yet.",
-        "zh-TW": "還沒有可以統計的比賽。",
+        "zh-TW": "尚無可統計的對戰。",
     },
-    "うち {thin} 試合は簡単な記録だけなので、KAST・ファーストキル・武器・キルの場所などは残りの {whole} 試合から出しています。": {
-        "ko": "그중 {thin}경기는 간단한 기록만 있어서 KAST·퍼스트 킬·무기·킬 위치 등은 나머지 {whole}경기로 계산합니다.",
-        "en-GB": "{thin} of them have a short record only, so KAST, first kills, weapons, kill spots and the like come from the other {whole}.",
-        "zh-TW": "其中 {thin} 場只有簡易紀錄，所以 KAST、首殺、武器、擊殺位置等是用其餘 {whole} 場算出的。",
+    "うち {thin} 試合は簡易データのため、KAST・武器・キル位置などは残り {whole} 試合から集計。": {
+        "ko": "그중 {thin}경기는 요약 데이터뿐이라 KAST·무기·킬 위치 등은 나머지 {whole}경기로 집계.",
+        "en-GB": "{thin} of them have summary data only, so KAST, weapons and kill positions use the other {whole}.",
+        "zh-TW": "其中 {thin} 場只有簡易資料，KAST、武器、擊殺位置等以其餘 {whole} 場統計。",
     },
-    "Riot から残りの試合を読み込んでいます（あと約 {left} 試合・{minutes} 分）。読み込んだ分から数えています。": {
-        "ko": "Riot에서 나머지 경기를 불러오는 중입니다 (약 {left}경기 · {minutes}분 남음). 불러온 경기까지 집계합니다.",
-        "en-GB": "Reading the rest of the matches from Riot (about {left} matches, {minutes} min to go). The numbers count what has been read so far.",
-        "zh-TW": "正在從 Riot 讀取其餘的比賽（還有約 {left} 場、{minutes} 分鐘）。目前以已讀取的比賽統計。",
+    "残りの試合を取得中（あと約 {left} 試合・{minutes} 分）": {
+        "ko": "나머지 경기 불러오는 중(약 {left}경기·{minutes}분 남음)",
+        "en-GB": "Loading the rest (about {left} matches, {minutes} min to go)",
+        "zh-TW": "正在取得其餘對戰（約剩 {left} 場、{minutes} 分鐘）",
     },
-    "残りの試合を読み込んでいます。読み込んだ分から数えています。": {
-        "ko": "나머지 경기를 불러오는 중입니다. 불러온 경기까지 집계합니다.",
-        "en-GB": "Reading the rest of the matches. The numbers count what has been read so far.",
-        "zh-TW": "正在讀取其餘的比賽。目前以已讀取的比賽統計。",
+    "残りの試合を取得中…": {
+        "ko": "나머지 경기 불러오는 중…",
+        "en-GB": "Loading the rest…",
+        "zh-TW": "正在取得其餘對戰…",
     },
-    "数え直す": {
-        "ko": "다시 집계",
-        "en-GB": "Count again",
-        "zh-TW": "重新統計",
-    },
+    "再集計": {"ko": "다시 집계", "en-GB": "Count again", "zh-TW": "重新統計"},
     "{count} 試合分": {
         "ko": "{count}경기분",
         "en-GB": "over {count} matches",
@@ -1946,15 +1707,15 @@ TEXTS = {
         "en-GB": "No matches yet.",
         "zh-TW": "還沒有比賽。",
     },
-    "緑の点はキルを取ったときに立っていた場所、赤の点は倒された場所です（通算。点は新しいものから最大 {count} 個）。": {
-        "ko": "초록 점은 킬을 했을 때 서 있던 곳, 빨간 점은 죽은 곳입니다 (통산. 점은 최근 것부터 최대 {count}개).",
-        "en-GB": "Green dots are where the player stood for a kill, red ones where they died (lifetime; up to the newest {count} dots).",
-        "zh-TW": "綠點是擊殺時所站的位置，紅點是被擊殺的位置（生涯。點最多顯示最新的 {count} 個）。",
+    "緑はキルした位置、赤はデスした位置（通算・最新 {count} 件まで）。": {
+        "ko": "초록은 킬한 위치, 빨강은 사망한 위치(통산·최근 {count}개까지).",
+        "en-GB": "Green: where you got kills. Red: where you died (lifetime, latest {count}).",
+        "zh-TW": "綠點是擊殺時的位置，紅點是陣亡位置（生涯，最新 {count} 筆）。",
     },
-    "それぞれ通算の試合（{a} 試合と {b} 試合。このサイトが読み込んだ分）の平均です。": {
-        "ko": "각각 통산 경기({a}경기와 {b}경기. 이 사이트가 불러온 만큼)의 평균입니다.",
-        "en-GB": "Each is the average over their lifetime ({a} and {b} matches, as far as this site has read).",
-        "zh-TW": "分別是生涯比賽（{a} 場與 {b} 場，本站已讀取的部分）的平均。",
+    "通算の平均（{a} 試合と {b} 試合）。": {
+        "ko": "통산 평균({a}경기와 {b}경기).",
+        "en-GB": "Lifetime averages ({a} and {b} matches).",
+        "zh-TW": "生涯平均（{a} 場與 {b} 場）。",
     },
     # The owner's own pages and boxes: the header's ライブ tab, the top page's 自分, the tools' 自分のアカウント
     "ライブ": {
@@ -1967,86 +1728,57 @@ TEXTS = {
         "en-GB": "Live ({state})",
         "zh-TW": "即時（{state}）",
     },
-    "進み具合": {
-        "ko": "진행 상황",
-        "en-GB": "Progress",
-        "zh-TW": "進度",
-    },
+    "進行状況": {"ko": "진행 상황", "en-GB": "Progress", "zh-TW": "進度"},
     "所持品": {
         "ko": "컬렉션",
         "en-GB": "Collection",
         "zh-TW": "收藏",
     },
-    "自分": {
-        "ko": "내 계정",
-        "en-GB": "Me",
-        "zh-TW": "我的帳號",
-    },
-    "自分の戦績": {
-        "ko": "내 전적",
-        "en-GB": "My matches",
-        "zh-TW": "我的戰績",
-    },
-    "自分のアカウント": {
-        "ko": "내 계정",
-        "en-GB": "My account",
-        "zh-TW": "我的帳號",
-    },
-    "キュー開始・ピックと確定": {
-        "ko": "대기열 시작 · 선택과 확정",
-        "en-GB": "Start a queue · pick and lock in",
-        "zh-TW": "開始排隊、選擇與鎖定",
+    "マイアカウント": {"ko": "내 계정", "en-GB": "My account", "zh-TW": "我的帳號"},
+    "戦績": {"ko": "전적", "en-GB": "My stats", "zh-TW": "戰績"},
+    "キュー開始・エージェント選択": {
+        "ko": "대기열 시작·요원 선택",
+        "en-GB": "Queue and agent select",
+        "zh-TW": "排隊與特務選擇",
     },
     "バトルパス・ミッション": {
         "ko": "배틀패스 · 미션",
         "en-GB": "Battle pass · missions",
         "zh-TW": "戰鬥通行證與任務",
     },
-    "スキンやカードを装備": {
-        "ko": "스킨과 카드 장착",
-        "en-GB": "Equip skins and cards",
-        "zh-TW": "裝備造型與卡片",
+    "スキン・カードの装備": {"ko": "스킨과 카드 장착", "en-GB": "Equip skins and cards", "zh-TW": "裝備造型與卡片"},
+    "Riot アカウントを連携すると、戦績・ライブ・所持品が使えます。": {
+        "ko": "Riot 계정을 연동하면 전적·라이브·컬렉션을 쓸 수 있습니다.",
+        "en-GB": "Link your Riot account for your stats, Live and collection.",
+        "zh-TW": "連結 Riot 帳號後可使用戰績、即時與收藏。",
     },
-    "Riot アカウントを設定で連携すると、自分の戦績・ライブ・進み具合・所持品をここから開けます。": {
-        "ko": "설정에서 Riot 계정을 연동하면 내 전적·라이브·진행 상황·컬렉션을 여기서 열 수 있습니다.",
-        "en-GB": "Link your Riot account in the settings to open your matches, Live, progress and collection from here.",
-        "zh-TW": "在設定中連結 Riot 帳號後，就能從這裡打開我的戰績、即時、進度與收藏。",
+    "キュー開始とエージェント選択": {
+        "ko": "대기열 시작과 요원 선택",
+        "en-GB": "Queue up and pick your agent",
+        "zh-TW": "開始排隊與選擇特務",
     },
-    "いまの VALORANT からキュー開始、エージェントのピックと確定。": {
-        "ko": "지금 켜져 있는 VALORANT에서 대기열 시작, 요원 선택과 확정.",
-        "en-GB": "Start a queue in the VALORANT you have open, pick and lock in an agent.",
-        "zh-TW": "從正在執行的 VALORANT 開始排隊，選擇並鎖定特務。",
+    "バトルパス・契約・ミッション": {
+        "ko": "배틀패스·계약·미션",
+        "en-GB": "Battle pass, contracts, missions",
+        "zh-TW": "戰鬥通行證、合約、任務",
     },
-    "バトルパス・契約・ミッション。": {
-        "ko": "배틀패스·계약·미션.",
-        "en-GB": "Battle pass, contracts and missions.",
-        "zh-TW": "戰鬥通行證、合約與任務。",
+    "スキン・ガンバディー・カードの装備": {
+        "ko": "스킨·총기 장식·카드 장착",
+        "en-GB": "Equip skins, buddies and cards",
+        "zh-TW": "裝備造型、吊飾與卡面",
     },
-    "自分のスキン・バディー・カードなど。": {
-        "ko": "내 스킨·총기 장식·카드 등.",
-        "en-GB": "Your skins, buddies, cards and more.",
-        "zh-TW": "我的造型、吊飾、卡片等。",
+    "API キーと Riot アカウント連携": {
+        "ko": "API 키와 Riot 계정 연동",
+        "en-GB": "API key and Riot account",
+        "zh-TW": "API 金鑰與 Riot 帳號連結",
     },
-    "HenrikDev の API キーと Riot アカウントの連携。": {
-        "ko": "HenrikDev API 키와 Riot 계정 연동.",
-        "en-GB": "The HenrikDev API key and the Riot account link.",
-        "zh-TW": "HenrikDev 的 API 金鑰與 Riot 帳號連結。",
-    },
-    "設定で Riot と連携する": {
-        "ko": "설정에서 Riot 연동하기",
-        "en-GB": "Link Riot in the settings",
-        "zh-TW": "在設定中連結 Riot",
-    },
+    "連携する": {"ko": "연동하기", "en-GB": "Link account", "zh-TW": "前往連結"},
     "エージェント選択が始まりました": {
         "ko": "요원 선택이 시작되었습니다",
         "en-GB": "Agent select has started",
         "zh-TW": "特務選擇開始了",
     },
-    "ライブでピックする": {
-        "ko": "라이브에서 선택하기",
-        "en-GB": "Pick on Live",
-        "zh-TW": "到即時選擇",
-    },
+    "ライブで選ぶ": {"ko": "라이브에서 선택하기", "en-GB": "Pick on Live", "zh-TW": "到即時選擇"},
     "閉じる": {
         "ko": "닫기",
         "en-GB": "Close",
@@ -2083,96 +1815,76 @@ TEXTS = {
         "en-GB": "In a match",
         "zh-TW": "對戰中",
     },
-    "ゲームの状態を読めません": {
-        "ko": "게임 상태를 읽을 수 없습니다",
-        "en-GB": "Can't read the game",
-        "zh-TW": "無法讀取遊戲狀態",
-    },
-    "VALORANT は開いていません": {
-        "ko": "VALORANT가 켜져 있지 않습니다",
-        "en-GB": "VALORANT isn't open",
-        "zh-TW": "VALORANT 沒有開啟",
+    "状態を取得できません": {"ko": "상태를 불러올 수 없음", "en-GB": "State unknown", "zh-TW": "無法取得狀態"},
+    "VALORANT は起動していません": {
+        "ko": "VALORANT 실행 안 됨",
+        "en-GB": "VALORANT isn't running",
+        "zh-TW": "VALORANT 未啟動",
     },
     # Live
-    "あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。PC で VALORANT を開いていれば、スマホからでも使えます。": {
-        "ko": "내 VALORANT를 실시간으로 읽어서, 대기열 시작과 요원 선택·확정을 여기서 할 수 있습니다. PC에서 VALORANT가 켜져 있으면 스마트폰에서도 쓸 수 있습니다.",
-        "en-GB": "Reads your VALORANT as you play: start a queue, pick and lock in an agent from here. With VALORANT open on your PC, it works from your phone too.",
-        "zh-TW": "即時讀取你的 VALORANT，可以從這裡開始排隊、選擇並鎖定特務。只要 PC 上開著 VALORANT，用手機也能操作。",
+    "ゲームと連動して、キュー開始とエージェント選択ができます。PC で VALORANT を起動していればスマホからも使えます。": {
+        "ko": "게임과 연동해 대기열 시작과 요원 선택을 할 수 있습니다. PC에서 VALORANT를 실행 중이면 스마트폰에서도 쓸 수 있습니다.",
+        "en-GB": "Follows your game: start the queue and pick your agent from here. Works from a phone too while VALORANT runs on your PC.",
+        "zh-TW": "與遊戲連動，可在這裡開始排隊與選擇特務。電腦開著 VALORANT 時，手機也能使用。",
     },
-    "あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。この PC の Riot クライアントから直接読むので、試合が見つかるとすぐに切り替わります。": {
-        "ko": "내 VALORANT를 실시간으로 읽어서, 대기열 시작과 요원 선택·확정을 여기서 할 수 있습니다. 이 PC의 Riot 클라이언트에서 직접 읽기 때문에, 매치가 잡히면 바로 바뀝니다.",
-        "en-GB": "Reads your VALORANT as you play: start a queue, pick and lock in an agent from here. It reads the Riot Client on this PC directly, so it switches the moment a match is found.",
-        "zh-TW": "即時讀取你的 VALORANT，可以從這裡開始排隊、選擇並鎖定特務。直接讀取這台 PC 上的 Riot 用戶端，找到對戰時會立刻切換。",
+    "ゲームと連動して、キュー開始とエージェント選択ができます。": {
+        "ko": "게임과 연동해 대기열 시작과 요원 선택을 할 수 있습니다.",
+        "en-GB": "Follows your game: start the queue and pick your agent from here.",
+        "zh-TW": "與遊戲連動，可在這裡開始排隊與選擇特務。",
     },
-    "ゲームの画面ごとにできること": {
+    "場面ごとの機能": {
         "ko": "게임 화면별로 할 수 있는 것",
         "en-GB": "What you can do on each screen of the game",
         "zh-TW": "遊戲各畫面可以做的事",
     },
-    "モードを選んでキューを開始・取り消し": {
-        "ko": "모드를 골라 대기열 시작·취소",
-        "en-GB": "Choose a mode, start or leave the queue",
-        "zh-TW": "選擇模式，開始或取消排隊",
+    "キューの開始・キャンセル": {
+        "ko": "대기열 시작·취소",
+        "en-GB": "Start or cancel the queue",
+        "zh-TW": "開始或取消排隊",
     },
     "エージェント選択": {
         "ko": "요원 선택",
         "en-GB": "Agent select",
         "zh-TW": "特務選擇",
     },
-    "味方の構成と、このマップで勝っているエージェントを見てピック・確定": {
-        "ko": "아군 조합과 이 맵에서 이기고 있는 요원을 보고 선택·확정",
-        "en-GB": "See your team's line-up and the agents that win on this map, then pick and lock in",
-        "zh-TW": "看隊友的組合與這張地圖上常勝的特務，再選擇並鎖定",
+    "構成と勝率を見てピック・確定": {
+        "ko": "조합과 승률을 보고 선택·확정",
+        "en-GB": "Pick and lock with comp and win rates in view",
+        "zh-TW": "參考陣容與勝率後選擇、鎖定",
     },
-    "敵も味方も全員のエージェントとランク": {
-        "ko": "적과 아군 모두의 요원과 랭크",
-        "en-GB": "Every player's agent and rank, on both teams",
-        "zh-TW": "敵我雙方所有人的特務與牌位",
+    "全員のエージェントとランク": {
+        "ko": "모든 플레이어의 요원과 랭크",
+        "en-GB": "Everyone's agents and ranks",
+        "zh-TW": "所有人的特務與牌位",
     },
-    "開いています": {
-        "ko": "켜져 있음",
-        "en-GB": "open",
-        "zh-TW": "已開啟",
-    },
-    "わかりません": {
-        "ko": "알 수 없음",
-        "en-GB": "unknown",
-        "zh-TW": "不明",
-    },
-    "開いていません": {
-        "ko": "꺼져 있음",
-        "en-GB": "not open",
-        "zh-TW": "未開啟",
-    },
-    "さっきの試合を見る": {
+    "起動中": {"ko": "실행 중", "en-GB": "Running", "zh-TW": "執行中"},
+    "不明": {"ko": "알 수 없음", "en-GB": "Unknown", "zh-TW": "不明"},
+    "未起動": {"ko": "실행 안 됨", "en-GB": "Not running", "zh-TW": "未啟動"},
+    "直前の試合を見る": {
         "ko": "방금 한 경기 보기",
         "en-GB": "See the match you just played",
         "zh-TW": "查看剛才的對戰",
     },
-    "さっきの試合": {
-        "ko": "방금 한 경기",
-        "en-GB": "The match you just played",
-        "zh-TW": "剛才的對戰",
+    "直前の試合": {"ko": "방금 한 경기", "en-GB": "The match you just played", "zh-TW": "剛才的對戰"},
+    "全員のスコアボードは試合終了の数分後に見られます。": {
+        "ko": "전체 점수판은 경기 종료 몇 분 뒤에 볼 수 있습니다.",
+        "en-GB": "The full scoreboard is ready a few minutes after the match.",
+        "zh-TW": "完整計分板會在對戰結束幾分鐘後出現。",
     },
-    "ゲームのサーバーから直接読んだ結果です。全員のスコアボードは、試合が終わってから数分で見られるようになります。": {
-        "ko": "게임 서버에서 직접 읽은 결과입니다. 전원의 스코어보드는 경기가 끝나고 몇 분 뒤에 볼 수 있습니다.",
-        "en-GB": "Read straight from the game's server. Everyone's scoreboard can be seen a few minutes after the match ends.",
-        "zh-TW": "這是直接從遊戲伺服器讀取的結果。所有人的計分板在對戰結束後幾分鐘就能查看。",
+    "試合終了の数分後から見られます。": {
+        "ko": "경기 종료 몇 분 뒤부터 볼 수 있습니다.",
+        "en-GB": "Ready a few minutes after the match.",
+        "zh-TW": "對戰結束幾分鐘後即可查看。",
     },
-    "試合が終わってから数分で見られるようになります。": {
-        "ko": "경기가 끝나고 몇 분 뒤에 볼 수 있습니다.",
-        "en-GB": "It can be seen a few minutes after the match ends.",
-        "zh-TW": "對戰結束後幾分鐘就能查看。",
+    "ゲームの状態を取得できませんでした。": {
+        "ko": "게임 상태를 불러오지 못했습니다.",
+        "en-GB": "Couldn't read the game's state.",
+        "zh-TW": "無法取得遊戲狀態。",
     },
-    "ゲームの状態を読めませんでした。": {
-        "ko": "게임 상태를 읽지 못했습니다.",
-        "en-GB": "The game's state could not be read.",
-        "zh-TW": "無法讀取遊戲狀態。",
-    },
-    "VALORANT を開くと、ここからキューを開始できます。エージェント選択が始まると、味方とピックがここに出ます。": {
-        "ko": "VALORANT를 켜면 여기서 대기열을 시작할 수 있습니다. 요원 선택이 시작되면 아군과 선택이 여기에 나옵니다.",
-        "en-GB": "Open VALORANT to start a queue from here. When agent select starts, your team and the picks show here.",
-        "zh-TW": "開啟 VALORANT 後就能從這裡開始排隊。特務選擇開始時，隊友與選擇會顯示在這裡。",
+    "VALORANT を起動すると、ここからキューを開始できます。": {
+        "ko": "VALORANT를 실행하면 여기에서 대기열을 시작할 수 있습니다.",
+        "en-GB": "Start VALORANT to queue from here.",
+        "zh-TW": "啟動 VALORANT 後即可在這裡開始排隊。",
     },
     "パーティー": {
         "ko": "파티",
@@ -2194,40 +1906,36 @@ TEXTS = {
         "en-GB": "{minutes}:{seconds}",
         "zh-TW": "{minutes} 分 {seconds} 秒",
     },
-    "キューをやめる": {
-        "ko": "대기열 취소",
-        "en-GB": "Leave the queue",
-        "zh-TW": "取消排隊",
-    },
+    "キューをキャンセル": {"ko": "대기열 취소", "en-GB": "Cancel the queue", "zh-TW": "取消排隊"},
     "試合が見つかりました。まもなくエージェント選択です。": {
         "ko": "경기를 찾았습니다. 곧 요원 선택입니다.",
         "en-GB": "Match found. Agent select is about to start.",
         "zh-TW": "找到對戰了，即將進入特務選擇。",
     },
-    "あと {seconds} 秒キューに入れません（ゲームのペナルティー）。": {
-        "ko": "{seconds}초 동안 대기열에 들어갈 수 없습니다 (게임 페널티).",
-        "en-GB": "You can't queue for another {seconds} seconds (a penalty in the game).",
-        "zh-TW": "還有 {seconds} 秒無法排隊（遊戲的懲罰）。",
+    "ペナルティー中: あと {seconds} 秒キューに入れません。": {
+        "ko": "페널티 중: {seconds}초 동안 대기열에 들어갈 수 없습니다.",
+        "en-GB": "Queue penalty: {seconds} s left.",
+        "zh-TW": "懲罰中：還有 {seconds} 秒無法排隊。",
     },
     "キューを開始": {
         "ko": "대기열 시작",
         "en-GB": "Start the queue",
         "zh-TW": "開始排隊",
     },
-    "ゲームの中でキューを開始したのと同じです。選べるのは、いまのパーティーで入れるモードだけです。": {
-        "ko": "게임 안에서 대기열을 시작한 것과 같습니다. 지금 파티로 들어갈 수 있는 모드만 고를 수 있습니다.",
-        "en-GB": "The same as starting the queue in the game. Only the modes your party can play now are listed.",
-        "zh-TW": "與在遊戲中開始排隊相同。只能選擇目前隊伍可以進入的模式。",
+    "今のパーティーで参加できるモードだけ選べます。": {
+        "ko": "지금 파티로 참가할 수 있는 모드만 고를 수 있습니다.",
+        "en-GB": "Only modes your party can enter are listed.",
+        "zh-TW": "只會列出目前隊伍可參加的模式。",
     },
-    "キューを開始できるのはパーティーのリーダーだけです。": {
+    "キューを開始できるのはリーダーだけです。": {
         "ko": "대기열은 파티 리더만 시작할 수 있습니다.",
         "en-GB": "Only the party leader can start the queue.",
-        "zh-TW": "只有隊長可以開始排隊。",
+        "zh-TW": "只有隊長能開始排隊。",
     },
-    "キューを開始できるのはパーティーのリーダーだけです（いまのモード: {queue}）。": {
-        "ko": "대기열은 파티 리더만 시작할 수 있습니다 (지금 모드: {queue}).",
+    "キューを開始できるのはリーダーだけです（現在のモード: {queue}）。": {
+        "ko": "대기열은 파티 리더만 시작할 수 있습니다(현재 모드: {queue}).",
         "en-GB": "Only the party leader can start the queue (mode now: {queue}).",
-        "zh-TW": "只有隊長可以開始排隊（目前模式：{queue}）。",
+        "zh-TW": "只有隊長能開始排隊（目前模式：{queue}）。",
     },
     "パーティーを読み込めませんでした。": {
         "ko": "파티를 불러오지 못했습니다.",
@@ -2254,18 +1962,18 @@ TEXTS = {
         "en-GB": "Average {rank}",
         "zh-TW": "平均 {rank}",
     },
-    "相手は {locked} / {size} 人が確定（相手の名前とエージェントは、ゲームでも試合が始まるまで出ません）": {
-        "ko": "상대는 {locked} / {size}명 확정 (상대의 이름과 요원은 게임에서도 경기가 시작될 때까지 나오지 않습니다)",
-        "en-GB": "{locked} of {size} enemies have locked in (the game itself shows their names and agents only once the match starts)",
-        "zh-TW": "對手已有 {locked} / {size} 人鎖定（對手的名稱與特務在遊戲中也要到對戰開始才會顯示）",
+    "相手は {locked} / {size} 人が確定": {
+        "ko": "상대 {locked} / {size}명 확정",
+        "en-GB": "Enemy team: {locked} of {size} locked in",
+        "zh-TW": "對手 {locked} / {size} 人已鎖定",
     },
     "ピック": {
         "ko": "선택",
         "en-GB": "Pick",
         "zh-TW": "選擇",
     },
-    "{agent} で確定しています。": {
-        "ko": "{agent}(으)로 확정했습니다.",
+    "{agent} で確定済み。": {
+        "ko": "{agent}(으)로 확정됨.",
         "en-GB": "Locked in as {agent}.",
         "zh-TW": "已鎖定 {agent}。",
     },
@@ -2274,15 +1982,11 @@ TEXTS = {
         "en-GB": "Lock in {agent}",
         "zh-TW": "鎖定 {agent}",
     },
-    "このマップで勝っている:": {
-        "ko": "이 맵에서 이기고 있는 요원:",
-        "en-GB": "Winning on this map:",
-        "zh-TW": "這張地圖上的常勝特務：",
-    },
-    "（このサイトが見た {count} 試合）": {
-        "ko": " (이 사이트가 본 {count}경기)",
-        "en-GB": " ({count} matches this site has seen)",
-        "zh-TW": "（本站看過的 {count} 場對戰）",
+    "このマップの勝率上位:": {"ko": "이 맵 승률 상위:", "en-GB": "Winning on this map:", "zh-TW": "此地圖勝率較高："},
+    "（{count} 試合の集計）": {
+        "ko": "({count}경기 집계)",
+        "en-GB": " ({count} matches)",
+        "zh-TW": "（統計 {count} 場）",
     },
     "{agent} を選ぶ": {
         "ko": "{agent} 선택",
@@ -2294,70 +1998,52 @@ TEXTS = {
         "en-GB": "Pick {agent} (a teammate has locked it in)",
         "zh-TW": "選擇 {agent}（隊友已鎖定）",
     },
-    "選ぶだけでは決まりません。「確定」を押すと、ゲームで確定したのと同じになります。": {
-        "ko": "고르기만 해서는 정해지지 않습니다. '확정'을 누르면 게임에서 확정한 것과 같아집니다.",
-        "en-GB": "Picking alone doesn't decide it. Pressing “Lock in” is the same as locking in in the game.",
-        "zh-TW": "只選擇還不會決定。按下「鎖定」就等於在遊戲中鎖定。",
+    "選択はまだ仮です。「確定」でロックされます。": {
+        "ko": "선택만으로는 확정되지 않습니다. '확정'을 누르면 잠깁니다.",
+        "en-GB": "Picking isn't final. 'Lock in' is.",
+        "zh-TW": "選擇後尚未確定，按「鎖定」才會鎖定。",
     },
-    "構成の目安": {
-        "ko": "조합 참고",
-        "en-GB": "Team line-up",
-        "zh-TW": "組合參考",
+    "構成のヒント": {"ko": "조합 참고", "en-GB": "Team line-up", "zh-TW": "組合參考"},
+    "チームに足りないロール": {
+        "ko": "팀에 없는 역할군",
+        "en-GB": "Roles your team still lacks",
+        "zh-TW": "隊伍還缺的定位",
     },
-    "味方にまだいない役割です。": {
-        "ko": "아군에 아직 없는 역할입니다.",
-        "en-GB": "Roles your team doesn't have yet.",
-        "zh-TW": "隊友中還沒有的角色。",
+    "所持エージェントなし": {"ko": "보유 요원 없음", "en-GB": "None you own", "zh-TW": "沒有持有的特務"},
+    "所持していて、まだ選ばれていないエージェントです。": {
+        "ko": "보유 중이며 아직 선택되지 않은 요원입니다.",
+        "en-GB": "Agents you own that nobody has taken.",
+        "zh-TW": "你持有且尚未被選走的特務。",
     },
-    "上から順に埋めるのがよくある形です。": {
-        "ko": "위에서부터 채우는 것이 흔한 형태입니다.",
-        "en-GB": "Filling them from the top is the usual way.",
-        "zh-TW": "常見的做法是從上往下補齊。",
-    },
-    "持っているエージェントでは埋められません": {
-        "ko": "가지고 있는 요원으로는 채울 수 없습니다",
-        "en-GB": "None of your agents can fill it",
-        "zh-TW": "你擁有的特務無法補上",
-    },
-    "あなたが持っているエージェントから、まだ選ばれていないものを出しています。マップや相手に合わせて選んでください。": {
-        "ko": "내가 가진 요원 중 아직 선택되지 않은 요원을 보여 줍니다. 맵과 상대에 맞춰 고르세요.",
-        "en-GB": "These are agents you own that nobody has picked yet. Choose to suit the map and the enemy.",
-        "zh-TW": "顯示你擁有、且還沒有人選的特務。請配合地圖與對手選擇。",
-    },
-    "役割はそろっています。": {
-        "ko": "역할이 모두 갖춰져 있습니다.",
+    "ロールはそろっています。": {
+        "ko": "역할군이 모두 갖춰졌습니다.",
         "en-GB": "Every role is covered.",
-        "zh-TW": "角色已經齊全。",
+        "zh-TW": "定位已齊全。",
     },
     "名前を読み込めませんでした。": {
         "ko": "이름을 불러오지 못했습니다.",
         "en-GB": "The names could not be loaded.",
         "zh-TW": "無法載入名稱。",
     },
-    "名前を隠しているプレイヤーの名前・カード・称号は出しません（本人が選んだ設定のため）。": {
-        "ko": "이름을 숨긴 플레이어의 이름·카드·칭호는 보여 주지 않습니다 (본인이 고른 설정이기 때문).",
-        "en-GB": "Players who hide their name are shown without their name, card or title (their own choice in the game).",
-        "zh-TW": "隱藏名稱的玩家不會顯示名稱、卡片與稱號（因為這是本人選擇的設定）。",
+    "非公開のプレイヤーは名前・カード・称号を表示しません。": {
+        "ko": "비공개 플레이어의 이름·카드·칭호는 표시하지 않습니다.",
+        "en-GB": "Hidden players' names, cards and titles aren't shown.",
+        "zh-TW": "未公開玩家的名稱、卡面與稱號不會顯示。",
     },
-    "このページは数秒ごとに新しくなります。ほかのページを見ているときも、上のタブ「ライブ」の点でゲームの状態がわかり、エージェント選択が始まると画面の下に知らせが出ます。": {
-        "ko": "이 페이지는 몇 초마다 새로 고쳐집니다. 다른 페이지를 볼 때도 위쪽 '라이브' 탭의 점으로 게임 상태를 알 수 있고, 요원 선택이 시작되면 화면 아래에 알림이 나옵니다.",
-        "en-GB": "This page refreshes every few seconds. On other pages the dot on the Live tab at the top shows where the game is, and a note appears at the bottom when agent select starts.",
-        "zh-TW": "本頁每幾秒會更新一次。瀏覽其他頁面時，也能從上方「即時」分頁的圓點得知遊戲狀態，特務選擇開始時畫面下方會出現通知。",
+    "数秒ごとに自動で更新されます。": {
+        "ko": "몇 초마다 자동으로 갱신됩니다.",
+        "en-GB": "Updates by itself every few seconds.",
+        "zh-TW": "每隔幾秒自動更新。",
     },
-    "このページはゲームの状態が変わるとすぐ新しくなります。ほかのページを見ているときも、上のタブ「ライブ」の点でゲームの状態がわかり、エージェント選択が始まると画面の下に知らせが出ます。": {
-        "ko": "이 페이지는 게임 상태가 바뀌면 바로 새로 고쳐집니다. 다른 페이지를 볼 때도 위쪽 '라이브' 탭의 점으로 게임 상태를 알 수 있고, 요원 선택이 시작되면 화면 아래에 알림이 나옵니다.",
-        "en-GB": "This page refreshes as soon as the game changes. On other pages the dot on the Live tab at the top shows where the game is, and a note appears at the bottom when agent select starts.",
-        "zh-TW": "遊戲狀態一改變，本頁就會立刻更新。瀏覽其他頁面時，也能從上方「即時」分頁的圓點得知遊戲狀態，特務選擇開始時畫面下方會出現通知。",
+    "ゲームの状態に合わせて自動で更新されます。": {
+        "ko": "게임 상태에 맞춰 자동으로 갱신됩니다.",
+        "en-GB": "Updates by itself as your game changes.",
+        "zh-TW": "會隨遊戲狀態自動更新。",
     },
     "あなた": {
         "ko": "나",
         "en-GB": "You",
         "zh-TW": "你",
-    },
-    "名前を隠しています": {
-        "ko": "이름 숨김",
-        "en-GB": "Name hidden",
-        "zh-TW": "已隱藏名稱",
     },
     "リーダー": {
         "ko": "리더",
@@ -2374,12 +2060,8 @@ TEXTS = {
         "en-GB": "{agent} (locked in)",
         "zh-TW": "{agent}（已鎖定）",
     },
-    "まだ選んでいません": {
-        "ko": "아직 선택하지 않음",
-        "en-GB": "Not picked yet",
-        "zh-TW": "尚未選擇",
-    },
-    "このアクト {wins}勝 / {games}試合（{rate}%）": {
+    "未選択": {"ko": "미선택", "en-GB": "Not picked yet", "zh-TW": "尚未選擇"},
+    "今アクト {wins}勝 / {games}試合（{rate}%）": {
         "ko": "이번 액트 {wins}승 / {games}경기 ({rate}%)",
         "en-GB": "This act: {wins} wins in {games} matches ({rate}%)",
         "zh-TW": "本階段 {wins} 勝 / {games} 場（{rate}%）",
@@ -2395,40 +2077,35 @@ TEXTS = {
         "en-GB": "The queue has started.",
         "zh-TW": "已開始排隊。",
     },
-    "キューをやめました。": {
+    "キューをキャンセルしました。": {
         "ko": "대기열을 취소했습니다.",
-        "en-GB": "You left the queue.",
+        "en-GB": "Queue cancelled.",
         "zh-TW": "已取消排隊。",
     },
-    "選びました。まだ確定していません。": {
-        "ko": "선택했습니다. 아직 확정하지 않았습니다.",
-        "en-GB": "Picked. Not locked in yet.",
-        "zh-TW": "已選擇，尚未鎖定。",
+    "選択しました（未確定）。": {
+        "ko": "선택했습니다(미확정).",
+        "en-GB": "Picked, not locked in yet.",
+        "zh-TW": "已選擇（尚未鎖定）。",
     },
     "確定しました。": {
         "ko": "확정했습니다.",
         "en-GB": "Locked in.",
         "zh-TW": "已鎖定。",
     },
-    "いまはできません（ゲームが開いていない、パーティーにいない、またはエージェント選択中ではない）。": {
-        "ko": "지금은 할 수 없습니다 (게임이 꺼져 있거나, 파티에 없거나, 요원 선택 중이 아닙니다).",
-        "en-GB": "Not possible right now (the game isn't open, you aren't in a party, or it isn't agent select).",
-        "zh-TW": "現在無法執行（遊戲沒有開啟、不在隊伍中，或不是特務選擇中）。",
+    "今は実行できません（ゲームが未起動、パーティー外、またはエージェント選択外）。": {
+        "ko": "지금은 할 수 없습니다(게임 미실행, 파티 없음 또는 요원 선택 중이 아님).",
+        "en-GB": "Not possible right now (game closed, no party, or not in agent select).",
+        "zh-TW": "目前無法執行（遊戲未啟動、不在隊伍中，或不在特務選擇階段）。",
     },
-    "そのボタンは使えません。": {
-        "ko": "그 버튼은 쓸 수 없습니다.",
-        "en-GB": "That button can't be used.",
-        "zh-TW": "無法使用該按鈕。",
+    "この操作はできません。": {
+        "ko": "이 작업은 할 수 없습니다.",
+        "en-GB": "That action isn't available.",
+        "zh-TW": "無法執行此操作。",
     },
     # Progress
-    "バトルパス、イベントのパス、エージェントの契約、ミッションの進み具合です。": {
-        "ko": "배틀패스, 이벤트 패스, 요원 계약, 미션의 진행 상황입니다.",
-        "en-GB": "How far you are in the battle pass, event passes, agent contracts and missions.",
-        "zh-TW": "戰鬥通行證、活動通行證、特務合約與任務的進度。",
-    },
-    "読み込めませんでした。時間をおいてもう一度どうぞ。": {
-        "ko": "불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
-        "en-GB": "Couldn't load it. Please try again later.",
+    "読み込めませんでした。しばらくしてからお試しください。": {
+        "ko": "불러오지 못했습니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "Couldn't load. Try again shortly.",
         "zh-TW": "無法載入，請稍後再試。",
     },
     "バトルパス": {
@@ -2436,10 +2113,10 @@ TEXTS = {
         "en-GB": "Battle pass",
         "zh-TW": "戰鬥通行證",
     },
-    "いまのアクトのバトルパスは見つかりませんでした。": {
-        "ko": "이번 액트의 배틀패스를 찾지 못했습니다.",
-        "en-GB": "This act's battle pass was not found.",
-        "zh-TW": "找不到本階段的戰鬥通行證。",
+    "今アクトのバトルパスが見つかりません。": {
+        "ko": "이번 액트의 배틀패스를 찾을 수 없습니다.",
+        "en-GB": "No battle pass found for this act.",
+        "zh-TW": "找不到本賽季階段的戰鬥通行證。",
     },
     "イベント": {
         "ko": "이벤트",
@@ -2456,35 +2133,23 @@ TEXTS = {
         "en-GB": "complete",
         "zh-TW": "完成",
     },
-    "次の締め切り": {
-        "ko": "다음 마감",
-        "en-GB": "next deadline",
-        "zh-TW": "下次截止",
-    },
-    "いまのミッションはありません。": {
-        "ko": "지금 미션이 없습니다.",
+    "次の期限": {"ko": "다음 마감", "en-GB": "next deadline", "zh-TW": "下次截止"},
+    "進行中のミッションはありません。": {
+        "ko": "진행 중인 미션이 없습니다.",
         "en-GB": "No missions right now.",
-        "zh-TW": "目前沒有任務。",
+        "zh-TW": "目前沒有進行中的任務。",
     },
-    "週のミッションが補充されるのは": {
-        "ko": "주간 미션이 채워지는 시각:",
-        "en-GB": "Weekly missions refill at",
-        "zh-TW": "每週任務補充時間：",
-    },
+    "ウィークリーの補充:": {"ko": "주간 미션 보충:", "en-GB": "Weeklies refill", "zh-TW": "每週任務補充："},
     "エージェントの契約": {
         "ko": "요원 계약",
         "en-GB": "Agent contracts",
         "zh-TW": "特務合約",
     },
-    "読み込めなかったもの:": {
-        "ko": "불러오지 못한 것:",
-        "en-GB": "Not loaded:",
-        "zh-TW": "無法載入的項目：",
-    },
-    "ゲームで進めた分は 2 分ほどで出ます。レベルごとの XP は valorant-api.com から。": {
-        "ko": "게임에서 진행한 만큼은 2분 정도 뒤에 나옵니다. 레벨별 XP는 valorant-api.com에서 가져옵니다.",
-        "en-GB": "Progress made in the game shows here within about 2 minutes. The XP of each level comes from valorant-api.com.",
-        "zh-TW": "在遊戲中的進度約 2 分鐘後會顯示。各等級的 XP 來自 valorant-api.com。",
+    "取得できなかった項目:": {"ko": "불러오지 못한 항목:", "en-GB": "Couldn't load:", "zh-TW": "無法取得的項目："},
+    "ゲームでの進行は 2 分ほどで反映されます。": {
+        "ko": "게임에서의 진행은 2분 정도면 반영됩니다.",
+        "en-GB": "Progress from the game shows up within about two minutes.",
+        "zh-TW": "遊戲中的進度約 2 分鐘後顯示。",
     },
     "レベル {reached} / {main}": {
         "ko": "레벨 {reached} / {main}",
@@ -2496,36 +2161,28 @@ TEXTS = {
         "en-GB": " (epilogue)",
         "zh-TW": "（尾聲）",
     },
-    "{name} の進み具合": {
-        "ko": "{name} 진행 상황",
-        "en-GB": "{name} progress",
-        "zh-TW": "{name} 的進度",
-    },
+    "{name} の進行状況": {"ko": "{name} 진행 상황", "en-GB": "{name} progress", "zh-TW": "{name} 的進度"},
     "次のレベルまで {xp} XP": {
         "ko": "다음 레벨까지 {xp} XP",
         "en-GB": "{xp} XP to the next level",
         "zh-TW": "距離下一級 {xp} XP",
     },
     # The store's own part and the days before
-    "これまでのストア": {
-        "ko": "지난 상점",
-        "en-GB": "Past stores",
-        "zh-TW": "過去的商店",
+    "ストア履歴": {"ko": "상점 기록", "en-GB": "Store history", "zh-TW": "商店紀錄"},
+    "ショップを開いた日のストアを記録しています。": {
+        "ko": "상점을 연 날의 스토어를 기록합니다.",
+        "en-GB": "Your store on each day you opened the Store page.",
+        "zh-TW": "記錄你開啟商店頁面當天的商店內容。",
     },
-    "このページでショップを開いた日の、毎日のスキンとナイトマーケットです。": {
-        "ko": "이 사이트에서 상점을 연 날의 일일 스킨과 야시장입니다.",
-        "en-GB": "The daily skins and Night Markets of the days you opened the store here.",
-        "zh-TW": "在本站開啟商店那幾天的每日造型與夜市。",
+    "{days} 日連続でチェック中。": {
+        "ko": "{days}일 연속 확인 중.",
+        "en-GB": " {days} days in a row so far.",
+        "zh-TW": "已連續查看 {days} 天。",
     },
-    "いま {days} 日連続でチェックしています。": {
-        "ko": "지금 {days}일 연속으로 확인하고 있습니다.",
-        "en-GB": "You have checked {days} days in a row.",
-        "zh-TW": "目前已連續 {days} 天查看。",
-    },
-    "まだありません。ショップを開くとその日のストアがここに残ります。": {
-        "ko": "아직 없습니다. 상점을 열면 그날의 상점이 여기에 남습니다.",
-        "en-GB": "None yet. Each day you open the store, that day's store is kept here.",
-        "zh-TW": "目前還沒有。開啟商店後，當天的商店會留在這裡。",
+    "まだ記録がありません。ショップを開くと記録されます。": {
+        "ko": "아직 기록이 없습니다. 상점을 열면 기록됩니다.",
+        "en-GB": "Nothing yet. Each day you open the Store page is kept here.",
+        "zh-TW": "尚無紀錄。開啟商店頁面後就會記錄。",
     },
     "{count} 回目": {
         "ko": "{count}번째",
@@ -2542,10 +2199,10 @@ TEXTS = {
         "en-GB": "Night Market",
         "zh-TW": "夜市",
     },
-    "「n 回目」はこのページに残っている日の中で並んだ回数です。日付はストアの日（日本時間の 9 時から翌朝 9 時まで）。": {
-        "ko": "'n번째'는 이 페이지에 남아 있는 날 중에서 나온 횟수입니다. 날짜는 상점 기준의 날입니다 (UTC 0시, 한국 시간 오전 9시부터 다음 날 오전 9시까지).",
-        "en-GB": "“nth time” counts how often the skin appeared among the days kept here. Dates are store days (from 00:00 UTC to the next 00:00 UTC).",
-        "zh-TW": "「第 n 次」是在本頁保留的日子中出現的次數。日期以商店的一天為準（UTC 0 點，台灣時間上午 8 點起到隔天上午 8 點）。",
+    "「n 回目」は記録の中で並んだ回数。日付は日本時間 9:00 区切りです。": {
+        "ko": "'n번째'는 기록 안에서 등장한 횟수. 날짜는 일본 시간 9:00 기준입니다.",
+        "en-GB": "'nth time' counts appearances within these records. A store day runs from 9:00 Japan time.",
+        "zh-TW": "「第 n 次」是在這些紀錄中出現的次數。日期以日本時間 9:00 為界。",
     },
     "所持": {
         "ko": "보유",
@@ -2557,10 +2214,10 @@ TEXTS = {
         "en-GB": "Balance",
         "zh-TW": "餘額",
     },
-    "欲しいスキンが並んでいます: {skins}": {
-        "ko": "위시리스트 스킨이 나왔습니다: {skins}",
-        "en-GB": "Skins on your wishlist are in the store: {skins}",
-        "zh-TW": "想要的造型上架了：{skins}",
+    "欲しいスキンが入荷: {skins}": {
+        "ko": "위시리스트 스킨 입고: {skins}",
+        "en-GB": "On your wishlist and in the store: {skins}",
+        "zh-TW": "願望清單造型上架：{skins}",
     },
     "{name} さんの今日のスキン": {
         "ko": "{name} 님의 오늘의 스킨",
@@ -2592,40 +2249,21 @@ TEXTS = {
         "en-GB": "Accessories (Kingdom Credits)",
         "zh-TW": "配件（王國點數）",
     },
-    "ストアは 2 分ほどで新しくなります。「所持」は持っているもの。": {
-        "ko": "상점은 2분 정도면 새로 고쳐집니다. '보유'는 가지고 있는 것입니다.",
-        "en-GB": "The store refreshes within about 2 minutes. “Owned” marks what you already have.",
-        "zh-TW": "商店約 2 分鐘更新一次。「已擁有」是你已經有的東西。",
-    },
     "欲しいリスト（{count}）": {
         "ko": "위시리스트 ({count})",
         "en-GB": "Wishlist ({count})",
         "zh-TW": "願望清單（{count}）",
-    },
-    "スキンのページで入れられます。ストアに並ぶと印がつきます。": {
-        "ko": "스킨 페이지에서 넣을 수 있습니다. 상점에 나오면 표시가 붙습니다.",
-        "en-GB": "Add skins on their own pages; they are marked when they show up in your store.",
-        "zh-TW": "可以在造型頁面加入。上架到商店時會加上標記。",
     },
     "欲しいリストから外す": {
         "ko": "위시리스트에서 빼기",
         "en-GB": "Remove from wishlist",
         "zh-TW": "從願望清單移除",
     },
-    "欲しいリストに入れる": {
-        "ko": "위시리스트에 넣기",
-        "en-GB": "Add to wishlist",
-        "zh-TW": "加入願望清單",
-    },
-    "ストアに並んだら印がつきます。": {
-        "ko": "상점에 나오면 표시가 붙습니다.",
-        "en-GB": "It will be marked when it shows up in your store.",
-        "zh-TW": "上架到商店時會加上標記。",
-    },
-    "ストアに並んだときに印がつきます。": {
-        "ko": "상점에 나왔을 때 표시가 붙습니다.",
-        "en-GB": "It gets marked when it shows up in your store.",
-        "zh-TW": "上架到商店時就會加上標記。",
+    "欲しいリストに追加": {"ko": "위시리스트에 넣기", "en-GB": "Add to wishlist", "zh-TW": "加入願望清單"},
+    "ストアに並ぶとマークが付きます。": {
+        "ko": "상점에 나오면 표시됩니다.",
+        "en-GB": "It gets a mark when it's in your store.",
+        "zh-TW": "上架時會標示出來。",
     },
     # The collection
     "スキン": {
@@ -2688,20 +2326,11 @@ TEXTS = {
         "en-GB": "← All weapons",
         "zh-TW": "← 武器列表",
     },
-    "いま装備中": {
-        "ko": "현재 장착 중",
-        "en-GB": "Equipped now",
-        "zh-TW": "目前裝備",
-    },
-    "読めませんでした": {
-        "ko": "읽지 못했습니다",
-        "en-GB": "Couldn't read it",
-        "zh-TW": "無法讀取",
-    },
-    "Riot から装備を読めなかったので、何を付けているかは出せません。": {
-        "ko": "Riot에서 장착 정보를 읽지 못해서, 무엇을 달고 있는지 보여 줄 수 없습니다.",
-        "en-GB": "Riot didn't give the loadout, so what is equipped can't be shown.",
-        "zh-TW": "無法從 Riot 讀取裝備，因此無法顯示目前裝備的內容。",
+    "取得できませんでした": {"ko": "불러오지 못했습니다", "en-GB": "Couldn't be read", "zh-TW": "無法取得"},
+    "装備情報を取得できませんでした。": {
+        "ko": "장착 정보를 불러오지 못했습니다.",
+        "en-GB": "Couldn't read your loadout.",
+        "zh-TW": "無法取得裝備資訊。",
     },
     "レベル {level}/{levels}": {
         "ko": "레벨 {level}/{levels}",
@@ -2713,17 +2342,13 @@ TEXTS = {
         "en-GB": "Buddy: {name}",
         "zh-TW": "吊飾：{name}",
     },
-    "{name}（付けている）": {
-        "ko": "{name} (장착 중)",
-        "en-GB": "{name} (on it)",
-        "zh-TW": "{name}（已掛上）",
-    },
+    "{name}（装備中）": {"ko": "{name} (장착 중)", "en-GB": "{name} (on it)", "zh-TW": "{name}（已掛上）"},
     "{name}（あと {count} 個）": {
         "ko": "{name} ({count}개 남음)",
         "en-GB": "{name} ({count} left)",
         "zh-TW": "{name}（還有 {count} 個）",
     },
-    "{name}（{weapon} から付け替え）": {
+    "{name}（{weapon} から移動）": {
         "ko": "{name} ({weapon}에서 옮기기)",
         "en-GB": "{name} (moves from the {weapon})",
         "zh-TW": "{name}（從 {weapon} 換過來）",
@@ -2773,22 +2398,22 @@ TEXTS = {
         "en-GB": "Equip",
         "zh-TW": "裝備",
     },
-    "武器を選ぶと、持っているスキンが出ます。": {
-        "ko": "무기를 고르면 가지고 있는 스킨이 나옵니다.",
-        "en-GB": "Pick a weapon to see the skins you own for it.",
-        "zh-TW": "選擇武器後會顯示你擁有的造型。",
+    "武器を選ぶと所持スキンが表示されます。": {
+        "ko": "무기를 고르면 보유한 스킨이 표시됩니다.",
+        "en-GB": "Pick a weapon to see the skins you own.",
+        "zh-TW": "選擇武器後會顯示持有的造型。",
     },
     "未獲得": {
         "ko": "미획득",
         "en-GB": "Locked",
         "zh-TW": "未取得",
     },
-    "{name} を入れる場所": {
+    "{name} のスロット": {
         "ko": "{name}을(를) 넣을 위치",
         "en-GB": "Where to put {name}",
         "zh-TW": "放入 {name} 的位置",
     },
-    "{number}（いま {name}）": {
+    "{number}（現在: {name}）": {
         "ko": "{number} (지금 {name})",
         "en-GB": "{number} (now {name})",
         "zh-TW": "{number}（目前 {name}）",
@@ -2798,7 +2423,7 @@ TEXTS = {
         "en-GB": "Weapon for {name}",
         "zh-TW": "掛上 {name} 的武器",
     },
-    "{weapon}（いま {name}）": {
+    "{weapon}（現在: {name}）": {
         "ko": "{weapon} (지금 {name})",
         "en-GB": "{weapon} (now {name})",
         "zh-TW": "{weapon}（目前 {name}）",
@@ -2818,21 +2443,13 @@ TEXTS = {
         "en-GB": "e.g. Ranked",
         "zh-TW": "例：牌位戰用",
     },
-    "いまの装備を保存": {
-        "ko": "지금 장착을 저장",
-        "en-GB": "Save what is equipped now",
-        "zh-TW": "儲存目前的裝備",
+    "現在の装備を保存": {"ko": "지금 장착을 저장", "en-GB": "Save what is equipped now", "zh-TW": "儲存目前的裝備"},
+    "現在の装備一式を保存して、ワンクリックで切り替えられます（{count} 個まで）。": {
+        "ko": "지금 장착한 구성을 통째로 저장해 클릭 한 번으로 바꿀 수 있습니다({count}개까지).",
+        "en-GB": "Save everything you have equipped and switch back with one click (up to {count}).",
+        "zh-TW": "儲存目前的整套裝備，一鍵切換（最多 {count} 組）。",
     },
-    "いま付けているスキン・ガンバディー・スプレーとフレックス・カード・タイトルをまとめて保存し、あとで「使う」1 回で付け直せます（{count} 個まで）。": {
-        "ko": "지금 장착한 스킨·총기 장식·스프레이와 플렉스·카드·칭호를 한꺼번에 저장하고, 나중에 '사용' 한 번으로 다시 장착할 수 있습니다 (최대 {count}개).",
-        "en-GB": "Saves the skins, gun buddies, sprays and flex, card and title you have on now, to put them all back later with one press of “Use” (up to {count} sets).",
-        "zh-TW": "把目前裝備的造型、槍枝吊飾、噴漆與 Flex、卡片、稱號一起儲存，之後按一次「使用」就能重新裝備（最多 {count} 組）。",
-    },
-    "いまの装備": {
-        "ko": "지금 장착",
-        "en-GB": "Equipped now",
-        "zh-TW": "目前裝備",
-    },
+    "現在の装備": {"ko": "지금 장착", "en-GB": "Equipped now", "zh-TW": "目前裝備"},
     "スキン {count}": {
         "ko": "스킨 {count}",
         "en-GB": "Skins {count}",
@@ -2848,84 +2465,68 @@ TEXTS = {
         "en-GB": "Saved {when}",
         "zh-TW": "{when} 儲存",
     },
-    "中身": {
-        "ko": "구성",
-        "en-GB": "Contents",
-        "zh-TW": "內容",
-    },
+    "内容": {"ko": "구성", "en-GB": "Contents", "zh-TW": "內容"},
     "{name} を使う": {
         "ko": "{name} 사용",
         "en-GB": "Use {name}",
         "zh-TW": "使用 {name}",
     },
-    "{name} を消す": {
-        "ko": "{name} 삭제",
-        "en-GB": "Delete {name}",
-        "zh-TW": "刪除 {name}",
-    },
+    "{name} を削除": {"ko": "{name} 삭제", "en-GB": "Delete {name}", "zh-TW": "刪除 {name}"},
     "使う": {
         "ko": "사용",
         "en-GB": "Use",
         "zh-TW": "使用",
     },
-    "いま装備しているものを Riot から読めませんでした。装備中の印は出ていません。少し待ってから開き直してください。": {
-        "ko": "지금 장착한 것을 Riot에서 읽지 못했습니다. 장착 중 표시는 나오지 않습니다. 잠시 후 다시 열어 주세요.",
-        "en-GB": "What you have equipped could not be read from Riot, so nothing is marked as equipped. Wait a little and open the page again.",
-        "zh-TW": "無法從 Riot 讀取目前的裝備，因此沒有顯示裝備中的標記。請稍候再重新開啟。",
+    "装備中のアイテムを取得できませんでした。少し待ってから開き直してください。": {
+        "ko": "장착 중인 아이템을 불러오지 못했습니다. 잠시 후 다시 열어 주세요.",
+        "en-GB": "Couldn't read what you have equipped. Reopen the page in a moment.",
+        "zh-TW": "無法取得目前的裝備，請稍後重新開啟。",
     },
-    "ゲームで手に入れたものは 2 分ほどで出ます。名前と絵は valorant-api.com から。": {
-        "ko": "게임에서 얻은 것은 2분 정도 뒤에 나옵니다. 이름과 그림은 valorant-api.com에서 가져옵니다.",
-        "en-GB": "Items you get in the game show here within about 2 minutes. Names and pictures come from valorant-api.com.",
-        "zh-TW": "在遊戲中取得的東西約 2 分鐘後會顯示。名稱與圖片來自 valorant-api.com。",
+    "ゲームで入手したアイテムは 2 分ほどで反映されます。": {
+        "ko": "게임에서 얻은 아이템은 2분 정도면 반영됩니다.",
+        "en-GB": "New items from the game show up within about two minutes.",
+        "zh-TW": "在遊戲中取得的物品約 2 分鐘後顯示。",
     },
     # What the collection page says after a press (owner.py)
-    "装備しました。Riot に保存されています。": {
-        "ko": "장착했습니다. Riot에 저장되었습니다.",
-        "en-GB": "Equipped. It is saved at Riot.",
-        "zh-TW": "已裝備，已儲存到 Riot。",
+    "装備しました。": {"ko": "장착했습니다.", "en-GB": "Equipped.", "zh-TW": "已裝備。"},
+    "装備しました。ゲームには次の試合から反映されます。": {
+        "ko": "장착했습니다. 게임에는 다음 경기부터 반영됩니다.",
+        "en-GB": "Equipped. The game uses it from your next match.",
+        "zh-TW": "已裝備，遊戲中將從下一場對戰開始套用。",
     },
-    "装備しました。Riot に保存されています。開いているゲームでは次の試合から使われます（ゲームのコレクション画面は、開き直すまで前の装備のままのことがあります）。": {
-        "ko": "장착했습니다. Riot에 저장되었습니다. 켜져 있는 게임에서는 다음 경기부터 적용됩니다 (게임의 컬렉션 화면은 다시 열 때까지 이전 장착 그대로일 수 있습니다).",
-        "en-GB": "Equipped. It is saved at Riot. The game you have open uses it from the next match (its collection screen may show the old loadout until it is reopened).",
-        "zh-TW": "已裝備，已儲存到 Riot。開著的遊戲會從下一場對戰開始使用（遊戲的收藏畫面在重新開啟前可能仍顯示原本的裝備）。",
-    },
-    "いまの装備をセットに保存しました。": {
+    "現在の装備をセットに保存しました。": {
         "ko": "지금 장착을 세트로 저장했습니다.",
         "en-GB": "What is equipped now is saved as a set.",
         "zh-TW": "已將目前的裝備儲存為套裝。",
     },
-    "セットを消しました。": {
-        "ko": "세트를 삭제했습니다.",
-        "en-GB": "The set is deleted.",
-        "zh-TW": "已刪除套裝。",
+    "セットを削除しました。": {"ko": "세트를 삭제했습니다.", "en-GB": "Set deleted.", "zh-TW": "已刪除套裝。"},
+    "未所持のアイテムは装備できません。": {
+        "ko": "보유하지 않은 아이템은 장착할 수 없습니다.",
+        "en-GB": "You can't equip what you don't own.",
+        "zh-TW": "無法裝備未持有的物品。",
     },
-    "持っていないものは装備できません。": {
-        "ko": "가지고 있지 않은 것은 장착할 수 없습니다.",
-        "en-GB": "You can't equip something you don't own.",
-        "zh-TW": "無法裝備沒有的東西。",
+    "その武器はロードアウトにありません。": {
+        "ko": "해당 무기가 로드아웃에 없습니다.",
+        "en-GB": "That weapon isn't in the loadout.",
+        "zh-TW": "配置中沒有這把武器。",
     },
-    "その武器がロードアウトにありませんでした。": {
-        "ko": "그 무기가 로드아웃에 없었습니다.",
-        "en-GB": "That weapon isn't in your loadout.",
-        "zh-TW": "裝備配置中沒有該武器。",
-    },
-    "Riot は受け付けましたが、装備は変わっていませんでした。": {
-        "ko": "Riot이 받아들였지만 장착은 바뀌지 않았습니다.",
-        "en-GB": "Riot accepted it, but the loadout didn't change.",
-        "zh-TW": "Riot 已接受，但裝備沒有改變。",
+    "装備が反映されませんでした。もう一度お試しください。": {
+        "ko": "장착이 반영되지 않았습니다. 다시 시도하세요.",
+        "en-GB": "The change didn't take. Try again.",
+        "zh-TW": "裝備未套用，請再試一次。",
     },
     "近接武器にはガンバディーを付けられません。": {
         "ko": "근접 무기에는 총기 장식을 달 수 없습니다.",
         "en-GB": "Melee weapons can't take a gun buddy.",
         "zh-TW": "近戰武器無法掛上槍枝吊飾。",
     },
-    "セットは {count} 個までです。使わないものを消してから保存してください。": {
-        "ko": "세트는 최대 {count}개입니다. 쓰지 않는 것을 지운 다음 저장해 주세요.",
-        "en-GB": "You can keep up to {count} sets. Delete one you don't use, then save.",
-        "zh-TW": "套裝最多 {count} 組。請先刪除不用的再儲存。",
+    "セットは {count} 個までです。不要なものを削除してください。": {
+        "ko": "세트는 {count}개까지입니다. 쓰지 않는 세트를 삭제하세요.",
+        "en-GB": "You can keep {count} sets. Delete one first.",
+        "zh-TW": "套裝最多 {count} 組，請先刪除不需要的套裝。",
     },
-    "そのセットはもうありません。": {
-        "ko": "그 세트는 이제 없습니다.",
+    "そのセットは存在しません。": {
+        "ko": "해당 세트가 없습니다.",
         "en-GB": "That set no longer exists.",
         "zh-TW": "該套裝已不存在。",
     },
@@ -2935,62 +2536,58 @@ TEXTS = {
         "zh-TW": "套裝 {number}",
     },
     # Why the owner's Riot account could not be read (views.py RIOT_FAILURES)
-    "Riot アカウントがまだ連携されていません。設定で ssid を貼ってください。": {
-        "ko": "Riot 계정이 아직 연동되지 않았습니다. 설정에서 ssid를 붙여 넣어 주세요.",
-        "en-GB": "Your Riot account isn't linked yet. Paste your ssid in the settings.",
-        "zh-TW": "尚未連結 Riot 帳號。請在設定中貼上 ssid。",
+    "Riot アカウントが未連携です。設定から連携してください。": {
+        "ko": "Riot 계정이 연동되지 않았습니다. 설정에서 연동하세요.",
+        "en-GB": "No Riot account linked. Link one in Settings.",
+        "zh-TW": "尚未連結 Riot 帳號，請到設定中連結。",
     },
-    "貼られたものが ssid ではありませんでした。手順 3 の値（Value）をそのまま貼ってください。": {
-        "ko": "붙여 넣은 것이 ssid가 아니었습니다. 3단계의 값(Value)을 그대로 붙여 넣어 주세요.",
-        "en-GB": "What was pasted isn't an ssid. Paste the Value from step 3 as it is.",
-        "zh-TW": "貼上的內容不是 ssid。請直接貼上步驟 3 的值（Value）。",
+    "ssid ではないようです。手順 3 の値をそのまま貼ってください。": {
+        "ko": "ssid가 아닌 것 같습니다. 3단계의 값을 그대로 붙여 넣으세요.",
+        "en-GB": "That doesn't look like an ssid. Paste the value from step 3 as it is.",
+        "zh-TW": "這不是 ssid，請直接貼上步驟 3 的值。",
     },
-    "Riot のログインが切れています。もう一度ログインして、新しい ssid を設定で貼ってください。": {
-        "ko": "Riot 로그인이 만료되었습니다. 다시 로그인해서 새 ssid를 설정에 붙여 넣어 주세요.",
-        "en-GB": "Your Riot sign-in has expired. Sign in again and paste the new ssid in the settings.",
-        "zh-TW": "Riot 的登入已失效。請重新登入，並在設定中貼上新的 ssid。",
+    "Riot のログインが切れました。設定で ssid を貼り直してください。": {
+        "ko": "Riot 로그인이 만료되었습니다. 설정에서 ssid를 다시 붙여 넣으세요.",
+        "en-GB": "Your Riot login has expired. Paste a new ssid in Settings.",
+        "zh-TW": "Riot 登入已過期，請到設定重新貼上 ssid。",
     },
-    "Riot のサーバーが混み合っています。少し待ってからもう一度どうぞ。": {
-        "ko": "Riot 서버가 붐비고 있습니다. 잠시 후 다시 시도해 주세요.",
-        "en-GB": "Riot's servers are busy. Please try again in a moment.",
-        "zh-TW": "Riot 的伺服器忙碌中，請稍候再試。",
+    "Riot のサーバーが混雑しています。少し待ってからお試しください。": {
+        "ko": "Riot 서버가 혼잡합니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "Riot's servers are busy. Try again in a moment.",
+        "zh-TW": "Riot 伺服器忙碌中，請稍後再試。",
     },
-    "Riot のサーバーから答えがありませんでした。時間をおいてもう一度どうぞ。": {
-        "ko": "Riot 서버에서 응답이 없었습니다. 잠시 후 다시 시도해 주세요.",
-        "en-GB": "Riot's servers didn't answer. Please try again later.",
-        "zh-TW": "Riot 的伺服器沒有回應，請稍後再試。",
+    "Riot のサーバーが応答しません。しばらくしてからお試しください。": {
+        "ko": "Riot 서버가 응답하지 않습니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "Riot's servers aren't answering. Try again shortly.",
+        "zh-TW": "Riot 伺服器沒有回應，請稍後再試。",
     },
     # Settings
-    "持ち主だけが見られるページです（公開の名前では、持ち主としてログインした端末だけ）。": {
-        "ko": "주인만 볼 수 있는 페이지입니다 (공개 주소에서는 주인으로 로그인한 기기만).",
-        "en-GB": "Only the owner can see this page (on the public address, only on devices signed in as the owner).",
-        "zh-TW": "只有擁有者能看到這個頁面（在公開網址上，只限以擁有者身分登入的裝置）。",
+    "サイトの持ち主専用のページです。": {
+        "ko": "사이트 소유자 전용 페이지입니다.",
+        "en-GB": "Only the site's owner sees this page.",
+        "zh-TW": "此頁面僅限網站擁有者使用。",
     },
     "HenrikDev API キー": {
         "ko": "HenrikDev API 키",
         "en-GB": "HenrikDev API key",
         "zh-TW": "HenrikDev API 金鑰",
     },
-    "プレイヤーの検索と試合の取得に使います。{link}で「API Keys」→「Generate New Key」から無料で作れます。": {
-        "ko": "플레이어 검색과 경기 정보 가져오기에 씁니다. {link}에서 'API Keys' → 'Generate New Key'로 무료로 만들 수 있습니다.",
-        "en-GB": "Used to look players up and fetch matches. Make one free on the {link}: “API Keys” → “Generate New Key”.",
-        "zh-TW": "用於搜尋玩家與取得對戰。可在{link}從「API Keys」→「Generate New Key」免費建立。",
+    "プレイヤー検索に使います。{link}の「API Keys」→「Generate New Key」で無料発行できます。": {
+        "ko": "플레이어 검색에 사용합니다. {link}의 'API Keys' → 'Generate New Key'에서 무료로 발급받을 수 있습니다.",
+        "en-GB": "Used for player search. Free from the {link}: 'API Keys' → 'Generate New Key'.",
+        "zh-TW": "用於搜尋玩家。可在{link}的「API Keys」→「Generate New Key」免費申請。",
     },
     "HenrikDev のダッシュボード": {
         "ko": "HenrikDev 대시보드",
         "en-GB": "HenrikDev dashboard",
         "zh-TW": "HenrikDev 的控制台",
     },
-    "キーはこのサーバーの instance/settings.json にだけ保存し、画面には一部しか出しません。": {
-        "ko": "키는 이 서버의 instance/settings.json에만 저장하고, 화면에는 일부만 보여 줍니다.",
-        "en-GB": "The key is kept only in this server's instance/settings.json, and only part of it is ever shown.",
-        "zh-TW": "金鑰只儲存在本伺服器的 instance/settings.json，畫面上只會顯示一部分。",
+    "キーはこのサーバーにのみ保存されます。": {
+        "ko": "키는 이 서버에만 저장됩니다.",
+        "en-GB": "The key is stored on this server only.",
+        "zh-TW": "金鑰只儲存在此伺服器。",
     },
-    "いまのキー:": {
-        "ko": "지금 키:",
-        "en-GB": "Key now:",
-        "zh-TW": "目前的金鑰：",
-    },
+    "現在のキー:": {"ko": "지금 키:", "en-GB": "Key now:", "zh-TW": "目前的金鑰："},
     "未設定": {
         "ko": "미설정",
         "en-GB": "not set",
@@ -3006,50 +2603,42 @@ TEXTS = {
         "en-GB": "Save",
         "zh-TW": "儲存",
     },
-    "Riot アカウント（所持品）": {
-        "ko": "Riot 계정 (컬렉션)",
-        "en-GB": "Riot account (collection)",
-        "zh-TW": "Riot 帳號（收藏）",
+    "Riot アカウント": {"ko": "Riot 계정", "en-GB": "Riot account", "zh-TW": "Riot 帳號"},
+    "{link}・ライブ・ショップの表示に使います。パスワードは不要です。": {
+        "ko": "{link}·라이브·상점 표시에 사용합니다. 비밀번호는 필요 없습니다.",
+        "en-GB": "Used for your {link}, Live and the store. No password needed.",
+        "zh-TW": "用於顯示{link}、即時與商店，不需要密碼。",
     },
-    "あなたの Riot アカウントの所持品（スキン・バディー・カードなど）と残高を{link}のページに出すのに使います。パスワードは使いません。": {
-        "ko": "내 Riot 계정의 아이템(스킨·총기 장식·카드 등)과 잔액을 {link} 페이지에 보여 주는 데 씁니다. 비밀번호는 쓰지 않습니다.",
-        "en-GB": "Used to show your Riot account's items (skins, buddies, cards and more) and balance on the {link} page. Your password is never used.",
-        "zh-TW": "用於在{link}頁面顯示你 Riot 帳號的物品（造型、吊飾、卡片等）與餘額。不會使用密碼。",
+    "状態:": {"ko": "상태:", "en-GB": "Status:", "zh-TW": "狀態："},
+    "Riot クライアントでサインイン中のアカウントを自動で使います。": {
+        "ko": "Riot 클라이언트에 로그인된 계정을 자동으로 사용합니다.",
+        "en-GB": "The app uses the account signed in to the Riot Client on this PC.",
+        "zh-TW": "會自動使用 Riot Client 目前登入的帳號。",
     },
-    "いまの状態:": {
-        "ko": "지금 상태:",
-        "en-GB": "Now:",
-        "zh-TW": "目前狀態：",
-    },
-    "PC アプリでは、この PC の Riot クライアントでサインインしているアカウントを自動で使います（ssid を貼る必要はありません）。": {
-        "ko": "PC 앱에서는 이 PC의 Riot 클라이언트에 로그인한 계정을 자동으로 사용합니다(ssid를 붙여 넣을 필요가 없습니다).",
-        "en-GB": "In the PC app, the account signed in to the Riot Client on this PC is used automatically (no ssid to paste).",
-        "zh-TW": "在 PC 應用程式中，會自動使用這台 PC 上 Riot 用戶端登入中的帳號（不必貼上 ssid）。",
-    },
-    "Riot クライアントから": {
+    "Riot クライアント経由": {
         "ko": "Riot 클라이언트에서",
         "en-GB": "from the Riot Client",
         "zh-TW": "來自 Riot 用戶端",
     },
-    "Riot クライアントを使わずに ssid を貼って連携する": {
-        "ko": "Riot 클라이언트 없이 ssid를 붙여 넣어 연동하기",
-        "en-GB": "Link by pasting an ssid instead of using the Riot Client",
-        "zh-TW": "不使用 Riot 用戶端，改貼上 ssid 連結",
+    "ssid で連携する（Riot クライアントを使わない場合）": {
+        "ko": "ssid로 연동하기(Riot 클라이언트를 쓰지 않는 경우)",
+        "en-GB": "Link with an ssid instead (without the Riot Client)",
+        "zh-TW": "改用 ssid 連結（不使用 Riot Client 時）",
     },
-    "Riot クライアントが開いていないか、サインインしていません。開いてサインインすると自動でつながります。": {
-        "ko": "Riot 클라이언트가 켜져 있지 않거나 로그인되어 있지 않습니다. 켜서 로그인하면 자동으로 연결됩니다.",
-        "en-GB": "The Riot Client isn't open, or nobody is signed in to it. Open it and sign in, and this connects by itself.",
-        "zh-TW": "Riot 用戶端沒有開啟，或尚未登入。開啟並登入後就會自動連線。",
+    "Riot クライアントが起動していないか、サインインしていません。": {
+        "ko": "Riot 클라이언트가 실행 중이 아니거나 로그인되어 있지 않습니다.",
+        "en-GB": "The Riot Client isn't running, or isn't signed in.",
+        "zh-TW": "Riot Client 未開啟或尚未登入。",
     },
     "{account}（{shard}）と連携中": {
         "ko": "{account} ({shard})와 연동 중",
         "en-GB": "linked to {account} ({shard})",
         "zh-TW": "已連結 {account}（{shard}）",
     },
-    "ログインが切れています。下の手順でもう一度貼ってください。": {
-        "ko": "로그인이 만료되었습니다. 아래 순서대로 다시 붙여 넣어 주세요.",
-        "en-GB": "The sign-in has expired. Paste it again with the steps below.",
-        "zh-TW": "登入已失效。請依照下方步驟重新貼上。",
+    "ログイン切れ。下の手順で貼り直してください。": {
+        "ko": "로그인 만료. 아래 순서대로 다시 붙여 넣으세요.",
+        "en-GB": "login expired. Paste it again with the steps below.",
+        "zh-TW": "登入已過期，請依下列步驟重新貼上。",
     },
     "{when} まで": {
         "ko": "{when}까지",
@@ -3061,30 +2650,26 @@ TEXTS = {
         "en-GB": "not linked",
         "zh-TW": "未連結",
     },
-    "最後に読めなかったもの:": {
-        "ko": "마지막으로 읽지 못한 것:",
-        "en-GB": "Last thing that couldn't be read:",
-        "zh-TW": "最後無法讀取的項目：",
-    },
-    "PC の Chrome か Edge で{link}を開き、「サインインしたままにする」にチェックを入れてログイン（playvalorant.com に移れば成功）": {
-        "ko": "PC의 Chrome이나 Edge에서 {link}을(를) 열고, '로그인 상태 유지'에 체크한 뒤 로그인 (playvalorant.com으로 넘어가면 성공)",
-        "en-GB": "On a PC, open the {link} in Chrome or Edge, tick “Stay signed in” and sign in (you land on playvalorant.com when it works)",
-        "zh-TW": "在 PC 的 Chrome 或 Edge 開啟{link}，勾選「保持登入」後登入（跳到 playvalorant.com 就成功了）",
+    "直近のエラー:": {"ko": "최근 오류:", "en-GB": "Last error:", "zh-TW": "最近的錯誤："},
+    "PC の Chrome か Edge で{link}を開き、「サインインしたままにする」を選んでログイン": {
+        "ko": "PC의 Chrome이나 Edge에서 {link}을 열고 '로그인 상태 유지'를 선택해 로그인",
+        "en-GB": "On a PC, open the {link} in Chrome or Edge, tick 'Stay signed in' and log in",
+        "zh-TW": "在電腦的 Chrome 或 Edge 開啟{link}，勾選「保持登入狀態」後登入",
     },
     "Riot のサインイン": {
         "ko": "Riot 로그인",
         "en-GB": "Riot sign-in",
         "zh-TW": "Riot 登入頁面",
     },
-    "同じブラウザで {link} を開く（中身は空やエラーでよい）": {
-        "ko": "같은 브라우저에서 {link}을(를) 연다 (내용은 비어 있거나 오류여도 괜찮음)",
-        "en-GB": "In the same browser, open {link} (it may be empty or show an error)",
-        "zh-TW": "在同一個瀏覽器開啟 {link}（內容是空白或錯誤也沒關係）",
+    "同じブラウザで {link} を開く（エラー表示でも問題ありません）": {
+        "ko": "같은 브라우저에서 {link} 열기(오류가 표시되어도 괜찮습니다)",
+        "en-GB": "Open {link} in the same browser (an error page is fine)",
+        "zh-TW": "在同一個瀏覽器開啟 {link}（顯示錯誤也沒關係）",
     },
-    "F12 →「アプリケーション」→「Cookie」→「https://auth.riotgames.com」→ 名前が ssid の行の「値」をコピー": {
-        "ko": "F12 → '애플리케이션' → '쿠키' → 'https://auth.riotgames.com' → 이름이 ssid인 행의 '값'을 복사",
-        "en-GB": "F12 → “Application” → “Cookies” → “https://auth.riotgames.com” → copy the “Value” of the row named ssid",
-        "zh-TW": "F12 →「應用程式」→「Cookie」→「https://auth.riotgames.com」→ 複製名稱為 ssid 那一列的「值」",
+    "F12 →「アプリケーション」→「Cookie」→「https://auth.riotgames.com」で ssid の「値」をコピー": {
+        "ko": "F12 → '애플리케이션' → '쿠키' → 'https://auth.riotgames.com'에서 ssid의 '값' 복사",
+        "en-GB": "F12 → 'Application' → 'Cookies' → 'https://auth.riotgames.com', then copy the Value of ssid",
+        "zh-TW": "F12 →「應用程式」→「Cookie」→「https://auth.riotgames.com」，複製 ssid 的「值」",
     },
     "下に貼って「連携」": {
         "ko": "아래에 붙여 넣고 '연동'",
@@ -3101,14 +2686,14 @@ TEXTS = {
         "en-GB": "Unlink",
         "zh-TW": "解除",
     },
-    "ssid はログインしたままの状態そのものなので、このサーバーの instance/riot.json にだけ保存し、画面には出しません。使うたびに Riot が新しいものに替え、サーバーが保存し直します。Riot でパスワードを変えるかログアウトすると使えなくなるので、そのときはもう一度貼ってください。ログイン後に移ったアドレス（playvalorant.com/opt_in#access_token=…）を貼っても 1 時間だけ使えます。": {
-        "ko": "ssid는 로그인 상태 그 자체이므로 이 서버의 instance/riot.json에만 저장하고 화면에는 보여 주지 않습니다. 쓸 때마다 Riot이 새것으로 바꾸고 서버가 다시 저장합니다. Riot에서 비밀번호를 바꾸거나 로그아웃하면 쓸 수 없게 되니, 그때는 다시 붙여 넣어 주세요. 로그인 뒤 넘어간 주소(playvalorant.com/opt_in#access_token=…)를 붙여 넣어도 1시간 동안만 쓸 수 있습니다.",
-        "en-GB": "The ssid is your signed-in session itself, so it is kept only in this server's instance/riot.json and never shown. Riot swaps it for a new one each time it is used, and the server saves that. Changing your Riot password or signing out ends it; paste a new one then. Pasting the address you land on after signing in (playvalorant.com/opt_in#access_token=…) also works, for one hour.",
-        "zh-TW": "ssid 就是保持登入的狀態本身，所以只儲存在本伺服器的 instance/riot.json，不會顯示在畫面上。每次使用時 Riot 會換成新的，伺服器會重新儲存。在 Riot 變更密碼或登出後就無法使用，屆時請重新貼上。貼上登入後跳轉的網址（playvalorant.com/opt_in#access_token=…）也能使用 1 小時。",
+    "ssid はログイン状態そのものです。このサーバーにのみ保存し、画面には表示しません。Riot でパスワード変更やログアウトをすると無効になるので、その場合は貼り直してください。ログイン後の URL（playvalorant.com/opt_in#access_token=…）でも 1 時間だけ使えます。": {
+        "ko": "ssid는 로그인 상태 그 자체입니다. 이 서버에만 저장하며 화면에 표시하지 않습니다. Riot에서 비밀번호를 바꾸거나 로그아웃하면 무효가 되니 그때는 다시 붙여 넣으세요. 로그인 후의 주소(playvalorant.com/opt_in#access_token=…)로도 1시간 동안 쓸 수 있습니다.",
+        "en-GB": "The ssid is your login itself. It is stored on this server only and never shown. Changing your Riot password or logging out ends it; paste a new one then. The address you land on after logging in (playvalorant.com/opt_in#access_token=…) also works, for one hour.",
+        "zh-TW": "ssid 等同於你的登入狀態，只儲存在此伺服器，不會顯示在畫面上。在 Riot 變更密碼或登出後會失效，屆時請重新貼上。登入後的網址（playvalorant.com/opt_in#access_token=…）也能使用，但只有 1 小時。",
     },
-    "API キーを消しました。": {
+    "API キーを削除しました。": {
         "ko": "API 키를 삭제했습니다.",
-        "en-GB": "The API key is removed.",
+        "en-GB": "API key removed.",
         "zh-TW": "已刪除 API 金鑰。",
     },
     "API キーを保存しました。": {
@@ -3127,15 +2712,15 @@ TEXTS = {
         "zh-TW": "已解除 Riot 帳號的連結。",
     },
     # The owner's search failures (views.py FAILURES)
-    "HenrikDev の API キーがまだ設定されていません。設定から入れてください。": {
-        "ko": "HenrikDev API 키가 아직 설정되지 않았습니다. 설정에서 넣어 주세요.",
-        "en-GB": "The HenrikDev API key isn't set yet. Add it in the settings.",
-        "zh-TW": "尚未設定 HenrikDev 的 API 金鑰。請在設定中輸入。",
+    "HenrikDev の API キーが未設定です。設定から登録してください。": {
+        "ko": "HenrikDev API 키가 없습니다. 설정에서 등록하세요.",
+        "en-GB": "No HenrikDev API key yet. Add one in Settings.",
+        "zh-TW": "尚未設定 HenrikDev API 金鑰，請到設定中新增。",
     },
-    "HenrikDev の API キーが受け付けられませんでした。設定で確かめてください。": {
-        "ko": "HenrikDev API 키가 받아들여지지 않았습니다. 설정에서 확인해 주세요.",
-        "en-GB": "The HenrikDev API key was refused. Check it in the settings.",
-        "zh-TW": "HenrikDev 的 API 金鑰未被接受。請到設定中確認。",
+    "HenrikDev の API キーが無効です。設定を確認してください。": {
+        "ko": "HenrikDev API 키가 올바르지 않습니다. 설정을 확인하세요.",
+        "en-GB": "The HenrikDev API key was rejected. Check it in Settings.",
+        "zh-TW": "HenrikDev API 金鑰無效，請檢查設定。",
     },
     # A player's numbers as tracker.gg shows them (the act, the tiles, clutches, roles)
     "ダメージ / ラウンド": {"ko": "피해량 / 라운드", "en-GB": "Damage / round", "zh-TW": "傷害 / 回合"},
@@ -3144,10 +2729,10 @@ TEXTS = {
     "1 試合 {count}": {"ko": "경기당 {count}", "en-GB": "{count} a match", "zh-TW": "每場 {count}"},
     "アシスト": {"ko": "어시스트", "en-GB": "Assists", "zh-TW": "助攻"},
     "ラウンドの {share}%": {"ko": "라운드의 {share}%", "en-GB": "{share}% of rounds", "zh-TW": "回合的 {share}%"},
-    "挑戦 {tried} · 成功 {rate}%": {
-        "ko": "시도 {tried} · 성공 {rate}%",
-        "en-GB": "{tried} tried · {rate}% won",
-        "zh-TW": "嘗試 {tried} · 成功 {rate}%",
+    "機会 {tried} · 成功 {rate}%": {
+        "ko": "기회 {tried} · 성공 {rate}%",
+        "en-GB": "{tried} chances · {rate}% won",
+        "zh-TW": "機會 {tried} · 成功 {rate}%",
     },
     "エース": {"ko": "에이스", "en-GB": "Aces", "zh-TW": "ACE"},
     "フローレス": {"ko": "플로리스", "en-GB": "Flawless rounds", "zh-TW": "完美回合"},
@@ -3155,10 +2740,10 @@ TEXTS = {
     "経済効率": {"ko": "경제 효율", "en-GB": "Econ rating", "zh-TW": "經濟效率"},
     "設置 / 解除": {"ko": "설치 / 해제", "en-GB": "Plants / defuses", "zh-TW": "安裝 / 拆除"},
     "{count} 発": {"ko": "{count}발", "en-GB": "{count} hits", "zh-TW": "{count} 發"},
-    "チームで自分だけが残ったラウンド。相手の人数ごとの成功 / 挑戦です。": {
-        "ko": "팀에서 혼자 남은 라운드입니다. 상대 인원별 성공 / 시도 횟수입니다.",
-        "en-GB": "Rounds where the player was the last of their team: won / tried, by how many they faced.",
-        "zh-TW": "隊上只剩自己的回合。依對手人數列出成功 / 嘗試次數。",
+    "相手の人数別の成功 / 機会": {
+        "ko": "상대 인원별 성공 / 기회",
+        "en-GB": "Won / chances, by enemies left",
+        "zh-TW": "依對手人數的成功 / 機會",
     },
     "ロール別": {"ko": "역할별", "en-GB": "By role", "zh-TW": "依角色"},
     "時間": {"ko": "시간", "en-GB": "Time", "zh-TW": "時間"},
@@ -3168,138 +2753,115 @@ TEXTS = {
         "en-GB": "avg {far} m · longest {longest} m",
         "zh-TW": "平均 {far} 公尺 · 最遠 {longest} 公尺",
     },
-    "（いま）": {"ko": "(현재)", "en-GB": "(now)", "zh-TW": "（目前）"},
-    "{act}（{since} から）の {count} 試合を数えています。": {
-        "ko": "{act}({since}부터)의 {count}경기를 집계하고 있습니다.",
-        "en-GB": "Counting {count} matches of {act} (from {since}).",
-        "zh-TW": "正在統計 {act}（{since} 起）的 {count} 場對戰。",
+    "（現在）": {"ko": "(현재)", "en-GB": "(now)", "zh-TW": "（目前）"},
+    "{act}（{since}〜）の {count} 試合を集計": {
+        "ko": "{act}({since}~) {count}경기 집계",
+        "en-GB": "{count} matches from {act} (since {since})",
+        "zh-TW": "統計 {act}（{since} 起）的 {count} 場",
     },
-    "{act}（{since} から）の試合はまだ読み込めていません。": {
-        "ko": "{act}({since}부터)의 경기는 아직 불러오지 못했습니다.",
-        "en-GB": "No matches of {act} (from {since}) have been loaded yet.",
-        "zh-TW": "尚未載入 {act}（{since} 起）的對戰。",
+    "{act}（{since}〜）の試合はまだ取得できていません。": {
+        "ko": "{act}({since}~) 경기를 아직 불러오지 못했습니다.",
+        "en-GB": "No matches loaded yet for {act} (since {since}).",
+        "zh-TW": "尚未取得 {act}（{since} 起）的對戰。",
     },
     "{act} · {count} 試合": {
         "ko": "{act} · {count}경기",
         "en-GB": "{act} · {count} matches",
         "zh-TW": "{act} · {count} 場",
     },
-    "もっと前の試合（通算）": {
+    "過去の試合（通算）": {
         "ko": "이전 경기 더 보기 (통산)",
         "en-GB": "Older matches (lifetime)",
         "zh-TW": "更早的對戰（生涯）",
     },
-    "緑の点はキルを取ったときに立っていた場所、赤の点は倒された場所です（{act}。点は新しいものから最大 {count} 個）。": {
-        "ko": "초록 점은 킬을 했을 때 서 있던 곳, 빨간 점은 죽은 곳입니다 ({act}. 점은 최근 것부터 최대 {count}개).",
-        "en-GB": "Green dots are where the player stood for a kill, red ones where they died ({act}; up to the newest {count} dots).",
-        "zh-TW": "綠點是擊殺時所站的位置，紅點是被擊殺的位置（{act}。點最多顯示最新的 {count} 個）。",
+    "緑はキルした位置、赤はデスした位置（{act}・最新 {count} 件まで）。": {
+        "ko": "초록은 킬한 위치, 빨강은 사망한 위치({act}·최근 {count}개까지).",
+        "en-GB": "Green: where you got kills. Red: where you died ({act}, latest {count}).",
+        "zh-TW": "綠點是擊殺時的位置，紅點是陣亡位置（{act}，最新 {count} 筆）。",
     },
-    "(倒した数 + アシストの数) ÷ 倒された数。アシストも数えた K/D です。": {
-        "ko": "(처치 수 + 어시스트 수) ÷ 죽은 수. 어시스트까지 센 K/D입니다.",
-        "en-GB": "(Kills + assists) ÷ deaths: a K/D that counts assists too.",
-        "zh-TW": "（擊殺數 + 助攻數）÷ 陣亡數。把助攻也算進去的 K/D。",
+    "(キル + アシスト) ÷ デス。": {
+        "ko": "(킬 + 어시스트) ÷ 데스.",
+        "en-GB": "(Kills + assists) ÷ deaths.",
+        "zh-TW": "（擊殺 + 助攻）÷ 死亡。",
     },
-    "1 ラウンドあたりに倒した数。": {
-        "ko": "라운드당 처치 수.",
-        "en-GB": "Kills per round.",
-        "zh-TW": "每回合的擊殺數。",
+    "1 ラウンドあたりのキル数。": {"ko": "라운드당 킬 수.", "en-GB": "Kills per round.", "zh-TW": "每回合擊殺數。"},
+    "クラッチ機会": {"ko": "클러치 기회", "en-GB": "Clutch chances", "zh-TW": "殘局機會"},
+    "最後の 1 人になったラウンド数と、その成功率。": {
+        "ko": "혼자 남은 라운드 수와 그 성공률.",
+        "en-GB": "Rounds as the last one alive, and the share won.",
+        "zh-TW": "只剩自己的回合數與成功率。",
     },
-    "クラッチの挑戦": {"ko": "클러치 시도", "en-GB": "Clutches tried", "zh-TW": "殘局嘗試"},
-    "チームで自分だけが残ったラウンドの数。成功はそのうち勝った割合です。": {
-        "ko": "팀에서 혼자 남은 라운드 수. 성공은 그중 이긴 비율입니다.",
-        "en-GB": "Rounds where the player was the last of their team; won is the share of them they won.",
-        "zh-TW": "隊上只剩自己的回合數。成功是其中贏下的比例。",
+    "1 ラウンドで 2 キル以上した回数。5 キルはエース。": {
+        "ko": "한 라운드에 2킬 이상 한 횟수. 5킬은 에이스.",
+        "en-GB": "Rounds with two or more kills. Five is an ace.",
+        "zh-TW": "單回合擊殺 2 人以上的次數。5 殺為 Ace。",
     },
-    "1 ラウンドで 5 人全員（エース）、4 人（4K）、3 人（3K）、2 人（2K）を倒した回数。": {
-        "ko": "한 라운드에 5명 전원(에이스), 4명(4K), 3명(3K), 2명(2K)을 처치한 횟수.",
-        "en-GB": "Rounds where you killed all five (ace), four (4K), three (3K) or two (2K).",
-        "zh-TW": "一回合擊殺全部 5 人（ACE）、4 人（4K）、3 人（3K）、2 人（2K）的次數。",
-    },
-    "味方が 1 人も倒されずに勝ったラウンドの数。": {
+    "味方が誰もデスせずに取ったラウンド数。": {
         "ko": "아군이 한 명도 죽지 않고 이긴 라운드 수.",
-        "en-GB": "Rounds the team won without losing anyone.",
-        "zh-TW": "隊友無人陣亡就贏下的回合數。",
+        "en-GB": "Rounds won without losing a teammate.",
+        "zh-TW": "隊友無人陣亡拿下的回合數。",
     },
-    "使ったクレジット 1000 あたりに与えたダメージ。安い装備で多く削るほど高くなります。": {
-        "ko": "사용한 크레드 1000당 입힌 피해량. 싼 장비로 많이 깎을수록 높아집니다.",
-        "en-GB": "Damage dealt per 1,000 credits spent: higher when cheap buys do a lot of damage.",
-        "zh-TW": "每花 1000 信用點造成的傷害。用便宜的裝備打出越多傷害就越高。",
+    "消費 1000 クレジットあたりの与ダメージ。": {
+        "ko": "사용한 1000 크레드당 준 피해량.",
+        "en-GB": "Damage dealt per 1,000 credits spent.",
+        "zh-TW": "每花費 1000 信用點造成的傷害。",
     },
     "ファーストキル率": {"ko": "퍼스트 킬 비율", "en-GB": "First-kill rate", "zh-TW": "首殺率"},
     "クラッチ成功率": {"ko": "클러치 성공률", "en-GB": "Clutch win rate", "zh-TW": "殘局勝率"},
     "今のアクト": {"ko": "현재 액트", "en-GB": "This act", "zh-TW": "目前的賽季階段"},
-    "それぞれ今のアクトの試合（{a} 試合と {b} 試合。このサイトが読み込んだ分）の平均です。": {
-        "ko": "각각 현재 액트 경기({a}경기와 {b}경기. 이 사이트가 불러온 만큼)의 평균입니다.",
-        "en-GB": "Each is the average of their matches this act ({a} and {b}: those this site has read).",
-        "zh-TW": "各為目前賽季階段對戰（{a} 場與 {b} 場，本站已讀取的部分）的平均。",
+    "今アクトの平均（{a} 試合と {b} 試合）。": {
+        "ko": "이번 액트 평균({a}경기와 {b}경기).",
+        "en-GB": "Averages for this act ({a} and {b} matches).",
+        "zh-TW": "本賽季階段的平均（{a} 場與 {b} 場）。",
     },
     # The PC app (desktop.py): its own buttons, 設定's panel, the first start, a newer build
     "今日のスキン": {"ko": "오늘의 스킨", "en-GB": "Today's skins", "zh-TW": "今日的造型"},
     "戻る": {"ko": "뒤로", "en-GB": "Back", "zh-TW": "上一頁"},
     "進む": {"ko": "앞으로", "en-GB": "Forward", "zh-TW": "下一頁"},
-    "読み込み直す": {"ko": "새로고침", "en-GB": "Reload", "zh-TW": "重新載入"},
-    "PC アプリの新しい版があります。": {
-        "ko": "PC 앱의 새 버전이 있습니다.",
-        "en-GB": "A new version of the PC app is out.",
-        "zh-TW": "PC 應用程式有新版本。",
+    "再読み込み": {"ko": "새로고침", "en-GB": "Reload", "zh-TW": "重新載入"},
+    "アップデートがあります。": {
+        "ko": "업데이트가 있습니다.",
+        "en-GB": "An update is available.",
+        "zh-TW": "有新版本。",
     },
     "ダウンロード": {"ko": "다운로드", "en-GB": "Download", "zh-TW": "下載"},
-    "いまのアプリを閉じてから展開し、いまのフォルダーに上書きしてください。設定はそのまま残ります。": {
-        "ko": "지금 앱을 닫은 뒤 압축을 풀어 지금 폴더에 덮어쓰세요. 설정은 그대로 남습니다.",
-        "en-GB": "Close this app, then unzip it over the folder it is in now. Your settings stay as they are.",
-        "zh-TW": "請先關閉目前的應用程式，再解壓縮並覆蓋目前的資料夾。設定會原樣保留。",
-    },
-    "この PC の VAL Tracker の設定です。": {
-        "ko": "이 PC의 VAL Tracker 설정입니다.",
-        "en-GB": "VAL Tracker's settings on this PC.",
-        "zh-TW": "這台 PC 上 VAL Tracker 的設定。",
+    "アプリを閉じてから、今のフォルダーに上書きしてください。設定は引き継がれます。": {
+        "ko": "앱을 닫고 지금 폴더에 덮어쓰세요. 설정은 유지됩니다.",
+        "en-GB": "Close the app, then unzip over the current folder. Your settings are kept.",
+        "zh-TW": "請先關閉程式，再解壓縮覆蓋目前的資料夾。設定會保留。",
     },
     "PC アプリ": {"ko": "PC 앱", "en-GB": "PC app", "zh-TW": "PC 應用程式"},
-    "この版:": {"ko": "이 버전:", "en-GB": "This version:", "zh-TW": "此版本："},
+    "バージョン:": {"ko": "버전:", "en-GB": "Version:", "zh-TW": "版本："},
     "ソースから実行中": {"ko": "소스에서 실행 중", "en-GB": "running from the source", "zh-TW": "從原始碼執行中"},
-    "新しい版をダウンロード": {"ko": "새 버전 다운로드", "en-GB": "Download the new version", "zh-TW": "下載新版本"},
+    "アップデートをダウンロード": {"ko": "업데이트 다운로드", "en-GB": "Download the update", "zh-TW": "下載新版本"},
     "最新です": {"ko": "최신입니다", "en-GB": "up to date", "zh-TW": "已是最新"},
-    "試合が見つかったら、自動でライブを開く": {
-        "ko": "매치가 잡히면 자동으로 라이브 열기",
-        "en-GB": "Open Live by itself when a match is found",
-        "zh-TW": "找到對戰時自動開啟即時",
+    "試合が見つかったらライブを開く": {
+        "ko": "매치를 찾으면 라이브 열기",
+        "en-GB": "Open Live when a match is found",
+        "zh-TW": "找到對戰時開啟即時頁面",
     },
-    "ほかのページを見ているときに試合が見つかると、このウィンドウがライブに切り替わります（ウィンドウを前に出したりはしません）。": {
-        "ko": "다른 페이지를 보는 중에 매치가 잡히면 이 창이 라이브로 바뀝니다(창을 앞으로 가져오지는 않습니다).",
-        "en-GB": "When a match is found while you are on another page, this window switches to Live (it is not brought to the front).",
-        "zh-TW": "在瀏覽其他頁面時找到對戰，這個視窗會切換到即時（不會把視窗移到最前面）。",
+    "データの保存先: {folder}（アンインストール時はこのフォルダーも削除してください）": {
+        "ko": "데이터 저장 위치: {folder}(앱을 지울 때 이 폴더도 삭제하세요)",
+        "en-GB": "Data folder: {folder} (delete it too when you remove the app)",
+        "zh-TW": "資料儲存位置：{folder}（移除程式時請一併刪除）",
     },
-    "設定・お気に入り・画像はこの PC の {folder} にあります。アプリを消すときは、このフォルダーも消してください。": {
-        "ko": "설정·즐겨찾기·이미지는 이 PC의 {folder}에 있습니다. 앱을 지울 때는 이 폴더도 지워 주세요.",
-        "en-GB": "Settings, favourites and pictures are kept on this PC in {folder}. Delete this folder too when you remove the app.",
-        "zh-TW": "設定、我的最愛與圖片放在這台 PC 的 {folder}。刪除應用程式時，請一併刪除這個資料夾。",
+    "キーはこの PC にのみ保存されます。": {
+        "ko": "키는 이 PC에만 저장됩니다.",
+        "en-GB": "The key is stored on this PC only.",
+        "zh-TW": "金鑰只儲存在這台電腦。",
     },
-    "キーはこの PC にだけ保存し、画面には一部しか出しません。": {
-        "ko": "키는 이 PC에만 저장되며, 화면에는 일부만 표시합니다.",
-        "en-GB": "The key is kept on this PC only, and only part of it is ever shown.",
-        "zh-TW": "金鑰只儲存在這台 PC，畫面上只顯示一部分。",
+    "HenrikDev の API キーが未設定です。": {
+        "ko": "HenrikDev API 키가 설정되지 않았습니다.",
+        "en-GB": "No HenrikDev API key yet.",
+        "zh-TW": "尚未設定 HenrikDev API 金鑰。",
     },
-    "Riot ID（名前#タグ）でランクと最近の試合を調べられます。☆を付けたプレイヤーはこの PC に保存され、ここに並びます。": {
-        "ko": "Riot ID(이름#태그)로 랭크와 최근 경기를 찾아볼 수 있습니다. ☆를 누른 플레이어는 이 PC에 저장되어 여기에 표시됩니다.",
-        "en-GB": "Look up anyone's rank and recent matches by Riot ID (name#tag). Players you star are kept on this PC and listed here.",
-        "zh-TW": "用 Riot ID（名稱#標籤）查詢牌位與最近的對戰。加上 ☆ 的玩家會儲存在這台 PC，並列在這裡。",
+    "プレイヤー検索に必要です（無料）。ライブ・ショップ・所持品はキーなしで使えます。": {
+        "ko": "플레이어 검색에 필요합니다(무료). 라이브·상점·컬렉션은 키 없이도 쓸 수 있습니다.",
+        "en-GB": "Player search needs one (it's free). Live, the store and your collection work without it.",
+        "zh-TW": "搜尋玩家需要金鑰（免費）。即時、商店與收藏不需要金鑰。",
     },
-    "はじめに: HenrikDev の API キーを入れてください。": {
-        "ko": "먼저: HenrikDev API 키를 넣어 주세요.",
-        "en-GB": "First: add a HenrikDev API key.",
-        "zh-TW": "首先：請填入 HenrikDev 的 API 金鑰。",
-    },
-    "プレイヤーの検索と戦績に使います（無料、1 分ほどで作れます）。ライブ・ショップ・所持品はキーなしで使えます。": {
-        "ko": "플레이어 검색과 전적에 씁니다(무료, 1분 정도면 만들 수 있습니다). 라이브·상점·보유 아이템은 키 없이 쓸 수 있습니다.",
-        "en-GB": "It is used to look up players and their matches (free, about a minute to make). Live, the store and your collection work without it.",
-        "zh-TW": "用於搜尋玩家與戰績（免費，約 1 分鐘即可建立）。即時、商店與收藏不需要金鑰也能使用。",
-    },
-    "設定でキーを入れる": {"ko": "설정에서 키 넣기", "en-GB": "Add the key in Settings", "zh-TW": "在設定中填入金鑰"},
-    "PC アプリの設定を保存しました。": {
-        "ko": "PC 앱 설정을 저장했습니다.",
-        "en-GB": "The PC app's settings are saved.",
-        "zh-TW": "已儲存 PC 應用程式的設定。",
-    },
+    "キーを設定": {"ko": "키 설정", "en-GB": "Add a key", "zh-TW": "設定金鑰"},
+    "設定を保存しました。": {"ko": "설정을 저장했습니다.", "en-GB": "Settings saved.", "zh-TW": "已儲存設定。"},
     "PC アプリをダウンロード（GitHub）": {
         "ko": "PC 앱 다운로드(GitHub)",
         "en-GB": "Download the PC app (GitHub)",
@@ -3310,80 +2872,76 @@ TEXTS = {
         "en-GB": "Riot's servers",
         "zh-TW": "Riot 的伺服器",
     },
-    "Riot のサーバーとほかの取得元も確かめる": {
-        "ko": "Riot 서버와 다른 출처도 확인하기",
+    "Riot のサーバーと外部データもチェック": {
+        "ko": "Riot 서버와 외부 데이터도 점검",
         "en-GB": "Check Riot's servers and the other sources too",
-        "zh-TW": "也檢查 Riot 的伺服器與其他來源",
+        "zh-TW": "一併檢查 Riot 伺服器與外部資料",
     },
-    "Riot のサーバーなどに 10 回ほど小さく問い合わせます（数秒かかります）。試合中でも押せますが、メニューにいるときがおすすめです。": {
-        "ko": "Riot 서버 등에 작은 요청을 10번 정도 보냅니다(몇 초 걸립니다). 경기 중에도 누를 수 있지만 메뉴에 있을 때를 권합니다.",
-        "en-GB": "This sends about ten small requests to Riot's servers and the other sources (a few seconds). You can press it during a match, but the menu is the better moment.",
-        "zh-TW": "會向 Riot 的伺服器等送出約 10 次小型請求（需要幾秒）。對戰中也能按，但建議在選單時進行。",
+    "10 回ほどの軽い通信で、数秒かかります。メニュー画面での実行がおすすめです。": {
+        "ko": "가벼운 통신을 10번 정도 하며 몇 초 걸립니다. 메뉴 화면에서 실행하는 것을 권장합니다.",
+        "en-GB": "About ten small requests, a few seconds in all. Best done from the menus.",
+        "zh-TW": "約 10 次小型連線，需要幾秒鐘。建議在主選單時執行。",
     },
     "Riot クライアント": {
         "ko": "Riot 클라이언트",
         "en-GB": "Riot Client",
         "zh-TW": "Riot 用戶端",
     },
-    "Riot クライアントが開いていないので、フレンドを読めません。Riot クライアントか VALORANT を開くと、ここに出ます。": {
-        "ko": "Riot 클라이언트가 켜져 있지 않아 친구를 읽을 수 없습니다. Riot 클라이언트나 VALORANT를 켜면 여기에 나옵니다.",
-        "en-GB": "The Riot Client isn't open, so your friends can't be read. Open the Riot Client or VALORANT and they appear here.",
-        "zh-TW": "Riot 用戶端沒有開啟，無法讀取好友。開啟 Riot 用戶端或 VALORANT 後就會顯示在這裡。",
+    "Riot クライアントが起動していません。起動するとフレンドが表示されます。": {
+        "ko": "Riot 클라이언트가 실행 중이 아닙니다. 실행하면 친구가 표시됩니다.",
+        "en-GB": "The Riot Client isn't running. Start it to see your friends.",
+        "zh-TW": "Riot Client 未啟動，啟動後會顯示好友。",
     },
-    "Riot クライアントのサインインをそのまま使うので、何も貼らずに自分のライブ・所持品・ストアが開きます": {
-        "ko": "Riot 클라이언트의 로그인을 그대로 쓰므로 아무것도 붙여 넣지 않고 내 라이브·컬렉션·상점이 열립니다",
-        "en-GB": "It uses the Riot Client's sign-in, so your Live, collection and store open with nothing to paste",
-        "zh-TW": "直接使用 Riot 用戶端的登入，不必貼上任何東西就能開啟自己的即時、收藏與商店",
+    "設定なしでライブ・所持品・ストアが使える（Riot クライアントのサインインを利用）": {
+        "ko": "설정 없이 라이브·컬렉션·상점 사용(Riot 클라이언트 로그인 이용)",
+        "en-GB": "Live, your collection and your store with no setup (it uses the Riot Client's sign-in)",
+        "zh-TW": "不需設定即可使用即時、收藏與商店（沿用 Riot Client 的登入）",
     },
-    "VALORANT そのものには触れません。ゲームの上に何も出さず、キーも送らず、ゲームより低い優先度で動きます。": {
-        "ko": "VALORANT 자체에는 손대지 않습니다. 게임 위에 아무것도 띄우지 않고, 키도 보내지 않으며, 게임보다 낮은 우선순위로 동작합니다.",
-        "en-GB": "It never touches VALORANT itself: nothing is drawn over the game, no keys are sent, and it runs at a lower priority than the game.",
-        "zh-TW": "不會碰觸 VALORANT 本身：不在遊戲上顯示任何東西、不送出按鍵，並以低於遊戲的優先順序執行。",
+    "ゲーム本体には一切触れません。オーバーレイもキー入力もなく、ゲームより低い優先度で動作します。": {
+        "ko": "게임 자체는 전혀 건드리지 않습니다. 오버레이도 키 입력도 없으며 게임보다 낮은 우선순위로 동작합니다.",
+        "en-GB": "It never touches the game itself: no overlay, no key presses, and it runs at a lower priority than the game.",
+        "zh-TW": "完全不會動到遊戲本身：沒有覆蓋層、不送出按鍵，並以低於遊戲的優先權執行。",
     },
-    "VALORANT にいる": {
-        "ko": "VALORANT 접속 중",
-        "en-GB": "In VALORANT",
-        "zh-TW": "在 VALORANT 中",
-    },
+    "VALORANT をプレイ中": {"ko": "VALORANT 플레이 중", "en-GB": "In VALORANT", "zh-TW": "正在玩 VALORANT"},
     "VALORANT の起動": {
         "ko": "VALORANT 실행",
         "en-GB": "VALORANT running",
         "zh-TW": "VALORANT 的啟動",
     },
-    "VALORANT は開いていますが、自分の居場所が届いていません": {
-        "ko": "VALORANT는 켜져 있지만 내 위치 정보가 오지 않았습니다",
-        "en-GB": "VALORANT is open, but where you are has not arrived",
-        "zh-TW": "VALORANT 已開啟，但尚未收到自己的所在位置",
+    "VALORANT は起動中ですが、自分のステータスが届いていません": {
+        "ko": "VALORANT는 실행 중이지만 내 상태가 오지 않습니다",
+        "en-GB": "VALORANT is running, but your own presence hasn't arrived",
+        "zh-TW": "VALORANT 執行中，但尚未收到自己的狀態",
     },
-    "VALORANT を開くと確かめられます": {
-        "ko": "VALORANT를 켜면 확인할 수 있습니다",
-        "en-GB": "Can be checked once VALORANT is open",
-        "zh-TW": "開啟 VALORANT 後即可檢查",
+    "VALORANT の起動後にチェックできます": {
+        "ko": "VALORANT 실행 후 점검할 수 있습니다",
+        "en-GB": "Checked once VALORANT is running",
+        "zh-TW": "啟動 VALORANT 後即可檢查",
     },
-    "Windows ではないので、何もしていません": {
-        "ko": "Windows가 아니어서 아무것도 하지 않습니다",
-        "en-GB": "Not Windows, so nothing is done",
-        "zh-TW": "不是 Windows，因此沒有進行任何設定",
+    "Windows 以外のため無効": {
+        "ko": "Windows가 아니어서 꺼짐",
+        "en-GB": "Off (not Windows)",
+        "zh-TW": "非 Windows，未啟用",
     },
-    "Windows の起動と一緒に、最小化して開く": {
-        "ko": "Windows 시작 시 최소화해서 열기",
-        "en-GB": "Open minimised when Windows starts",
-        "zh-TW": "隨 Windows 啟動並最小化開啟",
+    "Windows 起動時に最小化で起動": {
+        "ko": "Windows 시작 시 최소화로 실행",
+        "en-GB": "Start minimised with Windows",
+        "zh-TW": "Windows 開機時以最小化啟動",
     },
-    "Windows の起動と一緒に、最小化して開けます": {
-        "ko": "Windows 시작 시 최소화된 상태로 열 수 있습니다",
-        "en-GB": "It can open minimised when Windows starts",
-        "zh-TW": "可以隨 Windows 啟動並最小化開啟",
+    "Windows 起動時に自動で起動": {
+        "ko": "Windows 시작 시 자동 실행",
+        "en-GB": "Starts with Windows",
+        "zh-TW": "隨 Windows 開機自動啟動",
     },
-    "Windows の起動に登録できませんでした。": {
-        "ko": "Windows 시작 프로그램에 등록하지 못했습니다.",
-        "en-GB": "It could not be set to start with Windows.",
-        "zh-TW": "無法登錄為隨 Windows 啟動。",
+    "スタートアップに登録できませんでした。": {
+        "ko": "시작 프로그램에 등록하지 못했습니다.",
+        "en-GB": "Couldn't add the app to Windows start-up.",
+        "zh-TW": "無法加入 Windows 開機啟動。",
     },
-    "Windows 用のアプリは、このサイトと同じページを PC の中で開きます。VALORANT を遊ぶ PC で使うと、サイトではできないことができます。": {
-        "ko": "Windows용 앱은 이 사이트와 같은 페이지를 PC 안에서 엽니다. VALORANT를 하는 PC에서 쓰면 사이트에서는 할 수 없는 일을 할 수 있습니다.",
-        "en-GB": "The Windows app opens the same pages as this site on your PC. On the PC you play VALORANT on, it can do things the site cannot.",
-        "zh-TW": "Windows 版應用程式會在 PC 內開啟與本網站相同的頁面。在玩 VALORANT 的 PC 上使用，可以做到網站做不到的事。",
+    "Windows 用アプリです。VALORANT をプレイする PC で使うと、サイトにはない機能が使えます。": {
+        "ko": "Windows용 앱입니다. VALORANT를 플레이하는 PC에서 쓰면 사이트에 없는 기능을 쓸 수 있습니다.",
+        "en-GB": "A Windows app. On the PC you play VALORANT on, it does things the site can't.",
+        "zh-TW": "Windows 應用程式。在玩 VALORANT 的電腦上使用，可享有網站沒有的功能。",
     },
     "{count} 人": {
         "ko": "{count}명",
@@ -3405,111 +2963,75 @@ TEXTS = {
         "en-GB": "{where} ({shape})",
         "zh-TW": "{where}（{shape}）",
     },
-    "いま VALORANT にいるフレンドはいません。": {
-        "ko": "지금 VALORANT에 접속한 친구가 없습니다.",
-        "en-GB": "No friends are in VALORANT right now.",
-        "zh-TW": "目前沒有好友在 VALORANT 中。",
+    "VALORANT をプレイ中のフレンドはいません。": {
+        "ko": "VALORANT를 플레이 중인 친구가 없습니다.",
+        "en-GB": "No friends in VALORANT right now.",
+        "zh-TW": "目前沒有好友在玩 VALORANT。",
     },
-    "いまどこにいるか": {
-        "ko": "지금 어디에 있는지",
-        "en-GB": "Where they are now",
-        "zh-TW": "現在在哪裡",
-    },
-    "いまのゲーム（ライブ）": {
+    "オンライン状況": {"ko": "접속 상태", "en-GB": "Who's online", "zh-TW": "上線狀態"},
+    "現在のゲーム（ライブ）": {
         "ko": "지금의 게임(라이브)",
         "en-GB": "The game right now (Live)",
         "zh-TW": "目前的遊戲（即時）",
     },
-    "いまの形": {
-        "ko": "현재 형식",
-        "en-GB": "current shape",
-        "zh-TW": "目前的格式",
-    },
-    "うまく動かないときは、これをコピーして知らせてください。名前・ID・トークンは入っていません。": {
-        "ko": "잘 동작하지 않으면 이것을 복사해서 알려 주세요. 이름·ID·토큰은 들어 있지 않습니다.",
-        "en-GB": "When something does not work, copy this and send it. It holds no names, ids or tokens.",
-        "zh-TW": "無法正常運作時，請複製這段內容回報。其中不含名稱、ID 或權杖。",
+    "現行形式": {"ko": "현재 형식", "en-GB": "current shape", "zh-TW": "目前的格式"},
+    "不具合の報告に使えます。名前・ID・トークンは含みません。": {
+        "ko": "문제 신고에 쓸 수 있습니다. 이름·ID·토큰은 포함되지 않습니다.",
+        "en-GB": "Send this when something doesn't work. It holds no names, IDs or tokens.",
+        "zh-TW": "可用於回報問題，不含名稱、ID 或權杖。",
     },
     "この PC の Riot クライアント": {
         "ko": "이 PC의 Riot 클라이언트",
         "en-GB": "The Riot Client on this PC",
         "zh-TW": "這台 PC 的 Riot 用戶端",
     },
-    "この PC の分だけ確かめ直す": {
-        "ko": "이 PC 쪽만 다시 확인",
-        "en-GB": "Check this PC's part again",
-        "zh-TW": "只重新檢查這台 PC 的部分",
+    "この PC だけ再チェック": {
+        "ko": "이 PC만 다시 점검",
+        "en-GB": "Recheck this PC only",
+        "zh-TW": "只重新檢查這台電腦",
     },
-    "このアプリが読むものを一つずつ確かめます。ページが空のままのときに、どこが読めていないかがわかります。VALORANT そのものには触れません。": {
-        "ko": "이 앱이 읽는 것을 하나씩 확인합니다. 페이지가 비어 있을 때 어디를 읽지 못하는지 알 수 있습니다. VALORANT 자체에는 손대지 않습니다.",
-        "en-GB": "Each thing this app reads is checked in turn. When a page stays empty, this shows what could not be read. VALORANT itself is never touched.",
-        "zh-TW": "逐一檢查這個應用程式讀取的項目。頁面一直空白時，可以知道是哪裡讀不到。不會碰觸 VALORANT 本身。",
+    "データの取得元を 1 つずつチェックします。ゲーム本体には触れません。": {
+        "ko": "데이터 출처를 하나씩 점검합니다. 게임 자체는 건드리지 않습니다.",
+        "en-GB": "Checks each thing the app reads, one by one. The game itself is never touched.",
+        "zh-TW": "逐一檢查各個資料來源，不會動到遊戲本身。",
     },
-    "この版": {
-        "ko": "이 버전",
-        "en-GB": "This version",
-        "zh-TW": "此版本",
+    "バージョン": {"ko": "버전", "en-GB": "Version", "zh-TW": "版本"},
+    "すべてチェック": {"ko": "전체 점검", "en-GB": "Check everything", "zh-TW": "全部檢查"},
+    "未接続（数秒おきに再接続します）": {
+        "ko": "연결 안 됨(몇 초마다 다시 연결)",
+        "en-GB": "Not connected (retrying every few seconds)",
+        "zh-TW": "未連線（每隔幾秒重新連線）",
     },
-    "ぜんぶ確かめる": {
-        "ko": "전부 확인",
-        "en-GB": "Check everything",
-        "zh-TW": "全部檢查",
-    },
-    "つながっていません（数秒おきにつなぎ直します）": {
-        "ko": "연결되어 있지 않습니다(몇 초마다 다시 연결합니다)",
-        "en-GB": "Not connected (it reconnects every few seconds)",
-        "zh-TW": "尚未連線（每隔幾秒會重新連線）",
-    },
-    "つながりました": {
-        "ko": "연결되었습니다",
-        "en-GB": "Reached",
-        "zh-TW": "已連線",
-    },
-    "つながりません": {
-        "ko": "연결되지 않습니다",
-        "en-GB": "Could not be reached",
-        "zh-TW": "無法連線",
-    },
-    "ほかでオンライン": {
-        "ko": "다른 곳에서 온라인",
-        "en-GB": "Online elsewhere",
-        "zh-TW": "在其他地方上線",
-    },
-    "ほかでオンライン {count} 人": {
+    "接続 OK": {"ko": "연결됨", "en-GB": "Reached", "zh-TW": "連線正常"},
+    "接続できません": {"ko": "연결할 수 없음", "en-GB": "Can't be reached", "zh-TW": "無法連線"},
+    "その他のオンライン": {"ko": "다른 곳에서 온라인", "en-GB": "Online elsewhere", "zh-TW": "在其他地方上線"},
+    "その他のオンライン {count} 人": {
         "ko": "다른 곳에서 온라인 {count}명",
         "en-GB": "{count} online elsewhere",
         "zh-TW": "在其他地方上線 {count} 人",
     },
-    "ほかのアプリを見ていても、試合が見つかるとタスクバーのボタンで知らせます（音も選べます）": {
-        "ko": "다른 앱을 보고 있어도 매치가 잡히면 작업 표시줄 버튼으로 알려 줍니다(소리도 고를 수 있습니다)",
-        "en-GB": "While you are in another program, a match found lights its taskbar button (a sound is optional)",
-        "zh-TW": "即使正在看其他應用程式，找到對戰時也會以工作列按鈕通知（也可選擇音效）",
+    "試合が見つかるとタスクバーの点滅や音で通知": {
+        "ko": "매치를 찾으면 작업 표시줄 깜빡임이나 소리로 알림",
+        "en-GB": "A taskbar flash or a sound when a match is found",
+        "zh-TW": "找到對戰時以工作列閃爍或音效通知",
     },
-    "ほかのアプリを見ているときだけ知らせます。VALORANT が前にあるときは何もしません（ゲームが自分で知らせます）。ウィンドウを前に出すことも、ゲームの上に何かを出すこともありません。": {
-        "ko": "다른 앱을 보고 있을 때만 알립니다. VALORANT가 앞에 있을 때는 아무것도 하지 않습니다(게임이 직접 알려 줍니다). 창을 앞으로 가져오거나 게임 위에 무언가를 띄우지 않습니다.",
-        "en-GB": "You are told only while another program is in front. Nothing happens while VALORANT is in front (the game tells you itself). The window is never brought to the front and nothing is drawn over the game.",
-        "zh-TW": "只在你看著其他應用程式時通知。VALORANT 在最前面時什麼都不做（遊戲會自己通知）。不會把視窗移到最前面，也不會在遊戲上顯示任何東西。",
+    "VALORANT が前面のときは通知しません。ウィンドウを前面に出すこともありません。": {
+        "ko": "VALORANT가 맨 앞에 있을 때는 알리지 않습니다. 창을 앞으로 가져오지도 않습니다.",
+        "en-GB": "Nothing happens while VALORANT is in front, and the window never jumps forward.",
+        "zh-TW": "VALORANT 在最前面時不會通知，也不會把視窗帶到最前面。",
     },
-    "ほかのプレイヤーの検索（HenrikDev）": {
-        "ko": "다른 플레이어 검색(HenrikDev)",
-        "en-GB": "Looking up other players (HenrikDev)",
-        "zh-TW": "搜尋其他玩家（HenrikDev）",
+    "プレイヤー検索（HenrikDev）": {
+        "ko": "플레이어 검색(HenrikDev)",
+        "en-GB": "Player search (HenrikDev)",
+        "zh-TW": "搜尋玩家（HenrikDev）",
     },
-    "ほかの取得元": {
-        "ko": "다른 출처",
-        "en-GB": "Other sources",
-        "zh-TW": "其他來源",
+    "外部データ": {"ko": "외부 데이터", "en-GB": "Other sources", "zh-TW": "外部資料"},
+    "未確定（VALORANT の起動後に決まります。それまでは ap 扱い）": {
+        "ko": "미확정(VALORANT 실행 후 정해집니다. 그때까지는 ap로 처리)",
+        "en-GB": "Not known yet (set once VALORANT starts; read as ap until then)",
+        "zh-TW": "尚未確定（啟動 VALORANT 後決定，在此之前視為 ap）",
     },
-    "まだわかりません（VALORANT を開くと決まります。それまでは ap として読みます）": {
-        "ko": "아직 알 수 없습니다(VALORANT를 켜면 정해집니다. 그때까지는 ap로 읽습니다)",
-        "en-GB": "Not known yet (set once VALORANT is open; read as ap until then)",
-        "zh-TW": "尚未得知（開啟 VALORANT 後才會確定，在那之前以 ap 讀取）",
-    },
-    "もう一度確かめる": {
-        "ko": "다시 확인",
-        "en-GB": "Check again",
-        "zh-TW": "再檢查一次",
-    },
+    "再チェック": {"ko": "다시 점검", "en-GB": "Check again", "zh-TW": "重新檢查"},
     "アプリ": {
         "ko": "앱",
         "en-GB": "The app",
@@ -3530,66 +3052,46 @@ TEXTS = {
         "en-GB": "Setting up a custom game",
         "zh-TW": "自訂對戰準備中",
     },
-    "キーがありません（設定に入れると、ほかのプレイヤーを検索できます）": {
-        "ko": "키가 없습니다(설정에 넣으면 다른 플레이어를 검색할 수 있습니다)",
-        "en-GB": "No key (add one in Settings to look up other players)",
-        "zh-TW": "沒有金鑰（在設定中填入後即可搜尋其他玩家）",
+    "キー未設定（設定するとプレイヤー検索が使えます）": {
+        "ko": "키 없음(설정하면 플레이어 검색을 쓸 수 있습니다)",
+        "en-GB": "No key (add one in Settings to search for players)",
+        "zh-TW": "尚未設定金鑰（設定後即可搜尋玩家）",
     },
-    "クライアントからの知らせ": {
-        "ko": "클라이언트의 알림",
-        "en-GB": "Events from the client",
-        "zh-TW": "用戶端的通知",
-    },
+    "クライアントからの通知": {"ko": "클라이언트의 알림", "en-GB": "Events from the client", "zh-TW": "用戶端的通知"},
     "ゲームのサーバー": {
         "ko": "게임 서버",
         "en-GB": "The game's server",
         "zh-TW": "遊戲伺服器",
     },
-    "ゲームを優先する設定": {
-        "ko": "게임을 우선하는 설정",
-        "en-GB": "Giving way to the game",
-        "zh-TW": "讓遊戲優先的設定",
-    },
+    "ゲーム優先モード": {"ko": "게임 우선 모드", "en-GB": "Game-first mode", "zh-TW": "遊戲優先模式"},
     "サインイン": {
         "ko": "로그인",
         "en-GB": "Sign-in",
         "zh-TW": "登入",
     },
-    "サインインしています": {
-        "ko": "로그인되어 있습니다",
-        "en-GB": "Signed in",
-        "zh-TW": "已登入",
-    },
-    "サインインを読めません（Riot クライアントでサインインしているか確かめてください）": {
-        "ko": "로그인 정보를 읽을 수 없습니다(Riot 클라이언트에 로그인되어 있는지 확인해 주세요)",
-        "en-GB": "The sign-in could not be read (check that you are signed in to the Riot Client)",
-        "zh-TW": "無法讀取登入狀態（請確認是否已登入 Riot 用戶端）",
+    "サインイン済み": {"ko": "로그인됨", "en-GB": "Signed in", "zh-TW": "已登入"},
+    "サインイン情報を取得できません（Riot クライアントのサインインを確認してください）": {
+        "ko": "로그인 정보를 불러올 수 없습니다(Riot 클라이언트 로그인을 확인하세요)",
+        "en-GB": "Can't read the sign-in (check you're signed in to the Riot Client)",
+        "zh-TW": "無法取得登入資訊（請確認 Riot Client 已登入）",
     },
     "ストア": {
         "ko": "상점",
         "en-GB": "Store",
         "zh-TW": "商店",
     },
-    "ダウンロードした VALTracker.exe で使えます。": {
-        "ko": "다운로드한 VALTracker.exe에서 쓸 수 있습니다.",
-        "en-GB": "Available in the downloaded VALTracker.exe.",
-        "zh-TW": "可在下載的 VALTracker.exe 中使用。",
+    "VALTracker.exe 版でのみ使えます。": {
+        "ko": "VALTracker.exe 버전에서만 쓸 수 있습니다.",
+        "en-GB": "Needs the downloaded VALTracker.exe.",
+        "zh-TW": "僅 VALTracker.exe 版本可用。",
     },
-    "データのフォルダー": {
-        "ko": "데이터 폴더",
-        "en-GB": "Data folder",
-        "zh-TW": "資料夾",
-    },
+    "データフォルダー": {"ko": "데이터 폴더", "en-GB": "Data folder", "zh-TW": "資料夾"},
     "パーティー {count}人": {
         "ko": "파티 {count}명",
         "en-GB": "Party of {count}",
         "zh-TW": "隊伍 {count} 人",
     },
-    "パーティーに参加できます": {
-        "ko": "파티에 참가할 수 있습니다",
-        "en-GB": "Party open to join",
-        "zh-TW": "可以加入隊伍",
-    },
+    "パーティー参加可": {"ko": "파티에 참가할 수 있습니다", "en-GB": "Party open to join", "zh-TW": "可以加入隊伍"},
     "フレンド": {
         "ko": "친구",
         "en-GB": "Friends",
@@ -3600,41 +3102,33 @@ TEXTS = {
         "en-GB": "{total} friends",
         "zh-TW": "好友 {total} 人",
     },
-    "フレンドがいません。VALORANT でフレンドを追加すると、ここに出ます。": {
-        "ko": "친구가 없습니다. VALORANT에서 친구를 추가하면 여기에 나옵니다.",
-        "en-GB": "No friends yet. Friends you add in VALORANT appear here.",
-        "zh-TW": "還沒有好友。在 VALORANT 中加入好友後就會顯示在這裡。",
+    "フレンドがいません。": {"ko": "친구가 없습니다.", "en-GB": "No friends yet.", "zh-TW": "沒有好友。"},
+    "フレンドのオンライン状況と試合の状況がわかります。": {
+        "ko": "친구의 접속 상태와 경기 상황을 볼 수 있습니다.",
+        "en-GB": "Who's online and what they're playing.",
+        "zh-TW": "查看好友的上線狀態與對戰情況。",
     },
-    "フレンドがいまどこにいるかを、この PC の Riot クライアントのフレンド一覧から読んでいます。PC アプリだけの機能です。": {
-        "ko": "친구가 지금 어디에 있는지를 이 PC의 Riot 클라이언트 친구 목록에서 읽습니다. PC 앱에만 있는 기능입니다.",
-        "en-GB": "Where your friends are right now, read from the friends list of the Riot Client on this PC. Only the PC app has this.",
-        "zh-TW": "從這台 PC 的 Riot 用戶端好友名單讀取好友現在在哪裡。這是 PC 應用程式專屬的功能。",
-    },
-    "フレンドがいまどこにいるか（メニュー・マッチング中・対戦中とスコア・パーティーの人数）がわかります": {
-        "ko": "친구가 지금 어디에 있는지(메뉴·매칭 중·경기 중과 점수·파티 인원)를 알 수 있습니다",
-        "en-GB": "It shows where your friends are right now (the menu, matchmaking, in a match with its score, and their party's size)",
-        "zh-TW": "可以知道好友現在在哪裡（選單、配對中、對戰中與比分、隊伍人數）",
+    "フレンドの状況がわかる（マッチング中、対戦中のスコア、パーティー人数）": {
+        "ko": "친구의 상황 확인(매칭 중, 경기 중 스코어, 파티 인원)",
+        "en-GB": "What your friends are doing (in queue, the score of their match, party size)",
+        "zh-TW": "查看好友的狀況（配對中、對戰比分、隊伍人數）",
     },
     "フレンド一覧": {
         "ko": "친구 목록",
         "en-GB": "Friends list",
         "zh-TW": "好友名單",
     },
-    "ページが空のままのときは、{link}でどこが読めていないかを確かめられます。": {
-        "ko": "페이지가 비어 있을 때는 {link}에서 어디를 읽지 못하는지 확인할 수 있습니다.",
-        "en-GB": "When a page stays empty, {link} shows what could not be read.",
-        "zh-TW": "頁面一直空白時，可以在{link}檢查是哪裡讀不到。",
+    "うまく表示されないときは、{link}で原因を確認できます。": {
+        "ko": "제대로 표시되지 않으면 {link}에서 원인을 확인할 수 있습니다.",
+        "en-GB": "If a page stays empty, {link} shows what's failing.",
+        "zh-TW": "若頁面無法正常顯示，可在{link}查看原因。",
     },
-    "一部だけ読めました（読めなかったもの: {missing}）": {
-        "ko": "일부만 읽었습니다(읽지 못한 것: {missing})",
-        "en-GB": "Read in part (not read: {missing})",
-        "zh-TW": "只讀到一部分（未讀到：{missing}）",
+    "一部のみ取得（未取得: {missing}）": {
+        "ko": "일부만 불러옴(실패: {missing})",
+        "en-GB": "Partly read (missing: {missing})",
+        "zh-TW": "僅取得部分（未取得：{missing}）",
     },
-    "以前の形": {
-        "ko": "이전 형식",
-        "en-GB": "older shape",
-        "zh-TW": "舊的格式",
-    },
+    "旧形式": {"ko": "이전 형식", "en-GB": "older shape", "zh-TW": "舊的格式"},
     "優先度を下げられませんでした": {
         "ko": "우선순위를 낮추지 못했습니다",
         "en-GB": "The priority could not be lowered",
@@ -3660,91 +3154,43 @@ TEXTS = {
         "en-GB": "Fine",
         "zh-TW": "沒有問題",
     },
-    "報告": {
-        "ko": "보고서",
-        "en-GB": "Report",
-        "zh-TW": "報告",
-    },
-    "報告をコピー": {
-        "ko": "보고서 복사",
-        "en-GB": "Copy the report",
-        "zh-TW": "複製報告",
-    },
+    "レポート": {"ko": "보고서", "en-GB": "Report", "zh-TW": "報告"},
+    "レポートをコピー": {"ko": "보고서 복사", "en-GB": "Copy the report", "zh-TW": "複製報告"},
     "射撃場": {
         "ko": "사격장",
         "en-GB": "The Range",
         "zh-TW": "靶場",
     },
-    "待っています（これまでに 居場所 {presences} 回・起動 {sessions} 回・試合の知らせ {pushes} 回）": {
-        "ko": "기다리는 중입니다(지금까지 위치 {presences}회·실행 {sessions}회·경기 알림 {pushes}회)",
-        "en-GB": "Listening (so far: {presences} presence, {sessions} launch and {pushes} match events)",
-        "zh-TW": "等待中（目前為止：所在位置 {presences} 次・啟動 {sessions} 次・對戰通知 {pushes} 次）",
+    "待機中（受信: ステータス {presences} 回・起動 {sessions} 回・試合通知 {pushes} 回）": {
+        "ko": "대기 중(수신: 상태 {presences}회·실행 {sessions}회·경기 알림 {pushes}회)",
+        "en-GB": "Listening (so far: presence {presences}, sessions {sessions}, match events {pushes})",
+        "zh-TW": "待命中（已接收：狀態 {presences} 次、啟動 {sessions} 次、對戰通知 {pushes} 次）",
     },
-    "持っているエージェント": {
-        "ko": "보유한 요원",
-        "en-GB": "Agents you own",
-        "zh-TW": "擁有的特務",
+    "所持エージェント": {"ko": "보유한 요원", "en-GB": "Agents you own", "zh-TW": "擁有的特務"},
+    "アップデート確認（VAL Tracker のサイト）": {
+        "ko": "업데이트 확인(VAL Tracker 사이트)",
+        "en-GB": "Update check (VAL Tracker's site)",
+        "zh-TW": "檢查更新（VAL Tracker 網站）",
     },
-    "新しい版の確認（VAL Tracker のサイト）": {
-        "ko": "새 버전 확인(VAL Tracker 사이트)",
-        "en-GB": "Looking for a newer version (the VAL Tracker site)",
-        "zh-TW": "檢查新版本（VAL Tracker 網站）",
+    "書き込み可": {"ko": "쓰기 가능", "en-GB": "Writable", "zh-TW": "可寫入"},
+    "書き込み不可": {"ko": "쓰기 불가", "en-GB": "Not writable", "zh-TW": "無法寫入"},
+    "最終オンライン": {"ko": "마지막 접속", "en-GB": "Last online", "zh-TW": "上次上線"},
+    "有効（アプリの優先度を下げ、CPU とメモリーをゲームに譲ります）": {
+        "ko": "켜짐(앱 우선순위를 낮춰 CPU와 메모리를 게임에 양보)",
+        "en-GB": "On (the app runs at low priority and leaves CPU and memory to the game)",
+        "zh-TW": "已啟用（降低程式優先權，把 CPU 與記憶體讓給遊戲）",
     },
-    "書き込めます": {
-        "ko": "쓸 수 있습니다",
-        "en-GB": "Writable",
-        "zh-TW": "可以寫入",
+    "通知をテストしました。": {"ko": "알림을 테스트했습니다.", "en-GB": "Test alert sent.", "zh-TW": "已測試通知。"},
+    "通知をテスト": {"ko": "알림 테스트", "en-GB": "Test the alert", "zh-TW": "測試通知"},
+    "未対応の形式です（レポートをコピーして報告してください）": {
+        "ko": "지원하지 않는 형식입니다(보고서를 복사해 알려 주세요)",
+        "en-GB": "A shape the app doesn't know (please send the report)",
+        "zh-TW": "不支援的格式（請複製報告並回報）",
     },
-    "書き込めません": {
-        "ko": "쓸 수 없습니다",
-        "en-GB": "Not writable",
-        "zh-TW": "無法寫入",
-    },
-    "最後のオンライン": {
-        "ko": "마지막 접속",
-        "en-GB": "Last online",
-        "zh-TW": "上次上線",
-    },
-    "有効です（アプリの優先度を下げて、CPU とメモリーをゲームに譲っています）": {
-        "ko": "켜져 있습니다(앱의 우선순위를 낮춰 CPU와 메모리를 게임에 양보합니다)",
-        "en-GB": "On (the app runs at a lower priority and leaves the CPU and memory to the game)",
-        "zh-TW": "已啟用（降低應用程式的優先順序，把 CPU 與記憶體讓給遊戲）",
-    },
-    "知らせを試しました（タスクバーのボタンが光り、音がオンなら鳴ります）。": {
-        "ko": "알림을 시험했습니다(작업 표시줄 버튼이 빛나고, 소리가 켜져 있으면 울립니다).",
-        "en-GB": "The alert was tried (the taskbar button lights up, and the sound plays when it is on).",
-        "zh-TW": "已測試通知（工作列按鈕會亮起，音效開啟時會播放）。",
-    },
-    "知らせを試す": {
-        "ko": "알림 시험하기",
-        "en-GB": "Try the alert",
-        "zh-TW": "測試通知",
-    },
-    "知らない形の居場所です（報告をコピーして知らせてください）": {
-        "ko": "알 수 없는 형식의 위치 정보입니다(보고서를 복사해서 알려 주세요)",
-        "en-GB": "Where you are came in a shape this app does not know (please copy the report and send it)",
-        "zh-TW": "所在位置的格式無法辨識（請複製報告並回報）",
-    },
-    "確かめていません": {
-        "ko": "확인하지 않음",
-        "en-GB": "Not checked",
-        "zh-TW": "尚未檢查",
-    },
-    "自分の RR の動き": {
-        "ko": "내 RR 변동",
-        "en-GB": "Your RR changes",
-        "zh-TW": "自己的 RR 變動",
-    },
-    "自分の居場所": {
-        "ko": "내 위치",
-        "en-GB": "Where you are",
-        "zh-TW": "自己的所在位置",
-    },
-    "自分の試合の履歴": {
-        "ko": "내 경기 기록",
-        "en-GB": "Your match history",
-        "zh-TW": "自己的對戰紀錄",
-    },
+    "未チェック": {"ko": "점검 안 함", "en-GB": "Not checked", "zh-TW": "未檢查"},
+    "自分の RR 履歴": {"ko": "내 RR 변동", "en-GB": "Your RR changes", "zh-TW": "自己的 RR 變動"},
+    "自分のステータス": {"ko": "내 상태", "en-GB": "Your presence", "zh-TW": "自己的狀態"},
+    "自分の試合履歴": {"ko": "내 경기 기록", "en-GB": "Your match history", "zh-TW": "自己的對戰紀錄"},
     "診断": {
         "ko": "진단",
         "en-GB": "Checkup",
@@ -3755,184 +3201,152 @@ TEXTS = {
         "en-GB": "Open the checkup",
         "zh-TW": "開啟診斷",
     },
-    "試合が見つかったら、タスクバーのボタンを光らせる": {
-        "ko": "매치가 잡히면 작업 표시줄 버튼을 빛나게 하기",
-        "en-GB": "Light the taskbar button when a match is found",
-        "zh-TW": "找到對戰時讓工作列按鈕亮起",
+    "試合が見つかったらタスクバーを点滅": {
+        "ko": "매치를 찾으면 작업 표시줄 깜빡이기",
+        "en-GB": "Flash the taskbar when a match is found",
+        "zh-TW": "找到對戰時閃爍工作列",
     },
-    "試合が見つかったら、短い音を鳴らす": {
-        "ko": "매치가 잡히면 짧은 소리 내기",
-        "en-GB": "Play a short sound when a match is found",
-        "zh-TW": "找到對戰時播放短音效",
+    "試合が見つかったら音を鳴らす": {
+        "ko": "매치를 찾으면 소리 재생",
+        "en-GB": "Play a sound when a match is found",
+        "zh-TW": "找到對戰時播放音效",
     },
-    "試合が見つかった瞬間に、ライブに切り替わります": {
-        "ko": "매치가 잡히는 순간 라이브로 바뀝니다",
-        "en-GB": "It switches to Live the moment a match is found",
-        "zh-TW": "找到對戰的瞬間就會切換到即時",
+    "試合が見つかるとすぐライブに切り替わる": {
+        "ko": "매치를 찾으면 바로 라이브로 전환",
+        "en-GB": "Switches to Live the moment a match is found",
+        "zh-TW": "找到對戰時立即切換到即時頁面",
     },
-    "読めないものがあるときに、どこが読めていないかを「診断」で確かめられます": {
-        "ko": "읽지 못하는 것이 있을 때 어디를 읽지 못하는지 '진단'에서 확인할 수 있습니다",
-        "en-GB": "When something cannot be read, the checkup shows what it is",
-        "zh-TW": "有東西讀不到時，可以用「診斷」檢查是哪裡讀不到",
+    "不具合の原因を「診断」で確認できる": {
+        "ko": "문제의 원인을 '진단'에서 확인",
+        "en-GB": "A Checkup page that shows what's failing",
+        "zh-TW": "可在「診斷」查看問題原因",
     },
-    "読めました": {
-        "ko": "읽었습니다",
-        "en-GB": "Read",
-        "zh-TW": "已讀取",
-    },
-    "読めました（{where}）": {
-        "ko": "읽었습니다({where})",
-        "en-GB": "Read ({where})",
-        "zh-TW": "已讀取（{where}）",
-    },
-    "読めません": {
-        "ko": "읽을 수 없습니다",
-        "en-GB": "Could not be read",
-        "zh-TW": "無法讀取",
-    },
-    "進み具合（パスと契約）": {
+    "取得できました": {"ko": "불러옴", "en-GB": "OK", "zh-TW": "已取得"},
+    "取得できました（{where}）": {"ko": "불러옴({where})", "en-GB": "OK ({where})", "zh-TW": "已取得（{where}）"},
+    "取得できません": {"ko": "불러올 수 없음", "en-GB": "Can't be read", "zh-TW": "無法取得"},
+    "進行状況（パスと契約）": {
         "ko": "진행 상황(패스와 계약)",
         "en-GB": "Progress (passes and contracts)",
         "zh-TW": "進度（通行證與合約）",
     },
-    "開いています（サーバー: {shard}）": {
-        "ko": "켜져 있습니다(서버: {shard})",
-        "en-GB": "Open (server: {shard})",
-        "zh-TW": "已開啟（伺服器：{shard}）",
+    "起動中（サーバー: {shard}）": {
+        "ko": "실행 중(서버: {shard})",
+        "en-GB": "Running (server: {shard})",
+        "zh-TW": "執行中（伺服器：{shard}）",
     },
-    "開いていません。Riot クライアントか VALORANT を開いてから、もう一度確かめてください。": {
-        "ko": "켜져 있지 않습니다. Riot 클라이언트나 VALORANT를 켠 뒤 다시 확인해 주세요.",
-        "en-GB": "Not open. Open the Riot Client or VALORANT, then check again.",
-        "zh-TW": "沒有開啟。請開啟 Riot 用戶端或 VALORANT 後再檢查一次。",
+    "起動していません。Riot クライアントか VALORANT を起動して再チェックしてください。": {
+        "ko": "실행 중이 아닙니다. Riot 클라이언트나 VALORANT를 실행한 뒤 다시 점검하세요.",
+        "en-GB": "Not running. Start the Riot Client or VALORANT, then check again.",
+        "zh-TW": "未啟動。請開啟 Riot Client 或 VALORANT 後重新檢查。",
     },
-    "開いていません（開くと、居場所とライブも確かめられます）": {
-        "ko": "켜져 있지 않습니다(켜면 위치와 라이브도 확인할 수 있습니다)",
-        "en-GB": "Not open (once it is, where you are and Live can be checked too)",
-        "zh-TW": "沒有開啟（開啟後也能檢查所在位置與即時）",
+    "起動していません（起動するとステータスとライブもチェックできます）": {
+        "ko": "실행 중이 아닙니다(실행하면 상태와 라이브도 점검할 수 있습니다)",
+        "en-GB": "Not running (start it to check presence and Live too)",
+        "zh-TW": "未啟動（啟動後可一併檢查狀態與即時）",
     },
     "離席中": {
         "ko": "자리 비움",
         "en-GB": "Away",
         "zh-TW": "離開",
     },
-    "（参加できます）": {
-        "ko": "(참가 가능)",
-        "en-GB": " (open to join)",
-        "zh-TW": "（可加入）",
-    },
+    "（参加可）": {"ko": "(참가 가능)", "en-GB": " (open to join)", "zh-TW": "（可加入）"},
     "いますぐ更新": {
         "ko": "지금 업데이트",
         "en-GB": "Update now",
         "zh-TW": "立即更新",
     },
-    "いまの版が最新です。": {
-        "ko": "지금 버전이 최신입니다.",
-        "en-GB": "This is the newest version.",
-        "zh-TW": "目前已是最新版本。",
+    "最新バージョンです。": {"ko": "최신 버전입니다.", "en-GB": "You're up to date.", "zh-TW": "已是最新版本。"},
+    "アプリのフォルダーに書き込めないため更新できません。ダウンロードページから入れ直してください。": {
+        "ko": "앱 폴더에 쓸 수 없어 업데이트할 수 없습니다. 다운로드 페이지에서 다시 받아 주세요.",
+        "en-GB": "The app's folder can't be written to. Get the new version from the download page.",
+        "zh-TW": "無法寫入程式資料夾，因此無法更新。請從下載頁面重新安裝。",
     },
-    "アプリのフォルダーに書き込めないので、ここからは更新できません。ダウンロードのページから入れ替えてください。": {
-        "ko": "앱 폴더에 쓸 수 없어 여기서는 업데이트할 수 없습니다. 다운로드 페이지에서 받아 교체해 주세요.",
-        "en-GB": "The app's folder cannot be written, so it cannot update from here. Replace it from the download page.",
-        "zh-TW": "無法寫入應用程式的資料夾，因此不能從這裡更新。請從下載頁面取得後替換。",
-    },
-    "ダウンロードした VALTracker.exe でだけ更新できます。": {
-        "ko": "다운로드한 VALTracker.exe에서만 업데이트할 수 있습니다.",
+    "VALTracker.exe 版でのみ更新できます。": {
+        "ko": "VALTracker.exe 버전에서만 업데이트할 수 있습니다.",
         "en-GB": "Only the downloaded VALTracker.exe can update itself.",
-        "zh-TW": "只有下載的 VALTracker.exe 才能更新。",
+        "zh-TW": "只有 VALTracker.exe 版本可以更新。",
     },
-    "ダウンロードしたファイルを確かめられなかったので、使いませんでした。もう一度押してください。": {
-        "ko": "다운로드한 파일을 확인할 수 없어 사용하지 않았습니다. 다시 눌러 주세요.",
-        "en-GB": "The downloaded file could not be verified, so it was not used. Press again.",
-        "zh-TW": "無法確認下載的檔案，因此沒有使用。請再按一次。",
+    "ダウンロードしたファイルを検証できませんでした。もう一度お試しください。": {
+        "ko": "내려받은 파일을 검증하지 못했습니다. 다시 시도하세요.",
+        "en-GB": "The download couldn't be verified. Try again.",
+        "zh-TW": "無法驗證下載的檔案，請再試一次。",
     },
-    "ダウンロードできました。試合が終わったら「入れ替える」を押してください。": {
-        "ko": "다운로드했습니다. 경기가 끝나면 '교체'를 눌러 주세요.",
-        "en-GB": "Downloaded. Press “Install” once the match is over.",
-        "zh-TW": "下載完成。對戰結束後請按「替換」。",
+    "ダウンロード完了。試合が終わったら「再起動して更新」を押してください。": {
+        "ko": "다운로드 완료. 경기가 끝나면 '다시 시작해 업데이트'를 누르세요.",
+        "en-GB": "Downloaded. Press 'Restart to update' once your match is over.",
+        "zh-TW": "下載完成。對戰結束後請按「重新啟動並更新」。",
     },
-    "ダウンロードできませんでした。少ししてからもう一度押してください。": {
-        "ko": "다운로드하지 못했습니다. 잠시 후 다시 눌러 주세요.",
-        "en-GB": "The download did not work. Press again in a little while.",
-        "zh-TW": "下載失敗。請稍後再按一次。",
+    "ダウンロードに失敗しました。少し待ってからお試しください。": {
+        "ko": "다운로드에 실패했습니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "The download failed. Try again in a moment.",
+        "zh-TW": "下載失敗，請稍後再試。",
     },
-    "ダウンロードのページ": {
-        "ko": "다운로드 페이지",
-        "en-GB": "Download page",
-        "zh-TW": "下載頁面",
-    },
+    "ダウンロードページ": {"ko": "다운로드 페이지", "en-GB": "Download page", "zh-TW": "下載頁面"},
     "ダウンロード中… {percent}%": {
         "ko": "다운로드 중… {percent}%",
         "en-GB": "Downloading… {percent}%",
         "zh-TW": "下載中… {percent}%",
     },
-    "ボタンを押すと、新しい版をダウンロードして入れ替え、アプリを開き直します（1 分ほど）。設定はそのまま残ります。": {
-        "ko": "버튼을 누르면 새 버전을 다운로드해 교체하고 앱을 다시 엽니다(1분 정도). 설정은 그대로 남습니다.",
-        "en-GB": "The button downloads the new version, puts it in place and opens the app again (about a minute). Your settings stay.",
-        "zh-TW": "按下按鈕後，會下載新版本並替換，然後重新開啟應用程式（約 1 分鐘）。設定會保留。",
+    "1 分ほどで終わり、アプリが再起動します。設定は引き継がれます。": {
+        "ko": "1분 정도 걸리며 앱이 다시 시작됩니다. 설정은 유지됩니다.",
+        "en-GB": "Takes about a minute and restarts the app. Your settings are kept.",
+        "zh-TW": "約 1 分鐘，完成後會重新啟動。設定會保留。",
     },
-    "入れ替えます。アプリが数秒閉じて、新しい版で開き直ります。": {
-        "ko": "교체합니다. 앱이 몇 초 동안 닫혔다가 새 버전으로 다시 열립니다.",
-        "en-GB": "Installing. The app closes for a few seconds and opens again as the new version.",
-        "zh-TW": "正在替換。應用程式會關閉幾秒，然後以新版本重新開啟。",
+    "更新中です。アプリが数秒後に再起動します。": {
+        "ko": "업데이트 중입니다. 앱이 몇 초 뒤 다시 시작됩니다.",
+        "en-GB": "Updating. The app restarts in a few seconds.",
+        "zh-TW": "更新中，程式將在幾秒後重新啟動。",
     },
-    "入れ替える": {
-        "ko": "교체",
-        "en-GB": "Install",
-        "zh-TW": "替換",
+    "再起動して更新": {"ko": "다시 시작해 업데이트", "en-GB": "Restart to update", "zh-TW": "重新啟動並更新"},
+    "アップデートがあります。上の「いますぐ更新」から更新できます。": {
+        "ko": "업데이트가 있습니다. 위의 '지금 업데이트'를 누르세요.",
+        "en-GB": "An update is available. Use 'Update now' above.",
+        "zh-TW": "有新版本，請按上方的「立即更新」。",
     },
-    "新しい版があります。上の「いますぐ更新」で更新できます。": {
-        "ko": "새 버전이 있습니다. 위의 '지금 업데이트'로 업데이트할 수 있습니다.",
-        "en-GB": "A newer version is out. “Update now” above installs it.",
-        "zh-TW": "有新版本。可以用上方的「立即更新」更新。",
+    "アップデートあり（上のボタンから更新）": {
+        "ko": "업데이트 있음(위 버튼으로 업데이트)",
+        "en-GB": "update available (use the button above)",
+        "zh-TW": "有新版本（請按上方按鈕更新）",
     },
-    "新しい版があります（上のボタンで更新できます）": {
-        "ko": "새 버전이 있습니다(위의 버튼으로 업데이트할 수 있습니다)",
-        "en-GB": "a newer version is out (the button above installs it)",
-        "zh-TW": "有新版本（可以用上方的按鈕更新）",
+    "アップデートを確認できませんでした。少し待ってからお試しください。": {
+        "ko": "업데이트를 확인하지 못했습니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "Couldn't check for updates. Try again in a moment.",
+        "zh-TW": "無法檢查更新，請稍後再試。",
     },
-    "新しい版があるか確かめられませんでした。少ししてからもう一度押してください。": {
-        "ko": "새 버전이 있는지 확인하지 못했습니다. 잠시 후 다시 눌러 주세요.",
-        "en-GB": "Could not check for a newer version. Press again in a little while.",
-        "zh-TW": "無法確認是否有新版本。請稍後再按一次。",
+    "アップデートしました。": {"ko": "업데이트했습니다.", "en-GB": "Updated.", "zh-TW": "已更新。"},
+    "新しいバージョンを準備中です。数分後にお試しください。": {
+        "ko": "새 버전을 준비 중입니다. 몇 분 뒤 다시 시도하세요.",
+        "en-GB": "The new version is still being built. Try again in a few minutes.",
+        "zh-TW": "新版本準備中，請幾分鐘後再試。",
     },
-    "新しい版に更新しました。": {
-        "ko": "새 버전으로 업데이트했습니다.",
-        "en-GB": "Updated to the new version.",
-        "zh-TW": "已更新為新版本。",
+    "新しいバージョンを準備中です。数分後にもう一度確認してください。": {
+        "ko": "새 버전을 준비 중입니다. 몇 분 뒤 다시 확인하세요.",
+        "en-GB": "A new version is still being built. Check again in a few minutes.",
+        "zh-TW": "新版本準備中，請幾分鐘後再檢查。",
     },
-    "新しい版はまだ作っている途中です。数分後にもう一度押してください。": {
-        "ko": "새 버전을 아직 만드는 중입니다. 몇 분 뒤에 다시 눌러 주세요.",
-        "en-GB": "The new version is still being built. Press again in a few minutes.",
-        "zh-TW": "新版本仍在製作中。請幾分鐘後再按一次。",
+    "アップデートを確認中…": {"ko": "업데이트 확인 중…", "en-GB": "Checking for updates…", "zh-TW": "正在檢查更新…"},
+    "アップデートを確認": {"ko": "업데이트 확인", "en-GB": "Check for updates", "zh-TW": "檢查更新"},
+    "試合中は更新できません。試合後にお試しください。": {
+        "ko": "경기 중에는 업데이트할 수 없습니다. 경기 후에 시도하세요.",
+        "en-GB": "No updates during a match. Try again afterwards.",
+        "zh-TW": "對戰中無法更新，請在對戰結束後再試。",
     },
-    "新しい版を作っている途中です。数分後にもう一度確かめてください。": {
-        "ko": "새 버전을 만드는 중입니다. 몇 분 뒤에 다시 확인해 주세요.",
-        "en-GB": "A new version is being built. Check again in a few minutes.",
-        "zh-TW": "新版本正在製作中。請幾分鐘後再檢查一次。",
+    "アプリ内からワンクリックでアップデート": {
+        "ko": "앱 안에서 클릭 한 번으로 업데이트",
+        "en-GB": "One-click updates from inside the app",
+        "zh-TW": "在程式內一鍵更新",
     },
-    "新しい版を確かめています…": {
-        "ko": "새 버전을 확인하는 중…",
-        "en-GB": "Checking for the new version…",
-        "zh-TW": "正在確認新版本…",
+    "新しいバージョンを起動できなかったため、今のバージョンのまま続けます。ダウンロードページから入れ直してください。": {
+        "ko": "새 버전을 실행하지 못해 지금 버전으로 계속합니다. 다운로드 페이지에서 다시 받아 주세요.",
+        "en-GB": "The new version wouldn't start, so the current one carries on. Get it from the download page.",
+        "zh-TW": "新版本無法啟動，將繼續使用目前版本。請從下載頁面重新安裝。",
     },
-    "新しい版を確かめる": {
-        "ko": "새 버전 확인",
-        "en-GB": "Check for a newer version",
-        "zh-TW": "檢查新版本",
-    },
-    "試合が終わってから更新できます（ダウンロードがゲームの回線を使わないように）。": {
-        "ko": "경기가 끝난 뒤에 업데이트할 수 있습니다(다운로드가 게임의 회선을 쓰지 않도록).",
-        "en-GB": "You can update once the match is over (so the download does not take the game's connection).",
-        "zh-TW": "對戰結束後才能更新（避免下載佔用遊戲的網路）。",
-    },
-    "新しい版が出ると知らせ、アプリの中のボタン 1 つで更新できます": {
-        "ko": "새 버전이 나오면 알려 주고, 앱 안의 버튼 하나로 업데이트할 수 있습니다",
-        "en-GB": "It tells you when a newer version is out, and one button in the app installs it",
-        "zh-TW": "有新版本時會通知，並可用應用程式內的一個按鈕更新",
-    },
-    "新しい版を開けなかったので、いまの版のまま続けます。ダウンロードのページから入れ替えてください。": {
-        "ko": "새 버전을 열 수 없어 지금 버전으로 계속합니다. 다운로드 페이지에서 받아 교체해 주세요.",
-        "en-GB": "The new version could not be started, so this one carries on. Replace it from the download page.",
-        "zh-TW": "無法開啟新版本，因此繼續使用目前的版本。請從下載頁面取得後替換。",
+    "ssid について": {"ko": "ssid에 대하여", "en-GB": "About the ssid", "zh-TW": "關於 ssid"},
+    "集計方法": {"ko": "집계 방식", "en-GB": "How this is counted", "zh-TW": "統計方式"},
+    "コードの出し方": {"ko": "코드 복사 방법", "en-GB": "Where to get a code", "zh-TW": "如何取得代碼"},
+    "ゲームの「設定 → クロスヘア → プロファイルのコードをコピー」でコピーできます。": {
+        "ko": "게임의 '설정 → 조준선 → 프로필 코드 복사'로 복사할 수 있습니다.",
+        "en-GB": "In the game: Settings → Crosshair → Copy profile code.",
+        "zh-TW": "在遊戲的「設定 → 準星 → 複製設定檔代碼」即可複製。",
     },
 }

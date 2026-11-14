@@ -50,8 +50,8 @@ class OwnerTest(unittest.TestCase):
             self.page(path, 404, environ_base=VISITOR)
         answer = self.client.post("/collection/equip", data={"item": PRIME}, environ_base=VISITOR)
         self.assertIn(answer.status_code, (400, 404))
-        self.assertIn("まだ連携されていません", self.page("/progress"))
-        self.assertIn("まだ連携されていません", self.page("/live"))
+        self.assertIn("Riot アカウントが未連携です", self.page("/progress"))
+        self.assertIn("Riot アカウントが未連携です", self.page("/live"))
 
     def test_progress(self):
         self.link()
@@ -66,7 +66,7 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("ジェット", text, "an agent's contract by the agent's name")
         self.assertIn("完了", text)
         self.assertIn("<strong>1 / 3</strong> 完了", text)
-        self.assertIn("週のミッションが補充されるのは", text)
+        self.assertIn("ウィークリーの補充:", text)
         self.assertIn('href="/progress" aria-current="true"', text)
 
     def test_progress_when_riot_fails(self):
@@ -77,7 +77,7 @@ class OwnerTest(unittest.TestCase):
     def test_game_closed(self):
         self.link()
         text = self.page("/live")
-        self.assertIn("VALORANT: 開いていません", text)
+        self.assertIn("VALORANT: 未起動", text)
         self.assertIn('data-refresh="20"', text)
         self.assertNotIn('action="/live/act"', text)
 
@@ -88,7 +88,7 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("VALORANT: メニュー", text)
         self.assertIn("ゴッド", text, "the owner's title")
         self.assertIn("リーダー", text)
-        self.assertIn("名前を隠しています", text)
+        self.assertIn("非公開", text)
         self.assertNotIn("ルーキー", text, "a hidden player's title is left out")
         self.assertNotIn("cc000000-0000-4000-8000-000000000002", text, "and their card")
         self.assertIn('<option value="unrated" selected>アンレート</option>', text)
@@ -103,7 +103,7 @@ class OwnerTest(unittest.TestCase):
         self.assertNotIn("キューを開始しました", self.page("/live"), "said once")
         self.client.post("/live/act", data={"csrf": self.token(), "do": "leave"})
         self.assertEqual(self.riot.pressed[-1], ("leave", ""))
-        self.assertIn("キューをやめました", self.page("/live"))
+        self.assertIn("キューをキャンセルしました", self.page("/live"))
 
     def test_each_press_is_sent_on_a_slow_clock(self):
         """Windows' clock moves in 16 ms steps: two presses in one step are still two presses."""
@@ -120,9 +120,9 @@ class OwnerTest(unittest.TestCase):
         token = self.token()
         for data in ({"do": "start", "value": "../x"}, {"do": "quit"}, {"do": "lock", "value": "not-a-uuid"}):
             self.client.post("/live/act", data={"csrf": token, **data})
-            self.assertIn("そのボタンは使えません", self.page("/live"))
+            self.assertIn("この操作はできません", self.page("/live"))
         self.client.post("/live/act", data={"csrf": token, "do": "leave"})
-        self.assertIn("いまはできません", self.page("/live"), "the game is closed: no party")
+        self.assertIn("今は実行できません", self.page("/live"), "the game is closed: no party")
         self.assertEqual(self.riot.pressed, [])
         self.assertEqual(self.client.post("/live/act", data={"do": "leave"}).status_code, 400, "no csrf")
         visitor = self.client.post("/live/act", data={"csrf": token, "do": "leave"}, environ_base=VISITOR)
@@ -158,13 +158,13 @@ class OwnerTest(unittest.TestCase):
         self.assertIn('href="/collection"', shop)
         tools = self.page("/tools")
         self.assertIn("<strong>ライブ</strong>", tools)
-        self.assertIn("<strong>進み具合</strong>", tools)
+        self.assertIn("<strong>進行状況</strong>", tools)
 
     def test_where_the_game_is_for_the_tab(self):
         self.assertEqual(self.state()["problem"], "nologin")
         self.assertEqual(self.client.get("/live/state", environ_base=VISITOR).status_code, 404)
         self.link()
-        self.assertEqual((self.state()["phase"], self.state()["words"]), ("", "VALORANT は開いていません"))
+        self.assertEqual((self.state()["phase"], self.state()["words"]), ("", "VALORANT は起動していません"))
         self.riot.phase = "menus"
         self.assertEqual(self.state()["words"], "メニュー")
         self.riot.pd["party"]["State"] = "MATCHMAKING"
@@ -281,45 +281,45 @@ class OwnerTest(unittest.TestCase):
 
     def test_the_top_pages_box(self):
         text = self.page("/")
-        self.assertIn('<h2 id="me-title">自分</h2>', text)
-        self.assertIn("設定で連携すると", text)
-        self.assertNotIn("<strong>自分の戦績</strong>", text, "not linked yet: whose page is not known")
+        self.assertIn('<h2 id="me-title">マイアカウント</h2>', text)
+        self.assertIn("Riot アカウントを連携すると", text)
+        self.assertNotIn("<strong>戦績</strong>", text, "not linked yet: whose page is not known")
         self.assertNotIn("me-title", self.page("/", environ_base=VISITOR))
         self.link()
         text = self.page("/")
-        self.assertIn('href="/p/Owner/JP1"><strong>自分の戦績</strong><small>Owner#JP1</small>', text)
+        self.assertIn('href="/p/Owner/JP1"><strong>戦績</strong><small>Owner#JP1</small>', text)
         self.assertIn("<small data-live-text>", text, "the game's state, from the tab's asking")
-        self.assertNotIn("設定で連携すると", text)
+        self.assertNotIn("Riot アカウントを連携すると", text)
 
     def test_the_players_act_and_the_teams_rank(self):
         self.link()
         self.riot.phase = "pregame"
         text = self.page("/live")
-        self.assertIn("このアクト 15勝 / 30試合（50%） · 最高 Tier 22", text, "a player who shows their name")
+        self.assertIn("今アクト 15勝 / 30試合（50%） · 最高 Tier 22", text, "a player who shows their name")
         self.assertNotIn("7勝 / 9試合", text, "nothing about a player who hides who they are")
         self.assertIn('味方 <small class="team-average">平均 Tier 17</small>', text, "(18 + 21 + 12) / 3")
         self.riot.phase = "ingame"
         self.app.config["VAL_RIOT"].cache.put("live", None, 0)
         text = self.page("/live")
         self.assertEqual(text.count('class="team-average"'), 1, "the other team has one rank: no average")
-        self.assertIn("このアクト 15勝 / 30試合", text)
+        self.assertIn("今アクト 15勝 / 30試合", text)
 
     def test_the_last_match_once_it_is_over(self):
         self.link()
         self.riot.phase = "ingame"
-        self.assertNotIn("さっきの試合を見る", self.page("/live"))
+        self.assertNotIn("直前の試合を見る", self.page("/live"))
         self.riot.phase = ""
         self.app.config["VAL_RIOT"].cache.put("live", None, 0)
         match_id = self.riot.pd["coregame"]["MatchID"].lower()
-        self.assertIn(f'href="/m/ap/{match_id}?me=Owner%23JP1">さっきの試合を見る', self.page("/live"))
+        self.assertIn(f'href="/m/ap/{match_id}?me=Owner%23JP1">直前の試合を見る', self.page("/live"))
         with self.client.session_transaction() as kept:
             kept["live_match"] = [match_id, time.time() - 4 * 3600]
-        self.assertNotIn("さっきの試合を見る", self.page("/live"), "hours ago: not the last match any more")
+        self.assertNotIn("直前の試合を見る", self.page("/live"), "hours ago: not the last match any more")
         self.riot.phase = "ingame"
         self.state()  # played while another page was open: the tab's asking keeps it
         self.riot.phase = "menus"
         self.app.config["VAL_RIOT"].cache.put("live", None, 0)
-        self.assertIn("さっきの試合を見る", self.page("/live"))
+        self.assertIn("直前の試合を見る", self.page("/live"))
 
     def played(self, queue: str = "competitive") -> str:
         """The owner's match is over and Riot's server has its record: the match's id."""
@@ -342,13 +342,13 @@ class OwnerTest(unittest.TestCase):
         self.link()
         match_id = self.played()
         text = self.page("/live")
-        self.assertIn('<h2 id="last-title">さっきの試合</h2>', text)
+        self.assertIn('<h2 id="last-title">直前の試合</h2>', text)
         self.assertIn(f'<li class="match win"><a href="/m/ap/{match_id}?me=Owner%23JP1">', text)
         self.assertIn("<strong>2–1</strong>", text)
         self.assertIn('<span class="up">+18 RR</span>', text)
         self.assertIn("<strong>3 / 1 / 1</strong>", text)
         self.assertIn("コンペティティブ", text)
-        self.assertNotIn("さっきの試合を見る", text, "the result is the link")
+        self.assertNotIn("直前の試合を見る", text, "the result is the link")
         for name in ("Secret Mate", "Foe One", "Pd Player"):
             self.assertNotIn(name, text, "Riot's record names everyone: no one else's name is shown")
         asked = len(self.riot.asked)
@@ -366,7 +366,7 @@ class OwnerTest(unittest.TestCase):
         record = self.riot.pd["matches"].pop(match_id)
         text = self.page("/live")
         self.assertNotIn('id="last-title"', text)
-        self.assertIn("さっきの試合を見る", text, "the link as before")
+        self.assertIn("直前の試合を見る", text, "the link as before")
         self.riot.pd["matches"][match_id] = record
         self.app.config["VAL_RIOT"].cache.put("live", None, 0)
         self.assertNotIn('id="last-title"', self.page("/live"), "asked again only after a while")
@@ -416,17 +416,17 @@ class OwnerTest(unittest.TestCase):
             text = self.page("/live")
             self.assertEqual('class="live-wide"' in text, wide, phase)
             self.assertEqual('class="live-steps"' in text, not wide, phase)
-            self.assertEqual("上のタブ「ライブ」の点で" in text, not wide, phase)
+            self.assertEqual("自動で更新されます" in text, not wide, phase)
             self.assertEqual('<p class="game-state sr">' in text, wide, phase)
 
     def test_hidden_names_are_explained_only_when_someone_hides_theirs(self):
         self.link()
         self.riot.phase = "ingame"
-        self.assertIn("本人が選んだ設定のため", self.page("/live"))
+        self.assertIn("非公開のプレイヤーは名前・カード・称号を表示しません", self.page("/live"))
         for player in self.riot.pd["coregame"]["Players"]:
             player["PlayerIdentity"]["Incognito"] = False
         self.app.config["VAL_RIOT"].cache.put("live", None, 0)
-        self.assertNotIn("本人が選んだ設定のため", self.page("/live"))
+        self.assertNotIn("非公開のプレイヤーは名前・カード・称号を表示しません", self.page("/live"))
 
     def test_agent_select(self):
         self.link()
@@ -439,11 +439,11 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("Teammate", text)
         self.assertIn("ジェット（確定）", text)
         self.assertNotIn("Secret", text, "a hidden name stays hidden")
-        self.assertIn("名前を隠しています", text)
+        self.assertIn("非公開", text)
         self.assertNotIn("レベル 50", text, "a hidden level too")
         self.assertIn("相手は 2 / 5 人が確定", text)
         self.assertIn("イニシエーター", text, "a role the team lacks")
-        self.assertIn("持っているエージェントでは埋められません", text, "the owner has no initiator")
+        self.assertIn("所持エージェントなし", text, "the owner has no initiator")
         self.riot.pd["entitlements"]["agents"].append("22222222-2222-4222-8222-222222222222")
         self.app.config["VAL_RIOT"].cache = type(self.app.config["VAL_RIOT"].cache)(8)
         text = self.page("/live")
@@ -464,12 +464,12 @@ class OwnerTest(unittest.TestCase):
         self.assertNotIn("で確定</button>", text, "nothing picked yet")
         self.client.post("/live/act", data={"csrf": self.token(), "do": "select", "value": sova})
         text = self.page("/live")
-        self.assertIn("選びました。まだ確定していません", text)
+        self.assertIn("選択しました（未確定）", text)
         self.assertIn("ソーヴァ で確定</button>", text)
         self.client.post("/live/act", data={"csrf": self.token(), "do": "lock", "value": sova})
         self.assertEqual(self.riot.pressed, [("select", sova), ("lock", sova)])
         text = self.page("/live")
-        self.assertIn("ソーヴァ で確定しています", text)
+        self.assertIn("ソーヴァ で確定済み", text)
         self.assertNotIn('class="pick-grid"', text)
         self.assertNotIn(jett + '" class="pick', text)
 
@@ -501,8 +501,8 @@ class OwnerTest(unittest.TestCase):
             games.append(game)
         self.app.config["VAL_ACTIVITY"].seen(games)
         text = self.page("/live")
-        self.assertIn("このマップで勝っている: <strong>ソーヴァ</strong> 75%", text)
-        self.assertIn("このサイトが見た 8 試合", text)
+        self.assertIn("このマップの勝率上位: <strong>ソーヴァ</strong> 75%", text)
+        self.assertIn("8 試合の集計", text)
         self.assertIn('<small class="pick-win">75%</small>', text)
         self.assertNotIn("<strong>ジェット</strong> 25%", text, "a teammate has locked Jett")
 
@@ -564,7 +564,7 @@ class OwnerTest(unittest.TestCase):
         )
         self.assertIn("equip=unknown", answer.headers["Location"])
         self.assertEqual(self.riot.worn, [])
-        self.assertIn("持っていないものは装備できません", self.page("/collection?equip=unknown"))
+        self.assertIn("未所持のアイテムは装備できません", self.page("/collection?equip=unknown"))
 
     def test_wear_a_card(self):
         self.link()
@@ -585,7 +585,7 @@ class OwnerTest(unittest.TestCase):
         self.link()
         text = self.page("/collection?show=sprays")
         self.assertIn('name="slot.dd000000-0000-4000-8000-000000000001"', text)
-        self.assertIn("1（いま GG スプレー）", text, "each place of the wheel with the spray in it")
+        self.assertIn("1（現在: GG スプレー）", text, "each place of the wheel with the spray in it")
         answer = self.client.post(
             "/collection/equip",
             data={
@@ -638,7 +638,7 @@ class OwnerTest(unittest.TestCase):
         answer = self.client.post("/collection/equip", data={"csrf": self.token(), "show": "titles", "item": title})
         self.assertIn("equip=down", answer.headers["Location"])
         self.assertEqual(self.riot.worn, [])
-        self.assertIn("Riot のサーバーから答えがありませんでした", self.page("/collection?show=titles&equip=down"))
+        self.assertIn("Riot のサーバーが応答しません", self.page("/collection?show=titles&equip=down"))
 
     def test_wear_that_pd_does_not_keep(self):
         """PD answers 200 but with the loadout it had: the page does not say it was worn."""
@@ -648,7 +648,7 @@ class OwnerTest(unittest.TestCase):
         answer = self.client.post("/collection/equip", data={"csrf": self.token(), "show": "titles", "item": title})
         self.assertIn("equip=notsaved", answer.headers["Location"])
         text = self.page(answer.headers["Location"])
-        self.assertIn("Riot は受け付けましたが、装備は変わっていませんでした。", text)
+        self.assertIn("装備が反映されませんでした。もう一度お試しください。", text)
         self.assertIn("<code>equip: PD answered 200 with another loadout</code>", text)
         self.assertIn('class="verdict no equip-said" role="alert"', text)
 
@@ -663,7 +663,7 @@ class OwnerTest(unittest.TestCase):
         # the words are only shown with a failure, and only plain ones
         ok = self.page("/collection?show=titles&equip=ok&riot=x")
         self.assertNotIn("<code>x</code>", ok)
-        self.assertIn("装備しました。Riot に保存されています。", ok)
+        self.assertIn("装備しました。", ok)
 
     def test_wear_while_the_game_is_open(self):
         """The open game draws the loadout it started with: the note says the next match takes the new one."""
@@ -676,7 +676,7 @@ class OwnerTest(unittest.TestCase):
         open_ = self.client.post("/collection/equip", data={"csrf": self.token(), "show": "titles", "item": title})
         self.assertIn("equip=okopen", open_.headers["Location"])
         text = self.page(open_.headers["Location"])
-        self.assertIn("開いているゲームでは次の試合から使われます", text)
+        self.assertIn("ゲームには次の試合から反映されます", text)
         self.assertIn('class="verdict ok equip-said" role="status"', text)
 
     def gun(self, weapon: str, loadout: dict | None = None) -> dict:
@@ -705,10 +705,10 @@ class OwnerTest(unittest.TestCase):
         self.assertEqual(self.gun(VANDAL)["CharmInstanceID"], "i1", "the Vandal keeps its own")
         text = self.page(f"/collection?weapon={CLASSIC}")
         self.assertIn("バディー：ハート バディー", text, "what the weapon wears now")
-        self.assertIn("ハート バディー（付けている）", text)
+        self.assertIn("ハート バディー（装備中）", text)
         self.assertIn('name="unbuddy"', text)
         text = self.page(f"/collection?weapon={VANDAL}")
-        self.assertIn("ハート バディー（クラシック から付け替え）", text, "its one copy is on the Classic")
+        self.assertIn("ハート バディー（クラシック から移動）", text, "its one copy is on the Classic")
 
     def test_a_buddy_with_every_copy_on_moves(self):
         self.link()
@@ -756,7 +756,7 @@ class OwnerTest(unittest.TestCase):
         self.link()
         text = self.page("/collection?show=buddies")
         self.assertIn(f'name="weapon.{HEART}"', text)
-        self.assertIn("ヴァンダル（いま チリ バディー）", text)
+        self.assertIn("ヴァンダル（現在: チリ バディー）", text)
         self.assertNotIn(">近接武器<", text, "no buddy on a knife")
         answer = self.client.post(
             "/collection/equip",
@@ -772,8 +772,8 @@ class OwnerTest(unittest.TestCase):
         flex = "ff000000-0000-4000-8000-000000000001"
         text = self.page("/collection?show=flex")
         self.assertIn(f'name="slot.{flex}"', text)
-        self.assertIn("1（いま GG スプレー）", text)
-        self.assertIn("2（いま ぬいぐるみ）", text)
+        self.assertIn("1（現在: GG スプレー）", text)
+        self.assertIn("2（現在: ぬいぐるみ）", text)
         answer = self.client.post(
             "/collection/equip", data={"csrf": self.token(), "show": "flex", "item": flex, f"slot.{flex}": "0"}
         )
@@ -799,7 +799,7 @@ class OwnerTest(unittest.TestCase):
     def test_save_and_wear_a_set(self):
         self.link()
         text = self.page("/collection?show=sets")
-        self.assertIn("いまの装備を保存", text)
+        self.assertIn("現在の装備を保存", text)
         self.assertIn("まだありません", text)
         answer = self.client.post(
             "/collection/sets", data={"csrf": self.token(), "do": "save", "name": "  ランク  用 "}
@@ -814,9 +814,9 @@ class OwnerTest(unittest.TestCase):
         self.assertEqual(len(saved[0]["ActiveExpressions"]), 2)
         self.assertEqual(saved[0]["Identity"]["PlayerCardID"], "cc000000-0000-4000-8000-000000000001")
         text = self.page(answer.headers["Location"])
-        self.assertIn("いまの装備をセットに保存しました", text)
+        self.assertIn("現在の装備をセットに保存しました", text)
         self.assertIn("ランク 用", text)
-        self.assertIn('<span class="badge">いまの装備</span>', text, "it is what is worn")
+        self.assertIn('<span class="badge">現在の装備</span>', text, "it is what is worn")
         self.assertIn("<strong>ヴァンダル</strong> プライム ヴァンダル · チリ バディー", text)
         self.assertIn(">セット <small>1</small>", text, "the tab counts the sets")
         # something else is worn, then the set brings it all back
@@ -826,13 +826,13 @@ class OwnerTest(unittest.TestCase):
         self.client.post(
             "/collection/equip", data={"csrf": token, "show": "titles", "item": "ee000000-0000-4000-8000-000000000002"}
         )
-        self.assertNotIn('<span class="badge">いまの装備</span>', self.page("/collection?show=sets"))
+        self.assertNotIn('<span class="badge">現在の装備</span>', self.page("/collection?show=sets"))
         answer = self.client.post("/collection/sets", data={"csrf": token, "do": "use", "set": saved[0]["id"]})
         self.assertIn("equip=ok", answer.headers["Location"])
         vandal = self.gun(VANDAL)
         self.assertEqual((vandal["SkinID"], vandal["CharmInstanceID"], vandal["CharmID"]), (PRIME, "i1", CHILI))
         self.assertEqual(self.riot.worn[-1]["Identity"]["PlayerTitleID"], "ee000000-0000-4000-8000-000000000001")
-        self.assertIn('<span class="badge">いまの装備</span>', self.page("/collection?show=sets"))
+        self.assertIn('<span class="badge">現在の装備</span>', self.page("/collection?show=sets"))
         answer = self.client.post("/collection/sets", data={"csrf": token, "do": "delete", "set": saved[0]["id"]})
         self.assertIn("equip=deleted", answer.headers["Location"])
         self.assertEqual(json.loads((self.folder / "loadout_sets.json").read_text(encoding="utf-8"))["sets"], [])
@@ -872,15 +872,15 @@ class OwnerTest(unittest.TestCase):
         self.link()
         self.riot.phase = "menus"
         pages = {
-            "/live": ("Reads your VALORANT as you play", "Start the queue", "Party"),
+            "/live": ("Follows your game", "Start the queue", "Party"),
             "/progress": ("Battle pass", "Agent contracts", "Missions"),
             "/collection": ("Gun buddies", "Filter by skin or weapon name", "Level 187"),
-            f"/collection?weapon={VANDAL}": ("Equipped now", "Buddy: ", "Take off"),
+            f"/collection?weapon={VANDAL}": ("Equipped", "Buddy: ", "Take off"),
             "/collection?show=sets": ("Save what is equipped now", "Set name", "None yet."),
             "/settings": ("HenrikDev API key", "Stay signed in", "linked to Owner#JP1 (AP)"),
-            "/shop/history": ("Past stores",),
-            "/": ("Me", "Collection", "Progress", "Start a queue · pick and lock in"),
-            "/tools": ("My account", "Battle pass, contracts and missions."),
+            "/shop/history": ("Store history",),
+            "/": ("My account", "Collection", "Progress", "Queue and agent select"),
+            "/tools": ("My account", "Battle pass, contracts, missions"),
         }
         self.client.set_cookie("lang", "en-GB")
         for path, words in pages.items():

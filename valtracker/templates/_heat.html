@@ -18,7 +18,7 @@
 <svg class="heat-svg" viewBox="0 0 100 100" role="img" aria-label="{{ t('{map} のキル {kills}、デス {deaths}', map=name, kills=heat.kills, deaths=heat.deaths) }}">
 <image href="{{ media(heat.image) }}" x="0" y="0" width="100" height="100"/>
 {% if lines %}{% for dot in heat.dots if dot.line %}<line x1="{{ dot.x }}" y1="{{ dot.y }}" x2="{{ dot.line[0] }}" y2="{{ dot.line[1] }}" class="{{ dot.kind }} {{ dot.side }}"/>{% endfor %}{% endif %}
-{% for dot in heat.dots %}<circle cx="{{ dot.x }}" cy="{{ dot.y }}" r="{{ 1.5 if lines else 1.2 }}" class="{{ dot.kind }} {{ dot.side }}{% if dot.first %} first{% endif %}"><title>{{ t('キルした場所') if dot.kind == 'k' else t('倒された場所') }} · {{ t('ラウンド {number}', number=dot.round) }}{% if dot.place %} · {{ dot.place }}{% endif %}{% if dot.first %} · {{ t('ラウンド最初') }}{% endif %}</title></circle>{% endfor %}
+{% for dot in heat.dots %}<circle cx="{{ dot.x }}" cy="{{ dot.y }}" r="{{ 1.5 if lines else 1.2 }}" class="{{ dot.kind }} {{ dot.side }}{% if dot.first %} first{% endif %}"><title>{{ t('キルした場所') if dot.kind == 'k' else t('デスした場所') }} · {{ t('ラウンド {number}', number=dot.round) }}{% if dot.place %} · {{ dot.place }}{% endif %}{% if dot.first %} · {{ t('ラウンド最初') }}{% endif %}</title></circle>{% endfor %}
 </svg>
 </div>
 {%- endmacro %}
@@ -33,7 +33,7 @@
 {% endfor %}
 </tbody>
 </table>
-{% if heat.worst %}<p class="heat-worst">{{ t('{place} で負けやすい（{kills}キル {deaths}デス）。入り方やスキルの使い方を変えてみる場所です。', place=heat.worst.name, kills=heat.worst.kills, deaths=heat.worst.deaths) }}</p>{% endif %}
+{% if heat.worst %}<p class="heat-worst">{{ t('{place} でデスが多い（{kills}キル {deaths}デス）', place=heat.worst.name, kills=heat.worst.kills, deaths=heat.worst.deaths) }}</p>{% endif %}
 </div>
 {% endif %}
 {%- endmacro %}

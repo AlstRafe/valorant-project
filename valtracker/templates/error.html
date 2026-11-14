@@ -4,9 +4,9 @@
 <section class="hero">
 <p class="meta">{{ t('エラー {status}', status=status) }}</p>
 <h1>{{ message }}</h1>
-{% if status == 404 %}<p class="lead">{{ t('アドレスが変わったか、なくなった可能性があります。') }}</p>{% endif %}
+{% if status == 404 %}<p class="lead">{{ t('URL が変わったか、削除された可能性があります。') }}</p>{% endif %}
 <ul class="links">
-<li><a href="{{ url_for('top') }}">{{ t('{name} のトップへ', name=site_name) }}</a></li>
+<li><a href="{{ url_for('top') }}">{{ t('{name} トップ', name=site_name) }}</a></li>
 {% if home %}<li><a href="{{ home }}">{{ t('サイト一覧へ戻る') }}</a></li>{% endif %}
 </ul>
 </section>

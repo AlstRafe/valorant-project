@@ -107,27 +107,27 @@ FAILURES = {
     "nokey": (
         503,
         "戦績の検索はまだ準備中です。",
-        "HenrikDev の API キーがまだ設定されていません。設定から入れてください。",
+        "HenrikDev の API キーが未設定です。設定から登録してください。",
     ),
     "badkey": (
         503,
-        "戦績を取得できませんでした。時間をおいてもう一度どうぞ。",
-        "HenrikDev の API キーが受け付けられませんでした。設定で確かめてください。",
+        "戦績を取得できませんでした。しばらくしてからお試しください。",
+        "HenrikDev の API キーが無効です。設定を確認してください。",
     ),
-    "notfound": (404, "プレイヤーが見つかりませんでした。名前とタグを確かめてください。", None),
-    "busy": (503, "混み合っています。少し待ってからもう一度どうぞ。", None),
-    "down": (503, "戦績のサービスから答えがありませんでした。時間をおいてもう一度どうぞ。", None),
+    "notfound": (404, "プレイヤーが見つかりません。名前とタグを確認してください。", None),
+    "busy": (503, "混雑しています。少し待ってからお試しください。", None),
+    "down": (503, "戦績サーバーが応答しません。しばらくしてからお試しください。", None),
 }
 
 #: Why the owner's Riot account could not be read (riot_failure: in the page's language).
 RIOT_FAILURES = {
-    "nologin": "Riot アカウントがまだ連携されていません。設定で ssid を貼ってください。",
+    "nologin": "Riot アカウントが未連携です。設定から連携してください。",
     # the PC app: the account is the Riot Client's
-    "noclient": "Riot クライアントが開いていないか、サインインしていません。開いてサインインすると自動でつながります。",
-    "badpaste": "貼られたものが ssid ではありませんでした。手順 3 の値（Value）をそのまま貼ってください。",
-    "signedout": "Riot のログインが切れています。もう一度ログインして、新しい ssid を設定で貼ってください。",
-    "busy": "Riot のサーバーが混み合っています。少し待ってからもう一度どうぞ。",
-    "down": "Riot のサーバーから答えがありませんでした。時間をおいてもう一度どうぞ。",
+    "noclient": "Riot クライアントが起動していないか、サインインしていません。",
+    "badpaste": "ssid ではないようです。手順 3 の値をそのまま貼ってください。",
+    "signedout": "Riot のログインが切れました。設定で ssid を貼り直してください。",
+    "busy": "Riot のサーバーが混雑しています。少し待ってからお試しください。",
+    "down": "Riot のサーバーが応答しません。しばらくしてからお試しください。",
 }
 
 
@@ -183,9 +183,9 @@ def act_left() -> dict | None:
     if seconds <= 0:
         return None
     if seconds >= 2 * 86400:
-        text = _t("{act} の終わりまであと {days} 日", act=found["name"], days=int(seconds // 86400))
+        text = _t("{act} 終了まであと {days} 日", act=found["name"], days=int(seconds // 86400))
     else:
-        text = _t("{act} の終わりまであと {hours} 時間", act=found["name"], hours=max(1, math.ceil(seconds / 3600)))
+        text = _t("{act} 終了まであと {hours} 時間", act=found["name"], hours=max(1, math.ceil(seconds / 3600)))
     return {"name": found["name"], "text": text, "ends": found["ends"]}
 
 
@@ -612,7 +612,7 @@ def _player(
     name: str, tag: str, mode: str = "", fresh: bool = False, span: str = "", page: int = 1, act: str = ""
 ) -> tuple[dict, int]:
     """What the player page shows, and its HTTP status. The account comes first (its region is needed); then
-    the rank and the matches are asked for at the same time. ``fresh``: the visitor pressed "最新にする", so
+    the rank and the matches are asked for at the same time. ``fresh``: the visitor pressed "データを更新", so
     what is kept of the rank and the matches is asked for again (when it was read over a minute ago). ``span``
     "all": every match kept of the player (archive.py), not the latest RECENT; "act": those of one act (``act``,
     its uuid; the act being played when not given), as tracker.gg counts a season; ``page``: of its list."""
@@ -882,7 +882,7 @@ def _page() -> int:
 
 
 def _read(at: float) -> dict | None:
-    """When the page's numbers were read from HenrikDev, and whether "最新にする" can ask again yet."""
+    """When the page's numbers were read from HenrikDev, and whether "データを更新" can ask again yet."""
     if not at:
         return None
     age = max(0, time.time() - at)
@@ -1105,9 +1105,9 @@ def register(app: Flask) -> None:
             guess = split_riot_id(f"{head}#{last}") if head.strip() else None
             if name_only:
                 example = "#".join(guess) if guess else f"{name_only}#JP1"
-                problem = _t("タグ（# のあと）も入れてください。例: {example}", example=example)
+                problem = _t("タグも入力してください。例: {example}", example=example)
             else:
-                problem = _t("「名前#タグ」の形で入れてください（例: Name#JP1）。") if query else ""
+                problem = _t("「名前#タグ」の形式で入力してください（例: Name#JP1）。") if query else ""
             values = {"query": query, "problem": problem, "name_only": name_only, "guess": guess, "me": _me()}
             values["no_key"] = _no_key()
             return render_template("home.html", **values), 400 if query else 200
@@ -1257,7 +1257,7 @@ def register(app: Flask) -> None:
             do = request.form.get("do")
             if do == "clear":
                 store.save(henrik_key="")
-                saved = _t("API キーを消しました。")
+                saved = _t("API キーを削除しました。")
             elif do == "riot":
                 try:
                     linked = riot.sign_in(request.form.get("riot", ""))
@@ -1274,25 +1274,25 @@ def register(app: Flask) -> None:
                 try:
                     found = current_app.config["VAL_UPDATER"].look()
                 except UpdateError:
-                    riot_problem = _t("新しい版があるか確かめられませんでした。少ししてからもう一度押してください。")
+                    riot_problem = _t("アップデートを確認できませんでした。少し待ってからお試しください。")
                 else:
                     if found and found["ready"]:
-                        saved = _t("新しい版があります。上の「いますぐ更新」で更新できます。")
+                        saved = _t("アップデートがあります。上の「いますぐ更新」から更新できます。")
                     elif found:
-                        saved = _t("新しい版を作っている途中です。数分後にもう一度確かめてください。")
+                        saved = _t("新しいバージョンを準備中です。数分後にもう一度確認してください。")
                     else:
-                        saved = _t("いまの版が最新です。")
+                        saved = _t("最新バージョンです。")
             elif do in ("app", "alert_test") and current_app.config["VAL_LOCAL"] is not None:
                 # the PC app's own choices (pc.py): the match-found alert, the start with Windows
                 store.save(**{key: request.form.get(key) == "on" for key in pc.DEFAULTS})
-                saved = _t("PC アプリの設定を保存しました。")
+                saved = _t("設定を保存しました。")
                 if autostart is not None and autostart.possible:
                     wanted = request.form.get("autostart") == "on"
                     if not autostart.set(wanted):
-                        saved, riot_problem = "", _t("Windows の起動に登録できませんでした。")
+                        saved, riot_problem = "", _t("スタートアップに登録できませんでした。")
                 if do == "alert_test" and current_app.config["VAL_ALERT"] is not None:
                     current_app.config["VAL_ALERT"]("found", always=True)
-                    saved = _t("知らせを試しました（タスクバーのボタンが光り、音がオンなら鳴ります）。")
+                    saved = _t("通知をテストしました。")
             else:
                 key = request.form.get("henrik_key", "").strip()
                 if key:

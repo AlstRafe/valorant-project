@@ -35,7 +35,7 @@
 <li class="{{ side }}{% if item.turn %} swap{% endif %}" title="{{ t('ラウンド {number}', number=item.number) }} · {% if item.won is not none %}{{ t('勝利') if item.won else t('敗北') }}{% else %}{{ t('レッド') if item.winner|lower == 'red' else t('ブルー') }}{% endif %}{% if item.end_words %} · {{ item.end_words }}{% endif %}{% if item.site %} · {{ t('{site} サイト', site=item.site) }}{% endif %}{% for team_id, buy in item.buys|dictsort %} · {{ t('レッド') if team_id|lower == 'red' else (t('ブルー') if team_id|lower == 'blue' else team_id) }}: {{ buy_words[buy] }}{% endfor %}">{% if item.kills %}<a href="#r{{ item.number }}">{% endif %}<span class="rn">{{ item.number }}</span><svg aria-hidden="true"><use href="#end-{{ item.end or 'elim' }}"/></svg>{% if item.ceremony in ('ace', 'teamace', 'flawless', 'clutch', 'thrifty') %}<span class="cer">{{ {'ace': 'ACE', 'teamace': 'TEAM ACE', 'flawless': 'FLAWLESS', 'clutch': 'CLUTCH', 'thrifty': 'THRIFTY'}[item.ceremony] }}</span>{% endif %}{% if item.kills %}</a>{% endif %}</li>
 {% endfor %}
 </ol>
-<p class="note legend">{% if my_team %}<span class="key win"></span>{{ t('勝ったラウンド') }} <span class="key loss"></span>{{ t('負けたラウンド') }}{% else %}<span class="key red"></span>{{ t('レッドの勝ち') }} <span class="key blue"></span>{{ t('ブルーの勝ち') }}{% endif %}</p>
+<p class="note legend">{% if my_team %}<span class="key win"></span>{{ t('取ったラウンド') }} <span class="key loss"></span>{{ t('落としたラウンド') }}{% else %}<span class="key red"></span>{{ t('レッド') }} <span class="key blue"></span>{{ t('ブルー') }}{% endif %}</p>
 </section>
 {% endif %}
 
@@ -49,7 +49,7 @@
 {% endif %}
 <div class="table-wrap">
 <table class="board">
-<thead><tr><th scope="col">{{ t('プレイヤー') }}</th>{% if rounds %}<th scope="col">ACS</th>{% endif %}<th scope="col">K</th><th scope="col">D</th><th scope="col">A</th><th scope="col">+/−</th>{% if rounds %}<th scope="col">ADR</th>{% endif %}<th scope="col">{{ t('HS率') }}</th>{% if rounds and detailed %}<th scope="col"><abbr title="{{ t('キル・アシスト・生存・トレードされたラウンドの割合') }}">KAST</abbr></th><th scope="col"><abbr title="{{ t('ファーストキル') }}">FK</abbr></th><th scope="col"><abbr title="{{ t('ファーストデス') }}">FD</abbr></th><th scope="col"><abbr title="{{ t('3 キル以上のラウンド') }}">MK</abbr></th>{% endif %}{% if rounds %}<th scope="col"><abbr title="{{ t('与えたダメージ − 受けたダメージ（1 ラウンドあたり）') }}">DDΔ</abbr></th>{% endif %}{% if scored %}<th scope="col"><abbr title="{{ t('VAL スコア（同じランク帯と比べた 1000 点満点）') }}">{{ t('スコア') }}</abbr></th>{% endif %}</tr></thead>
+<thead><tr><th scope="col">{{ t('プレイヤー') }}</th>{% if rounds %}<th scope="col">ACS</th>{% endif %}<th scope="col">K</th><th scope="col">D</th><th scope="col">A</th><th scope="col">+/−</th>{% if rounds %}<th scope="col">ADR</th>{% endif %}<th scope="col">{{ t('HS率') }}</th>{% if rounds and detailed %}<th scope="col"><abbr title="{{ t('キル・アシスト・生存・トレードがあったラウンドの割合') }}">KAST</abbr></th><th scope="col"><abbr title="{{ t('ファーストキル') }}">FK</abbr></th><th scope="col"><abbr title="{{ t('ファーストデス') }}">FD</abbr></th><th scope="col"><abbr title="{{ t('3 キル以上のラウンド') }}">MK</abbr></th>{% endif %}{% if rounds %}<th scope="col"><abbr title="{{ t('与ダメージ − 被ダメージ（1 ラウンドあたり）') }}">DDΔ</abbr></th>{% endif %}{% if scored %}<th scope="col"><abbr title="{{ t('VAL スコア（同ランク帯比、1000 点満点）') }}">{{ t('スコア') }}</abbr></th>{% endif %}</tr></thead>
 <tbody>
 {% for player in team.players %}
 <tr{% if player.me %} class="me"{% endif %}>
@@ -67,7 +67,7 @@
 </div>
 </section>
 {% endfor %}
-{% if parties %}<p class="note">{{ t('番号の印は一緒にパーティを組んだプレイヤーです。') }}</p>{% endif %}
+{% if parties %}<p class="note">{{ t('同じ番号は同じパーティです。') }}</p>{% endif %}
 {% set terms = ['kda', 'diff', 'hs'] + (['acs', 'adr', 'dd'] if rounds else []) + (['kast', 'first', 'multi'] if rounds and detailed else []) + (['score'] if scored else []) %}
 {% include "_glossary.html" %}
 
@@ -76,10 +76,10 @@
 <h2 id="duel-title">{{ t('{name} の対面成績', name=me.name) }}</h2>
 <ul class="duel-list">
 {% for duel in duels %}
-<li>{% if duel.person.agent.icon %}<img src="{{ media(duel.person.agent.icon) }}" alt="" width="32" height="32">{% endif %}<span class="pn">{{ duel.person.name }}<small>#{{ duel.person.tag }}</small></span><span class="score-pair"><span class="up" title="{{ t('倒した') }}">{{ duel.took }}</span>–<span class="down" title="{{ t('倒された') }}">{{ duel.lost }}</span></span></li>
+<li>{% if duel.person.agent.icon %}<img src="{{ media(duel.person.agent.icon) }}" alt="" width="32" height="32">{% endif %}<span class="pn">{{ duel.person.name }}<small>#{{ duel.person.tag }}</small></span><span class="score-pair"><span class="up" title="{{ t('キル') }}">{{ duel.took }}</span>–<span class="down" title="{{ t('デス') }}">{{ duel.lost }}</span></span></li>
 {% endfor %}
 </ul>
-<p class="note">{{ t('左が倒した数、右が倒された数です。') }}</p>
+<p class="note">{{ t('左がキル、右がデス。') }}</p>
 </section>
 {% endif %}
 
@@ -87,7 +87,7 @@
 {% from "_heat.html" import filters, figure, places with context %}
 <section class="heat" aria-labelledby="heat-title">
 <h2 id="heat-title">{{ t('{name} のキルとデスの場所', name=me.name) }}</h2>
-<p class="note">{{ t('緑の点はキルを取ったときに立っていた場所、赤の点は倒された場所です。線はそのとき相手がいた場所へ伸びています。') }}</p>
+<p class="note">{{ t('緑はキルした位置、赤はデスした位置。線の先が相手の位置です。') }}</p>
 {{ filters('m', heat.sides) }}
 <div class="heat-body">
 {{ figure(heat, map.name, lines=True) }}
@@ -99,7 +99,7 @@
 {% if timeline and timeline|selectattr('kills')|list %}
 <section class="feed" aria-labelledby="feed-title">
 <h2 id="feed-title">{{ t('ラウンドごとのキル') }}</h2>
-<p class="note">{{ t('上のラウンドを押すと、そのラウンドのキルが開きます。') }}</p>
+<p class="note">{{ t('上のラウンドを選ぶと、そのキルが開きます。') }}</p>
 {% for item in timeline if item.kills %}
 <details class="round-feed {{ ('win' if item.won else 'loss') if item.won is not none else (item.winner|lower) }}" id="r{{ item.number }}">
 <summary><span>{{ t('ラウンド {number}', number=item.number) }}</span><small>{% if item.won is not none %}{{ t('勝利') if item.won else t('敗北') }}{% else %}{{ t('レッド') if item.winner|lower == 'red' else t('ブルー') }}{% endif %}{% if item.end_words %} · {{ item.end_words }}{% endif %}{% if item.site %} · {{ t('{site} サイト', site=item.site) }}{% endif %}</small></summary>

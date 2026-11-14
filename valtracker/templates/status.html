@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}{{ t('サーバー状況') }} · {{ region_name }} · {{ site_name }}{% endblock %}
-{% block description %}{{ t('Riot が出しているメンテナンスと障害のお知らせです（PC 版）。') }}{% endblock %}
+{% block description %}{{ t('Riot 公式のメンテナンス・障害情報（PC 版）。') }}{% endblock %}
 {% block main %}
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">
 <h1>{{ t('サーバー状況') }}</h1>
-<p class="lead">{{ t('Riot が出しているメンテナンスと障害のお知らせです（PC 版）。') }}</p>
+<p class="lead">{{ t('Riot 公式のメンテナンス・障害情報（PC 版）。') }}</p>
 </section>
 <nav class="modes" aria-label="{{ t('地域') }}">
 {% for item in regions %}<a href="{{ item.url }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
@@ -14,7 +14,7 @@
 <p class="problem" role="alert">{{ problem }}</p>
 {% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}">{{ t('設定を開く') }}</a></p>{% endif %}
 {% elif not notices %}
-<p class="done">{{ t('{region} では、いまメンテナンスも障害もありません。', region=region_name) }}</p>
+<p class="done">{{ t('{region} は現在、メンテナンス・障害ともにありません。', region=region_name) }}</p>
 {% else %}
 <ul class="notices">
 {% for item in notices %}<li class="notice {{ item.kind }}">
@@ -25,5 +25,5 @@
 </li>
 {% endfor %}</ul>
 {% endif %}
-<p class="note">{{ t('お知らせは Riot が書いたものを、その言語のものがなければ英語で出しています。') }}</p>
+<p class="note">{{ t('この言語の告知がない場合は英語で表示します。') }}</p>
 {% endblock %}

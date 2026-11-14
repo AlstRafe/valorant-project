@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ t('スキン図鑑') }} · {{ site_name }}{% endblock %}
-{% block description %}{{ t('VALORANT の武器スキンを全部。武器・ティア・名前で探して、バリエーションやレベルごとの動画を見られます。') }}{% endblock %}
+{% block description %}{{ t('VALORANT の全武器スキン。動画とバリエーションを確認できます。') }}{% endblock %}
 {% macro card(item) -%}
 <li class="item{% if item.tier.key %} tier-{{ item.tier.key }}{% endif %}"><a class="skin-link" href="{{ item.url }}">
 <img src="{{ media(item.image) }}" alt="" width="256" height="96" loading="lazy">
@@ -12,11 +12,11 @@
 {% block main %}
 <section class="hero">
 <h1>{{ t('スキン図鑑') }}</h1>
-<p class="lead">{{ t('VALORANT の武器スキンを全部。武器・ティア・名前で探して、バリエーションやレベルごとの動画を見られます。') }}</p>
+<p class="lead">{{ t('VALORANT の全武器スキン。動画とバリエーションを確認できます。') }}</p>
 </section>
 {% include "_pages.html" %}
 {% if not total %}
-<p class="problem" role="alert">{{ t('スキンの一覧を読み込めませんでした。時間をおいてもう一度どうぞ。') }}</p>
+<p class="problem" role="alert">{{ t('スキン一覧を読み込めませんでした。しばらくしてからお試しください。') }}</p>
 {% else %}
 <form class="skin-form" action="{{ url_for('skins') }}" method="get" role="search">
 <label><span>{{ t('名前') }}</span><input name="q" type="search" value="{{ q }}" placeholder="{{ t('例: プライム') }}" maxlength="40" autocomplete="off" spellcheck="false" enterkeyhint="search"></label>
@@ -30,9 +30,9 @@
 <option value=""{% if not tier %} selected{% endif %}>{{ t('すべて') }}</option>
 {% for item in tiers %}<option value="{{ item.key }}"{% if item.key == tier %} selected{% endif %}>{{ item.name }}</option>
 {% endfor %}</select></label>
-<button type="submit">{{ t('探す') }}</button>
+<button type="submit">{{ t('検索') }}</button>
 </form>
-{% if owner %}<p class="meta"><a href="{{ url_for('skins', wants=1) }}">{{ t('欲しいリスト（{count}）', count=wants) }}</a> · {{ t('スキンのページで入れられます。ストアに並ぶと印がつきます。') }}</p>{% endif %}
+{% if owner %}<p class="meta"><a href="{{ url_for('skins', wants=1) }}">{{ t('欲しいリスト（{count}）', count=wants) }}</a> · {{ t('ストアに並ぶとマークが付きます。') }}</p>{% endif %}
 {% if top %}
 <section aria-labelledby="top-title">
 <h2 id="top-title">{{ t('評価の高いスキン') }}</h2>
@@ -43,7 +43,7 @@
 {% endif %}
 <p class="meta" role="status">{{ t('{found} 件（全 {total} 件）', found=found, total=total) }}</p>
 {% if not groups %}
-<p class="note">{{ t('合うスキンはありませんでした。') }}</p>
+<p class="note">{{ t('該当するスキンがありません。') }}</p>
 {% else %}
 {% for group in groups %}
 <section class="weapon">
@@ -53,8 +53,7 @@
 {% endfor %}</ul>
 </section>
 {% endfor %}
-{% if more %}<p class="note">{{ t('ほかに {count} 件あります。武器やティアで絞り込んでください。', count=more) }}</p>{% endif %}
+{% if more %}<p class="note">{{ t('ほか {count} 件。武器やティアで絞り込めます。', count=more) }}</p>{% endif %}
 {% endif %}
-<p class="note">{{ t('名前・絵・動画は valorant-api.com と Riot から。') }}</p>
 {% endif %}
 {% endblock %}

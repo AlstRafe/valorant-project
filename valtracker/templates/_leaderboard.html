@@ -8,7 +8,7 @@
 {% endfor %}</ul>
 {% endif %}
 {% if not players %}
-<p class="note">{% if searched %}{{ t('「{q}」はこの地域のランキングにいません。名前を隠している人は名前では探せません。', q=q) }}{% else %}{{ t('まだ誰もいません。') }}{% endif %}</p>
+<p class="note">{% if searched %}{{ t('「{q}」はこの地域のランキングにいません。非公開のプレイヤーは名前で検索できません。', q=q) }}{% else %}{{ t('まだ誰もいません。') }}{% endif %}</p>
 {% else %}
 <div class="table-wrap">
 <table class="board ladder" data-source="{{ source }}">
@@ -34,5 +34,5 @@
 {% if later %}<a class="button quiet" href="{{ later }}" rel="next">{{ t('次の 50 人') }} →</a>{% endif %}
 </nav>
 {% endif %}
-{% if updated %}<p class="note">{{ t('更新') }}: <time datetime="{{ updated.iso }}">{{ updated.text }}</time> · {{ t('Riot が数分ごとに更新します。') }}{% if source == 'riot' %} {{ t('ゲームのランキングを Riot から直接読んでいます。') }}{% endif %}</p>{% endif %}
+{% if updated %}<p class="note">{{ t('更新') }}: <time datetime="{{ updated.iso }}">{{ updated.text }}</time> · {{ t('数分ごとに更新') }}{% if source == 'riot' %} {{ t('Riot 公式データ') }}{% endif %}</p>{% endif %}
 {% endif %}

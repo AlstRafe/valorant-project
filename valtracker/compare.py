@@ -38,7 +38,7 @@ def _side(asked: str, mode: str, span: str = "") -> dict:
     asked = _from_link(" ".join(asked.split()))[:40]
     parts = split_riot_id(asked)
     if not parts:
-        problem = _t("「名前#タグ」の形で入れてください（例: Name#JP1）。") if asked else ""
+        problem = _t("「名前#タグ」の形式で入力してください（例: Name#JP1）。") if asked else ""
         return {"asked": asked, "found": None, "problem": problem, "status": 400 if asked else 200}
     values, status = _player(parts[0], parts[1], mode, span=span)
     if not values.get("account"):

@@ -32,7 +32,7 @@ class WorldTest(unittest.TestCase):
     def test_news_by_kind_and_word(self):
         text = self.page("/news")
         self.assertIn("VALORANT パッチノート 11.10", text)
-        self.assertIn("いまのパッチ", text)
+        self.assertIn("現在のパッチ", text)
         self.assertIn("&lt;b&gt;開発&lt;/b&gt;の話", text, "titles are text, never HTML")
         self.assertNotIn("javascript:", text, "only https links")
         self.assertIn('href="https://valorantesports.com/news/champions"', text, "the article's own link first")
@@ -46,11 +46,11 @@ class WorldTest(unittest.TestCase):
         text = self.page("/news?category=esports")
         self.assertIn("Champions の結果", text)
         self.assertNotIn("新しいエージェント", text)
-        self.assertNotIn("いまのパッチ", text)
+        self.assertNotIn("現在のパッチ", text)
         text = self.page("/news?q=エージェント")
         self.assertIn("新しいエージェント", text)
         self.assertNotIn("Champions の結果", text)
-        self.assertIn("合うニュースはありませんでした", self.page("/news?q=zzz"))
+        self.assertIn("に一致するニュースはありません", self.page("/news?q=zzz"))
         self.client.set_cookie("lang", "en-GB")
         self.assertIn("Patch notes", self.page("/news"))
         self.assertTrue(any("locale=en_GB" in url for url, _ in self.fetch.asked))
@@ -82,7 +82,7 @@ class WorldTest(unittest.TestCase):
 
         with mock.patch.object(FakeFetch, "__call__", answer):
             text = self.page("/news")
-        self.assertIn("いまのパッチ", text)
+        self.assertIn("現在のパッチ", text)
         self.assertIn("VALORANT パッチノート 11.10", text)
         self.assertTrue(any("tags=patch_notes" in url for url, _ in self.fetch.asked))
 
@@ -129,7 +129,7 @@ class WorldTest(unittest.TestCase):
         henrik.budget = Budget(0, 60)  # and the allowance is used up
         text = self.page("/esports")
         self.assertIn("Paper Rex", text, "the last schedule rather than 混み合っています")
-        self.assertIn("に読み込んだものを出しています", text)
+        self.assertIn("時点のデータを表示しています", text)
         self.assertNotIn('class="problem"', text)
         henrik.budget = Budget(25, 60)
         asked = len(self.fetch.asked)
@@ -238,7 +238,7 @@ class WorldTest(unittest.TestCase):
         self.failing("/v1/esports/schedule", status=500)
         text = self.page("/esports?show=results")
         self.assertNotIn('class="problem"', text, "the schedule still works: no error")
-        self.assertIn("結果はいま読み込めません", text)
+        self.assertIn("結果を取得できません", text)
         self.assertIn('href="https://valorantesports.com/"', text)
         self.assertIn("Team Heretics", self.page("/esports"), "the schedule from Riot")
 

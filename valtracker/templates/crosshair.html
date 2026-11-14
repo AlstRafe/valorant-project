@@ -15,12 +15,13 @@
 </figure>
 {%- endmacro %}
 {% block title %}{{ t('クロスヘア') }} · {{ site_name }}{% endblock %}
-{% block description %}{{ t('ゲームの「設定 → クロスヘア → プロファイルのコードをコピー」で出たコードを貼ると、ゲームでの見た目を暗い所と明るい所で確かめられます。') }}{% endblock %}
+{% block description %}{{ t('クロスヘアコードを貼ると、ゲームでの見た目をプレビューできます。') }}{% endblock %}
 {% block main %}
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">
 <h1>{{ t('クロスヘア') }}</h1>
-<p class="lead">{{ t('ゲームの「設定 → クロスヘア → プロファイルのコードをコピー」で出たコードを貼ると、ゲームでの見た目を暗い所と明るい所で確かめられます。') }}</p>
+<p class="lead">{{ t('クロスヘアコードを貼ると、ゲームでの見た目をプレビューできます。') }}</p>
+<details class="more"><summary>{{ t('コードの出し方') }}</summary><p>{{ t('ゲームの「設定 → クロスヘア → プロファイルのコードをコピー」でコピーできます。') }}</p></details>
 <form class="search" action="{{ url_for('crosshair') }}" method="get">
 <label for="code" class="sr">{{ t('クロスヘアのコード') }}</label>
 <input id="code" name="code" type="text" value="{{ code }}" placeholder="0;P;c;5;h;0;0l;4;0o;2;0a;1;1b;0" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="600"{% if problem %} aria-invalid="true" aria-describedby="code-problem"{% endif %}>
@@ -30,26 +31,26 @@
 </section>
 
 <section aria-labelledby="look-title">
-<h2 id="look-title">{{ t('見た目') if code and not problem else t('ゲームの初期設定') }}</h2>
+<h2 id="look-title">{{ t('プレビュー') if code and not problem else t('ゲームの初期設定') }}</h2>
 <div class="xhair-row">
 {{ draw(primary, t('通常')) }}
-{% if ads is not none %}{{ draw(ads, t('覗き込み')) }}{% endif %}
+{% if ads is not none %}{{ draw(ads, t('ADS')) }}{% endif %}
 {{ draw(sniper, t('スナイパーのスコープ'), sniper=True) }}
 </div>
-<p class="note">{{ t('1080p での大きさを 4 倍にしています。') }} {{ t('止まっていて、撃っていないときの見た目です。') }}{% if code and not problem %} <button type="button" class="quiet copy" data-copy="{{ code }}" data-done="{{ t('コピーしました') }}">{{ t('コードをコピー') }}</button>{% endif %}</p>
-{% if unknown %}<p class="note">{{ t('このサイトがまだ知らない設定（そのまま残ります）') }}: <code>{{ unknown|join(', ') }}</code></p>{% endif %}
+<p class="note">{{ t('1080p の 4 倍で表示。') }} {{ t('静止・非射撃時の見た目です。') }}{% if code and not problem %} <button type="button" class="quiet copy" data-copy="{{ code }}" data-done="{{ t('コピーしました') }}">{{ t('コードをコピー') }}</button>{% endif %}</p>
+{% if unknown %}<p class="note">{{ t('未対応の設定（コードには残ります）') }}: <code>{{ unknown|join(', ') }}</code></p>{% endif %}
 {% if code and not problem %}<form class="sens-form xh-save" id="xh-save" data-code="{{ code }}" data-saved="{{ t('保存しました') }}" hidden>
-<label><span>{{ t('名前（なくてもかまいません）') }}</span><input name="name" maxlength="30" autocomplete="off"></label>
+<label><span>{{ t('名前（任意）') }}</span><input name="name" maxlength="30" autocomplete="off"></label>
 <button type="submit">{{ t('このブラウザに保存') }}</button>
 <button type="button" class="quiet copy" data-copy="{{ shared_url('crosshair', code=code) }}" data-done="{{ t('リンクをコピーしました') }}" hidden>{{ t('リンクをコピー') }}</button>
 <span class="sr" role="status"></span>
 </form>{% endif %}
 </section>
 
-<section id="xh-saved" aria-labelledby="saved-title" data-show="{{ url_for('crosshair') }}" data-view="{{ t('表示') }}" data-copy-word="{{ t('コピー') }}" data-done="{{ t('コピーしました') }}" data-remove="{{ t('消す') }}" data-unnamed="{{ t('名前なし') }}" hidden>
+<section id="xh-saved" aria-labelledby="saved-title" data-show="{{ url_for('crosshair') }}" data-view="{{ t('表示') }}" data-copy-word="{{ t('コピー') }}" data-done="{{ t('コピーしました') }}" data-remove="{{ t('削除') }}" data-unnamed="{{ t('名前なし') }}" hidden>
 <h2 id="saved-title">{{ t('保存したクロスヘア') }}</h2>
 <ul class="xh-saved"></ul>
-<p class="note">{{ t('このブラウザの中だけに保存されます。ほかの端末へはリンクをコピーして送ってください。') }}</p>
+<p class="note">{{ t('保存先はこのブラウザだけです。') }}</p>
 </section>
 
 <section aria-labelledby="settings-title">
@@ -73,7 +74,7 @@
 </section>
 
 <section aria-labelledby="presets-title">
-<h2 id="presets-title">{{ t('よく使われる型') }}</h2>
+<h2 id="presets-title">{{ t('定番のクロスヘア') }}</h2>
 <ul class="presets">
 {% for preset in presets %}<li>
 {{ draw(preset.shapes, preset.name, zoom=3) }}
@@ -81,6 +82,6 @@
 <p><a class="button quiet" href="{{ url_for('crosshair', code=preset.code) }}">{{ t('表示') }}</a> <button type="button" class="quiet copy" data-copy="{{ preset.code }}" data-done="{{ t('コピーしました') }}">{{ t('コピー') }}</button></p>
 </li>
 {% endfor %}</ul>
-<p class="note">{{ t('ゲームで「プロファイルのコードを読み込む」に貼ると使えます。') }}</p>
+<p class="note">{{ t('ゲームの「プロファイルのコードを読み込む」に貼り付けて使えます。') }}</p>
 </section>
 {% endblock %}

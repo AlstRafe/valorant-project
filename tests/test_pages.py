@@ -37,7 +37,7 @@ class PagesTest(unittest.TestCase):
         self.assertIn('id="theme"', text)
 
     def test_every_language(self):
-        for lang, words in {"ko": "플레이어 찾기", "en-GB": "Find a player", "zh-TW": "搜尋玩家"}.items():
+        for lang, words in {"ko": "플레이어 검색", "en-GB": "Find a player", "zh-TW": "搜尋玩家"}.items():
             with self.subTest(lang=lang):
                 text = self.get("/", lang=lang).get_data(as_text=True)
                 self.assertIn(f'<html lang="{lang}">', text)
@@ -89,22 +89,22 @@ class PagesTest(unittest.TestCase):
         answer = self.get("/search?q=Tester")
         self.assertEqual(answer.status_code, 400)
         text = answer.get_data(as_text=True)
-        self.assertIn("タグ（# のあと）も入れてください。例: Tester#JP1", text)  # what is missing, with their name
+        self.assertIn("タグも入力してください。例: Tester#JP1", text)  # what is missing, with their name
         self.assertIn('href="/help#riot-id"', text)
         self.assertIn('id="same-name" data-name="Tester"', text)  # the kept players of that name (app.js)
         self.assertNotIn('class="guess"', text)
         # a space where the # goes: the likely Riot ID is offered, not opened (a name may hold spaces)
         text = self.get("/search?q=Tester+JP1").get_data(as_text=True)
-        self.assertIn('<a class="button quiet" href="/p/Tester/JP1">「Tester#JP1」を探す</a>', text)
+        self.assertIn('<a class="button quiet" href="/p/Tester/JP1">「Tester#JP1」で検索</a>', text)
         self.assertIn("例: Tester#JP1", text)
         # not a name at all: the general words
         text = self.get("/search?q=%3Cb%3E").get_data(as_text=True)
-        self.assertIn("「名前#タグ」の形で入れてください", text)
+        self.assertIn("「名前#タグ」の形式で入力してください", text)
         self.assertNotIn('id="same-name"', text)
         self.assertIn('list="known"', self.get("/").get_data(as_text=True))  # the kept players suggested
 
     def test_help_page(self):
-        for lang, words in {"ja": "使い方・よくある質問", "ko": "자주 묻는 질문", "en-GB": "Help and FAQ"}.items():
+        for lang, words in {"ja": "ヘルプ", "ko": "도움말", "en-GB": "Help"}.items():
             with self.subTest(lang=lang):
                 answer = self.get("/help", lang=lang)
                 self.assertEqual(answer.status_code, 200)
@@ -128,7 +128,7 @@ class PagesTest(unittest.TestCase):
     def test_when_the_numbers_were_read_and_reading_again(self):
         os.environ["VAL_HENRIK_KEY"] = "HDEV-test"
         text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
-        self.assertIn('<span class="read-at" id="read-at">いま読んだデータ</span>', text)  # no press for a minute
+        self.assertIn('<span class="read-at" id="read-at">たった今更新</span>', text)  # no press for a minute
         self.assertNotIn('class="refresh"', text)
         calls = len(self.fetch.henrik_calls())
         henrik = self.app.config["VAL_HENRIK"]
@@ -137,7 +137,7 @@ class PagesTest(unittest.TestCase):
             if at:
                 henrik.read_times.put(key, at - 180, 60)
         text = self.get("/p/Tester/JP1").get_data(as_text=True)  # at once: still kept
-        self.assertIn("3 分前のデータ", text)
+        self.assertIn("3 分前に更新", text)
         self.assertIn('href="/p/Tester/JP1?fresh=1&amp;full=1"', text)  # without JavaScript, the whole page
         self.assertIn('data-part="/p/Tester/JP1/part?fresh=1"', text)
         self.assertEqual(len(self.fetch.henrik_calls()), calls, "nothing asked again yet")
@@ -145,7 +145,7 @@ class PagesTest(unittest.TestCase):
         shell = self.get("/p/Tester/JP1?fresh=1").get_data(as_text=True)  # pressed: the page asks again
         self.assertIn('data-part="/p/Tester/JP1/part?fresh=1"', shell)
         part = self.get("/p/Tester/JP1/part?fresh=1").get_data(as_text=True)
-        self.assertIn("いま読んだデータ", part)
+        self.assertIn("たった今更新", part)
         self.assertEqual(len(self.fetch.henrik_calls()), calls + 4, "the rank, the RR and both parts of the matches")
         self.get("/p/Tester/JP1/part?fresh=1")  # pressed again at once: a minute must pass
         self.assertEqual(len(self.fetch.henrik_calls()), calls + 4)
@@ -163,7 +163,7 @@ class PagesTest(unittest.TestCase):
         self.assertEqual(answer.status_code, 200)
         text = answer.get_data(as_text=True)
         self.assertIn("Tier 21", text)  # what it showed before
-        self.assertIn("2 分前のデータ", text)
+        self.assertIn("2 分前に更新", text)
 
     def test_player(self):
         answer = self.get("/p/Tester/JP1?full=1")
@@ -185,7 +185,7 @@ class PagesTest(unittest.TestCase):
         self.assertEqual(shell.status_code, 200)
         text = shell.get_data(as_text=True)
         self.assertIn('data-part="/p/Tester/JP1/part"', text)
-        self.assertIn("ランクと最近の試合を読み込んでいます", text)
+        self.assertIn("戦績を読み込み中", text)
         self.assertIn('href="/p/Tester/JP1?full=1"', text)  # without JavaScript
         self.assertEqual(self.fetch.henrik_calls(), [])
 
@@ -244,19 +244,19 @@ class PagesTest(unittest.TestCase):
         self.assertNotIn("勝ち", text)
 
         english = self.get("/p/Tester/JP1?full=1", lang="en-GB").get_data(as_text=True)
-        self.assertIn("E9 A3 act rank: the ranks of the best 9 wins", english)
+        self.assertIn("Act rank for E9 A3 (best 9 wins)", english)
         self.assertIn("Victory", english)
         self.assertIn('<li class="win">W</li><li class="loss">L</li>', english)
 
     def test_a_player_page_in_depth(self):
         text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
-        self.assertIn("Tier 22 まであと 58 RR · 平均 +18 なら約 4 勝", text)  # 42 RR of 100
+        self.assertIn("Tier 22 まであと 58 RR · 平均 +18 で約 4 勝", text)  # 42 RR of 100
         self.assertIn('<path class="line" d="M14.0,93.3 L786.0,56.7"/>', text)  # the RR trend: two competitive matches
         self.assertIn("+3 RR", text)  # +18 - 15
         self.assertIn("<dd>59%", text)  # KAST over the match told round by round
         self.assertIn("<dt>ファーストキル</dt><dd>13", text)
         self.assertIn("<dt>ファーストデス</dt><dd>1<", text)
-        self.assertIn("挑戦 9 · 成功 11%", text)  # 1 of the 9 rounds the player was the last of their team
+        self.assertIn("機会 9 · 成功 11%", text)  # 1 of the 9 rounds the player was the last of their team
         self.assertIn(
             '<dt>1v2</dt><dd><meter min="0" max="100" value="0"></meter><span>0%</span><small>0/8</small>', text
         )
@@ -331,7 +331,7 @@ class PagesTest(unittest.TestCase):
             with self.subTest(path=path):
                 answer = self.get(path)
                 self.assertEqual(answer.status_code, 404)
-                self.assertIn("プレイヤーが見つかりませんでした", answer.get_data(as_text=True))
+                self.assertIn("プレイヤーが見つかりません", answer.get_data(as_text=True))
 
     def test_part_of_a_bad_riot_id(self):
         self.assertEqual(self.get("/p/a/b/part").status_code, 404)
@@ -340,7 +340,7 @@ class PagesTest(unittest.TestCase):
         self.app.config["VAL_SETTINGS"].save(henrik_key="")
         owner = self.get("/p/Tester/JP1")
         self.assertEqual(owner.status_code, 503)
-        self.assertIn("API キーがまだ設定されていません", owner.get_data(as_text=True))
+        self.assertIn("API キーが未設定です", owner.get_data(as_text=True))
         visitor = self.get("/p/Tester/JP1", environ_base=VISITOR)
         self.assertIn("まだ準備中", visitor.get_data(as_text=True))
         self.assertNotIn("API キー", visitor.get_data(as_text=True))
@@ -382,12 +382,12 @@ class PagesTest(unittest.TestCase):
         self.assertIn("0:10", text)
         self.assertIn("+ Mate", text)  # the assist
         self.assertIn(
-            '<th scope="col"><abbr title="キル・アシスト・生存・トレードされたラウンドの割合">KAST</abbr></th>', text
+            '<th scope="col"><abbr title="キル・アシスト・生存・トレードがあったラウンドの割合">KAST</abbr></th>', text
         )
         self.assertIn('<span class="party p1" title="パーティ 1">1</span>', text)
         self.assertEqual(text.count('class="party '), 2, "only parties of two or more")
         self.assertIn("Tester の対面成績", text)
-        self.assertIn('<span class="up" title="倒した">12</span>', text)  # Tester on Foe
+        self.assertIn('<span class="up" title="キル">12</span>', text)  # Tester on Foe
         # without the player the visitor came from: the rounds by team colour, no duels
         plain = self.get(f"/m/ap/{MATCH}").get_data(as_text=True)
         self.assertIn('<li class="red"', plain)

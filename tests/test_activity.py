@@ -270,16 +270,16 @@ class PagesTest(unittest.TestCase):
 
     def test_agent_stats_page(self):
         text = self.page("/agents/stats", environ_base=VISITOR)
-        self.assertIn("まだ試合が足りません", text)
+        self.assertIn("集計できる試合がまだ足りません", text)
         self.page("/p/Player/JP1?full=1")  # a player's page keeps their matches, and who played what
         text = self.page("/agents/stats", environ_base=VISITOR)
         self.assertIn("ジェット", text)
-        self.assertIn("2 試合から", text)
+        self.assertIn("2 試合の集計", text)
         self.assertIn("100.0%", text, "Jett on both teams of both matches")
         self.assertIn("アセント", text, "the maps played")
         self.assertIn("—", text, "too few for a win rate")
         self.assertIn("ジェット", self.page("/agents/stats?map=7eaecc1b-4337-bbf6-6ab9-04b8f06b3319&sort=win"))
-        self.assertIn("2 試合から", self.page("/agents/stats?map=nowhere&queue=nonsense&band=nonsense"))
+        self.assertIn("2 試合の集計", self.page("/agents/stats?map=nowhere&queue=nonsense&band=nonsense"))
         self.assertIn('href="/agents/stats"', self.page("/agents", environ_base=VISITOR))
 
     def test_tools_lead_to_the_new_pages(self):
@@ -291,14 +291,14 @@ class PagesTest(unittest.TestCase):
 
     def test_servers_from_the_matches_seen(self):
         text = self.page("/servers")
-        self.assertIn("まだ集まっていません", text)
-        self.assertIn("Riot は接続人数も待ち時間も公開していません", text)
+        self.assertIn("この地域のデータがまだ足りません", text)
+        self.assertIn("Riot は接続人数や待ち時間を公開していません", text)
         self.page("/p/Player/JP1?full=1")  # a player's page keeps their matches
         text = self.page("/servers?region=ap")
         self.assertIn("東京", text)
         self.assertIn('class="hours"', text)
         self.assertIn("日本時間", text)
-        self.assertIn("まだ試合が少ない", text, "a few matches: no busy hours yet")
+        self.assertIn("データ不足", text, "a few matches: no busy hours yet")
         self.assertNotIn("いちばん混む", text)
         self.client.set_cookie("lang", "en-GB")
         self.assertIn("Tokyo", self.page("/servers?region=ap"))
@@ -315,7 +315,7 @@ class PagesTest(unittest.TestCase):
             self.assertIn('data-offset="0"', self.page("/servers?region=ap"), wrong)
         self.client.set_cookie("lang", "ja")
         self.client.set_cookie("tz", "540")
-        self.assertIn("時刻は日本時間です", self.page("/servers?region=ap"), "the same as the language's: its name")
+        self.assertIn("時刻は日本時間。", self.page("/servers?region=ap"), "the same as the language's: its name")
 
     def test_player_rows_show_their_server_and_today(self):
         text = self.page("/p/Player/JP1?full=1")
@@ -370,7 +370,7 @@ class PagesTest(unittest.TestCase):
 
     def test_queues_for_visitors_without_riot(self):
         text = self.page("/queues", 200, environ_base=VISITOR)
-        self.assertIn("いまはゲームの設定を読めません", text)
+        self.assertIn("ゲームの設定を取得できません", text)
         self.assertNotIn("/settings", text.split("<main")[1])
 
     def test_queues_and_party_check(self):
@@ -387,7 +387,7 @@ class PagesTest(unittest.TestCase):
         text = self.page("/queues?rank=14&rank=16", environ_base=VISITOR)
         self.assertIn('class="verdict ok"', text)
         text = self.page("/queues?rank=24&rank=24&rank=24&rank=25&rank=x", environ_base=VISITOR)
-        self.assertIn("4 人のパーティー", text)
+        self.assertIn("4 人パーティー", text)
         calls = self.app.riot.pd_calls()
         self.page("/queues", environ_base=VISITOR)
         self.assertEqual(self.app.riot.pd_calls(), calls, "kept for a while")
@@ -407,11 +407,11 @@ class PagesTest(unittest.TestCase):
 
     def test_shop_tells_when_the_daily_store_changes(self):
         text = self.page("/shop", environ_base=VISITOR)
-        self.assertIn("毎日のスキンの次の入れ替わり", text)
+        self.assertIn("次のストア更新", text)
         self.assertIn("9:00", text)
 
     def test_leaderboard_tells_when_the_act_ends(self):
-        self.assertIn("ACT III の終わりまであと", self.page("/leaderboard"))
+        self.assertIn("ACT III 終了まであと", self.page("/leaderboard"))
 
 
 if __name__ == "__main__":

@@ -372,7 +372,7 @@ class UpdaterTest(unittest.TestCase):
         self.assertTrue(answer.get_json()["possible"])
         state = self.client.get("/app/update/state").get_json()
         self.assertEqual((state["state"], state["busy"]), ("installing", True))
-        self.assertIn("入れ替えます", state["words"])
+        self.assertIn("更新中です", state["words"])
 
     def test_the_page_says_why_it_stopped(self):
         self.where = "ingame"
@@ -380,8 +380,8 @@ class UpdaterTest(unittest.TestCase):
         self.stopped("playing")
         state = self.client.get("/app/update/state").get_json()
         self.assertEqual((state["failed"], state["busy"]), (True, False))
-        self.assertIn("試合が終わってから", state["words"])
-        self.assertIn("試合が終わってから", self.client.get("/").get_data(as_text=True))
+        self.assertIn("試合中は更新できません", state["words"])
+        self.assertIn("試合中は更新できません", self.client.get("/").get_data(as_text=True))
 
     def test_the_download_is_told_in_percent(self):
         self.updater._set("downloading", done=30, total=120)
@@ -396,24 +396,24 @@ class UpdaterTest(unittest.TestCase):
     def test_looking_for_a_newer_build_from_the_settings(self):
         token = re.search(r'name="csrf" value="([^"]+)"', self.client.get("/settings").get_data(as_text=True)).group(1)
         page = self.client.post("/settings", data={"csrf": token, "do": "look"}).get_data(as_text=True)
-        self.assertIn("新しい版があります。上の「いますぐ更新」で更新できます。", page)
+        self.assertIn("アップデートがあります。上の「いますぐ更新」から更新できます。", page)
         self.assertEqual(self.app.config["VAL_UPDATE"]["commit"], NEW)
         self.told = {"commit": OLD["commit"], "time": OLD["time"]}
         page = self.client.post("/settings", data={"csrf": token, "do": "look"}).get_data(as_text=True)
-        self.assertIn("いまの版が最新です。", page)
+        self.assertIn("最新バージョンです。", page)
         self.assertIsNone(self.app.config["VAL_UPDATE"])
 
     def test_the_app_says_once_that_it_was_updated(self):
         self.app.config["VAL_UPDATED"] = True
-        self.assertIn("新しい版に更新しました。", self.client.get("/").get_data(as_text=True))
-        self.assertNotIn("新しい版に更新しました。", self.client.get("/").get_data(as_text=True))
+        self.assertIn("アップデートしました。", self.client.get("/").get_data(as_text=True))
+        self.assertNotIn("アップデートしました。", self.client.get("/").get_data(as_text=True))
 
     def test_the_source_and_the_site_have_no_button(self):
         self.updater.home = None
         self.app.config["VAL_UPDATE"] = {"commit": NEW, "date": "2026-11-13 21:00", "url": "https://x", "ready": True}
         page = self.client.get("/").get_data(as_text=True)
         self.assertNotIn('action="/app/update"', page)
-        self.assertIn("いまのアプリを閉じてから展開し", page)
+        self.assertIn("アプリを閉じてから、今のフォルダーに上書き", page)
         site, _, _ = make_app()
         self.addCleanup(site._test_folder.cleanup)
         client = site.test_client()

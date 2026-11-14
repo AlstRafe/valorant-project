@@ -3,22 +3,22 @@
 <li class="seat{% if row.me %} me{% endif %}{% if row.state %} {{ row.state }}{% endif %}">
 {% if row.agent_icon %}<img src="{{ media(row.agent_icon) }}" alt="" width="40" height="40">{% elif row.card %}<img src="{{ media(row.card) }}" alt="" width="40" height="40">{% else %}<span class="no-agent" aria-hidden="true">?</span>{% endif %}
 <span class="seat-text">
-<strong>{% if row.name %}<a href="{{ url_for('player', name=row.name, tag=row.tag) }}">{{ row.name }}<span class="tag">#{{ row.tag }}</span></a>{% elif row.me %}{{ t('あなた') }}{% else %}<span class="hidden-name">{{ t('名前を隠しています') }}</span>{% endif %}{% if row.owner %} <span class="badge">{{ t('リーダー') }}</span>{% endif %}</strong>
+<strong>{% if row.name %}<a href="{{ url_for('player', name=row.name, tag=row.tag) }}">{{ row.name }}<span class="tag">#{{ row.tag }}</span></a>{% elif row.me %}{{ t('あなた') }}{% else %}<span class="hidden-name">{{ t('非公開') }}</span>{% endif %}{% if row.owner %} <span class="badge">{{ t('リーダー') }}</span>{% endif %}</strong>
 {%- set parts = [] -%}
-{%- if row.agent %}{% set _ = parts.append(t('{agent}（選択中）', agent=row.agent) if row.state == 'selected' else t('{agent}（確定）', agent=row.agent) if row.state == 'locked' else row.agent) %}{% elif phase != 'menus' %}{% set _ = parts.append(t('まだ選んでいません')) %}{% endif -%}
+{%- if row.agent %}{% set _ = parts.append(t('{agent}（選択中）', agent=row.agent) if row.state == 'selected' else t('{agent}（確定）', agent=row.agent) if row.state == 'locked' else row.agent) %}{% elif phase != 'menus' %}{% set _ = parts.append(t('未選択')) %}{% endif -%}
 {%- if row.title %}{% set _ = parts.append(row.title) %}{% endif -%}
 {%- if row.level %}{% set _ = parts.append(t('レベル {level}', level=row.level)) %}{% endif %}
 {% if parts %}<small>{{ parts|join(' · ') }}</small>{% endif %}
-{% if row.record %}<small class="seat-record">{{ t('このアクト {wins}勝 / {games}試合（{rate}%）', wins=row.record.wins, games=row.record.games, rate=row.record.win_rate) }}{% if row.record.peak_rank %} · {{ t('最高 {rank}', rank=row.record.peak_rank.name) }}{% endif %}</small>{% endif %}
+{% if row.record %}<small class="seat-record">{{ t('今アクト {wins}勝 / {games}試合（{rate}%）', wins=row.record.wins, games=row.record.games, rate=row.record.win_rate) }}{% if row.record.peak_rank %} · {{ t('最高 {rank}', rank=row.record.peak_rank.name) }}{% endif %}</small>{% endif %}
 </span>
 {% if row.rank %}<span class="seat-rank">{% if row.rank.icon %}<img src="{{ media(row.rank.icon) }}" alt="" width="28" height="28">{% endif %}<span class="rank-words"><span>{{ row.rank.name }}</span>{% if row.rank.rr is not none %} <span>{{ row.rank.rr }} RR</span>{% endif %}</span></span>{% endif %}
 </li>
 {%- endmacro %}
 {% macro steps() -%}
-<ol class="live-steps" aria-label="{{ t('ゲームの画面ごとにできること') }}">
-<li{% if phase == 'menus' %} aria-current="step"{% endif %}><strong>{{ t('メニュー') }}</strong><span>{{ t('モードを選んでキューを開始・取り消し') }}</span></li>
-<li{% if phase == 'pregame' %} aria-current="step"{% endif %}><strong>{{ t('エージェント選択') }}</strong><span>{{ t('味方の構成と、このマップで勝っているエージェントを見てピック・確定') }}</span></li>
-<li{% if phase == 'ingame' %} aria-current="step"{% endif %}><strong>{{ t('対戦中') }}</strong><span>{{ t('敵も味方も全員のエージェントとランク') }}</span></li>
+<ol class="live-steps" aria-label="{{ t('場面ごとの機能') }}">
+<li{% if phase == 'menus' %} aria-current="step"{% endif %}><strong>{{ t('メニュー') }}</strong><span>{{ t('キューの開始・キャンセル') }}</span></li>
+<li{% if phase == 'pregame' %} aria-current="step"{% endif %}><strong>{{ t('エージェント選択') }}</strong><span>{{ t('構成と勝率を見てピック・確定') }}</span></li>
+<li{% if phase == 'ingame' %} aria-current="step"{% endif %}><strong>{{ t('対戦中') }}</strong><span>{{ t('全員のエージェントとランク') }}</span></li>
 </ol>
 {%- endmacro %}
 {% block title %}{{ t('ライブ') }} · {{ site_name }}{% endblock %}
@@ -32,23 +32,23 @@
 <h1>{{ t('ライブ') }}</h1>
 {#- in agent select and a match, what is happening takes the room: the team and the agents to pick in one screen
     (what the page does is said again at the bottom, in the steps) #}
-{% if not playing %}<p class="lead">{% if desktop %}{{ t('あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。この PC の Riot クライアントから直接読むので、試合が見つかるとすぐに切り替わります。') }}{% else %}{{ t('あなたの VALORANT をリアルタイムで読んで、キューの開始とエージェントのピック・確定をここからできます。PC で VALORANT を開いていれば、スマホからでも使えます。') }}{% endif %}</p>{% endif %}
+{% if not playing %}<p class="lead">{% if desktop %}{{ t('ゲームと連動して、キュー開始とエージェント選択ができます。') }}{% else %}{{ t('ゲームと連動して、キュー開始とエージェント選択ができます。PC で VALORANT を起動していればスマホからも使えます。') }}{% endif %}</p>{% endif %}
 </section>
 {% include "_play.html" %}
 {% if not phase %}{{ steps() }}{% endif %}
 {% if said %}<p class="verdict {{ 'ok' if said_ok else 'no' }}" role="status">{{ said }}</p>{% endif %}
 {% if problem %}
 <p class="problem" role="alert">{{ problem }}{% if detail %} <code>{{ detail }}</code>{% endif %}</p>
-{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">{{ t('設定で Riot と連携する') }}</a></p>{% endif %}
+{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">{{ t('連携する') }}</a></p>{% endif %}
 {% if desktop %}<p><a class="button quiet" href="{{ url_for('checkup') }}">{{ t('診断を開く') }}</a></p>{% endif %}
 {% else %}
-<p class="game-state{% if playing %} sr{% endif %}"><span class="dot {{ 'on' if running else 'off' }}" aria-hidden="true"></span>VALORANT: {% if phase == 'pregame' %}{{ t('エージェント選択') }}{% elif phase == 'ingame' %}{{ t('対戦中') }}{% elif phase == 'menus' %}{{ t('マッチング中') if party and party.state == 'matchmaking' else t('メニュー') }}{% elif running %}{{ t('開いています') }}{% elif running is none %}{{ t('わかりません') }}{% else %}{{ t('開いていません') }}{% endif %}</p>
+<p class="game-state{% if playing %} sr{% endif %}"><span class="dot {{ 'on' if running else 'off' }}" aria-hidden="true"></span>VALORANT: {% if phase == 'pregame' %}{{ t('エージェント選択') }}{% elif phase == 'ingame' %}{{ t('対戦中') }}{% elif phase == 'menus' %}{{ t('マッチング中') if party and party.state == 'matchmaking' else t('メニュー') }}{% elif running %}{{ t('起動中') }}{% elif running is none %}{{ t('不明') }}{% else %}{{ t('未起動') }}{% endif %}</p>
 {% if last_result and not playing %}
 {#- the match just played, from the game's own server the moment it ends: the result, the owner's line, the RR #}
 {% set row = last_result %}
 {% set outcome = 'win' if row.result.won is sameas true or (row.result.won is none and not row.result.rounds and row.placing.place == 1) else ('loss' if row.result.won is sameas false else 'draw') %}
 <section class="last-result" aria-labelledby="last-title">
-<h2 id="last-title">{{ t('さっきの試合') }}</h2>
+<h2 id="last-title">{{ t('直前の試合') }}</h2>
 <ol class="match-list"><li class="match {{ outcome }}"><a href="{{ last_match }}">
 <span class="pic">{% if row.agent_icon %}<img class="agent" src="{{ media(row.agent_icon) }}" alt="{{ row.agent_name }}" width="44" height="44">{% else %}<span class="agent">{{ row.agent_name[:2] }}</span>{% endif %}
 {% if row.placing.mvp %}<span class="mvp {{ row.placing.mvp }}" title="{{ t('マッチ MVP') if row.placing.mvp == 'match' else t('チーム MVP') }}">MVP<span class="sr">{{ t('マッチ MVP') if row.placing.mvp == 'match' else t('チーム MVP') }}</span></span>{% elif row.result.rounds and row.placing.place %}<span class="mvp place" title="{{ t('{count}人中', count=row.placing.of) }} {{ t('{place}位', place=row.placing.place) }}">{{ t('{place}位', place=row.placing.place) }}</span>{% endif %}</span>
@@ -69,20 +69,20 @@
 <span class="cell"><small>{{ t('スコア') }}</small><strong>{% if row.score %}<span class="row-score grade-{{ row.score.grade|lower }}" title="{{ t('VAL スコア') }}">{{ row.score.value }}</span>{% else %}–{% endif %}</strong></span>
 </span>
 </a></li></ol>
-<p class="note">{{ t('ゲームのサーバーから直接読んだ結果です。全員のスコアボードは、試合が終わってから数分で見られるようになります。') }}</p>
+<p class="note">{{ t('全員のスコアボードは試合終了の数分後に見られます。') }}</p>
 </section>
-{% elif last_match and not playing %}<p class="last-match"><a class="button quiet" href="{{ last_match }}">{{ t('さっきの試合を見る') }}</a> <small>{{ t('試合が終わってから数分で見られるようになります。') }}</small></p>{% endif %}
+{% elif last_match and not playing %}<p class="last-match"><a class="button quiet" href="{{ last_match }}">{{ t('直前の試合を見る') }}</a> <small>{{ t('試合終了の数分後から見られます。') }}</small></p>{% endif %}
 {% if not phase %}
-<p class="note">{% if running is none %}{{ t('ゲームの状態を読めませんでした。') }}{% else %}{{ t('VALORANT を開くと、ここからキューを開始できます。エージェント選択が始まると、味方とピックがここに出ます。') }}{% endif %}</p>
+<p class="note">{% if running is none %}{{ t('ゲームの状態を取得できませんでした。') }}{% else %}{{ t('VALORANT を起動すると、ここからキューを開始できます。') }}{% endif %}</p>
 {% if account and account.linked %}
 {#- nothing to do here until the game opens: the owner's other pages, a click away (the PC app opens on this page) #}
 <section class="me-box" aria-labelledby="me-title">
-<h2 id="me-title">{{ t('自分') }}</h2>
+<h2 id="me-title">{{ t('マイアカウント') }}</h2>
 <ul class="me-links">
-{% if account.name %}<li><a href="{{ url_for('player', name=account.name, tag=account.tag) }}"><strong>{{ t('自分の戦績') }}</strong><small>{{ account.name }}#{{ account.tag }}</small></a></li>{% endif %}
+{% if account.name %}<li><a href="{{ url_for('player', name=account.name, tag=account.tag) }}"><strong>{{ t('戦績') }}</strong><small>{{ account.name }}#{{ account.tag }}</small></a></li>{% endif %}
 <li><a href="{{ url_for('shop') }}"><strong>{{ t('ショップ') }}</strong><small>{{ t('今日のスキン') }}</small></a></li>
-<li><a href="{{ url_for('progress') }}"><strong>{{ t('進み具合') }}</strong><small>{{ t('バトルパス・ミッション') }}</small></a></li>
-<li><a href="{{ url_for('collection') }}"><strong>{{ t('所持品') }}</strong><small>{{ t('スキンやカードを装備') }}</small></a></li>
+<li><a href="{{ url_for('progress') }}"><strong>{{ t('進行状況') }}</strong><small>{{ t('バトルパス・ミッション') }}</small></a></li>
+<li><a href="{{ url_for('collection') }}"><strong>{{ t('所持品') }}</strong><small>{{ t('スキン・カードの装備') }}</small></a></li>
 </ul>
 </section>
 {% endif %}
@@ -96,19 +96,19 @@
 <h2 id="queue-title">{{ t('キュー') }}</h2>
 {% if party.state == 'matchmaking' %}
 <p class="queue-now">{{ t('{queue} でマッチング中', queue=party.queue_name or t('キュー')) }}{% if party.waited is not none %} · {{ t('{minutes} 分 {seconds} 秒', minutes=party.waited // 60, seconds='%02d'|format(party.waited % 60)) }}{% endif %}</p>
-{% if party.leader %}<form method="post" action="{{ url_for('live_act') }}" class="live-act"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button type="submit" name="do" value="leave" class="quiet">{{ t('キューをやめる') }}</button></form>{% endif %}
+{% if party.leader %}<form method="post" action="{{ url_for('live_act') }}" class="live-act"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button type="submit" name="do" value="leave" class="quiet">{{ t('キューをキャンセル') }}</button></form>{% endif %}
 {% elif party.state == 'starting' %}
 <p class="queue-now">{{ t('試合が見つかりました。まもなくエージェント選択です。') }}</p>
 {% elif party.restricted %}
-<p class="problem" role="alert">{{ t('あと {seconds} 秒キューに入れません（ゲームのペナルティー）。', seconds=party.restricted) }}</p>
+<p class="problem" role="alert">{{ t('ペナルティー中: あと {seconds} 秒キューに入れません。', seconds=party.restricted) }}</p>
 {% elif party.leader %}
 <form method="post" action="{{ url_for('live_act') }}" class="live-act queue-form"><input type="hidden" name="csrf" value="{{ csrf_token() }}">
 <label><span>{{ t('モード') }}</span><select name="value">{% for queue in party.queues %}<option value="{{ queue.id }}"{% if queue.id == party.queue %} selected{% endif %}>{{ queue.name }}</option>{% endfor %}</select></label>
 <button type="submit" name="do" value="start">{{ t('キューを開始') }}</button>
 </form>
-<p class="note">{{ t('ゲームの中でキューを開始したのと同じです。選べるのは、いまのパーティーで入れるモードだけです。') }}</p>
+<p class="note">{{ t('今のパーティーで参加できるモードだけ選べます。') }}</p>
 {% else %}
-<p class="note">{% if party.queue_name %}{{ t('キューを開始できるのはパーティーのリーダーだけです（いまのモード: {queue}）。', queue=party.queue_name) }}{% else %}{{ t('キューを開始できるのはパーティーのリーダーだけです。') }}{% endif %}</p>
+<p class="note">{% if party.queue_name %}{{ t('キューを開始できるのはリーダーだけです（現在のモード: {queue}）。', queue=party.queue_name) }}{% else %}{{ t('キューを開始できるのはリーダーだけです。') }}{% endif %}</p>
 {% endif %}
 </section>
 {% else %}
@@ -121,33 +121,33 @@
 <section class="live-ally" aria-labelledby="ally-title">
 <h2 id="ally-title">{{ t('味方') }}{% if average %} <small class="team-average">{{ t('平均 {rank}', rank=average.name) }}</small>{% endif %}</h2>
 <ul class="seats">{% for row in players %}{{ person(row) }}{% endfor %}</ul>
-{% if enemy_size %}<p class="note">{{ t('相手は {locked} / {size} 人が確定（相手の名前とエージェントは、ゲームでも試合が始まるまで出ません）', locked=enemy_locked, size=enemy_size) }}</p>{% endif %}
+{% if enemy_size %}<p class="note">{{ t('相手は {locked} / {size} 人が確定', locked=enemy_locked, size=enemy_size) }}</p>{% endif %}
 </section>
 {% if picker %}
 <section class="live-pick" aria-labelledby="pick-title">
 <h2 id="pick-title">{{ t('ピック') }}</h2>
 {% if picker.locked %}
-<p class="queue-now">{{ t('{agent} で確定しています。', agent=picker.current_name) }}</p>
+<p class="queue-now">{{ t('{agent} で確定済み。', agent=picker.current_name) }}</p>
 {% else %}
 {% if picker.current %}<form method="post" action="{{ url_for('live_act') }}" class="live-act lock-row"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="value" value="{{ picker.current }}"><button type="submit" name="do" value="lock">{{ t('{agent} で確定', agent=picker.current_name) }}</button></form>{% endif %}
 <form method="post" action="{{ url_for('live_act') }}" class="live-act"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="do" value="select">
-{% if picker.best %}<p class="note pick-best">{{ t('このマップで勝っている:') }} {% for agent in picker.best %}<strong>{{ agent.name }}</strong> {{ agent.win|round|int }}%{% if not loop.last %}{{ t('、') }}{% endif %}{% endfor %}{{ t('（このサイトが見た {count} 試合）', count=picker.matches) }}</p>{% endif %}
+{% if picker.best %}<p class="note pick-best">{{ t('このマップの勝率上位:') }} {% for agent in picker.best %}<strong>{{ agent.name }}</strong> {{ agent.win|round|int }}%{% if not loop.last %}{{ t('、') }}{% endif %}{% endfor %}{{ t('（{count} 試合の集計）', count=picker.matches) }}</p>{% endif %}
 <ul class="pick-grid">{% for agent in picker.agents %}<li><button type="submit" name="value" value="{{ agent.id }}" class="pick{% if agent.id == picker.current %} on{% endif %}"{% if agent.taken %} disabled aria-disabled="true"{% endif %} aria-label="{{ t('{agent} を選ぶ（味方が確定済み）', agent=agent.name) if agent.taken else t('{agent} を選ぶ', agent=agent.name) }}">{% if agent.icon %}<img src="{{ media(agent.icon) }}" alt="" width="48" height="48">{% endif %}<span>{{ agent.name }}</span>{% if agent.win is not none %}<small class="pick-win">{{ agent.win|round|int }}%</small>{% endif %}</button></li>{% endfor %}</ul>
 </form>
-<p class="note">{{ t('選ぶだけでは決まりません。「確定」を押すと、ゲームで確定したのと同じになります。') }}</p>
+<p class="note">{{ t('選択はまだ仮です。「確定」でロックされます。') }}</p>
 {% endif %}
 </section>
 {% endif %}
 <section class="live-comp" aria-labelledby="comp-title">
-<h2 id="comp-title">{{ t('構成の目安') }}</h2>
+<h2 id="comp-title">{{ t('構成のヒント') }}</h2>
 {% if missing_roles %}
-<p>{{ t('味方にまだいない役割です。') }}{% if missing_roles|length > 1 %}{{ t('上から順に埋めるのがよくある形です。') }}{% endif %}</p>
+<p>{{ t('チームに足りないロール') }}</p>
 <ul class="roles">
-{% for role in missing_roles %}<li><strong>{{ role.name }}</strong>{% if role.agents %}<span class="role-agents">{% for agent in role.agents %}<span class="role-agent">{% if agent.icon %}<img src="{{ media(agent.icon) }}" alt="" width="28" height="28">{% endif %}{{ agent.name }}</span>{% endfor %}</span>{% else %}<small>{{ t('持っているエージェントでは埋められません') }}</small>{% endif %}</li>
+{% for role in missing_roles %}<li><strong>{{ role.name }}</strong>{% if role.agents %}<span class="role-agents">{% for agent in role.agents %}<span class="role-agent">{% if agent.icon %}<img src="{{ media(agent.icon) }}" alt="" width="28" height="28">{% endif %}{{ agent.name }}</span>{% endfor %}</span>{% else %}<small>{{ t('所持エージェントなし') }}</small>{% endif %}</li>
 {% endfor %}</ul>
-<p class="note">{{ t('あなたが持っているエージェントから、まだ選ばれていないものを出しています。マップや相手に合わせて選んでください。') }}</p>
+<p class="note">{{ t('所持していて、まだ選ばれていないエージェントです。') }}</p>
 {% else %}
-<p>{{ t('役割はそろっています。') }}</p>
+<p>{{ t('ロールはそろっています。') }}</p>
 {% endif %}
 </section>
 </div>
@@ -163,9 +163,9 @@
 {% endif %}
 {% endif %}
 {% if names_missing %}<p class="note">{{ t('名前を読み込めませんでした。') }}</p>{% endif %}
-{% if hidden_names %}<p class="note">{{ t('名前を隠しているプレイヤーの名前・カード・称号は出しません（本人が選んだ設定のため）。') }}</p>{% endif %}
+{% if hidden_names %}<p class="note">{{ t('非公開のプレイヤーは名前・カード・称号を表示しません。') }}</p>{% endif %}
 {% if phase == 'menus' %}{{ steps() }}{% endif %}
-{% if not playing %}<p class="note">{% if desktop %}{{ t('このページはゲームの状態が変わるとすぐ新しくなります。ほかのページを見ているときも、上のタブ「ライブ」の点でゲームの状態がわかり、エージェント選択が始まると画面の下に知らせが出ます。') }}{% else %}{{ t('このページは数秒ごとに新しくなります。ほかのページを見ているときも、上のタブ「ライブ」の点でゲームの状態がわかり、エージェント選択が始まると画面の下に知らせが出ます。') }}{% endif %}</p>{% endif %}
+{% if not playing %}<p class="note">{% if desktop %}{{ t('ゲームの状態に合わせて自動で更新されます。') }}{% else %}{{ t('数秒ごとに自動で更新されます。') }}{% endif %}</p>{% endif %}
 {% endif %}
 </div>
 {% endblock %}

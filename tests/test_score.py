@@ -180,7 +180,7 @@ class PagesTest(unittest.TestCase):
         self.assertIsNotNone(found, "the average score, big")
         self.assertTrue(0 <= int(found.group(1)) <= 1000)
         self.assertRegex(text, r"(上位|下位) \d+%")
-        self.assertIn("スコアの出し方", text, "how it is reckoned is on the page")
+        self.assertIn("スコアの算出方法", text, "how it is reckoned is on the page")
         self.assertIn("row-score", text, "each match's score in the list")
 
     def test_no_score_without_a_yardstick(self):
@@ -206,7 +206,7 @@ class PagesTest(unittest.TestCase):
         few = {"lines": RANKS_ENOUGH - 1, "tiers": {12: RANKS_ENOUGH - 1}}
         with mock.patch.object(self.app.config["VAL_ACTIVITY"], "ranks", return_value=few):
             text = self.page("/ranks")
-            self.assertIn("まだ集まっていません", text)
+            self.assertIn("この地域のデータがまだ足りません", text)
             self.assertNotIn("この地域で上位", self.page("/p/Tester/JP1?full=1"))
         self.assertIn('href="/ranks"', self.page("/tools"))
 

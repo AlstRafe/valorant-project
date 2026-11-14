@@ -45,9 +45,9 @@ STORED_QUEUES = {
     "replication": "onefa",
     "snowball fight": "snowball",
 }
-#: A player's page can be read again ("最新にする") once this long has passed since it was read (seconds).
+#: A player's page can be read again ("データを更新") once this long has passed since it was read (seconds).
 FRESH_AFTER = 60
-#: How long what "最新にする" dropped stays at hand, in case the new call fails (seconds).
+#: How long what "データを更新" dropped stays at hand, in case the new call fails (seconds).
 SPARE_KEEP = 120
 #: Players on one page of a leaderboard.
 BOARD_PAGE = 50
@@ -124,7 +124,7 @@ class Henrik:
         self.cache = TTLCache(1024)
         #: cache key -> when its answer was read (unix seconds), kept as long as the answer is.
         self.read_times = TTLCache(1024)
-        #: cache key -> (answer, read at) dropped by "最新にする": shown again if HenrikDev cannot answer.
+        #: cache key -> (answer, read at) dropped by "データを更新": shown again if HenrikDev cannot answer.
         self.spares = TTLCache(64)
 
     def account(self, name: str, tag: str) -> dict:
@@ -224,7 +224,7 @@ class Henrik:
         return float(self.read_times.get(_matches_key(region, name, tag, mode, 0)) or 0)
 
     def forget_player(self, region: str, name: str, tag: str, mode: str = "") -> bool:
-        """Ask HenrikDev again for the player's rank, RR and matches (the page's "最新にする"), unless they were
+        """Ask HenrikDev again for the player's rank, RR and matches (the page's "データを更新"), unless they were
         read less than FRESH_AFTER ago: a press costs up to four calls of the key every visitor shares."""
         if time.time() - self.read_at(region, name, tag, mode) < FRESH_AFTER:
             return False
@@ -360,7 +360,7 @@ class Henrik:
         try:
             return self._ask(cache_key, path, seconds, shape)
         except HenrikError as error:
-            # "最新にする" was pressed and HenrikDev cannot answer now: the page keeps what it showed before
+            # "データを更新" was pressed and HenrikDev cannot answer now: the page keeps what it showed before
             spare = self.spares.get(cache_key) if error.kind in ("busy", "down") else None
             if spare is None:
                 raise

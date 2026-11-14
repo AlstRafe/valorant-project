@@ -450,14 +450,14 @@ class PagesTest(unittest.TestCase):
         self.assertEqual(answer.status_code, 200)
         self.assertIn('<a href="/p/Tomo/JP2">Tomo<span class="tag">#JP2</span></a>', text)
         self.assertIn("対戦中 · コンペティティブ", text)
-        self.assertIn("最後のオンライン", text)
+        self.assertIn("最終オンライン", text)
         self.assertIn('data-refresh="10"', text)
         self.assertIn('<a href="/friends" aria-current="true">フレンド</a>', text)
 
     def test_the_friends_page_while_the_client_is_closed(self):
         self.lockfile.unlink()
         text = self.client.get("/friends").get_data(as_text=True)
-        self.assertIn("Riot クライアントが開いていない", text)
+        self.assertIn("Riot クライアントが起動していません", text)
         self.assertIn('href="/checkup"', text)
 
     def test_the_site_has_neither_page(self):
@@ -472,8 +472,8 @@ class PagesTest(unittest.TestCase):
         before = len(self.app.riot.asked)
         text = self.client.get("/checkup").get_data(as_text=True)
         self.assertEqual(len(self.app.riot.asked), before)
-        self.assertIn("サインインしています", text)
-        self.assertIn("メニュー（いまの形）", text)
+        self.assertIn("サインイン済み", text)
+        self.assertIn("メニュー（現行形式）", text)
         self.assertIn("presence: ok 200 count=2 mine=1 shape=nested loop=MENUS", text)
         self.assertNotIn("[riot]", text)
         for secret in (PUUID, PARTY, "Owner", "JP1"):
@@ -521,7 +521,7 @@ class PagesTest(unittest.TestCase):
         text = self.client.post("/settings", data={"csrf": token, "do": "app", "alert_sound": "on"}).get_data(
             as_text=True
         )
-        self.assertIn("PC アプリの設定を保存しました。", text)
+        self.assertIn("設定を保存しました。", text)
         self.assertEqual(pc.chosen(self.app.config["VAL_SETTINGS"]), {"alert_flash": False, "alert_sound": True})
         self.assertIn('name="alert_sound" checked', text)
 
@@ -550,7 +550,7 @@ class PagesTest(unittest.TestCase):
         text = self.client.post(
             "/settings", data={"csrf": token, "do": "alert_test", "alert_flash": "on", "alert_sound": "on"}
         ).get_data(as_text=True)
-        self.assertIn("知らせを試しました", text)
+        self.assertIn("通知をテストしました", text)
         self.assertIn(("flash", 42, True), windows.did)
         self.assertIn(("play", pc.SOUND), windows.did)
 

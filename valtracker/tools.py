@@ -48,14 +48,14 @@ GAMES = {
 }
 #: Why a party may or may not queue together (queues.check) -> the words (translated).
 PARTY_WORDS = {
-    "size": "{size} 人のパーティーではコンペティティブに行けません。",
-    "high": "{rank} 以上の人がいるパーティーは {size} 人まで（5 人なら行けます）。",
-    "high_strict": "{rank} 以上の人がいるパーティーは {size} 人までです。",
-    "full": "5 人ならランクの差に関係なく行けます。",
-    "unranked": "ランクの付いていない人は、ここでは確かめられません。",
-    "gap_ok": "行けます。{low} がいるパーティーは {top} まで一緒に行けます。",
-    "gap": "行けません。{low} がいるパーティーは {top} まで（{high} は離れすぎています）。",
-    "unknown": "このランクの決まりが Riot の設定にありませんでした。",
+    "size": "{size} 人パーティーではコンペティティブに参加できません。",
+    "high": "{rank} 以上を含むパーティーは {size} 人まで（5 人は可）。",
+    "high_strict": "{rank} 以上を含むパーティーは {size} 人までです。",
+    "full": "5 人パーティーはランク差に関係なく参加できます。",
+    "unranked": "未ランクのプレイヤーは判定できません。",
+    "gap_ok": "組めます。{low} と組めるのは {top} までです。",
+    "gap": "組めません。{low} と組めるのは {top} まで（{high} はランク差が大きすぎます）。",
+    "unknown": "このランクの制限データがありません。",
 }
 #: A notice for these platforms only is not about the PC game, which this site tracks.
 CONSOLES = {"playstation", "xbox", "ps5", "xbsx", "console"}
@@ -122,7 +122,7 @@ def _board(region: str, page: int) -> tuple[dict, int]:
     values = {"region": region, "page": page, "problem": "", "settings_link": False, "loading": False}
     values |= {"q": typed, "searched": bool(typed)}
     if typed and not name:
-        values["problem"] = _t("「名前#タグ」の形で入れてください。")
+        values["problem"] = _t("「名前#タグ」の形式で入力してください。")
         return values | {"players": [], "thresholds": []}, 400
     start = 0 if typed else (page - 1) * BOARD_PAGE
     found, source = None, ""
@@ -220,7 +220,7 @@ def _crosshair_page(code: str) -> dict:
     shown = found or crosshairs.parse("0")
     table = [("primary", _t("通常"), shown["primary"])]
     if shown["ads"] is not None:
-        table.append(("ads", _t("覗き込み"), shown["ads"]))
+        table.append(("ads", _t("ADS"), shown["ads"]))
     described = []
     for key, name, settings in table:
         about = crosshairs.describe(settings)
@@ -228,7 +228,7 @@ def _crosshair_page(code: str) -> dict:
         described.append({"key": key, "name": name, "about": about})
     return {
         "code": code,
-        "problem": _t("クロスヘアのコードではありませんでした。ゲームの「コピー」で出たものをそのまま貼ってください。")
+        "problem": _t("クロスヘアコードとして読み取れません。ゲームでコピーしたものをそのまま貼ってください。")
         if code and not found
         else "",
         "unknown": found["unknown"] if found else [],
@@ -284,7 +284,7 @@ def _zone() -> tuple[float, str]:
         return offset, _t(name)
     hours, rest = divmod(abs(minutes), 60)
     zone = f"UTC{'+' if minutes >= 0 else '−'}{hours}" + (f":{rest:02d}" if rest else "")
-    return minutes / 60, _t("あなたの時間（{zone}）", zone=zone)
+    return minutes / 60, _t("現地時間（{zone}）", zone=zone)
 
 
 def _ranks_page(region: str) -> dict:
@@ -374,12 +374,12 @@ def _sensitivity(args) -> dict:
         new_dpi = int(float(args.get("new_dpi", "") or 0))
     except ValueError:
         sens, dpi, new_dpi = 0, 0, 0
-        values["problem"] = _t("数を入れてください。")
+        values["problem"] = _t("数値を入力してください。")
     values |= {"sens": args.get("sens", ""), "dpi": args.get("dpi", ""), "new_dpi": args.get("new_dpi", "")}
     if not sens or not dpi:
         return values
     if not (0 < sens <= 1000 and 50 <= dpi <= 64000) or (new_dpi and not 50 <= new_dpi <= 64000):
-        values["problem"] = _t("感度は 0 より大きく、DPI は 50〜64000 で入れてください。")
+        values["problem"] = _t("感度は 0 より大きい値、DPI は 50〜64000 で入力してください。")
         return values
     turn = sens * GAMES[game][1]  # degrees a count turns
     rows = []
@@ -406,7 +406,7 @@ def _queues_page() -> tuple[dict, int]:
             values["problem"] = riot_failure(error.kind)
             values["settings_link"] = error.kind not in ("busy", "down")
         else:
-            values["problem"] = _t("いまはゲームの設定を読めません。時間をおいてもう一度どうぞ。")
+            values["problem"] = _t("ゲームの設定を取得できません。しばらくしてからお試しください。")
         return values, 200 if error.kind == "nologin" else 503
     data = queues.settings(found.get("config") or {}, current_app.config["VAL_CONTENT"].map_index(g.lang))
     for queue in data["queues"]:
@@ -490,8 +490,8 @@ def _reminder():
     now = time.time()
     start = datetime.fromtimestamp(_next_reset(now), UTC).strftime("%Y%m%dT%H%M%SZ")
     stamp = datetime.fromtimestamp(now, UTC).strftime("%Y%m%dT%H%M%SZ")
-    title = _ics(_t("VALORANT のストアが入れ替わりました"))
-    about = _ics(_t("毎日の 4 つのスキンが新しくなりました。") + " " + shared_url("shop"))
+    title = _ics(_t("VALORANT のストアが更新されました"))
+    about = _ics(_t("デイリーの 4 スキンが入れ替わりました。") + " " + shared_url("shop"))
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",

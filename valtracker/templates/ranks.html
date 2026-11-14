@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 {% block title %}{{ t('ランクの分布') }} · {{ region_name }} · {{ site_name }}{% endblock %}
-{% block description %}{{ t('コンペティティブでどのランクがどれくらいいるか、各ランクが上位何 % か。このサイトが見た試合からの目安です。') }}{% endblock %}
+{% block description %}{{ t('コンペティティブのランク別人数比と上位 %（当サイト集計の推定値）。') }}{% endblock %}
 {% block main %}
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">
 <h1>{{ t('ランクの分布') }}</h1>
-<p class="lead">{{ t('コンペティティブでどのランクがどれくらいいるか、各ランクが上位何 % か。このサイトが見た試合からの目安です。') }}</p>
+<p class="lead">{{ t('コンペティティブのランク別人数比と上位 %（当サイト集計の推定値）。') }}</p>
 </section>
 <nav class="modes" aria-label="{{ t('地域') }}">
 {% for item in regions %}<a href="{{ item.url }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
 {% endfor %}</nav>
-<p class="note estimate">{{ t('Riot はランクの分布を公開していません。ここ {days} 日にこのサイトが見たコンペティティブの試合の、1 試合 1 人ずつの {count} 人分から数えています（たくさん遊ぶ人ほど多く数えられます）。', days=days, count='{:,}'.format(lines)) }}</p>
+<details class="more"><summary>{{ t('集計方法') }}</summary><p>{{ t('Riot はランク分布を公開していません。直近 {days} 日に当サイトで集計したコンペティティブの {count} 人分から推定しています。プレイ回数の多い人ほど多く数えられます。', days=days, count='{:,}'.format(lines)) }}</p></details>
 {% if not enough %}
-<p class="note">{{ t('この地域の試合はまだ集まっていません。誰かの戦績が見られるたびに増えていきます。') }}</p>
+<p class="note">{{ t('この地域のデータがまだ足りません。') }}</p>
 {% else %}
 <div class="table-wrap"><table class="board plain rank-spread">
 <thead><tr><th scope="col">{{ t('ランク') }}</th><th scope="col">{{ t('割合') }}</th><th scope="col">{{ t('上位') }}</th></tr></thead>
