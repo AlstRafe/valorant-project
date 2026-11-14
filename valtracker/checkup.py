@@ -227,7 +227,13 @@ def riot_items(riot) -> list[dict]:
         _riot("live", riot.live, lived),
         _riot("collection", riot.collection),
         _riot("shop", riot.shop),
-        _riot("contracts", riot.contracts),
+        # the names of the answer's parts (no value): where a new part of the game shows first, as the agents'
+        # mastery levels of patch 13.06, which no public document places yet
+        _riot(
+            "contracts",
+            riot.contracts,
+            lambda found: _item("contracts", "ok", "read", "parts=" + ",".join(sorted(found["contracts"])[:14])),
+        ),
         _riot("agents", lambda: {"agents": riot.agents()}, lambda found: counted("agents", len(found["agents"]))),
         _riot(
             "history",
