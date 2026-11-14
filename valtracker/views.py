@@ -1092,6 +1092,32 @@ def _match_page(found: dict, me: str) -> dict:
         duels.sort(key=lambda duel: (-(duel["took"] - duel["lost"]), -duel["took"]))
     tiers = [person["rank"]["tier"] for person in people if person["rank"]["tier"] > 2]
     average = _rank({"id": round(sum(tiers) / len(tiers))}) if tiers else None
+    # the player's numbers as they stood after each round (the game shows none of this while it is played)
+    course = []
+    if mine >= 0 and digest.get("kills") and digest.get("rounds"):
+        kills = deaths = head = hits = 0
+        counted = any(item.get("h") for item in digest["rounds"])
+        for number, item in enumerate(digest["rounds"]):
+            happened = by_round.get(number, [])
+            took = sum(1 for kill in happened if kill[2] == mine and people[kill[3]]["team"] != my_team)
+            died = any(kill[3] == mine for kill in happened)
+            kills, deaths = kills + took, deaths + died
+            shot = next((line for line in item.get("h") or [] if line[0] == mine), None)
+            if shot:
+                head, hits = head + shot[1], hits + shot[2]
+            course.append(
+                {
+                    "number": number + 1,
+                    "won": item["w"] == my_team if my_team else None,
+                    "took": took,
+                    "died": died,
+                    "kills": kills,
+                    "deaths": deaths,
+                    "kd": round(kills / max(deaths, 1), 2),
+                    "hs": round(100 * head / hits) if counted and hits else None,
+                    "turn": bool(half) and number in (half, 2 * half),
+                }
+            )
     moment = stats.started(found)
     scored = any(person["score"] for person in people)
     plan = heatmap.plan(_map_item(metadata)) if mine >= 0 else None
@@ -1107,6 +1133,8 @@ def _match_page(found: dict, me: str) -> dict:
         "rounds": rounds,
         "teams": teams,
         "timeline": timeline,
+        "course": course,
+        "course_hs": any(row["hs"] is not None for row in course),
         "my_team": my_team,
         "detailed": bool(digest.get("players")),
         "duels": duels,

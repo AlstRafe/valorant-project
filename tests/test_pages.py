@@ -395,10 +395,15 @@ class PagesTest(unittest.TestCase):
         self.assertEqual(text.count('class="party '), 2, "only parties of two or more")
         self.assertIn("Tester の対面成績", text)
         self.assertIn('<span class="up" title="キル">12</span>', text)  # Tester on Foe
+        # the player's numbers after each round: kills, deaths, K/D and the share of hits to the head so far
+        self.assertIn("Tester のラウンドごとの推移", text)
+        self.assertRegex(text, r'<tr class="win"><th scope="row"><a href="#r1">1</a></th><td>\d</td>')
+        self.assertIn('<th scope="col">HS%</th>', text)
         # without the player the visitor came from: the rounds by team colour, no duels
         plain = self.get(f"/m/ap/{MATCH}").get_data(as_text=True)
         self.assertIn('<li class="red"', plain)
         self.assertNotIn("対面成績", plain)
+        self.assertNotIn("ラウンドごとの推移", plain)
 
     def test_a_match_without_its_rounds(self):
         text = self.get("/m/ap/aaaaaaaa-0000-4000-8000-000000000002").get_data(as_text=True)

@@ -234,6 +234,7 @@ def _round(item: dict) -> dict:
         "stats": [
             {
                 "player": {"puuid": _id(line.get("subject"))},
+                "stats": _shots(line),
                 "economy": {
                     "loadout_value": _int((line.get("economy") or {}).get("loadoutValue"))
                     if isinstance(line.get("economy"), dict)
@@ -244,6 +245,12 @@ def _round(item: dict) -> dict:
             if isinstance(line, dict)
         ],
     }
+
+
+def _shots(line: dict) -> dict:
+    """A player's hits of one round by where they landed (PD counts them per opponent hit)."""
+    hit = [item for item in line.get("damage") or [] if isinstance(item, dict)]
+    return {name: sum(_int(item.get(name)) for item in hit) for name in ("headshots", "bodyshots", "legshots")}
 
 
 def _kills(details: dict, rounds_raw: list) -> list:

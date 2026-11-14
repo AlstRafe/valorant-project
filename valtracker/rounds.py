@@ -106,10 +106,16 @@ def _round(raw: dict, place: dict, team: list) -> dict:
     planter = place.get(_puuid(plant.get("player") or plant.get("planted_by")), -1) if plant else -1
     defuser = place.get(_puuid(defuse.get("player") or defuse.get("defused_by")), -1) if defuse else -1
     loadout: dict[str, int] = {}
+    shots = []
     for line in raw.get("stats") or raw.get("player_stats") or []:
         if not isinstance(line, dict):
             continue
         who = place.get(_puuid(line.get("player") or line.get("player_puuid")))
+        counted = line.get("stats") if isinstance(line.get("stats"), dict) else line
+        head = _int(counted.get("headshots"))
+        hits = head + _int(counted.get("bodyshots")) + _int(counted.get("legshots"))
+        if who is not None and hits:
+            shots.append([who, head, hits])
         economy = line.get("economy") if isinstance(line.get("economy"), dict) else {}
         if who is not None and team[who]:
             loadout[team[who]] = loadout.get(team[who], 0) + _int(economy.get("loadout_value"))
@@ -123,6 +129,8 @@ def _round(raw: dict, place: dict, team: list) -> dict:
         "d": defuser,
         "a": "",
         "l": loadout,
+        # the hits of the round: [player, to the head, altogether] (the players who hit someone)
+        "h": shots,
     }
 
 

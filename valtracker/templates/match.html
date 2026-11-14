@@ -71,6 +71,20 @@
 {% set terms = ['kda', 'diff', 'hs'] + (['acs', 'adr', 'dd'] if rounds else []) + (['kast', 'first', 'multi'] if rounds and detailed else []) + (['score'] if scored else []) %}
 {% include "_glossary.html" %}
 
+{% if course %}
+<section class="course" aria-labelledby="course-title">
+<h2 id="course-title">{{ t('{name} のラウンドごとの推移', name=me.name) }}</h2>
+<p class="note">{{ t('各ラウンドが終わった時点の数字です。') }}</p>
+<div class="table-wrap"><table class="board plain course-table">
+<thead><tr><th scope="col">{{ t('ラウンド') }}</th><th scope="col">{{ t('キル') }}</th><th scope="col">{{ t('デス') }}</th><th scope="col">{{ t('累計') }}</th><th scope="col">K/D</th>{% if course_hs %}<th scope="col">HS%</th>{% endif %}</tr></thead>
+<tbody>
+{% for row in course %}<tr class="{{ ('win' if row.won else 'loss') if row.won is not none }}{% if row.turn %} turn-row{% endif %}"><th scope="row"><a href="#r{{ row.number }}">{{ row.number }}</a></th><td>{{ row.took or '–' }}</td><td>{{ '1' if row.died else '–' }}</td><td>{{ row.kills }} / {{ row.deaths }}</td><td><strong>{{ '%.2f'|format(row.kd) }}</strong></td>{% if course_hs %}<td>{% if row.hs is not none %}{{ row.hs }}%{% else %}–{% endif %}</td>{% endif %}</tr>
+{% endfor %}
+</tbody>
+</table></div>
+</section>
+{% endif %}
+
 {% if duels %}
 <section class="duels" aria-labelledby="duel-title">
 <h2 id="duel-title">{{ t('{name} の対面成績', name=me.name) }}</h2>
