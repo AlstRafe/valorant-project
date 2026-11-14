@@ -418,6 +418,8 @@ def shows_rr(mode: str) -> bool:
 
 def _slim_mmr(data) -> dict:
     slim = _pick(data, ("current", "peak"))
+    if isinstance(slim.get("peak"), dict):  # the best rank ever: from an act before Ascendant, numbered its way
+        slim["peak"] = slim["peak"] | {"old": _old_ranks(slim["peak"])}
     seasons = [_slim_act(season) for season in (data or {}).get("seasonal") or [] if isinstance(season, dict)]
     slim["seasons"] = sorted(
         (act for act in seasons if act["games"]), key=lambda act: _act_order(act["short"]), reverse=True
@@ -449,11 +451,18 @@ def _slim_act(season: dict) -> dict:
         "games": number(season.get("games")),
         "wins": number(season.get("wins")),
         "end_tier": tier(season.get("end_tier")),
-        # before Episode 5 the ranks had no Ascendant, so the same number was another rank
-        "old": str(season.get("ranking_schema") or "") == "base" or (_act_order(short)[:1] or (99,))[0] < 5,
+        "old": _old_ranks(season),
         "board": number(board.get("rank")) if isinstance(board, dict) else 0,
         "best": [win for win in wins if win > 2][:BADGE_WINS],
     }
+
+
+def _old_ranks(item: dict) -> bool:
+    """Whether an act of v3 mmr (or the peak's act) numbers its ranks as before Episode 5: there was no Ascendant,
+    so the same number was another rank."""
+    season = item.get("season") if isinstance(item.get("season"), dict) else {}
+    episode = (_act_order(str(season.get("short") or ""))[:1] or (99,))[0]
+    return str(item.get("ranking_schema") or "") == "base" or episode < 5
 
 
 def _act_order(short: str) -> tuple:

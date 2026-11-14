@@ -9,7 +9,7 @@
 {%- if row.title %}{% set _ = parts.append(row.title) %}{% endif -%}
 {%- if row.level %}{% set _ = parts.append(t('レベル {level}', level=row.level)) %}{% endif %}
 {% if parts %}<small>{{ parts|join(' · ') }}</small>{% endif %}
-{% if row.record %}<small class="seat-record">{{ t('今アクト {wins}勝 / {games}試合（{rate}%）', wins=row.record.wins, games=row.record.games, rate=row.record.win_rate) }}{% if row.record.peak_rank %} · {{ t('最高 {rank}', rank=row.record.peak_rank.name) }}{% endif %}</small>{% endif %}
+{% if row.record or row.peak %}<small class="seat-record">{% if row.record %}{{ t('今アクト {wins}勝 / {games}試合（{rate}%）', wins=row.record.wins, games=row.record.games, rate=row.record.win_rate) }}{% endif %}{% if row.record and row.peak %} · {% endif %}{% if row.peak %}{{ t('通算最高 {rank}', rank=row.peak.name) }}{% endif %}</small>{% endif %}
 </span>
 {% if row.rank %}<span class="seat-rank">{% if row.rank.icon %}<img src="{{ media(row.rank.icon) }}" alt="" width="28" height="28">{% endif %}<span class="rank-words"><span>{{ row.rank.name }}</span>{% if row.rank.rr is not none %} <span>{{ row.rank.rr }} RR</span>{% endif %}</span></span>{% endif %}
 </li>

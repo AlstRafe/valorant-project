@@ -10,7 +10,7 @@
 <li><a href="{{ url_for('queue_settings') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg><strong>{{ t('マップとパーティー') }}</strong><small>{{ t('マッププールとランク差の制限') }}</small></a></li>
 <li><a href="{{ url_for('servers') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V13M9 20V8M14 20v-9M19 20V5"/></svg><strong>{{ t('サーバーの混雑状況') }}</strong><small>{{ t('時間帯別の混雑と待ち時間の目安') }}</small></a></li>
 <li><a href="{{ url_for('status') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><strong>{{ t('サーバー状況') }}</strong><small>{{ t('メンテナンス・障害情報') }}</small></a></li>
-<li><a href="{{ url_for('crosshair') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.3"/><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/></svg><strong>{{ t('クロスヘア') }}</strong><small>{{ t('コードのプレビューと定番クロスヘア') }}</small></a></li>
+<li><a href="{{ url_for('crosshair') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="1.3"/><path d="M12 3v5M12 16v5M3 12h5M16 12h5"/></svg><strong>{{ t('クロスヘア') }}</strong><small>{{ t('プレビューと定番コード') }}</small></a></li>
 <li><a href="{{ url_for('sensitivity') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="5"/><path d="M12 7v3"/></svg><strong>{{ t('感度変換') }}</strong><small>{{ t('他ゲームからの変換と振り向き距離') }}</small></a></li>
 </ul>
 </section>
@@ -34,7 +34,7 @@
 <h2 id="tools-4">{{ t('スキンとショップ') }}</h2>
 <ul class="tool-grid">
 <li><a href="{{ url_for('shop') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h16V20H4z"/><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5"/></svg><strong>{{ t('ショップ') }}</strong><small>{{ t('販売中のバンドル') }}</small></a></li>
-<li><a href="{{ url_for('skins') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5h13l2-2h3v4h-3l-1.5 1.5H11l-1.5 5h-4l1.5-5H3z"/></svg><strong>{{ t('スキン図鑑') }}</strong><small>{{ t('全スキンの動画・バリエーション・評価') }}</small></a></li>
+<li><a href="{{ url_for('skins') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5h13l2-2h3v4h-3l-1.5 1.5H11l-1.5 5h-4l1.5-5H3z"/></svg><strong>{{ t('スキン図鑑') }}</strong><small>{{ t('全スキンの動画と評価') }}</small></a></li>
 </ul>
 </section>
 {% if owner %}
@@ -43,9 +43,11 @@
 <ul class="tool-grid">
 <li><a href="{{ url_for('live') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="2.2"/><path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.3 5.3a9.5 9.5 0 0 0 0 13.4M18.7 5.3a9.5 9.5 0 0 1 0 13.4"/></svg><strong>{{ t('ライブ') }}</strong><small>{{ t('キュー開始とエージェント選択') }}</small></a></li>
 <li><a href="{{ url_for('progress') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18h16M4 18V6M8 18v-5M12 18V9M16 18v-7"/></svg><strong>{{ t('進行状況') }}</strong><small>{{ t('バトルパス・契約・ミッション') }}</small></a></li>
-<li><a href="{{ url_for('collection') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h16V20H4z"/><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5M4 13h16"/></svg><strong>{{ t('所持品') }}</strong><small>{{ t('スキン・ガンバディー・カードの装備') }}</small></a></li>
+{% if desktop %}<li><a href="{{ url_for('friends') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.7-3.8 3-6 6.5-6s5.8 2.2 6.5 6M16 4.800a3.5 3.5 0 0 1 0 6.400M18 14.500c2 .9 3.2 2.8 3.6 5.5"/></svg><strong>{{ t('フレンド') }}</strong><small>{{ t('オンライン状況') }}</small></a></li>
+{% endif %}<li><a href="{{ url_for('collection') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h16V20H4z"/><path d="M8.5 8.5V6a3.5 3.5 0 0 1 7 0v2.5M4 13h16"/></svg><strong>{{ t('所持品') }}</strong><small>{{ t('スキン・カードの装備') }}</small></a></li>
 <li><a href="{{ url_for('settings') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg><strong>{{ t('設定') }}</strong><small>{{ t('API キーと Riot アカウント連携') }}</small></a></li>
-</ul>
+{% if desktop %}<li><a href="{{ url_for('checkup') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.500c0 4.4 3 8 7.5 9.5 4.5-1.5 7.5-5.1 7.5-9.500V6z"/><path d="m8.8 12 2.3 2.3 4.2-4.6"/></svg><strong>{{ t('診断') }}</strong><small>{{ t('動作チェックとレポート') }}</small></a></li>
+{% endif %}</ul>
 </section>
 {% endif %}
 <p class="note cn" id="china">{{ t('中国大陸版（无畏契约）は戦績が公開されていないため検索できません。クロスヘアと感度変換は使えます。') }}</p>

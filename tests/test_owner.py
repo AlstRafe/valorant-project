@@ -164,7 +164,7 @@ class OwnerTest(unittest.TestCase):
         self.assertEqual(self.state()["problem"], "nologin")
         self.assertEqual(self.client.get("/live/state", environ_base=VISITOR).status_code, 404)
         self.link()
-        self.assertEqual((self.state()["phase"], self.state()["words"]), ("", "VALORANT は起動していません"))
+        self.assertEqual((self.state()["phase"], self.state()["words"]), ("", "VALORANT 未起動"))
         self.riot.phase = "menus"
         self.assertEqual(self.state()["words"], "メニュー")
         self.riot.pd["party"]["State"] = "MATCHMAKING"
@@ -291,11 +291,29 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("<small data-live-text>", text, "the game's state, from the tab's asking")
         self.assertNotIn("Riot アカウントを連携すると", text)
 
+    def test_the_best_rank_is_the_best_of_every_act(self):
+        from valtracker.live import best_ever
+
+        acts = {
+            "act-now": {"CompetitiveTier": 21, "WinsByTier": {"18": 3, "22": 2, "23": 0}},
+            "act-before": {"CompetitiveTier": 24, "WinsByTier": {"25": 1}},
+            "act-old": {"CompetitiveTier": 0, "WinsByTier": {"23": 4}},  # Immortal 3 of Episode 3
+        }
+        mmr = {"QueueSkills": {"competitive": {"SeasonalInfoBySeasonID": acts}}}
+        self.assertEqual(best_ever(mmr), 25, "an earlier act's, not only this act's")
+        self.assertEqual(best_ever(mmr, frozenset({"act-old"})), 26, "before Ascendant, 23 was today's 26")
+        self.assertEqual(best_ever({"QueueSkills": {"competitive": {"SeasonalInfoBySeasonID": {"a": {}}}}}), 0)
+        self.assertEqual(best_ever(None), 0)
+
     def test_the_players_act_and_the_teams_rank(self):
         self.link()
         self.riot.phase = "pregame"
         text = self.page("/live")
-        self.assertIn("今アクト 15勝 / 30試合（50%） · 最高 Tier 22", text, "a player who shows their name")
+        self.assertIn(
+            "今アクト 15勝 / 30試合（50%） · 通算最高 Tier 24",
+            text,
+            "a player who shows their name: the best rank of every act (the act before), not of this act (22)",
+        )
         self.assertNotIn("7勝 / 9試合", text, "nothing about a player who hides who they are")
         self.assertIn('味方 <small class="team-average">平均 Tier 17</small>', text, "(18 + 21 + 12) / 3")
         self.riot.phase = "ingame"

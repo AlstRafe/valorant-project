@@ -13,7 +13,7 @@ import re
 from flask import Flask, abort, current_app, render_template, request
 
 from valtracker.henrik import MODES, STORED_MODES, HenrikError, split_riot_id
-from valtracker.views import QUEUES, _agent, _failure, _rank, _t
+from valtracker.views import QUEUES, _agent, _failure, _peak, _rank, _t
 
 #: The agents shown for each act, the most played first.
 AGENTS_SHOWN = 3
@@ -114,4 +114,12 @@ def register(app: Flask) -> None:
         values["acts"] = [_named(act, mode) for act in seasons(stored)]
         counted = [match for match in stored if match["season"]]
         values["total"] = _named(numbers(counted), mode) if counted else None
+        if values["total"] and mode == "competitive":
+            # the lifetime card: the best rank ever (as the player page says it), not the best of the kept matches
+            try:
+                ever = _peak(henrik.mmr(str(account.get("region") or "ap"), values["name"], values["tag"]))
+            except HenrikError:
+                ever = None
+            if ever and ever["tier"] >= values["total"]["peak"]:
+                values["total"]["peak_rank"] = ever
         return render_template("seasons.html", **values)

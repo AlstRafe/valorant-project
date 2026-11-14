@@ -248,6 +248,13 @@ class PagesTest(unittest.TestCase):
         self.assertIn("Victory", english)
         self.assertIn('<li class="win">W</li><li class="loss">L</li>', english)
 
+    def test_the_best_rank_is_the_best_ever_in_todays_numbers(self):
+        # v3 mmr's peak is Tier 22, but Episode 4 ended at 21: before Ascendant that was Immortal 1, today's 24
+        text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
+        best = text[text.index('<p class="label">最高ランク</p>') :]
+        self.assertIn("<span>Tier 24</span>", best[:400])
+        self.assertIn("/24/smallicon.png", best[:400])
+
     def test_a_player_page_in_depth(self):
         text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
         self.assertIn("Tier 22 まであと 58 RR · 平均 +18 で約 4 勝", text)  # 42 RR of 100

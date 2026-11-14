@@ -77,6 +77,9 @@ class PageTest(unittest.TestCase):
         self.assertIn('class="change up"', text)
         self.assertIn("ジェット", text, "the agents by name")
         self.assertIn("Tier 22", text, "the act's best rank")
+        self.assertRegex(
+            text, r'title="最高ランク"><img [^>]*>Tier 24</span>', "all time: the best rank ever, as the player page"
+        )
         calls = [url for url in self.fetch.henrik_calls() if "/stored-matches/" in url]
         self.assertEqual(len(calls), 1)
         self.assertIn("mode=competitive", calls[0])

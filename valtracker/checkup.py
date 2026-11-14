@@ -98,7 +98,7 @@ WHERE = {
     "found": "試合が見つかりました",
     "pregame": "エージェント選択中",
     "ingame": "対戦中",
-    "": "VALORANT は起動していません",
+    "": "VALORANT 未起動",
 }
 _ID = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 _LONG = re.compile(r"[A-Za-z0-9_\-+/]{40,}")
