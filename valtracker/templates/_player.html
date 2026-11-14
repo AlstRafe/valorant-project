@@ -35,9 +35,15 @@
 {% if standing.placements %}<p class="sub">{{ t('ランク決定まであと {count} 試合', count=standing.placements) }}</p>{% endif %}
 {% endif %}
 </div>
+{% if act_peak and act_peak.tier > 2 %}
+<div class="rank">
+<p class="label">{{ t('今アクト最高') }}</p>
+<p class="value">{% if act_peak.icon %}<img src="{{ media(act_peak.icon) }}" alt="" width="40" height="40">{% endif %}<span>{{ act_peak.name }}</span></p>
+</div>
+{% endif %}
 {% if peak and peak.tier > 2 %}
 <div class="rank">
-<p class="label">{{ t('最高ランク') }}</p>
+<p class="label">{{ t('通算最高') }}</p>
 <p class="value">{% if peak.icon %}<img src="{{ media(peak.icon) }}" alt="" width="40" height="40">{% endif %}<span>{{ peak.name }}</span></p>
 </div>
 {% endif %}
@@ -202,7 +208,7 @@
   "name": name, "tag": tag,
   "rank": rank.name if rank and rank.tier > 2 else t('ランクなし'),
   "rankIcon": media(rank.icon) if rank and rank.tier > 2 and rank.icon else "",
-  "under": ((rr ~ ' RR') if rank and rank.tier > 2 and rr is not none else '') ~ ((' · ' ~ t('最高ランク') ~ ' ' ~ peak.name) if peak and peak.tier > 2 else ''),
+  "under": ((rr ~ ' RR') if rank and rank.tier > 2 and rr is not none else '') ~ ((' · ' ~ t('通算最高') ~ ' ' ~ peak.name) if peak and peak.tier > 2 else ''),
   "wide": wide,
   "title": mode_name ~ ' · ' ~ (t('{act} · {count} 試合', act=window.name, count='{:,}'.format(summary.games)) if span == 'act' else t('通算 {count} 試合', count='{:,}'.format(summary.games)) if span else t('直近 {count} 試合', count=summary.games)),
   "stats": ([[t('勝率'), summary.win_rate ~ '%']] if summary.decided else []) + [["K/D", summary.kd]] + ([["ACS", summary.acs]] if summary.acs is not none else []) + [[t('HS率'), summary.hs ~ '%']] + ([["KAST", summary.kast ~ '%']] if summary.kast is not none else []) + ([["ADR", summary.adr]] if summary.adr is not none else []),

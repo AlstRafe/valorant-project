@@ -169,13 +169,12 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
         if tier > 2
         else None,
         "tier": tier if tier > 2 else 0,
-        # the act's record, its best rank and the best rank ever only for the owner and the players who show their name: as
-        # public as their page on this site, and nothing about the ones who hide who they are
+        # the act's record only for the owner and the players who show their name: as public as their page on
+        # this site. The three ranks (now, the act's best, the best ever) for everyone: the owner asked for them
+        # for the players who hide their name too (2026-11-15), and a rank does not tell who someone is
         "record": _record(look["ranks"].get(subject), look["act"]) if shown else None,
-        "peak": _rank_of(best_ever(look["ranks"].get(subject), look.get("old_acts") or frozenset()), look)
-        if shown
-        else None,
-        "act_peak": _rank_of(act_best(look["ranks"].get(subject), look["act"]), look) if shown else None,
+        "peak": _rank_of(best_ever(look["ranks"].get(subject), look.get("old_acts") or frozenset()), look),
+        "act_peak": _rank_of(act_best(look["ranks"].get(subject), look["act"]), look),
         "team": str(item.get("TeamID") or ""),
         "owner": bool(item.get("IsOwner")),
     }
@@ -293,6 +292,13 @@ def page(
             values["picker"] = {
                 "current": mine["agent_id"] if mine["state"] in ("selected", "locked") else "",
                 "current_name": mine["agent"],
+                # the locked agent is shown large: the whole figure, or the square when the game has none
+                "portrait": str(
+                    (agents.get(mine["agent_id"]) or {}).get("fullPortrait")
+                    or (agents.get(mine["agent_id"]) or {}).get("displayIcon")
+                    or ""
+                ),
+                "current_role": ((agents.get(mine["agent_id"]) or {}).get("role") or {}).get("displayName") or "",
                 "locked": mine["state"] == "locked",
                 "agents": [
                     {

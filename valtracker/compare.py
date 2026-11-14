@@ -68,7 +68,13 @@ def _rows(found: list[dict]) -> list[dict]:
             "best": _best(tiers, True),
         },
         {
-            "name": _t("最高ランク"),
+            "name": _t("今アクト最高"),
+            "kind": "rank",
+            "values": [v.get("act_peak") for v in found],
+            "best": _best([_number((values.get("act_peak") or {}).get("tier")) for values in found], True),
+        },
+        {
+            "name": _t("通算最高"),
             "kind": "rank",
             "values": [v.get("peak") for v in found],
             "best": _best(peaks, True),

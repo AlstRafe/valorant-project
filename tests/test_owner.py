@@ -531,7 +531,7 @@ class OwnerTest(unittest.TestCase):
         self.client.post("/live/act", data={"csrf": self.token(), "do": "lock", "value": sova})
         self.assertEqual(self.riot.pressed, [("select", sova), ("lock", sova)])
         text = self.page("/live")
-        self.assertIn("ソーヴァ で確定済み", text)
+        self.assertRegex(text, r'<div class="locked-agent">.*<span class="badge">確定</span><strong>ソーヴァ</strong>')
         self.assertNotIn('class="pick-grid"', text)
         self.assertNotIn(jett + '" class="pick', text)
 

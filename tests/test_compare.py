@@ -60,7 +60,7 @@ class CompareTest(unittest.TestCase):
         row = row[: row.index("</tr>")]
         self.assertLess(row.index("Tier 21"), row.index('class="best"'), "the higher rank is the one marked")
         self.assertIn("Tier 24", row)
-        self.assertIn("1 項目で優勢", text, "the peak is the same, a level is no better")
+        self.assertIn("2 項目で優勢", text, "the rank and the act's best; the peak is the same, a level is no better")
         self.assertIn("<td>+95</td>", text)
         self.assertIn("ACS", text)
         self.assertIn("ジェット", text)
