@@ -19,6 +19,7 @@ import re
 import secrets
 import time
 from datetime import datetime
+from urllib.parse import urlsplit
 
 from flask import Flask, abort, current_app, g, jsonify, redirect, render_template, request, session, url_for
 
@@ -42,6 +43,8 @@ from valtracker.views import QUEUES, _row, _score, _t, riot_failure
 PUSH_WAIT = 25
 #: How long /live links to the match the owner played last, once it is over.
 LAST_MATCH_KEPT = 3 * 3600
+#: How often the owner's match history is asked for their last match (owner._last_played).
+LAST_PLAYED_EVERY = 120
 #: The last match's result from Riot (_last_result): asked for at most every RESULT_EVERY seconds, RESULT_TRIES
 #: times (it is there seconds after the match ends; the Range has none), and so its RR, written a little later.
 RESULT_EVERY, RESULT_TRIES = 12.0, 8
@@ -123,11 +126,36 @@ def _last_match(found: dict) -> str:
         if not isinstance(kept, list) or len(kept) != 2 or kept[0] != playing or time.time() - float(kept[1]) > 300:
             session["live_match"] = [playing, time.time()]
         return ""
-    kept = session.get("live_match")
-    if found.get("phase") in ("ingame", "pregame") or not isinstance(kept, list) or len(kept) != 2:
+    if found.get("phase") in ("ingame", "pregame"):
         return ""
-    match_id, when = str(kept[0]), float(kept[1] or 0)
-    return match_id if _MATCH_ID.match(match_id) and time.time() - when < LAST_MATCH_KEPT else ""
+    kept = session.get("live_match")
+    if isinstance(kept, list) and len(kept) == 2:
+        match_id, when = str(kept[0]), float(kept[1] or 0)
+        if _MATCH_ID.match(match_id) and time.time() - when < LAST_MATCH_KEPT:
+            return match_id
+    return _last_played()
+
+
+def _last_played() -> str:
+    """The match the owner played last by the game's own record (PD's match history), for when no page here saw
+    it being played: the PC app reads nothing while it is behind the game, and the site may have been closed.
+    Asked once in a while; "" when Riot does not answer or the match started hours ago."""
+    riot = current_app.config["VAL_RIOT"]
+    status, puuid = riot.status(game=True), riot.me(game=True)
+    if not puuid:
+        return ""
+    kept = current_app.config.setdefault("VAL_LAST_PLAYED", {})
+    now = time.time()
+    if kept.get("puuid") != puuid or now - kept.get("asked", 0.0) >= LAST_PLAYED_EVERY:
+        kept |= {"puuid": puuid, "asked": now, "id": "", "at": 0}
+        try:
+            matches = riot.history(status["shard"] if status["shard"] in REGIONS else "ap", puuid)["matches"]
+        except RiotError:
+            matches = []
+        if matches:
+            kept |= {"id": matches[0]["id"], "at": matches[0]["at"]}
+    fresh = _MATCH_ID.match(str(kept.get("id") or "")) and now - float(kept.get("at") or 0) < LAST_MATCH_KEPT
+    return kept["id"] if fresh else ""
 
 
 def _last_result(match_id: str) -> dict | None:
@@ -138,7 +166,7 @@ def _last_result(match_id: str) -> dict | None:
     if not match_id:
         return None
     riot = current_app.config["VAL_RIOT"]
-    status, puuid = riot.status(), riot.me()
+    status, puuid = riot.status(game=True), riot.me(game=True)  # the account the match was played with
     if not puuid:
         return None
     region = status["shard"] if status["shard"] in REGIONS else "ap"
@@ -188,7 +216,7 @@ def _match_link(match_id: str) -> str:
     """The owner's last match on this site, with their line marked (?me=)."""
     if not match_id:
         return ""
-    status = current_app.config["VAL_RIOT"].status()
+    status = current_app.config["VAL_RIOT"].status(game=True)
     region = status["shard"] if status["shard"] in REGIONS else "ap"
     me = f"{status['name']}#{status['tag']}" if status["name"] and status["tag"] else None
     return url_for("match", region=region, match_id=match_id, me=me)
@@ -399,9 +427,15 @@ def register(app: Flask) -> None:
                 owned = riot.agents() | STARTERS  # read ahead while matchmaking (riot.Riot.live)
             except RiotError:
                 owned = None
-        me = riot.me()
+        me = riot.me(game=True)
         values = live_page.page(
             found, current_app.config["VAL_CONTENT"], g.lang, me, owned, _queue_name, _agents_on_the_map
+        )
+        # the PC app: the game is the Riot Client's account's, whichever account the other pages show
+        playing, shown = riot.status(game=True), riot.status()
+        other = bool(playing["linked"] and shown["linked"]) and (playing["name"], playing["tag"]) != (
+            shown["name"],
+            shown["tag"],
         )
         last = _last_match(found)
         said = session.pop("live_said", "")  # once: the page is asked again every few seconds
@@ -417,7 +451,8 @@ def register(app: Flask) -> None:
             last_match=_match_link(last),
             last_result=_last_result(last) if found.get("phase") not in ("pregame", "ingame") else None,
             # the game closed: links to the owner's other pages (the account as the settings page reads it)
-            account=riot.status() if not found.get("phase") else None,
+            account=shown if not found.get("phase") else None,
+            game_account=f"{playing['name']}#{playing['tag']}" if other else "",
         )
 
     @app.get("/live/state")
@@ -454,6 +489,19 @@ def register(app: Flask) -> None:
         answer = jsonify({"version": local.wait(after, PUSH_WAIT)})
         answer.headers["Cache-Control"] = "no-store"
         return answer
+
+    @app.post("/account")
+    def account_switch():
+        """The owner picks which of their Riot accounts the pages show (riot.Riot.switch): the buttons where the
+        owner's own things are (_accounts.html). Back to the page the button was on."""
+        security.owner_only()
+        riot = current_app.config["VAL_RIOT"]
+        claim(riot.me())
+        try:
+            riot.switch(request.form.get("account", "")[:36])
+        except RiotError:
+            pass  # an account unlinked meanwhile: the page shows the ones there are
+        return redirect(own_page(request.form.get("next", "")[:400]), 303)
 
     @app.get("/friends")
     def friends():
@@ -602,7 +650,9 @@ def register(app: Flask) -> None:
         set again) or delete."""
         security.owner_only()
         store = current_app.config["VAL_SETS"]
-        sets = [item for item in store.load().get("sets") or [] if isinstance(item, dict)]
+        me = current_app.config["VAL_RIOT"].me()
+        every = [item for item in store.load().get("sets") or [] if isinstance(item, dict)]
+        sets = sets_of(every, me)  # a set is of the account it was saved from
         do, picked = request.form.get("do", ""), request.form.get("set", "")[:32]
 
         def back(why: str, detail: str = ""):
@@ -617,19 +667,47 @@ def register(app: Flask) -> None:
                 return back(error.kind, error.detail)
             name = " ".join(request.form.get("name", "").split())[:30] or _t("セット {number}", number=len(sets) + 1)
             when = datetime.now(JST).isoformat(timespec="minutes")
-            sets.append({"id": secrets.token_hex(8), "name": name, "at": when, **owned_items.snapshot(loadout)})
-            store.save(sets=sets)
+            saved = {"id": secrets.token_hex(8), "name": name, "at": when, "account": me}
+            store.save(sets=[*every, saved | owned_items.snapshot(loadout)])
             return back("saved")
         kept = next((item for item in sets if item.get("id") == picked), None)
         if kept is None:
             return back("noset")
         if do == "delete":
-            store.save(sets=[item for item in sets if item is not kept])
+            store.save(sets=[item for item in every if item is not kept])
             return back("deleted")
         try:
             return back(_wear(owned_items.wear_set(kept)))
         except RiotError as error:
             return back(error.kind, error.detail)
+
+
+def sets_of(sets: list[dict], account: str) -> list[dict]:
+    """The saved sets of one account (a puuid); a set saved before several accounts could be linked is nobody's
+    yet (claim), and shows for whichever."""
+    return [item for item in sets if not item.get("account") or item.get("account") == account]
+
+
+def claim(account: str) -> None:
+    """What was kept while there was one account (the store's diary, the saved sets) is ``account``'s: said just
+    before another account is linked or shown, so that the next one starts with its own."""
+    if not account:
+        return
+    current_app.config["VAL_DIARY"].claim(account)
+    store = current_app.config["VAL_SETS"]
+    sets = [item for item in store.load().get("sets") or [] if isinstance(item, dict)]
+    if any(not item.get("account") for item in sets):
+        store.save(sets=[item if item.get("account") else item | {"account": account} for item in sets])
+
+
+def own_page(address: str) -> str:
+    """``address`` when it is a page of this site (a path under its mount), else the top page: where a button
+    of the owner's leads back to."""
+    parts = urlsplit(address)
+    inside = address.startswith(request.script_root + "/") and not address.startswith("//")
+    if parts.scheme or parts.netloc or not inside or "\\" in address:
+        return url_for("top")
+    return address
 
 
 def equip_said(kind: str) -> tuple[str, bool]:

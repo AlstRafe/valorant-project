@@ -111,6 +111,9 @@ def _token(claims: dict) -> str:
 
 
 ACCESS = _token({"sub": PUUID, "scp": ["account", "openid"]})
+#: A second account of the owner's (Smurf#JP2, its cookie "sub-1"): PD answers for it as for the first.
+PUUID2 = "0d0d0d0d-1111-4222-8333-555555555555"
+ACCESS2 = _token({"sub": PUUID2, "scp": ["account", "openid"]})
 ID_TOKEN = _token({"sub": PUUID, "nonce": "1"})
 ENTITLEMENTS = _token({"entitlements": [], "sub": PUUID})
 
@@ -123,6 +126,9 @@ class FakeRiot:
         self.asked: list[tuple[str, str, dict, bytes | None]] = []
         self.ssid = "ssid-1"
         self.renewals = 0
+        #: The second account's cookie (renewed at each use, like the first's).
+        self.second = "sub-1"
+        self.second_renewals = 0
         self.refuse = 0
         self.broken: set[str] = set()
         self.pd = json.loads(fixture("riot_pd.json"))
@@ -153,6 +159,11 @@ class FakeRiot:
         if url.endswith(f"/store/v3/storefront/{PUUID}") and method != "POST":
             return 404, [], b"{}"  # v2's GET is gone
         if url.startswith("https://auth.riotgames.com/authorize"):
+            if f"ssid={self.second}" in headers.get("Cookie", "").split("; "):
+                self.second_renewals += 1
+                self.second = f"sub-{self.second_renewals + 1}"
+                cookie = ("Set-Cookie", f"ssid={self.second}; Path=/; Max-Age=2592000; Secure; HttpOnly")
+                return 303, [("Location", self.address(ACCESS2)), cookie], b""
             if f"ssid={self.ssid}" not in headers.get("Cookie", "").split("; "):
                 return 303, [("Location", "/login")], b""
             self.renewals += 1
@@ -163,10 +174,12 @@ class FakeRiot:
             ]
             return 303, [("Location", self.address()), *cookies], b""
         if url == "https://entitlements.auth.riotgames.com/api/token/v1":
-            if method != "POST" or headers.get("Authorization") != f"Bearer {ACCESS}":
+            if method != "POST" or headers.get("Authorization") not in (f"Bearer {ACCESS}", f"Bearer {ACCESS2}"):
                 return 400, [], b"{}"
             return 200, [], json.dumps({"entitlements_token": ENTITLEMENTS}).encode()
         if url == "https://auth.riotgames.com/userinfo":
+            if headers.get("Authorization") == f"Bearer {ACCESS2}":
+                return 200, [], json.dumps({"sub": PUUID2, "acct": {"game_name": "Smurf", "tag_line": "JP2"}}).encode()
             return 200, [], json.dumps({"sub": PUUID, "acct": {"game_name": "Owner", "tag_line": "JP1"}}).encode()
         if url.startswith("https://riot-geo.pas.si.riotgames.com/"):
             if json.loads(body).get("id_token") != ID_TOKEN:
@@ -178,7 +191,7 @@ class FakeRiot:
                 return 400, [], json.dumps({"httpStatus": 400, "errorCode": "BAD_CLAIMS"}).encode()
             if headers.get("X-Riot-Entitlements-JWT") != ENTITLEMENTS:
                 return 400, [], json.dumps({"errorCode": "BAD_CLAIMS"}).encode()
-            return self._pd(url, method, body)
+            return self._pd(url.replace(PUUID2, PUUID), method, body)
         return 404, [], b""
 
     def _pd(self, url: str, method: str = "GET", body=None):

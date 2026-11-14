@@ -7,6 +7,7 @@
 <h1>{{ t('ストア履歴') }}</h1>
 <p class="lead">{{ t('ショップを開いた日のストアを記録しています。') }}{% if streak > 1 %}{{ t('{days} 日連続でチェック中。', days=streak) }}{% endif %}</p>
 </section>
+{% include "_accounts.html" %}
 {% if not days %}
 <p class="note">{{ t('まだ記録がありません。ショップを開くと記録されます。') }}</p>
 {% else %}

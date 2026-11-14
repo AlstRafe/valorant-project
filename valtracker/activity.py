@@ -30,7 +30,9 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from valtracker import stats
+from valtracker import pdmatch, stats
+from valtracker.henrik import _slim_match
+from valtracker.riot import RiotError
 
 #: The regions the collector goes round (HenrikDev's names).
 REGIONS = ("ap", "kr", "eu", "na", "latam", "br")
@@ -63,6 +65,8 @@ LINES_ENOUGH = 200
 RANKS_ENOUGH = 100
 #: The collector: seconds between two players (0: off), and how many recent players it can pick from.
 COLLECT_SECONDS = 240
+#: Matches of one player read from the game's own records at a look (Collector._riot): a few calls every few minutes.
+RIOT_MATCHES = 3
 CANDIDATES = 600
 
 
@@ -192,8 +196,27 @@ def _lines(match: dict) -> list[tuple]:
     return rows
 
 
+def _shaped(kind: str, answer):
+    """The site's answer (JSON) as the method of that name gives it, or None when it is not one."""
+    if kind == "yardstick":
+        if not (isinstance(answer, list) and len(answer) == 3 and isinstance(answer[0], dict)):
+            return None
+        stick = {str(stat): [float(v) for v in values] for stat, values in answer[0].items() if stat in LINE_STATS}
+        return stick, int(answer[1]), str(answer[2])
+    if not isinstance(answer, dict):
+        return None
+    if kind == "ranks":
+        tiers = answer.get("tiers") if isinstance(answer.get("tiers"), dict) else {}
+        return {"lines": int(answer.get("lines") or 0), "tiers": {int(tier): int(n) for tier, n in tiers.items()}}
+    wanted = {"agents": ("matches", "agents", "maps"), "servers": ("servers", "waits", "lengths", "matches")}[kind]
+    return answer if all(name in answer for name in wanted) else None
+
+
 class Activity:
     def __init__(self, folder: Path, clock=time.time):
+        #: the PC app: how the site's numbers are asked for (kind, params) -> its JSON (_ask); None on the site
+        self.shared = None
+        self._shared: dict = {}
         self.path = Path(folder) / "activity.sqlite"
         self.clock = clock
         self._lock = threading.Lock()
@@ -232,6 +255,26 @@ class Activity:
         return self._db
 
     # -- what is seen ---------------------------------------------------------------------------------
+
+    def _ask(self, kind: str, params: dict):
+        """The site's own numbers for the PC app (``shared``: how the site is asked, None on the site itself):
+        the site looks at matches all day, the app's own file holds only what its owner opened. Kept 10 minutes;
+        None when the site did not answer (asked again in 5), so the app's own numbers are shown."""
+        if self.shared is None:
+            return None
+        key = (kind, tuple(sorted(params.items())))
+        now = self.clock()
+        kept = self._shared.get(key)
+        if kept and now < kept[0]:
+            return kept[1]
+        try:
+            found = _shaped(kind, self.shared(kind, params))
+        except Exception:  # noqa: BLE001 - whatever went wrong on the way: the app's own numbers
+            found = None
+        if len(self._shared) > 200:
+            self._shared.clear()
+        self._shared[key] = (now + (600 if found is not None else 300), found)
+        return found
 
     def seen(self, matches: list, puuid: str = "") -> int:
         """Keep the matches (a player's list when ``puuid`` is theirs: the waits between them too). Returns how
@@ -314,6 +357,9 @@ class Activity:
         "matches", "hour_now"}`` for a region over the last WINDOW_DAYS, the hours in the visitor's time
         (``offset_hours`` from UTC). A server with fewer than ENOUGH matches has the level "few" and no peak or
         quiet hours. Kept a few minutes."""
+        shared = self._ask("servers", {"region": region, "offset": offset_hours})
+        if shared is not None:
+            return shared
         key = (region, offset_hours)
         now = self.clock()
         kept = self._summary.get(key)
@@ -400,6 +446,9 @@ class Activity:
         """How often each agent is picked and how often its team wins, in the matches seen over WINDOW_DAYS:
         ``{"matches", "agents": [{"agent", "picks", "wins", "pick" (% of the teams), "win" (%)}], "maps": {map:
         matches}}`` (most picked first), for a queue, a rank band (BANDS' names) and a map. Kept a few minutes."""
+        shared = self._ask("agents", {"queue": queue, "band": band_name, "map": map_id})
+        if shared is not None:
+            return shared
         key = ("agents", queue, band_name, map_id)
         now = self.clock()
         kept = self._summary.get(key)
@@ -451,6 +500,9 @@ class Activity:
         """How many competitive lines (one a player a match) of a region over WINDOW_DAYS are at each rank:
         ``{"lines", "tiers": {tier: count}}``. Players who play more count more: no player is kept to tell them
         apart. Read again every 10 minutes."""
+        shared = self._ask("ranks", {"region": region})
+        if shared is not None:
+            return shared
         key = ("ranks", region)
         now = self.clock()
         kept = self._summary.get(key)
@@ -474,6 +526,9 @@ class Activity:
         """The lines of the rank band of ``tier`` over WINDOW_DAYS, each number sorted (``{stat: [values]}``), how
         many lines, and the band's name ("" when every band is the yardstick, as when the band has fewer than
         LINES_ENOUGH). Nothing (``{}, 0, ""``) with fewer than LINES_ENOUGH altogether. Read again every 10 minutes."""
+        shared = self._ask("yardstick", {"tier": int(tier)})
+        if shared is not None:
+            return shared
         name = band(tier)
         own = self._sticks(name) if name else ({}, 0)
         if own[1] >= LINES_ENOUGH:
@@ -519,8 +574,12 @@ class Activity:
 class Collector:
     """Looks at one more player every COLLECT_SECONDS in a thread of its own (see the module's words)."""
 
-    def __init__(self, activity: Activity, henrik, seconds: float = COLLECT_SECONDS):
+    def __init__(self, activity: Activity, henrik, seconds: float = COLLECT_SECONDS, riot=None, maps=None):
         self.activity, self.henrik, self.seconds = activity, henrik, seconds
+        #: the owner's Riot account (riot.Riot) and the maps' index (a callable), for the game's own records
+        self.riot, self.maps = riot, maps
+        #: matches read from the game's own records, not read again
+        self.read: set[str] = set()
         self._started = False
         self._lock = threading.Lock()
         self.looked: set[str] = set()
@@ -542,6 +601,38 @@ class Collector:
             except Exception:  # noqa: BLE001 - a failed look is tried again next time
                 pass
 
+    def _riot(self) -> int | None:
+        """One player's latest matches from the game's own records (PD's match history and match details, with
+        the owner's linked account): whole matches of players the owner never met, with no HenrikDev key and none
+        of its budget. Only in the owner's own region (the records are kept per region); the first player is the
+        owner, then the players of the matches read. No name is read (pdmatch). None: not this time (no account,
+        no one new in the region, or Riot said no), so HenrikDev is asked as before."""
+        if self.riot is None or self.maps is None:
+            return None
+        try:
+            status = self.riot.status()
+            region = status["shard"]
+            if not status["linked"] or status["signed_out"] or region not in REGIONS:
+                return None
+            fresh = [item for item in self.activity.candidates if item[0] == region and item[1] not in self.looked]
+            puuid = random.choice(fresh)[1] if fresh else self.riot.me()
+            if not puuid or puuid in self.looked:
+                return None
+            self.looked.add(puuid)
+            self.regions[region] = self.regions.get(region, 0) + 1
+            new = [item["id"] for item in self.riot.history(region, puuid)["matches"] if item["id"] not in self.read]
+            matches = []
+            for match_id in new[:RIOT_MATCHES]:
+                self.read.add(match_id)
+                raw = pdmatch.to_v4(self.riot.match_details(region, match_id), region, self.maps())
+                if raw and raw["metadata"].get("is_completed", True):
+                    matches.append(_slim_match(raw))
+        except RiotError:
+            return None
+        if len(self.read) > 5000:
+            self.read.clear()
+        return self.activity.seen(matches, puuid)
+
     def pick(self) -> tuple[str, str] | None:
         """A player not looked at yet: from the region, then the rank band, with the fewest of them so far."""
         fresh = [item for item in self.activity.candidates if item[1] not in self.looked and item[0]]
@@ -558,6 +649,9 @@ class Collector:
     def once(self) -> int:
         """One player's latest matches into the numbers; how many matches were new. Now and then (and when no one
         is left to look at) a player of the leaderboard of the region looked at least, so every region fills."""
+        own = self._riot()
+        if own is not None:
+            return own
         if not self.henrik.key():
             return 0
         chosen = self.pick()

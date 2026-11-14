@@ -22,6 +22,17 @@ class ToolsTest(unittest.TestCase):
         self.client = self.app.test_client()
         self.client.set_cookie("lang", "ja")
 
+    def test_the_numbers_for_the_pc_app(self):
+        """What the site worked out, as JSON: the app's own file holds only its owner's matches."""
+        ranks = self.client.get("/numbers/ranks?region=ap")
+        self.assertEqual(ranks.get_json(), {"lines": 0, "tiers": {}})
+        self.assertIn("max-age=600", ranks.headers["Cache-Control"])
+        self.assertEqual(self.client.get("/numbers/yardstick?tier=16").get_json(), [{}, 0, ""])
+        self.assertEqual(self.client.get("/numbers/agents?queue=competitive").get_json()["matches"], 0)
+        self.assertIn("servers", self.client.get("/numbers/servers?region=ap&offset=9").get_json())
+        for path in ("/numbers/ranks?region=moon", "/numbers/agents?queue=x", "/numbers/agents?band=x", "/numbers/x"):
+            self.assertEqual(self.client.get(path).status_code, 404, path)
+
     def page(self, path: str, status: int = 200, **kwargs) -> str:
         answer = self.client.get(path, **kwargs)
         self.assertEqual(answer.status_code, status, path)

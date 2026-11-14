@@ -9,12 +9,12 @@ import re
 import time
 from datetime import UTC, datetime
 
-from flask import Flask, current_app, g, make_response, render_template, request, url_for
+from flask import Flask, abort, current_app, g, jsonify, make_response, render_template, request, url_for
 
 from valtracker import crosshair as crosshairs
 from valtracker import i18n, queues, security, shared_url
 from valtracker import shop as store
-from valtracker.activity import BANDS, ENOUGH, FEW, RANKS_ENOUGH, WINDOW_DAYS
+from valtracker.activity import BANDS, ENOUGH, FEW, LINE_QUEUES, RANKS_ENOUGH, WINDOW_DAYS
 from valtracker.diary import store_day
 from valtracker.henrik import BOARD_PAGE, HenrikError
 from valtracker.riot import RiotError
@@ -287,6 +287,13 @@ def _zone() -> tuple[float, str]:
     return minutes / 60, _t("現地時間（{zone}）", zone=zone)
 
 
+def _numbers_region() -> str:
+    region = request.args.get("region", "ap")
+    if region not in REGION_NAMES:
+        abort(404)
+    return region
+
+
 def _ranks_page(region: str) -> dict:
     """How the competitive lines seen in a region spread over the ranks, best first: each rank's share and the
     share at it or above ("top X%")."""
@@ -450,6 +457,7 @@ def _queues_page() -> tuple[dict, int]:
 def _diary(own: dict) -> None:
     """Notes the owner's store of today (diary.py) and marks the skins they want, and the days in a row."""
     diary = current_app.config["VAL_DIARY"]
+    account = current_app.config["VAL_RIOT"].me()  # each account has its own store, so its own days
     now = time.time()
     day = store_day(own["daily_until"], now)
     diary.note(
@@ -460,13 +468,14 @@ def _diary(own: dict) -> None:
             for item in own["night"] or []
             if item.get("skin")
         ],
+        account,
     )
     wants = set(diary.wants())
     shown = own["daily"] + (own["night"] or []) + [thing for bundle in own["bundles"] for thing in bundle["items"]]
     for item in shown:
         item["wanted"] = bool(item.get("skin")) and item["skin"] in wants and not item.get("owned")
     own["wanted"] = list(dict.fromkeys(item["name"] for item in shown if item["wanted"]))
-    own["streak"] = diary.streak(day)
+    own["streak"] = diary.streak(day, account)
     # the night market's cards the game has not shown yet lie face down until turned (app.js, remembered there)
     own["night_key"] = day
     for number, item in enumerate(own["night"] or []):
@@ -602,6 +611,45 @@ def register(app: Flask) -> None:
         values = _crosshair_page(code)
         return render_template("crosshair.html", **values), 400 if values["problem"] else 200
 
+    @app.get("/numbers/<kind>")
+    def numbers(kind: str):
+        """The numbers this site worked out from the matches it has seen, for the PC app (activity.Activity._ask):
+        the app's own file holds only its owner's matches. No player is in them."""
+        activity = current_app.config["VAL_ACTIVITY"]
+        asked = request.args
+        if kind == "agents":
+            queue = asked.get("queue", "competitive")
+            band = asked.get("band", "")
+            map_id = asked.get("map", "")[:40]
+            if queue not in LINE_QUEUES or (band and band not in [name for name, _, _ in BANDS]):
+                abort(404)
+            found = activity.agents(queue, band, map_id)
+        elif kind == "ranks":
+            found = activity.ranks(_numbers_region())
+        elif kind == "servers":
+            try:
+                offset = max(-12.0, min(14.0, float(asked.get("offset", 9))))
+            except ValueError:
+                offset = 9.0
+            found = activity.servers(_numbers_region(), round(offset * 4) / 4)
+        elif kind == "yardstick":
+            try:
+                tier = max(0, min(27, int(asked.get("tier", 0))))
+            except ValueError:
+                tier = 0
+            stick, lines, band = activity.yardstick(tier)
+            # every 400th part of each sorted list is as good a yardstick as the whole (a megabyte of numbers)
+            thin = {
+                stat: values if len(values) <= 400 else [values[i * (len(values) - 1) // 399] for i in range(400)]
+                for stat, values in stick.items()
+            }
+            found = (thin, lines, band)
+        else:
+            abort(404)
+        answer = jsonify(found)
+        answer.headers["Cache-Control"] = "public, max-age=600"
+        return answer
+
     @app.get("/servers")
     def servers():
         region = _region()
@@ -672,9 +720,10 @@ def register(app: Flask) -> None:
         """The owner's stores of the days before (diary.py), with the skins they want marked."""
         security.owner_only()
         content, diary = current_app.config["VAL_CONTENT"], current_app.config["VAL_DIARY"]
+        account = current_app.config["VAL_RIOT"].me()
         wants = set(diary.wants())
         days = []
-        for day, entry in diary.days():
+        for day, entry in diary.days(account):
             listed = {}
             for key in ("daily", "night"):
                 listed[key] = [
@@ -693,7 +742,7 @@ def register(app: Flask) -> None:
         today = store_day(_next_reset(time.time()), time.time())
         vp = (content.index("currencies", g.lang).get(store.VP) or {}).get("displayIcon")
         return render_template(
-            "shop_history.html", days=days, streak=diary.streak(today), vp_icon=vp, wants=len(wants), seen=seen
+            "shop_history.html", days=days, streak=diary.streak(today, account), vp_icon=vp, wants=len(wants), seen=seen
         )
 
     @app.get("/shop/reminder.ics")

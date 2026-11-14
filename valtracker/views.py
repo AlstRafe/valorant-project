@@ -26,14 +26,14 @@ from flask import (
 
 from valtracker import archive as archive_module
 from valtracker import collection as owned_items
-from valtracker import heatmap, i18n, pc, release, score, security, stats
+from valtracker import heatmap, i18n, pc, pdmatch, release, score, security, stats
 from valtracker import rounds as rounds_module
 from valtracker.activity import BANDS, LINE_QUEUES, LINE_STATS, RANKS_ENOUGH
 from valtracker.content import todays_tier
-from valtracker.henrik import FRESH_AFTER, MODES, NAME, REGIONS, HenrikError, shows_rr, split_riot_id
+from valtracker.henrik import FRESH_AFTER, MODES, NAME, REGIONS, HenrikError, _slim_match, shows_rr, split_riot_id
 from valtracker.media import kind as media_kind
 from valtracker.pdmatch import MODE_TYPES
-from valtracker.riot import AUTHORIZE, RiotError
+from valtracker.riot import ACCOUNTS_MAX, AUTHORIZE, RiotError
 from valtracker.update import UpdateError
 
 #: HenrikDev's queue ids -> what the game calls them (translated in locale.py).
@@ -129,6 +129,7 @@ RIOT_FAILURES = {
     "signedout": "Riot のログインが切れました。設定で ssid を貼り直してください。",
     "busy": "Riot のサーバーが混雑しています。少し待ってからお試しください。",
     "down": "Riot のサーバーが応答しません。しばらくしてからお試しください。",
+    "full": "連携できるアカウントは {count} 個までです。",
 }
 
 
@@ -140,7 +141,7 @@ def riot_failure(kind: str) -> str:
     """Why the owner's Riot account could not be read (RiotError's kind), in the page's language."""
     if kind == "nologin" and current_app.config.get("VAL_LOCAL") is not None:
         kind = "noclient"
-    return _t(RIOT_FAILURES.get(kind, RIOT_FAILURES["down"]))
+    return _t(RIOT_FAILURES.get(kind, RIOT_FAILURES["down"]), count=ACCOUNTS_MAX)
 
 
 def _failure(kind: str) -> tuple[int, str, bool]:
@@ -958,6 +959,27 @@ def _buy(loadout: int, players: int) -> str:
     return "eco" if each < 1000 else "semi-eco" if each < 2000 else "semi-buy" if each < 3900 else "full"
 
 
+def _own_match(region: str, match_id: str) -> dict | None:
+    """A match from the game's own server (PD) for the owner, when HenrikDev does not have it (yet: it takes
+    minutes after the match, and some matches never reach it) or does not answer. PD names every player, so only
+    the owner's own name is kept (pdmatch). None for visitors, without a linked account, or when Riot has none."""
+    if not security.is_owner():
+        return None
+    riot = current_app.config["VAL_RIOT"]
+    try:
+        status, puuid = riot.status(game=True), riot.me(game=True)
+        if not puuid:
+            return None
+        details = riot.match_details(region, match_id)
+    except RiotError:
+        return None
+    maps = current_app.config["VAL_CONTENT"].map_index("en-GB")
+    raw = pdmatch.to_v4(details, region, maps, puuid, status["name"], status["tag"])
+    if not raw or not raw["metadata"].get("is_completed", True):
+        return None
+    return _slim_match(raw)
+
+
 def _match_page(found: dict, me: str) -> dict:
     """What a match's page shows: the scoreboards (with the rounds' numbers), the rounds one by one and their
     kills, the parties, and for the player the visitor came from their duels with each opponent."""
@@ -1180,12 +1202,16 @@ def register(app: Flask) -> None:
         try:
             found = current_app.config["VAL_HENRIK"].match(region, match_id)
         except HenrikError as error:
-            status, problem, settings_link = _failure(error.kind)
-            if error.kind == "notfound":
-                abort(404)
-            return render_template("match.html", problem=problem, settings_link=settings_link), status
-        current_app.config["VAL_ACTIVITY"].seen([found])
-        current_app.config["VAL_ARCHIVE"].keep([found], "henrik")
+            found = _own_match(region, match_id)
+            if found is None:
+                status, problem, settings_link = _failure(error.kind)
+                if error.kind == "notfound":
+                    abort(404)
+                return render_template("match.html", problem=problem, settings_link=settings_link), status
+            current_app.config["VAL_ARCHIVE"].keep([found], "riot")
+        else:
+            current_app.config["VAL_ACTIVITY"].seen([found])
+            current_app.config["VAL_ARCHIVE"].keep([found], "henrik")
         me = request.args.get("me", "")  # the player whose list the visitor came from: their line stands out
         return render_template("match.html", problem="", **_match_page(found, me))
 
@@ -1259,9 +1285,11 @@ def register(app: Flask) -> None:
             values = {"problem": riot_failure(error.kind), "detail": error.detail}
             return render_template("collection.html", **values, settings_link=status == 200), status
         weapon = request.args.get("weapon", "")[:36] if show == "skins" else ""
+        from valtracker.owner import equip_said, sets_of
+
         sets = [item for item in current_app.config["VAL_SETS"].load().get("sets") or [] if isinstance(item, dict)]
+        sets = sets_of(sets, current_app.config["VAL_RIOT"].me())
         values = owned_items.page(found, current_app.config["VAL_CONTENT"], g.lang, show, weapon, sets)
-        from valtracker.owner import equip_said
 
         values["equip_said"], values["equip_ok"] = equip_said(request.args.get("equip", "")[:20])
         values["equip_detail"] = "" if values["equip_ok"] else request.args.get("riot", "")[:80]
@@ -1279,6 +1307,9 @@ def register(app: Flask) -> None:
                 store.save(henrik_key="")
                 saved = _t("API キーを削除しました。")
             elif do == "riot":
+                from valtracker.owner import claim
+
+                claim(riot.me())  # what was kept so far is the account's that was in use until now
                 try:
                     linked = riot.sign_in(request.form.get("riot", ""))
                     saved = _t(
@@ -1286,8 +1317,17 @@ def register(app: Flask) -> None:
                     )
                 except RiotError as error:
                     riot_problem, riot_detail = riot_failure(error.kind), error.detail
+            elif do == "riot_use":
+                from valtracker.owner import claim
+
+                claim(riot.me())
+                try:
+                    shown = riot.switch(request.form.get("account", "")[:36])
+                    saved = _t("{account} に切り替えました。", account=f"{shown['name']}#{shown['tag']}")
+                except RiotError as error:
+                    riot_problem = riot_failure(error.kind)
             elif do == "riot_off":
-                riot.sign_out()
+                riot.sign_out(request.form.get("account", "")[:36])
                 saved = _t("Riot アカウントとの連携を解除しました。")
             elif do == "look" and current_app.config["VAL_UPDATER"] is not None:
                 # the PC app: ask the site now whether a newer build is out (update.py)
@@ -1327,6 +1367,7 @@ def register(app: Flask) -> None:
             shown=shown,
             saved=saved,
             riot=status,
+            accounts=riot.accounts(),
             riot_until=until,
             riot_problem=riot_problem,
             riot_detail=riot_detail,

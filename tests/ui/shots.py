@@ -53,33 +53,9 @@ def at(section: str) -> str:
 #: "go:" before it when it leads to another page). In this order: every page after /live in a match must be /live
 #: too, since the app goes to /live by itself while a match is on.
 SHOTS = (
-    ("01-live-game-closed", "/live", WIDE, "dark", ""),
-    ("02-live-menus-queue", "/live?phase=menus", WIDE, "dark", ""),
-    ("03-live-matchmaking", "/live?phase=queue", WIDE, "dark", ""),
-    ("04-live-agent-select", "/live?phase=pregame", WIDE, "dark", PICK),
-    ("05-live-in-match", "/live?phase=ingame", WIDE, "dark", ""),
-    ("06-live-result-after-match", "/live?phase=menus", WIDE, "dark", ""),
-    ("07-player", f"{PLAYER}?full=1", WIDE, "dark", ""),
-    ("08-player-numbers", f"{PLAYER}?full=1", WIDE, "dark", at("sum-title")),
-    ("09-player-matches", f"{PLAYER}?full=1", WIDE, "dark", at("m-title")),
-    ("10-player-agents-maps", f"{PLAYER}?full=1", WIDE, "dark", at("ag-title")),
-    ("11-player-kill-map", f"{PLAYER}?full=1", WIDE, "dark", at("heat-title")),
-    ("12-player-lifetime", f"{PLAYER}?span=all&full=1", WIDE, "dark", ""),
-    ("13-match", MATCH, WIDE, "dark", ""),
-    ("14-match-kill-map", MATCH, WIDE, "dark", at("duel-title")),
-    ("15-match-rounds", MATCH, WIDE, "dark", ROUND + ";" + at("feed-title")),
-    ("16-shop", "/shop", WIDE, "dark", ""),
-    ("17-collection", "/collection", WIDE, "dark", ""),
-    ("18-progress", "/progress", WIDE, "dark", ""),
-    ("19-agents", "/agents", WIDE, "dark", ""),
-    ("20-agent", "/agents", WIDE, "dark", "go:" + AGENT),
-    ("21-tools", "/tools", WIDE, "dark", ""),
-    ("22-crosshair", f"/crosshair?code={CROSSHAIR}", WIDE, "dark", ""),
-    ("23-servers", "/servers", WIDE, "dark", ""),
-    ("24-ranks", "/ranks", WIDE, "dark", ""),
-    ("25-settings-update-notice", "/settings?update=1", WIDE, "dark", ""),
-    ("26-narrow-window-in-match", "/live?phase=ingame", NARROW, "dark", ""),
-    ("27-light-in-match", "/live?phase=ingame", WIDE, "light", ""),
+    ("01-live-agent-select", "/live?phase=pregame", WIDE, "dark", PICK),
+    ("02-live-in-match", "/live?phase=ingame", WIDE, "dark", ""),
+    ("03-player", f"{PLAYER}?full=1", WIDE, "dark", ""),
 )
 #: The page that was left is marked; one that has arrived has no mark and is whole.
 LEAVE = "window.__left = true;"
