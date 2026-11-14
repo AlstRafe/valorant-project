@@ -292,7 +292,7 @@ class DesktopAppTest(unittest.TestCase):
         self.assertTrue(sent)
         self.assertEqual({headers["X-Riot-ClientVersion"] for headers in sent}, {VERSION})
         settings = self.client.get("/settings").get_data(as_text=True)
-        self.assertIn("Owner#JP1（AP）と連携中 — Riot クライアント経由", settings)
+        self.assertIn("<strong>Owner#JP1</strong><small>AP · Riot クライアント</small>", settings)
         self.assertIn('<details class="ssid-way">', settings)
         self.assertNotIn('value="riot_off"', settings, "nothing to unlink: it is the client's")
         self.assertIn('data-live-push="/live/next"', self.client.get("/").get_data(as_text=True))

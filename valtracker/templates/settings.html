@@ -42,12 +42,23 @@
 </section>
 <section class="panel" id="riot" aria-labelledby="riot-title">
 <h2 id="riot-title">{{ t('Riot アカウント') }}</h2>
-<p>{{ linked(t('{link}・ライブ・ショップの表示に使います。パスワードは不要です。'), url_for('collection'), t('所持品'), false) }}</p>
+<p>{{ linked(t('{link}・ライブ・ショップの表示に使います。パスワードは不要です。'), url_for('collection'), t('所持品'), false) }} {{ t('複数のアカウントを追加して切り替えられます。') }}</p>
 {% if desktop %}<p>{{ t('Riot クライアントでサインイン中のアカウントを自動で使います。') }}</p>{% endif %}
-<p>{{ t('状態:') }} {% if riot.linked %}{{ t('{account}（{shard}）と連携中', account=riot.name ~ '#' ~ riot.tag, shard=riot.shard|upper) }}{% if riot.client %} — {{ t('Riot クライアント経由') }}{% elif riot.signed_out %} — <span class="down">{{ t('ログイン切れ。下の手順で貼り直してください。') }}</span>{% elif riot_until %} — {{ t('{when} まで', when=riot_until) }}{% endif %}{% else %}{{ t('未連携') }}{% endif %}</p>
+{% if accounts %}
+<ul class="account-list">
+{% for account in accounts %}<li{% if account.current %} class="now"{% endif %}>
+<span class="account-name"><strong>{{ account.name }}#{{ account.tag }}</strong><small>{{ account.shard|upper }}{% if account.client %} · {{ t('Riot クライアント') }}{% endif %}{% if account.signed_out %} · <span class="down">{{ t('ログイン切れ。下の手順で貼り直してください。') }}</span>{% elif account.current and not account.client and riot_until %} · {{ t('{when} まで', when=riot_until) }}{% endif %}</small></span>
+{% if account.current %}<span class="account-state">{{ t('使用中') }}</span>{% endif %}
+{% if not account.current or account.linked %}<form method="post"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="account" value="{{ account.puuid }}">{% if not account.current %}<button type="submit" name="do" value="riot_use">{{ t('切り替え') }}</button>{% endif %}{% if account.linked %}<button type="submit" name="do" value="riot_off" class="quiet">{{ t('解除') }}</button>{% endif %}</form>{% endif %}
+</li>
+{% endfor %}</ul>
+{% else %}<p>{{ t('状態:') }} {{ t('未連携') }}</p>{% endif %}
 {% if riot.problem %}<p class="note">{{ t('直近のエラー:') }} <code>{{ riot.problem }}</code></p>{% endif %}
 {% if riot_problem %}<p class="problem" role="alert">{{ riot_problem }}{% if riot_detail %} <code>{{ riot_detail }}</code>{% endif %}</p>{% endif %}
-{% if desktop %}<details class="ssid-way"><summary>{{ t('ssid で連携する（Riot クライアントを使わない場合）') }}</summary>{% endif %}
+{#- the steps are open when they are the next thing to do: nothing linked yet (the site), a paste that failed, or
+    an account Riot signed out #}
+{% set paste_now = riot_problem or accounts|selectattr('signed_out')|list %}
+{% if desktop %}<details class="ssid-way"{% if paste_now %} open{% endif %}><summary>{{ t('ssid で別のアカウントを追加') }}</summary>{% elif accounts %}<details class="ssid-way"{% if paste_now %} open{% endif %}><summary>{{ t('アカウントを追加') }}</summary>{% endif %}
 <ol class="steps">
 <li>{{ linked(t('PC の Chrome か Edge で{link}を開き、「サインインしたままにする」を選んでログイン'), riot_link, t('Riot のサインイン')) }}</li>
 <li>{{ linked(t('同じブラウザで {link} を開く（エラー表示でも問題ありません）'), 'https://auth.riotgames.com/userinfo', 'auth.riotgames.com/userinfo') }}</li>
@@ -58,9 +69,9 @@
 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
 <label for="riot-ssid">ssid</label>
 <input id="riot-ssid" name="riot" type="password" autocomplete="off" spellcheck="false" maxlength="8000">
-<div class="row"><button type="submit" name="do" value="riot">{{ t('連携') }}</button>{% if riot.linked and not riot.client %}<button type="submit" name="do" value="riot_off" class="quiet">{{ t('解除') }}</button>{% endif %}</div>
+<div class="row"><button type="submit" name="do" value="riot">{{ t('連携') }}</button></div>
 </form>
 <details class="more"><summary>{{ t('ssid について') }}</summary><p>{{ t('ssid はログイン状態そのものです。このサーバーにのみ保存し、画面には表示しません。Riot でパスワード変更やログアウトをすると無効になるので、その場合は貼り直してください。ログイン後の URL（playvalorant.com/opt_in#access_token=…）でも 1 時間だけ使えます。') }}</p></details>
-{% if desktop %}</details>{% endif %}
+{% if desktop or accounts %}</details>{% endif %}
 </section>
 {% endblock %}

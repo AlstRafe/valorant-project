@@ -309,10 +309,12 @@ class OwnerTest(unittest.TestCase):
         self.link()
         self.riot.phase = "pregame"
         text = self.page("/live")
-        self.assertIn(
-            "今アクト 15勝 / 30試合（50%） · 通算最高 Tier 24",
+        self.assertIn("今アクト 15勝 / 30試合（50%）", text)
+        self.assertRegex(
             text,
-            "a player who shows their name: the best rank of every act (the act before), not of this act (22)",
+            r'<span class="rank-label">今アクト最高</span>.*?<span>Tier 22</span>.*?'
+            r'<span class="rank-label">通算最高</span>.*?<span>Tier 24</span>',
+            "a player who shows their name: this act's best, and the best of every act (the act before)",
         )
         self.assertNotIn("7勝 / 9試合", text, "nothing about a player who hides who they are")
         self.assertIn('味方 <small class="team-average">平均 Tier 17</small>', text, "(18 + 21 + 12) / 3")
@@ -338,6 +340,31 @@ class OwnerTest(unittest.TestCase):
         self.riot.phase = "menus"
         self.app.config["VAL_RIOT"].cache.put("live", None, 0)
         self.assertIn("直前の試合を見る", self.page("/live"))
+
+    def test_the_last_match_no_page_saw(self):
+        """The PC app reads nothing behind the game: the last match comes from the game's own history."""
+        self.link()
+        match_id = "cccccccc-0000-4000-8000-000000000009"
+        record = json.loads(json.dumps(self.riot.pd["matches"]["bbbbbbbb-0000-4000-8000-000000000001"]))
+        record["matchInfo"] |= {"matchId": match_id}
+        record = json.loads(json.dumps(record).replace(self.riot.pd["player"], PUUID))
+        self.riot.pd["matches"][match_id] = record
+        self.riot.pd["player"] = PUUID
+        started = int((time.time() - 2400) * 1000)
+        self.riot.pd["history"]["History"].insert(
+            0, {"MatchID": match_id, "GameStartTime": started, "QueueID": "competitive"}
+        )
+        self.riot.phase = "menus"
+        text = self.page("/live")
+        self.assertIn(f'<a href="/m/ap/{match_id}?me=Owner%23JP1">', text)
+        # its page, although HenrikDev does not have the match: from Riot, with no one else's name
+        self.fetch.fail = 404
+        page = self.client.get(f"/m/ap/{match_id}?me=Owner%23JP1")
+        self.assertEqual(page.status_code, 200)
+        text = page.get_data(as_text=True)
+        self.assertIn("Owner", text)
+        for name in ("Secret Mate", "Foe One", "Pd Player"):
+            self.assertNotIn(name, text)
 
     def played(self, queue: str = "competitive") -> str:
         """The owner's match is over and Riot's server has its record: the match's id."""
@@ -895,7 +922,7 @@ class OwnerTest(unittest.TestCase):
             "/collection": ("Gun buddies", "Filter by skin or weapon name", "Level 187"),
             f"/collection?weapon={VANDAL}": ("Equipped", "Buddy: ", "Take off"),
             "/collection?show=sets": ("Save what is equipped now", "Set name", "None yet."),
-            "/settings": ("HenrikDev API key", "Stay signed in", "linked to Owner#JP1 (AP)"),
+            "/settings": ("HenrikDev API key", "Stay signed in", "<strong>Owner#JP1</strong><small>AP", "In use"),
             "/shop/history": ("Store history",),
             "/": ("My account", "Collection", "Progress", "Queue and agent select"),
             "/tools": ("My account", "Battle pass, contracts, missions"),

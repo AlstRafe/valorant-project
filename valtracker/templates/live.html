@@ -9,9 +9,11 @@
 {%- if row.title %}{% set _ = parts.append(row.title) %}{% endif -%}
 {%- if row.level %}{% set _ = parts.append(t('レベル {level}', level=row.level)) %}{% endif %}
 {% if parts %}<small>{{ parts|join(' · ') }}</small>{% endif %}
-{% if row.record or row.peak %}<small class="seat-record">{% if row.record %}{{ t('今アクト {wins}勝 / {games}試合（{rate}%）', wins=row.record.wins, games=row.record.games, rate=row.record.win_rate) }}{% endif %}{% if row.record and row.peak %} · {% endif %}{% if row.peak %}{{ t('通算最高 {rank}', rank=row.peak.name) }}{% endif %}</small>{% endif %}
+{% if row.record %}<small class="seat-record">{{ t('今アクト {wins}勝 / {games}試合（{rate}%）', wins=row.record.wins, games=row.record.games, rate=row.record.win_rate) }}</small>{% endif %}
 </span>
-{% if row.rank %}<span class="seat-rank">{% if row.rank.icon %}<img src="{{ media(row.rank.icon) }}" alt="" width="28" height="28">{% endif %}<span class="rank-words"><span>{{ row.rank.name }}</span>{% if row.rank.rr is not none %} <span>{{ row.rank.rr }} RR</span>{% endif %}</span></span>{% endif %}
+{% if row.rank or row.act_peak or row.peak %}<span class="seat-ranks">
+{% for label, rank in ((t('現在'), row.rank), (t('今アクト最高'), row.act_peak), (t('通算最高'), row.peak)) if rank %}<span class="seat-rank">{% if row.act_peak or row.peak %}<span class="rank-label">{{ label }}</span>{% endif %}{% if rank.icon %}<img src="{{ media(rank.icon) }}" alt="" width="28" height="28">{% endif %}<span class="rank-words"><span>{{ rank.name }}</span>{% if rank.rr is defined and rank.rr is not none %} <span>{{ rank.rr }} RR</span>{% endif %}</span></span>{% endfor %}
+</span>{% endif %}
 </li>
 {%- endmacro %}
 {% macro steps() -%}
@@ -35,6 +37,7 @@
 {% if not playing %}<p class="lead">{% if desktop %}{{ t('ゲームと連動して、キュー開始とエージェント選択ができます。') }}{% else %}{{ t('ゲームと連動して、キュー開始とエージェント選択ができます。PC で VALORANT を起動していればスマホからも使えます。') }}{% endif %}</p>{% endif %}
 </section>
 {% include "_play.html" %}
+{% if game_account %}<p class="note">{{ t('ライブは Riot クライアントのアカウント（{account}）で動作します。', account=game_account) }}</p>{% endif %}
 {% if not phase %}{{ steps() }}{% endif %}
 {% if said %}<p class="verdict {{ 'ok' if said_ok else 'no' }}" role="status">{{ said }}</p>{% endif %}
 {% if problem %}
@@ -78,6 +81,7 @@
 {#- nothing to do here until the game opens: the owner's other pages, a click away (the PC app opens on this page) #}
 <section class="me-box" aria-labelledby="me-title">
 <h2 id="me-title">{{ t('マイアカウント') }}</h2>
+{% if desktop %}{% include "_accounts.html" %}{% endif %}
 <ul class="me-links">
 {% if account.name %}<li><a href="{{ url_for('player', name=account.name, tag=account.tag) }}"><strong>{{ t('戦績') }}</strong><small>{{ account.name }}#{{ account.tag }}</small></a></li>{% endif %}
 <li><a href="{{ url_for('shop') }}"><strong>{{ t('ショップ') }}</strong><small>{{ t('今日のスキン') }}</small></a></li>

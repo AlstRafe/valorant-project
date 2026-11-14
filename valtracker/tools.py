@@ -450,6 +450,7 @@ def _queues_page() -> tuple[dict, int]:
 def _diary(own: dict) -> None:
     """Notes the owner's store of today (diary.py) and marks the skins they want, and the days in a row."""
     diary = current_app.config["VAL_DIARY"]
+    account = current_app.config["VAL_RIOT"].me()  # each account has its own store, so its own days
     now = time.time()
     day = store_day(own["daily_until"], now)
     diary.note(
@@ -460,13 +461,14 @@ def _diary(own: dict) -> None:
             for item in own["night"] or []
             if item.get("skin")
         ],
+        account,
     )
     wants = set(diary.wants())
     shown = own["daily"] + (own["night"] or []) + [thing for bundle in own["bundles"] for thing in bundle["items"]]
     for item in shown:
         item["wanted"] = bool(item.get("skin")) and item["skin"] in wants and not item.get("owned")
     own["wanted"] = list(dict.fromkeys(item["name"] for item in shown if item["wanted"]))
-    own["streak"] = diary.streak(day)
+    own["streak"] = diary.streak(day, account)
     # the night market's cards the game has not shown yet lie face down until turned (app.js, remembered there)
     own["night_key"] = day
     for number, item in enumerate(own["night"] or []):
@@ -672,9 +674,10 @@ def register(app: Flask) -> None:
         """The owner's stores of the days before (diary.py), with the skins they want marked."""
         security.owner_only()
         content, diary = current_app.config["VAL_CONTENT"], current_app.config["VAL_DIARY"]
+        account = current_app.config["VAL_RIOT"].me()
         wants = set(diary.wants())
         days = []
-        for day, entry in diary.days():
+        for day, entry in diary.days(account):
             listed = {}
             for key in ("daily", "night"):
                 listed[key] = [
@@ -693,7 +696,7 @@ def register(app: Flask) -> None:
         today = store_day(_next_reset(time.time()), time.time())
         vp = (content.index("currencies", g.lang).get(store.VP) or {}).get("displayIcon")
         return render_template(
-            "shop_history.html", days=days, streak=diary.streak(today), vp_icon=vp, wants=len(wants), seen=seen
+            "shop_history.html", days=days, streak=diary.streak(today, account), vp_icon=vp, wants=len(wants), seen=seen
         )
 
     @app.get("/shop/reminder.ics")

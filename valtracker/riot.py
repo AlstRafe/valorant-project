@@ -11,8 +11,14 @@ a browser and pastes on the settings page either
 In the desktop app (desktop.py) none of this is needed: the account signed in to the Riot Client on the PC gives its
 tokens (localclient.py), and the client's events say where the game is without asking GLZ's session.
 
+Several accounts can be linked, one of them in use: the pages show that one's store, collection and progress, and
+the owner switches between them (the top page, the settings). In the desktop app the Riot Client's account is one
+of them, and the game on this PC (/live: the queue, the picks) is always that account's, whichever is shown.
+
 Kept in instance/riot.json (readable by its owner only, never in Git): the cookies, the account (puuid, Riot ID,
-shard) and the tokens until they run out. These are the game client's own addresses, not a published API: Riot
+shard) and the tokens until they run out, of the account in use; the other linked accounts under ``others``
+(``{puuid: the same keys}``), and ``linked_first`` (the desktop app: a linked account is shown although the Riot
+Client is signed in to another). These are the game client's own addresses, not a published API: Riot
 can change them without notice, so every field is read as optional, and what failed is kept for the owner to see.
 """
 
@@ -106,6 +112,10 @@ ITEM_TYPES = {
 }
 #: How long the collection is kept (seconds): a skin bought in the game shows here after this.
 KEEP = 90
+#: What riot.json keeps of one linked account (the rest of the file is not one account's).
+ACCOUNT_KEYS = ("cookies", "token", "puuid", "name", "tag", "shard", "signed_out")
+#: Accounts linked at most.
+ACCOUNTS_MAX = 8
 #: A token is traded for a new one this long before it runs out.
 EARLY = 300
 #: At most this much of what is pasted (a whole Cookie header is a few kB).
@@ -118,7 +128,8 @@ _TOKEN = re.compile(r"^[A-Za-z0-9._\-]{20,8192}$")
 class RiotError(Exception):
     """Why there is no answer: ``kind`` is one of nologin (no account linked), badpaste (what was pasted is
     neither a cookie nor a signed-in address), signedout (Riot no longer takes the cookie, or the hour is over),
-    busy, down (no answer, or one that cannot be read). ``detail``: what Riot said, for the owner."""
+    busy, down (no answer, or one that cannot be read), full (ACCOUNTS_MAX accounts are linked already), unknown
+    (no such account or button). ``detail``: what Riot said, for the owner."""
 
     def __init__(self, kind: str, detail: str = ""):
         super().__init__(kind)
@@ -133,6 +144,8 @@ class Riot:
         self.send, self.version, self.clock, self.local = send, version, clock, local
         #: The client's event count /live was last read at: a newer event reads it again at once.
         self._local_version = -1
+        #: The account the Riot Client was last seen signed in to ("": closed; None: not looked at yet).
+        self._client_seen: str | None = None
         self.cache = TTLCache(8)
         #: Players' ranks in the owner's match: {puuid: PD's mmr answer}.
         self.ranks = TTLCache(64)
@@ -151,12 +164,13 @@ class Riot:
 
     # -- what the pages use ---------------------------------------------------------------------------
 
-    def status(self) -> dict:
-        """For the settings page: the linked account, whether it lasts (a cookie) or ends at ``until`` (an
+    def status(self, game: bool = False) -> dict:
+        """For the settings page: the account in use, whether it lasts (a cookie) or ends at ``until`` (an
         hour's address), and whether Riot refused it last time (``signed_out``). ``client``: the account is the
-        one signed in to the Riot Client on this PC (the desktop app)."""
+        one signed in to the Riot Client on this PC (the desktop app). ``game``: the account the game on this PC
+        is played with (the Riot Client's, whichever account the pages show)."""
         saved = self.store.load()
-        found = self._client()
+        found = self._client(game=game)
         if found is not None:
             account = found[1]
             return {
@@ -184,14 +198,84 @@ class Riot:
             "client": False,
         }
 
-    def me(self) -> str:
-        """The puuid of the owner's account: the Riot Client's on this PC (the desktop app), else the linked one."""
-        found = self._client()
+    def me(self, game: bool = False) -> str:
+        """The puuid of the account in use: the Riot Client's on this PC (the desktop app), else the linked one.
+        ``game``: of the account the game on this PC is played with."""
+        found = self._client(game=game)
         return found[1]["puuid"] if found is not None else str(self.store.load().get("puuid") or "").lower()
 
-    def _client(self, renew: bool = False) -> tuple[dict, dict] | None:
-        """(tokens, account) from the Riot Client on this PC, or None (no desktop app, or the client closed)."""
-        return self.local.signed_in(renew) if self.local is not None else None
+    def _client(self, renew: bool = False, game: bool = False) -> tuple[dict, dict] | None:
+        """(tokens, account) from the Riot Client on this PC, or None: no desktop app, the client closed, or
+        (unless ``game``: what the game itself is asked) the owner chose to see a linked account instead."""
+        if self.local is None:
+            return None
+        found = self.local.signed_in(renew)
+        self._follow(found[1]["puuid"] if found is not None else "")
+        if found is None or game:
+            return found
+        saved = self.store.load()
+        linked = str(saved.get("puuid") or "").lower()
+        return None if saved.get("linked_first") and linked and linked != found[1]["puuid"] else found
+
+    def _follow(self, puuid: str) -> None:
+        """The desktop app: when the Riot Client opens, or signs in to another account, its account is the one
+        shown again. A linked account the owner chose to see is shown until then."""
+        if puuid == self._client_seen:
+            return
+        self._client_seen = puuid
+        if puuid and self.store.load().get("linked_first"):
+            self.store.save(linked_first=None)
+            self._forget()
+
+    def accounts(self) -> list[dict]:
+        """Every account the owner can use, always in the same order (the Riot Client's first, then the linked
+        ones by name): ``[{"puuid", "name", "tag", "shard", "current": the pages show it now, "client": it is the
+        one signed in to the Riot Client on this PC, "linked": with a cookie or an address (it can be unlinked),
+        "signed_out": Riot refused it last time}]``."""
+        saved = self.store.load()
+        signed = self._client(game=True)
+        found: list[dict] = []
+        if signed is not None:
+            found.append({**_row(signed[1]), "client": True, "linked": False, "signed_out": False})
+        linked = [item for item in (saved, *_others(saved).values()) if item.get("puuid")]
+        for item in sorted(linked, key=lambda item: str(item.get("name") or "").casefold()):
+            row = _row(item)
+            if found and found[0]["client"] and row["puuid"] == found[0]["puuid"]:
+                found[0]["linked"] = True  # the client's account is linked as well: one line
+                continue
+            token = item.get("token") if isinstance(item.get("token"), dict) else {}
+            over = not item.get("cookies") and _number(token.get("until")) < self.clock()
+            found.append({**row, "client": False, "linked": True, "signed_out": bool(item.get("signed_out")) or over})
+        current = self.me()
+        for row in found:
+            row["current"] = row["puuid"] == current
+        return found
+
+    def switch(self, puuid: str) -> dict:
+        """Shows another of the owner's accounts from now on: a linked one, or (the desktop app) the one signed
+        in to the Riot Client. RiotError ``unknown`` when it is neither."""
+        puuid = str(puuid or "").strip().lower()
+        with self._lock:
+            saved = self.store.load()
+            others = _others(saved)
+            signed = self._client(game=True)
+            first = True if self.local is not None else None
+            if signed is not None and puuid == signed[1]["puuid"]:
+                changes = {"linked_first": None}  # the Riot Client's account again, whichever it is
+            elif puuid and puuid == str(saved.get("puuid") or "").lower():
+                changes = {"linked_first": first}
+            elif puuid in others:
+                changes = _swap(saved, others, puuid) | {"linked_first": first}
+            else:
+                raise RiotError("unknown")
+            self.store.save(**changes, problem=None)
+            self._forget()
+        return self.status()
+
+    def _forget(self) -> None:
+        """Nothing read of the account shown until now is shown for the next one."""
+        self.cache = TTLCache(8)
+        self.where = {}
 
     def sign_in(self, pasted: str) -> dict:
         """Link the account from what the owner pasted (see the module's words); RiotError when it does not work."""
@@ -208,18 +292,42 @@ class Riot:
                 tokens, cookies = self._authorize(cookies)
             tokens["entitlements"] = self._entitlements(tokens["access"])
             account = self._account(tokens)
-            self.store.save(cookies=cookies or None, token=tokens, signed_out=None, problem=None, **account)
-            self.cache = TTLCache(8)  # another account's collection is not shown
-            self.where = {}
+            saved = self.store.load()
+            others, now = _others(saved), str(saved.get("puuid") or "").lower()
+            if now and now != account["puuid"]:
+                # another account: the one in use until now stays linked, among the others
+                if account["puuid"] not in others and len(others) + 2 > ACCOUNTS_MAX:
+                    raise RiotError("full")
+                others = {key: value for key, value in others.items() if key != account["puuid"]}
+                others[now] = _kept_of(saved)
+            self.store.save(
+                cookies=cookies or None,
+                token=tokens,
+                signed_out=None,
+                problem=None,
+                others=others or None,
+                linked_first=True if self.local is not None else None,  # the account just linked is the one shown
+                **account,
+            )
+            self._forget()  # another account's collection is not shown
         return self.status()
 
-    def sign_out(self) -> None:
+    def sign_out(self, puuid: str = "") -> None:
+        """Unlinks an account (the linked one in use when none is named). Another linked account, when there is
+        one, is used from then on."""
         with self._lock:
-            self.store.save(
-                cookies=None, token=None, puuid=None, name=None, tag=None, shard=None, signed_out=None, problem=None
-            )
-            self.cache = TTLCache(8)
-            self.where = {}
+            saved = self.store.load()
+            others, now = _others(saved), str(saved.get("puuid") or "").lower()
+            puuid = str(puuid or "").strip().lower() or now
+            if puuid and puuid in others:
+                del others[puuid]
+                self.store.save(others=others or None)
+            elif puuid and puuid == now and others:
+                following = min(others, key=lambda key: str(others[key].get("name") or "").casefold())
+                self.store.save(**_swap({}, others, following), problem=None)
+            elif puuid == now:
+                self.store.save(**dict.fromkeys(ACCOUNT_KEYS), problem=None, others=None, linked_first=None)
+            self._forget()
 
     def collection(self) -> dict:
         """``{"name", "tag", "wallet": {currency uuid: amount} or None, "loadout": PD's playerloadout or None,
@@ -254,8 +362,9 @@ class Riot:
         return self._kept("contracts", self._contracts)
 
     def agents(self) -> set[str]:
-        """The owner's agents (uuids; PD's entitlements of the agent type), for the pick screen: one call, kept
-        AGENTS_KEEP (the whole collection is ten). RiotError when it could not be read."""
+        """The owner's agents (uuids; PD's entitlements of the agent type), for the pick screen (so of the account
+        the game is played with): one call, kept AGENTS_KEEP (the whole collection is ten). RiotError when it
+        could not be read."""
 
         def read(tokens: dict, saved: dict) -> dict:
             url = f"{self._base(saved)}/store/v1/entitlements/{saved['puuid']}/{ITEM_TYPES['agents']}"
@@ -267,7 +376,7 @@ class Riot:
             ]
             return {"agents": owned, "missing": [], "problem": ""}
 
-        return set(self._kept("agents", read, AGENTS_KEEP)["agents"])
+        return set(self._kept("agents", read, AGENTS_KEEP, game=True)["agents"])
 
     def live(self) -> dict:
         """Where the owner's game is now (GLZ): ``{"running": whether VALORANT is open (None: could not tell),
@@ -278,7 +387,7 @@ class Riot:
             # the client told of a change (the match found, agent select, a pick): read now, not the kept answer
             self._local_version = self.local.version
             self.cache.put("live", None, 0)
-        return self._kept("live", self._live, LIVE_KEEP)
+        return self._kept("live", self._live, LIVE_KEEP, game=True)
 
     def leaderboard(self, region: str, season: str, start: int = 0, size: int = 50, query: str = "") -> dict:
         """One page of a region's ranked leaderboard from the game's own server (PD), in henrik.Henrik.leaderboard's
@@ -392,7 +501,7 @@ class Riot:
             return {"answer": answer, "missing": [], "problem": ""}
 
         try:
-            return self._kept("act", send, 0)
+            return self._kept("act", send, 0, game=True)
         finally:
             self.cache.put("live", None, 0)  # what the page shows next is asked again
 
@@ -697,24 +806,24 @@ class Riot:
             "problem": "",
         }
 
-    def _kept(self, key: str, read, seconds: float = KEEP) -> dict:
+    def _kept(self, key: str, read, seconds: float = KEEP, game: bool = False) -> dict:
         """``read(tokens, saved)``'s answer, kept ``seconds`` (0: a button, done each time it is pressed: Windows'
         clock moves in 16 ms steps, so an answer kept for 0 seconds was still there for the next press); a refused
-        token is traded for a new one once."""
+        token is traded for a new one once. ``game``: asked as the account the game on this PC is played with."""
         kept = self.cache.get(key) if seconds > 0 else None
         if kept is not None:
             return kept
-        found = self._read(read)
+        found = self._read(read, game)
         if (self.store.load().get("problem") or None) != (found["problem"] or None):  # not a write every look
             self.store.save(problem=found["problem"] or None)
         if seconds > 0:
             self.cache.put(key, found, seconds)
         return found
 
-    def _read(self, read) -> dict:
+    def _read(self, read, game: bool = False) -> dict:
         """``read(tokens, saved)``, with a refused token traded for a new one once."""
         for renew in (False, True):
-            tokens, saved = self._tokens(renew)
+            tokens, saved = self._tokens(renew, game)
             try:
                 return read(tokens, saved)
             except RiotError as error:
@@ -726,10 +835,10 @@ class Riot:
 
     # -- tokens ---------------------------------------------------------------------------------------
 
-    def _tokens(self, renew: bool = False) -> tuple[dict, dict]:
+    def _tokens(self, renew: bool = False, game: bool = False) -> tuple[dict, dict]:
         """The hour's tokens (the Riot Client's on this PC, else saved or traded for with the cookies) and what is
         saved (with the client's account)."""
-        found = self._client(renew)
+        found = self._client(renew, game)
         if found is not None:
             tokens, account = found
             return tokens, {**self.store.load(), **account}
@@ -936,6 +1045,39 @@ class Riot:
             kind = "busy" if status == 429 else "down"
             raise RiotError(kind, f"{key} {status or 'no answer'} {code}".strip())
         return said
+
+
+def _others(saved: dict) -> dict:
+    """The linked accounts that are not the one in use: ``{puuid: what riot.json keeps of each}``."""
+    others = saved.get("others")
+    return {
+        str(puuid).lower(): item
+        for puuid, item in (others.items() if isinstance(others, dict) else [])
+        if isinstance(item, dict) and item.get("puuid")
+    }
+
+
+def _kept_of(saved: dict) -> dict:
+    """What riot.json keeps of the account in use, to put among the others."""
+    return {key: saved[key] for key in ACCOUNT_KEYS if saved.get(key) not in ("", None)}
+
+
+def _swap(saved: dict, others: dict, puuid: str) -> dict:
+    """What to save so that ``puuid`` (one of ``others``) is the account in use, and the one in use until now
+    (``saved``'s, when there is one) is among the others."""
+    rest = {key: value for key, value in others.items() if key != puuid}
+    if saved.get("puuid"):
+        rest[str(saved["puuid"]).lower()] = _kept_of(saved)
+    return {key: others[puuid].get(key) for key in ACCOUNT_KEYS} | {"others": rest or None}
+
+
+def _row(account: dict) -> dict:
+    return {
+        "puuid": str(account.get("puuid") or "").lower(),
+        "name": str(account.get("name") or ""),
+        "tag": str(account.get("tag") or ""),
+        "shard": str(account.get("shard") or ""),
+    }
 
 
 def _subjects(match: dict, phase: str) -> set[str]:

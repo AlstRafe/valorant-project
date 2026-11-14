@@ -81,6 +81,23 @@ def best_ever(mmr, old_acts=frozenset()) -> int:
     return best
 
 
+def act_best(mmr, act: str) -> int:
+    """The highest rank the player had in the act (the tiers they won at, and where they are now). 0: none."""
+    if not isinstance(mmr, dict) or not act:
+        return 0
+    skills = ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
+    info = (
+        next((info for season, info in skills.items() if _id(season) == act), None)
+        if isinstance(skills, dict)
+        else None
+    )
+    if not isinstance(info, dict):
+        return 0
+    won_at = info.get("WinsByTier") if isinstance(info.get("WinsByTier"), dict) else {}
+    tiers = [_number(tier) for tier, count in won_at.items() if _number(count) > 0]
+    return max([*tiers, _number(info.get("CompetitiveTier"))])
+
+
 def _record(mmr, act: str) -> dict | None:
     """The act's competitive record from PD's mmr answer, as the game's career page has it: ``{"wins", "games",
     "win_rate"}``, or None (no games)."""
@@ -152,12 +169,13 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
         if tier > 2
         else None,
         "tier": tier if tier > 2 else 0,
-        # the act's record and the best rank ever only for the owner and the players who show their name: as
+        # the act's record, its best rank and the best rank ever only for the owner and the players who show their name: as
         # public as their page on this site, and nothing about the ones who hide who they are
         "record": _record(look["ranks"].get(subject), look["act"]) if shown else None,
         "peak": _rank_of(best_ever(look["ranks"].get(subject), look.get("old_acts") or frozenset()), look)
         if shown
         else None,
+        "act_peak": _rank_of(act_best(look["ranks"].get(subject), look["act"]), look) if shown else None,
         "team": str(item.get("TeamID") or ""),
         "owner": bool(item.get("IsOwner")),
     }

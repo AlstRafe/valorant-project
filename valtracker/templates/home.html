@@ -30,6 +30,7 @@
 {% if me %}
 <section class="me-box" aria-labelledby="me-title">
 <h2 id="me-title">{{ t('マイアカウント') }}</h2>
+{% include "_accounts.html" %}
 <ul class="me-links">
 {% if me.linked and me.name %}<li><a href="{{ url_for('player', name=me.name, tag=me.tag) }}"><strong>{{ t('戦績') }}</strong><small>{{ me.name }}#{{ me.tag }}</small></a></li>{% endif %}
 <li><a href="{{ url_for('live') }}"><strong>{{ t('ライブ') }}</strong><small data-live-text>{{ t('キュー開始・エージェント選択') }}</small></a></li>

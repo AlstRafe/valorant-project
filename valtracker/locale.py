@@ -2057,7 +2057,6 @@ TEXTS = {
         "en-GB": "This act: {wins} wins in {games} matches ({rate}%)",
         "zh-TW": "本階段 {wins} 勝 / {games} 場（{rate}%）",
     },
-    "通算最高 {rank}": {"ko": "역대 최고 {rank}", "en-GB": "All-time peak {rank}", "zh-TW": "生涯最高 {rank}"},
     # What /live says after one of its buttons (owner.py LIVE_SAID)
     "キューを開始しました。": {
         "ko": "대기열을 시작했습니다.",
@@ -2602,25 +2601,15 @@ TEXTS = {
         "en-GB": "The app uses the account signed in to the Riot Client on this PC.",
         "zh-TW": "會自動使用 Riot Client 目前登入的帳號。",
     },
-    "Riot クライアント経由": {
-        "ko": "Riot 클라이언트에서",
-        "en-GB": "from the Riot Client",
-        "zh-TW": "來自 Riot 用戶端",
-    },
-    "ssid で連携する（Riot クライアントを使わない場合）": {
-        "ko": "ssid로 연동하기(Riot 클라이언트를 쓰지 않는 경우)",
-        "en-GB": "Link with an ssid instead (without the Riot Client)",
-        "zh-TW": "改用 ssid 連結（不使用 Riot Client 時）",
+    "ssid で別のアカウントを追加": {
+        "ko": "ssid로 다른 계정 추가",
+        "en-GB": "Add another account with its ssid",
+        "zh-TW": "用 ssid 新增其他帳號",
     },
     "Riot クライアントが起動していないか、サインインしていません。": {
         "ko": "Riot 클라이언트가 실행 중이 아니거나 로그인되어 있지 않습니다.",
         "en-GB": "The Riot Client isn't running, or isn't signed in.",
         "zh-TW": "Riot Client 未開啟或尚未登入。",
-    },
-    "{account}（{shard}）と連携中": {
-        "ko": "{account} ({shard})와 연동 중",
-        "en-GB": "linked to {account} ({shard})",
-        "zh-TW": "已連結 {account}（{shard}）",
     },
     "ログイン切れ。下の手順で貼り直してください。": {
         "ko": "로그인 만료. 아래 순서대로 다시 붙여 넣으세요.",
@@ -3338,4 +3327,32 @@ TEXTS = {
     },
     "{count} 人がプレイ中": {"ko": "{count}명 플레이 중", "en-GB": "{count} playing now", "zh-TW": "{count} 人遊玩中"},
     "オンライン {count} 人": {"ko": "온라인 {count}명", "en-GB": "{count} online", "zh-TW": "{count} 人上線"},
+    "アカウント": {"ko": "계정", "en-GB": "Account", "zh-TW": "帳號"},
+    "アカウントを追加": {"ko": "계정 추가", "en-GB": "Add an account", "zh-TW": "新增帳號"},
+    "ログイン切れ": {"ko": "로그인 만료", "en-GB": "Signed out", "zh-TW": "登入已過期"},
+    "使用中": {"ko": "사용 중", "en-GB": "In use", "zh-TW": "使用中"},
+    "切り替え": {"ko": "전환", "en-GB": "Switch", "zh-TW": "切換"},
+    "{account} に切り替えました。": {
+        "ko": "{account} 계정으로 전환했습니다.",
+        "en-GB": "Switched to {account}.",
+        "zh-TW": "已切換至 {account}。",
+    },
+    "複数のアカウントを追加して切り替えられます。": {
+        "ko": "여러 계정을 추가해 전환할 수 있습니다.",
+        "en-GB": "You can add several accounts and switch between them.",
+        "zh-TW": "可新增多個帳號並隨時切換。",
+    },
+    "連携できるアカウントは {count} 個までです。": {
+        "ko": "계정은 {count}개까지 연동할 수 있습니다.",
+        "en-GB": "You can link up to {count} accounts.",
+        "zh-TW": "最多可連結 {count} 個帳號。",
+    },
+    "ライブは Riot クライアントのアカウント（{account}）で動作します。": {
+        "ko": "라이브는 Riot 클라이언트의 계정({account})으로 동작합니다.",
+        "en-GB": "Live uses the Riot Client's account ({account}).",
+        "zh-TW": "即時功能使用 Riot 用戶端的帳號（{account}）。",
+    },
+    "現在": {"ko": "현재", "en-GB": "Now", "zh-TW": "目前"},
+    "今アクト最高": {"ko": "이번 액트 최고", "en-GB": "Act peak", "zh-TW": "本章最高"},
+    "通算最高": {"ko": "역대 최고", "en-GB": "All-time peak", "zh-TW": "生涯最高"},
 }

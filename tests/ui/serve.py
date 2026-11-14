@@ -725,8 +725,12 @@ def main() -> None:
         local = desktop_client(Path(client_folder.name))
     app, fetch, _ = make_app(local=local)
     fetch.esports_page = True  # the matches to come from Riot's esports site, the results from HenrikDev
+    # two Riot accounts, the first one shown: the buttons to the other are on the owner's pages (in the PC app
+    # the first is the made-up Riot Client's)
     if local is None:
         app.config["VAL_RIOT"].sign_in("ssid-1")
+    app.config["VAL_RIOT"].sign_in("sub-1")
+    app.config["VAL_RIOT"].switch(helpers.PUUID)
     seed(app.config["VAL_ACTIVITY"], time.time())
     seed_lifetime(app, time.time(), rating)
     # a few days of the owner's store, and a skin wanted that is in today's (diary.py)

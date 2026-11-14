@@ -19,6 +19,8 @@ python -m unittest discover -s tests
 
 - 戦績には HenrikDev API のキーが要る。[ダッシュボード](https://api.henrikdev.xyz/dashboard/)の「API Keys」で作り、画面の「設定」に入れる（`instance/settings.json` に保存。Git には入らない）。試すだけなら環境変数 `VAL_HENRIK_KEY` でもよい
 - 所持品（`/val/collection`、持ち主だけ）は、設定に Riot の `ssid` クッキーを一度貼ると見られる（手順は設定ページ。仕組みは [DESIGN.md](docs/DESIGN.md#riot-のログイン段階2valtrackerriotpy)）
+- Riot のアカウントは 8 個まで連携でき、ホーム・ショップ・所持品などの上のチップか設定で切り替える（PC アプリも同じ。
+  ライブだけはいつも Riot クライアントのアカウント）
 - エージェントやマップの名前と絵は valorant-api.com から取り、`instance/` にためて自分のアドレスで出す（外部の読み込みはしない）
 
 ## PC アプリ（Windows）
@@ -29,11 +31,11 @@ python -m unittest discover -s tests
 
 | エージェント選択                                                       | 対戦中                                                   |
 | ---------------------------------------------------------------------- | -------------------------------------------------------- |
-| ![ライブ: エージェント選択](docs/screenshots/04-live-agent-select.png) | ![ライブ: 対戦中](docs/screenshots/05-live-in-match.png) |
-| **プレイヤーの戦績**                                                   | **試合**                                                 |
-| ![プレイヤーの戦績](docs/screenshots/07-player.png)                    | ![試合](docs/screenshots/13-match.png)                   |
+| ![ライブ: エージェント選択](docs/screenshots/01-live-agent-select.png) | ![ライブ: 対戦中](docs/screenshots/02-live-in-match.png) |
 
-画面は全部で 27 枚を [docs/SCREENSHOTS.md](docs/SCREENSHOTS.md) に（写っているプレイヤーと試合は作りもの）。
+![プレイヤーの戦績](docs/screenshots/03-player.png)
+
+写っているプレイヤーと試合は作りもの（撮り方は [docs/SCREENSHOTS.md](docs/SCREENSHOTS.md)）。
 
 - 入れ方: GitHub の [Releases →「desktop」](https://github.com/AlstRafe/valorant-project/releases/tag/desktop) →
   `VALTracker-windows.zip` を好きな場所に展開し、`VALTracker.exe` を開く。

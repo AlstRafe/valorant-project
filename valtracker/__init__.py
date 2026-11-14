@@ -177,6 +177,8 @@ def create_app(
             "site_name": NAME,
             "home": request.environ.get("homepage.home", ""),
             "owner": security.is_owner(),
+            # the owner's Riot accounts, for the buttons that show another one (_accounts.html)
+            "own_accounts": lambda: app.config["VAL_RIOT"].accounts() if security.is_owner() else [],
             # the PC app (desktop.py): the Riot Client tells when the game changes (/live/next)
             "desktop": local is not None,
             "push_version": g.get("push_version", local.version) if local is not None else 0,
