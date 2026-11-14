@@ -4594,6 +4594,37 @@ code {
     animation: none !important;
     scroll-behavior: auto !important;
   }
+  /* What says "working" must be seen to work (the PC app's window always asks for reduced motion, and a still
+     ring reads as a page that hangs): it moves in a few steps a second instead of smoothly. */
+  .spinner {
+    animation: spin 0.9s steps(8) infinite !important;
+  }
+  html.leaving::after {
+    animation: leaving 1.2s steps(6) infinite !important;
+  }
+}
+/* A page on its way (app.js leaving()): a thin bar across the top. The PC app's window has no browser tab to show
+   it, and on a phone the browser's own bar is easy to miss. */
+html.leaving::after {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200;
+  width: 40%;
+  height: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--accent);
+  content: "";
+  pointer-events: none;
+  animation: leaving 1.1s ease-in-out infinite;
+}
+@keyframes leaving {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
 }
 
 /* The VAL score (score.py): the grade's colour — S blue, A green, B gold, C grey, D red */
