@@ -131,7 +131,7 @@
 <section class="live-pick" aria-labelledby="pick-title">
 <h2 id="pick-title">{{ t('ピック') }}</h2>
 {% if picker.locked %}
-<p class="queue-now">{{ t('{agent} で確定済み。', agent=picker.current_name) }}</p>
+<div class="locked-agent">{% if picker.portrait %}<img src="{{ media(picker.portrait) }}" alt="" width="260" height="260">{% endif %}<p><span class="badge">{{ t('確定') }}</span><strong>{{ picker.current_name }}</strong>{% if picker.current_role %}<small>{{ picker.current_role }}</small>{% endif %}</p></div>
 {% else %}
 {% if picker.current %}<form method="post" action="{{ url_for('live_act') }}" class="live-act lock-row"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="value" value="{{ picker.current }}"><button type="submit" name="do" value="lock">{{ t('{agent} で確定', agent=picker.current_name) }}</button></form>{% endif %}
 <form method="post" action="{{ url_for('live_act') }}" class="live-act"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="do" value="select">

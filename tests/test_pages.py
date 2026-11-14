@@ -150,6 +150,22 @@ class PagesTest(unittest.TestCase):
         self.get("/p/Tester/JP1/part?fresh=1")  # pressed again at once: a minute must pass
         self.assertEqual(len(self.fetch.henrik_calls()), calls + 4)
 
+    def test_the_last_answer_when_the_stats_server_does_not_answer(self):
+        """HenrikDev has moments (502, 503): asked once more, and then the day's last answer rather than an error."""
+        self.assertIn("Tester", self.get("/p/Tester/JP1?full=1").get_data(as_text=True))
+        henrik = self.app.config["VAL_HENRIK"]
+        for key in henrik.player_keys("ap", "Tester", "JP1", ""):
+            henrik.cache.drop(key)  # what was read is old
+        self.fetch.henrik_status = 503
+        asked = len(self.fetch.asked)
+        answer = self.get("/p/Tester/JP1?full=1")
+        self.assertEqual(answer.status_code, 200)
+        text = answer.get_data(as_text=True)
+        self.assertNotIn("応答しません", text)
+        self.assertIn("Tester", text)
+        urls = [url for url, _ in self.fetch.asked[asked:] if "henrikdev" in url]
+        self.assertTrue(urls and all(urls.count(url) == 2 for url in urls), "each call once more, no more")
+
     def test_reading_again_keeps_the_numbers_when_henrikdev_is_busy(self):
         os.environ["VAL_HENRIK_KEY"] = "HDEV-test"
         self.get("/p/Tester/JP1?full=1")
@@ -251,7 +267,7 @@ class PagesTest(unittest.TestCase):
     def test_the_best_rank_is_the_best_ever_in_todays_numbers(self):
         # v3 mmr's peak is Tier 22, but Episode 4 ended at 21: before Ascendant that was Immortal 1, today's 24
         text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
-        best = text[text.index('<p class="label">最高ランク</p>') :]
+        best = text[text.index('<p class="label">通算最高</p>') :]
         self.assertIn("<span>Tier 24</span>", best[:400])
         self.assertIn("/24/smallicon.png", best[:400])
 

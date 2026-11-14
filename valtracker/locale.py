@@ -1963,11 +1963,6 @@ TEXTS = {
         "en-GB": "Pick",
         "zh-TW": "選擇",
     },
-    "{agent} で確定済み。": {
-        "ko": "{agent}(으)로 확정됨.",
-        "en-GB": "Locked in as {agent}.",
-        "zh-TW": "已鎖定 {agent}。",
-    },
     "{agent} で確定": {
         "ko": "{agent}(으)로 확정",
         "en-GB": "Lock in {agent}",
@@ -3367,4 +3362,5 @@ TEXTS = {
         "en-GB": "The numbers as they stood after each round.",
         "zh-TW": "各回合結束時的數字。",
     },
+    "確定": {"ko": "확정", "en-GB": "Locked in", "zh-TW": "已鎖定"},
 }

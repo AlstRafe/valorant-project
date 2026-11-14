@@ -49,6 +49,8 @@ STORED_QUEUES = {
 FRESH_AFTER = 60
 #: How long what "データを更新" dropped stays at hand, in case the new call fails (seconds).
 SPARE_KEEP = 120
+#: How long the last answer of each call stays at hand for when HenrikDev does not answer (seconds).
+LAST_KEEP = 24 * 3600
 #: Players on one page of a leaderboard.
 BOARD_PAGE = 50
 #: A Riot ID: the name (3-16 characters, spaces allowed) and the tag (3-5 letters or digits).
@@ -126,6 +128,8 @@ class Henrik:
         self.read_times = TTLCache(1024)
         #: cache key -> (answer, read at) dropped by "データを更新": shown again if HenrikDev cannot answer.
         self.spares = TTLCache(64)
+        #: the last answer of each call, shown when HenrikDev does not answer (LAST_KEEP)
+        self.lasts = TTLCache(128)
 
     def account(self, name: str, tag: str) -> dict:
         """``{"puuid", "region", "account_level", "name", "tag", "card", "title"}``."""
@@ -326,7 +330,7 @@ class Henrik:
         path = "/valorant/v1/esports/schedule"
         if not self.cache.get(("no-esports",)):
             try:
-                return self._get(("esports",), path, KEEP["esports"], _slim_esports)
+                return self._get(("esports",), path, KEEP["esports"], _slim_esports, last=False)
             except HenrikError as error:
                 if not (error.kind == "down" or _refused(error)):
                     raise
@@ -353,15 +357,18 @@ class Henrik:
             raise HenrikError("down", f"{first.detail or first.kind}; leagues: no matches")
         return games
 
-    def _get(self, cache_key, path: str, seconds: float, shape=None):
+    def _get(self, cache_key, path: str, seconds: float, shape=None, last: bool = True):
         kept = self.cache.get(cache_key)
         if kept is not None:
             return kept
         try:
             return self._ask(cache_key, path, seconds, shape)
         except HenrikError as error:
-            # "データを更新" was pressed and HenrikDev cannot answer now: the page keeps what it showed before
-            spare = self.spares.get(cache_key) if error.kind in ("busy", "down") else None
+            # HenrikDev cannot answer now: the page keeps what it showed before ("データを更新" was pressed), or
+            # shows the last answer of the day (``last``; its age is on the page) rather than an error
+            spare = None
+            if error.kind in ("busy", "down"):
+                spare = self.spares.get(cache_key) or (self.lasts.get(cache_key) if last else None)
             if spare is None:
                 raise
             data, at = spare
@@ -376,6 +383,10 @@ class Henrik:
         if not self.budget.take():
             raise HenrikError("busy")
         status, body = self.fetch(BASE + path, {"Authorization": key, "Accept": "application/json"})
+        if status >= 500 and self.budget.take():
+            # HenrikDev's own trouble of a moment (502, 503, 504 come and go): asked once more. Not after a
+            # silence of 10 s, which a second 10 s would only double
+            status, body = self.fetch(BASE + path, {"Authorization": key, "Accept": "application/json"})
         if status in (401, 403):
             raise HenrikError("badkey")
         if status == 404:
@@ -394,6 +405,8 @@ class Henrik:
             data = shape(data)
         self.cache.put(cache_key, data, seconds)
         self.read_times.put(cache_key, time.time(), seconds)  # when it was read: the player's page says so
+        # kept on the side too: when HenrikDev does not answer later, the page shows this instead of an error
+        self.lasts.put(cache_key, (data, time.time()), LAST_KEEP)
         return data
 
 

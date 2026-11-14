@@ -229,6 +229,17 @@ def _peak(mmr: dict | None) -> dict | None:
     return _rank(tier if best == number else {"id": best})
 
 
+def _act_peak(mmr: dict | None, rank: dict | None) -> dict | None:
+    """The player's best rank of this act: the latest act's best win and final rank, and the rank now. Only for
+    a player with a rank now: without one the latest act played is an earlier act."""
+    seasons = (mmr or {}).get("seasons") or []
+    if not rank or rank["tier"] <= 2 or not seasons:
+        return None
+    act = seasons[0]
+    best = todays_tier(max([act.get("end_tier") or 0, *(act.get("best") or [])[:1]]), bool(act.get("old")))
+    return rank if best <= rank["tier"] else _rank({"id": best})
+
+
 def _agent(agent: dict | None) -> dict:
     agent = agent or {}
     known = current_app.config["VAL_CONTENT"].agent_index(g.lang).get(str(agent.get("id") or "").lower()) or {}
@@ -723,6 +734,7 @@ def _player(
         "rr_chart": _rr_chart(rr_all) if shows_rr(mode) else None,
         "last_change": current.get("last_change"),
         "peak": _peak(mmr),
+        "act_peak": _act_peak(mmr, rank),
         "standing": _standing(current),
         "acts": _acts((mmr or {}).get("seasons") or []),
         "rows": rows,
