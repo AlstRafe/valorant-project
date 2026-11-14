@@ -61,6 +61,34 @@ jobs:
           if (-not $done) { Stop-Process -Id $app.Id -Force; "Still running after 3 minutes." }
           Get-ChildItem "$env:VAL_DESKTOP_HOME\*.log" | ForEach-Object { "--- $($_.Name)"; Get-Content $_ }
           if (-not $done -or $app.ExitCode -ne 0) { exit 1 }
+      # the way the app reaches a PC: a browser downloads the zip and marks it as come from the internet, Explorer
+      # passes the mark on to every file it unpacks, and .NET refuses to load a marked library (the window's part).
+      # The .exe is left unmarked: its mark is gone once the owner has answered Windows' "run anyway?", a question
+      # that would wait for ever here.
+      - name: Unpacked from a downloaded zip (every file marked by Windows), the app still opens its own window
+        shell: pwsh
+        run: |
+          $runtime = "SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}"
+          if (-not (Test-Path "HKLM:\$runtime")) { "This runner has no WebView2 Runtime: nothing to try."; exit 0 }
+          $env:VAL_DESKTOP_HOME = "$env:RUNNER_TEMP\vt-marked"
+          $marked = "$env:RUNNER_TEMP\marked\VALTracker"
+          New-Item -ItemType Directory -Force "$env:RUNNER_TEMP\marked" | Out-Null
+          Copy-Item dist\VALTracker $marked -Recurse
+          $files = Get-ChildItem $marked -Recurse -File | Where-Object Name -ne "VALTracker.exe"
+          $files | ForEach-Object { Set-Content -LiteralPath $_.FullName -Stream Zone.Identifier -Value "[ZoneTransfer]", "ZoneId=3" }
+          "Marked $($files.Count) files as come from the internet."
+          $app = Start-Process "$marked\VALTracker.exe" -ArgumentList "--close-after", "30" -PassThru
+          Start-Sleep -Seconds 20
+          $window = Get-CimInstance Win32_Process | Where-Object { $_.Name -eq "msedgewebview2.exe" -and $_.ParentProcessId -eq $app.Id }
+          $browsers = Get-Process msedge, chrome, firefox -ErrorAction SilentlyContinue
+          if (-not $app.WaitForExit(40000)) { Stop-Process -Id $app.Id -Force; "The app was ended by hand (a message box was waiting)." }
+          $browsers | Stop-Process -Force -ErrorAction SilentlyContinue
+          Get-Content "$env:VAL_DESKTOP_HOME\desktop.log"
+          if (-not $window) { "NO WINDOW: the app did not open its own window."; exit 1 }
+          if ($browsers) { "A BROWSER WAS OPENED: $(($browsers | ForEach-Object ProcessName | Select-Object -Unique) -join ', ')"; exit 1 }
+          $left = @(Get-ChildItem $marked -Recurse -File | Where-Object { Get-Item -LiteralPath $_.FullName -Stream Zone.Identifier -ErrorAction SilentlyContinue }).Count
+          if ($left) { "STILL MARKED: $left files"; exit 1 }
+          "The app took the mark off its files and opened its own window, and no browser."
       - name: The window, and what the app takes (memory, processor, priority)
         shell: pwsh
         continue-on-error: true # a runner without WebView2 or a desktop says so, and the build still counts

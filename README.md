@@ -37,7 +37,8 @@ python -m unittest discover -s tests
 
 - 入れ方: GitHub の [Releases →「desktop」](https://github.com/AlstRafe/valorant-project/releases/tag/desktop) →
   `VALTracker-windows.zip` を好きな場所に展開し、`VALTracker.exe` を開く。
-  署名がないので初回は「Windows によって PC が保護されました」→「詳細情報」→「実行」。データは `%LOCALAPPDATA%\VAL Tracker`
+  署名がないので初回は「Windows によって PC が保護されました」→「詳細情報」→「実行」。自分のウィンドウで開く
+  （ブラウザは開かない。ウィンドウを開けないときは理由を言って、ブラウザで開くかを聞く）。データは `%LOCALAPPDATA%\VAL Tracker`
   （HenrikDev のキーは「ツール → 設定」で一度入れる）。新しい版はアプリの中のボタンで入る（下の「サイトにはなく、
   アプリだけにあるもの」）
 - ソースから: `python -m pip install -r requirements.txt -r requirements-desktop.txt` → `python -m valtracker.desktop`
