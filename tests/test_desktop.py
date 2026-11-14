@@ -1,6 +1,8 @@
 """The PC app: the Riot Client on the PC (localclient.py) and the app around the pages (desktop.py)."""
 
 import base64
+import contextlib
+import io
 import json
 import os
 import sys
@@ -578,6 +580,81 @@ class UpdateTest(unittest.TestCase):
         with mock.patch.object(threading, "Thread") as thread:
             desktop.look_for_updates(app, threading.Event(), lambda site: {})
         thread.assert_not_called()
+
+
+class NoWindowTest(unittest.TestCase):
+    """The app as it reaches a PC (unpacked from a downloaded zip), and what it does when it has no window."""
+
+    def test_the_mark_of_a_download_is_taken_off_the_apps_own_files(self):
+        with tempfile.TemporaryDirectory() as folder:
+            home = Path(folder)
+            (home / "_internal" / "pythonnet").mkdir(parents=True)
+            marked = [home / "_internal" / "pythonnet" / "Python.Runtime.dll", home / "_internal" / "base.zip"]
+            for path in (*marked, home / "VALTracker.exe"):
+                path.write_bytes(b"")
+            removed = []
+
+            def remove(name):
+                if not any(name == f"{path}:Zone.Identifier" for path in marked):
+                    raise FileNotFoundError(name)  # the .exe ("run anyway" took its mark off) and the folders
+                removed.append(name)
+
+            self.assertEqual(desktop.unmark(home, remove), 2)
+            self.assertEqual(sorted(removed), sorted(f"{path}:Zone.Identifier" for path in marked))
+            self.assertTrue(all(path.exists() for path in marked), "the files themselves stay")
+            self.assertEqual(desktop.unmark(home), 0, "nothing marked: nothing done")
+        self.assertEqual(desktop.unmark(None), 0, "the source: no folder of its own")
+
+    def test_a_folder_that_cannot_be_written_is_left(self):
+        with tempfile.TemporaryDirectory() as folder:
+            (Path(folder) / "VALTracker.exe").write_bytes(b"")
+
+            def remove(name):
+                raise PermissionError(name)
+
+            self.assertEqual(desktop.unmark(Path(folder), remove), 0)
+
+    def test_the_built_app_asks_before_it_opens_a_browser(self):
+        log = Path("desktop.log")
+        for why in (desktop.NO_PART, desktop.NO_RUNTIME):
+            with (
+                self.subTest(why=why),
+                mock.patch.object(desktop, "ask", return_value=False) as asked,
+                mock.patch.object(desktop.webbrowser, "open") as opened,
+            ):
+                self.assertFalse(desktop.in_browser("http://127.0.0.1:1/live", why, log, built=True))
+                opened.assert_not_called()
+                (words,), _ = asked.call_args
+                self.assertIn("ウィンドウを開けませんでした", words)
+                self.assertIn("ブラウザーで開きますか", words)
+        with (
+            mock.patch.object(desktop, "ask", return_value=True),
+            mock.patch.object(desktop.webbrowser, "open") as opened,
+        ):
+            self.assertTrue(desktop.in_browser("http://127.0.0.1:1/live", desktop.NO_PART, log, built=True))
+            opened.assert_called_once_with("http://127.0.0.1:1/live")
+
+    def test_a_browser_that_was_asked_for_opens_without_a_question(self):
+        with (
+            mock.patch.object(desktop, "ask") as asked,
+            mock.patch.object(desktop.webbrowser, "open") as opened,
+        ):
+            self.assertTrue(desktop.in_browser("http://127.0.0.1:1/live", "", Path("desktop.log"), built=True))
+            self.assertTrue(desktop.in_browser("http://127.0.0.1:1/live", desktop.NO_PART, Path("x"), built=False))
+            asked.assert_not_called()
+            self.assertEqual(opened.call_count, 2)
+
+    def test_no_window_says_why(self):
+        """Without pywebview (as here), the reason is printed (the app's log) and told, not a wrong guess."""
+        out = io.StringIO()
+        with (
+            mock.patch.dict(sys.modules, {"webview": None}),
+            contextlib.redirect_stdout(out),
+            tempfile.TemporaryDirectory() as folder,
+        ):
+            self.assertEqual(desktop.window("http://127.0.0.1:1/live", Path(folder)), desktop.NO_PART)
+        self.assertIn("no window: ", out.getvalue())
+        self.assertNotIn("WebView2", desktop.IN_BROWSER, "the box after the browser opened guesses nothing")
 
 
 class OpenedTwiceTest(unittest.TestCase):

@@ -67,10 +67,23 @@ WINDOW_CLASS = "WindowsForms10."
 ALREADY_OPEN = (
     "VAL Tracker はもう開いています（タスクバーにあります）。\nVAL Tracker is already open (see the taskbar)."
 )
-IN_BROWSER = (
-    "VAL Tracker をブラウザーで開きました（アプリのウィンドウには Microsoft Edge WebView2 Runtime が要ります）。\n"
-    "OK を押すと VAL Tracker は終わります。"
+IN_BROWSER = "VAL Tracker をブラウザーで開きました。OK を押すと VAL Tracker は終わります。"
+#: Why there is no window (window()'s answers; "" when it was shown), and what the owner is asked then: the
+#: browser is opened only when they say so (a browser beside the game is what the app is there to avoid).
+NO_RUNTIME, NO_PART = "runtime", "part"
+NO_WINDOW = {
+    NO_RUNTIME: "アプリのウィンドウを開けませんでした。Microsoft Edge WebView2 Runtime が見つかりません。\n"
+    "(The app's window could not be opened: Microsoft Edge WebView2 Runtime was not found.)",
+    NO_PART: "アプリのウィンドウを開けませんでした。ウィンドウの部品を読み込めませんでした。\n"
+    "理由はここに書きました: {log}\n"
+    "(The app's window could not be opened: its parts could not be loaded. The reason is in that file.)",
+}
+IN_BROWSER_INSTEAD = (
+    "代わりにブラウザーで開きますか？「いいえ」を押すと、何も開かずに終わります。\n"
+    "(Open in the browser instead? No: the app ends and opens nothing.)"
 )
+#: Windows' mark on a file that came from the internet: a second stream of data beside the file's own.
+MARK = ":Zone.Identifier"
 _held = []  # the mutex's handle, for the app's life
 #: Where the site says which build is the newest (after the site's own address).
 LATEST = "/app/latest"
@@ -267,6 +280,48 @@ def tell(words: str) -> None:
         ctypes.windll.user32.MessageBoxW(None, words, NAME, 0x40)  # MB_ICONINFORMATION
     else:
         print(words, flush=True)
+
+
+def ask(words: str) -> bool:
+    """A message box with はい and いいえ (Windows; いいえ is the one Enter presses): whether はい was pressed.
+    Elsewhere the words are printed and the answer is yes."""
+    if sys.platform != "win32":
+        print(words, flush=True)
+        return True
+    # MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON2; IDYES
+    return ctypes.windll.user32.MessageBoxW(None, words, NAME, 0x4 | 0x30 | 0x100) == 6
+
+
+def in_browser(url: str, why: str, log: Path, built: bool | None = None) -> bool:
+    """Opens ``url`` in the default browser, because it was asked for (``why`` is "") or because there is no
+    window (``why``: window()'s answer): whether it was opened. The built app never opens a browser by itself (a
+    browser beside the game is what the app is there to avoid): the owner is told why there is no window, and
+    asked first."""
+    built = bool(getattr(sys, "frozen", False)) if built is None else built
+    if built and why and not ask(f"{NO_WINDOW[why].format(log=log)}\n\n{IN_BROWSER_INSTEAD}"):
+        return False
+    webbrowser.open(url)
+    return True
+
+
+def unmark(home: Path | None, remove=os.remove) -> int:
+    """Takes Windows' mark "this file came from the internet" off the app's own files: how many had it.
+
+    A browser marks the zip it downloads and Explorer passes the mark on to every file it unpacks. .NET does not
+    load a marked library ("Operation is not supported", 0x80131515), so the window's part (pythonnet, WebView2's
+    libraries) could not start and the app opened in the browser instead. The mark is a second stream beside the
+    file's data; removing it is what "Unblock" in the file's properties does. Only the app's own folder is looked
+    at (``home``: update.running_home(), None for the source), and a file that cannot be changed is left."""
+    if home is None:
+        return 0
+    count = 0
+    for path in home.rglob("*"):
+        try:
+            remove(f"{path}{MARK}")
+            count += 1
+        except OSError:  # no mark on this one (the usual case), or the folder cannot be written
+            continue
+    return count
 
 
 class OnlyHere:
@@ -485,10 +540,11 @@ def _screens(webview) -> list[tuple[int, int, int, int]]:
         return []
 
 
-def window(url: str, folder: Path, close_after: float = 0, minimized: bool = False, made=None) -> bool:
-    """Shows ``url`` in the app's window until it is closed: False when there is no window to be had (no
-    pywebview, or Windows without WebView2), and the default browser is used instead. ``minimized``: it opens in
-    the taskbar (the start with Windows); ``made(window)``: told of the window once it is there."""
+def window(url: str, folder: Path, close_after: float = 0, minimized: bool = False, made=None) -> str:
+    """Shows ``url`` in the app's window until it is closed, and answers "". When there is no window to be had,
+    why (and the reason is printed, which is the app's log): NO_PART (no pywebview, or its .NET part could not
+    start) or NO_RUNTIME (Windows without WebView2). ``minimized``: it opens in the taskbar (the start with
+    Windows); ``made(window)``: told of the window once it is there."""
     os.environ.setdefault("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", BROWSER_ARGUMENTS)
     try:
         import webview
@@ -497,9 +553,11 @@ def window(url: str, folder: Path, close_after: float = 0, minimized: bool = Fal
             from webview.platforms import winforms
 
             if winforms.renderer != "edgechromium":  # Internet Explorer's engine: the pages need a modern one
-                return False
-    except Exception:  # noqa: BLE001 - no pywebview, or its .NET part could not start
-        return False
+                print(f"{NAME}: no window: WebView2 Runtime was not found (engine: {winforms.renderer})", flush=True)
+                return NO_RUNTIME
+    except Exception as error:  # noqa: BLE001 - no pywebview, or its .NET part could not start
+        print(f"{NAME}: no window: {type(error).__name__}: {str(error)[:600]}", flush=True)
+        return NO_PART
     # a picture or a calendar file the page saves: Windows' "save as" box (else the window drops it)
     webview.settings["ALLOW_DOWNLOADS"] = True
     start = placed(folder, _screens(webview))
@@ -527,7 +585,7 @@ def window(url: str, folder: Path, close_after: float = 0, minimized: bool = Fal
 
     # cookies (language, the session) and the page's own lists are kept in the app's folder
     webview.start(close_later if close_after else None, private_mode=False, storage_path=str(folder / "window"))
-    return True
+    return ""
 
 
 def check(base: str) -> int:
@@ -616,6 +674,10 @@ def main(argv: list[str] | None = None) -> int:
     _output(folder)  # after the check above: the running app's log is not emptied
     calmed = calm()
     print(f"{NAME}: {', '.join(calmed) or 'no Windows priorities (not Windows)'}", flush=True)
+    # unpacked from a downloaded zip: Windows' mark is taken off before the window's part is loaded
+    unmarked = unmark(update.running_home())
+    if unmarked:
+        print(f"{NAME}: {unmarked} of the app's files were marked as come from the internet: unmarked", flush=True)
     os.environ.setdefault("VAL_COLLECT_SECONDS", "0")  # the busy-hour collector: the site's work, not the PC's
     local = LocalClient()
     app = create_app(instance=folder, local=local)
@@ -652,8 +714,11 @@ def main(argv: list[str] | None = None) -> int:
         if args.check:
             return check(base)
         keep_window_low(stopping)
-        if args.browser or not window(base + FIRST_PAGE, folder, args.close_after, args.minimized, shown.append):
-            webbrowser.open(base + FIRST_PAGE)
+        first_page = base + FIRST_PAGE
+        why = "" if args.browser else window(first_page, folder, args.close_after, args.minimized, shown.append)
+        if args.browser or why:
+            if not in_browser(first_page, why, folder / "desktop.log"):
+                return 0  # no window, and the owner did not want a browser
             if getattr(sys, "frozen", False):  # no console to stop it from: the box's OK does
                 tell(IN_BROWSER)
                 return 0
