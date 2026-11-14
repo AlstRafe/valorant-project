@@ -3720,6 +3720,20 @@ code {
   align-items: start;
   gap: 0.6rem;
 }
+/* A narrow window: the three ranks go under the name, which keeps its room */
+@media (max-width: 560px) {
+  .seat:has(.rank-label) {
+    flex-wrap: wrap;
+  }
+  .seat:has(.rank-label) .seat-text {
+    flex-basis: calc(100% - 3.3rem);
+  }
+  .seat:has(.rank-label) .seat-ranks {
+    flex-basis: 100%;
+    gap: 1rem;
+    padding-left: 3.3rem;
+  }
+}
 .rank-label {
   color: var(--soft);
   font-size: 0.66rem;
