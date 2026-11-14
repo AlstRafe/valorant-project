@@ -4,10 +4,12 @@ start with Windows (pc.py), and the Riot Client's part of them (localclient.py).
 import base64
 import json
 import re
+import struct
 import tempfile
 import threading
 import time
 import unittest
+import wave
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest import mock
@@ -314,7 +316,28 @@ class AlertTest(unittest.TestCase):
         self.assertEqual(self.windows.did, [("play", pc.SOUND)])
         with (self.folder / pc.SOUND).open("rb") as file:
             self.assertEqual(file.read(4), b"RIFF")
-        self.assertLess((self.folder / pc.SOUND).stat().st_size, 40_000)
+        self.assertLess((self.folder / pc.SOUND).stat().st_size, 80_000)
+
+    def test_the_sound_rings_out_instead_of_stopping_short(self):
+        """It begins and ends in silence, and what is heard fades: nothing is cut while it still rings."""
+        (self.folder / pc.OLD_SOUNDS[0]).write_bytes(b"the sound as it was")
+        path = pc.chime(self.folder / pc.SOUND)
+        with wave.open(str(path), "rb") as file:
+            rate, count = file.getframerate(), file.getnframes()
+            heard = [abs(value) for (value,) in struct.iter_unpack("<h", file.readframes(count))]
+        loudest = max(heard)
+        self.assertGreater(count / rate, 1.2, "long enough for both notes to ring out")
+        self.assertLess(loudest, 0.5 * 32767, "quiet beside a game")
+        self.assertGreater(loudest, 0.15 * 32767, "and still heard")
+        self.assertEqual(max(heard[: int(rate * 0.03)]), 0, "silence before the first note")
+        self.assertEqual(max(heard[-int(rate * 0.1) :]), 0, "silence at the end")
+        last = heard[-int(rate * 0.2) : -int(rate * 0.1)]
+        self.assertLess(max(last), loudest / 50, "the last tenth of a second of the notes is all but silent")
+        steps = max(abs(a - b) for a, b in zip(heard, heard[1:], strict=False))
+        self.assertLess(steps, loudest * 0.6, "no jump from one moment to the next (a click)")
+        self.assertFalse((self.folder / pc.OLD_SOUNDS[0]).exists(), "the sound it had before is removed")
+        made = path.stat().st_mtime_ns
+        self.assertEqual(pc.chime(path).stat().st_mtime_ns, made, "made once")
 
     def test_the_settings_button_tries_it_whatever_is_in_front(self):
         self.windows.now = (42, "VAL Tracker", "WindowsForms10.Window.8")

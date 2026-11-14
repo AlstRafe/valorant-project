@@ -1623,6 +1623,61 @@
     );
   }
 
+  // A page on its way: a thin bar across the top (html.leaving, app.css) once the wait is long enough to be felt.
+  // The PC app's window has no browser tab that turns, and without the bar a slow page looks like a press that
+  // did nothing. Links and forms that lead to another page of the site, and the app's own back, forward and
+  // reload; not what opens elsewhere or is saved. The bar goes when this page is shown again (Back), and by
+  // itself after LEFT_ALONE ms (an answer that was a file to save leaves the page where it is).
+  var LEAVING = 150;
+  var LEFT_ALONE = 12000;
+  function leaving() {
+    var root = document.documentElement;
+    var timers = [];
+    function stop() {
+      timers.forEach(clearTimeout);
+      timers = [];
+      root.classList.remove("leaving");
+    }
+    function start() {
+      stop();
+      timers.push(
+        setTimeout(function () {
+          root.classList.add("leaving");
+        }, LEAVING),
+        setTimeout(stop, LEFT_ALONE),
+      );
+    }
+    document.addEventListener("click", function (e) {
+      if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+      var target = e.target.closest ? e.target.closest("a[href], [data-go]") : null;
+      if (!target) return;
+      if (target.hasAttribute("data-go")) {
+        if (!target.disabled) start();
+        return;
+      }
+      if (target.target === "_blank" || target.hasAttribute("download")) return;
+      var address;
+      try {
+        address = new URL(target.href, location.href);
+      } catch (err) {
+        return;
+      }
+      if (address.origin !== location.origin) return;
+      if (address.pathname === location.pathname && address.search === location.search) return; // a place on this page
+      // after the page's own handlers: a link they answer themselves (in place) leads nowhere
+      setTimeout(function () {
+        if (!e.defaultPrevented) start();
+      }, 0);
+    });
+    document.addEventListener("submit", function (e) {
+      if (e.target.target === "_blank") return;
+      setTimeout(function () {
+        if (!e.defaultPrevented) start();
+      }, 0);
+    });
+    addEventListener("pageshow", stop);
+  }
+
   // Phones: the tab bar at the bottom would sit on the keyboard while typing.
   function typing() {
     document.addEventListener("focusin", function (e) {
@@ -1644,6 +1699,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     desktopApp();
+    leaving();
     prefs();
     part();
     chosen();

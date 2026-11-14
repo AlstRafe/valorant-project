@@ -39,8 +39,10 @@ GAME_TITLE, GAME_CLASS = "VALORANT", "UnrealWindow"
 #: How long the taskbar button stays lit at most (seconds), and how often the window in front is looked at
 #: meanwhile.
 LIT, LOOK = 12.0, 0.5
-#: The sound's file in the app's folder.
-SOUND = "match-found.wav"
+#: The sound's file in the app's folder. It is made once and kept, so a changed sound takes a new name, and the
+#: names it had before are removed.
+SOUND = "match-found-2.wav"
+OLD_SOUNDS = ("match-found.wav",)
 #: The settings' keys (settings.json) and what they are while the owner has not chosen.
 DEFAULTS = {"alert_flash": True, "alert_sound": False}
 
@@ -59,22 +61,42 @@ def is_game(title: str, kind: str) -> bool:
 
 
 def chime(path: Path) -> Path:
-    """The alert's sound, made once: two soft notes (0.45 s), quiet enough beside a game."""
+    """The alert's sound, made once: two soft bell notes that ring out (about 1.3 s), quiet enough beside a game.
+
+    It begins and ends in silence. The first one (0.45 s) stopped while its second note was still heard, which
+    sounds cut off; and some sound cards drop the first and last moments of what they are given."""
     if path.exists():
         return path
-    rate, notes, frames = 22050, ((880.0, 0.0), (1318.5, 0.16)), []
-    for index in range(int(rate * 0.45)):
-        at, value = index / rate, 0.0
-        for pitch, start in notes:
-            if at >= start:
-                value += math.sin(2 * math.pi * pitch * (at - start)) * math.exp(-9 * (at - start))
-        frames.append(struct.pack("<h", int(max(-1.0, min(1.0, value * 0.28)) * 32767)))
+    rate = 22050
+    lead, ring, tail = 0.04, 1.15, 0.12  # silence, the notes, silence (seconds)
+    notes = ((880.0, 0.0), (1318.5, 0.17))  # pitch, and when it is struck
+    attack, fade = 0.006, 0.3  # a note's rise, and the end brought down to nothing
+    frames = []
+    for index in range(int(rate * (lead + ring + tail))):
+        at, value = index / rate - lead, 0.0
+        if 0 <= at < ring:
+            for pitch, start in notes:
+                since = at - start
+                if since < 0:
+                    continue
+                turn = 2 * math.pi * pitch * since
+                tone = math.sin(turn) + 0.25 * math.sin(2 * turn)  # a little of the octave above: a bell, not a beep
+                value += min(1.0, since / attack) * tone * math.exp(-5.5 * since)
+            left = ring - at
+            if left < fade:
+                value *= 0.5 - 0.5 * math.cos(math.pi * left / fade)
+        frames.append(struct.pack("<h", int(max(-1.0, min(1.0, value * 0.22)) * 32767)))
     path.parent.mkdir(parents=True, exist_ok=True)
     with wave.open(str(path), "wb") as file:
         file.setnchannels(1)
         file.setsampwidth(2)
         file.setframerate(rate)
         file.writeframes(b"".join(frames))
+    for name in OLD_SOUNDS:
+        try:
+            (path.parent / name).unlink()
+        except OSError:
+            pass
     return path
 
 
