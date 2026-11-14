@@ -166,6 +166,45 @@ class StreakTest(unittest.TestCase):
         self.assertIsNone(_streak(rows(True, True, standard=False)), "deathmatch and the like are left out")
 
 
+class SharedTest(unittest.TestCase):
+    """The PC app shows the site's numbers: its own file holds only what its owner opened."""
+
+    def setUp(self):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.activity = Activity(Path(folder.name), clock=lambda: NOON + 3600)
+        self.addCleanup(self.activity.close)
+        self.asked = []
+
+    def test_the_sites_numbers_and_the_apps_own_without_them(self):
+        answers = {
+            "ranks": {"lines": 500, "tiers": {"15": 300, "21": 200}},
+            "yardstick": [{"acs": [100, 200.5], "bogus": [1]}, 400, "plat-diamond"],
+            "agents": {"matches": 9, "agents": [], "maps": {}},
+        }
+
+        def shared(kind, params):
+            self.asked.append((kind, params))
+            return answers.get(kind)
+
+        self.activity.shared = shared
+        self.assertEqual(self.activity.ranks("ap"), {"lines": 500, "tiers": {15: 300, 21: 200}})
+        self.assertEqual(self.activity.yardstick(16), ({"acs": [100.0, 200.5]}, 400, "plat-diamond"))
+        self.assertEqual(self.activity.agents("competitive")["matches"], 9)
+        self.activity.ranks("ap")
+        self.assertEqual([kind for kind, _ in self.asked].count("ranks"), 1, "kept a while")
+        # the site does not answer: the app's own numbers, and the site is left alone for a while
+        self.assertEqual(self.activity.servers("ap")["matches"], 0)
+        self.activity.servers("ap")
+        self.assertEqual([kind for kind, _ in self.asked].count("servers"), 1)
+
+    def test_a_broken_answer_is_no_answer(self):
+        self.activity.shared = lambda kind, params: ["nonsense"]
+        self.assertEqual(self.activity.ranks("ap"), {"lines": 0, "tiers": {}})
+        self.activity.shared = mock.Mock(side_effect=OSError("no network"))
+        self.assertEqual(self.activity.yardstick(16), ({}, 0, ""))
+
+
 class CollectorTest(unittest.TestCase):
     def setUp(self):
         folder = tempfile.TemporaryDirectory()

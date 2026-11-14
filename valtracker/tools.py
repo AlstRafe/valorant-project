@@ -9,12 +9,12 @@ import re
 import time
 from datetime import UTC, datetime
 
-from flask import Flask, current_app, g, make_response, render_template, request, url_for
+from flask import Flask, abort, current_app, g, jsonify, make_response, render_template, request, url_for
 
 from valtracker import crosshair as crosshairs
 from valtracker import i18n, queues, security, shared_url
 from valtracker import shop as store
-from valtracker.activity import BANDS, ENOUGH, FEW, RANKS_ENOUGH, WINDOW_DAYS
+from valtracker.activity import BANDS, ENOUGH, FEW, LINE_QUEUES, RANKS_ENOUGH, WINDOW_DAYS
 from valtracker.diary import store_day
 from valtracker.henrik import BOARD_PAGE, HenrikError
 from valtracker.riot import RiotError
@@ -285,6 +285,13 @@ def _zone() -> tuple[float, str]:
     hours, rest = divmod(abs(minutes), 60)
     zone = f"UTC{'+' if minutes >= 0 else '−'}{hours}" + (f":{rest:02d}" if rest else "")
     return minutes / 60, _t("現地時間（{zone}）", zone=zone)
+
+
+def _numbers_region() -> str:
+    region = request.args.get("region", "ap")
+    if region not in REGION_NAMES:
+        abort(404)
+    return region
 
 
 def _ranks_page(region: str) -> dict:
@@ -603,6 +610,45 @@ def register(app: Flask) -> None:
         code = request.args.get("code", "").strip()[:600]
         values = _crosshair_page(code)
         return render_template("crosshair.html", **values), 400 if values["problem"] else 200
+
+    @app.get("/numbers/<kind>")
+    def numbers(kind: str):
+        """The numbers this site worked out from the matches it has seen, for the PC app (activity.Activity._ask):
+        the app's own file holds only its owner's matches. No player is in them."""
+        activity = current_app.config["VAL_ACTIVITY"]
+        asked = request.args
+        if kind == "agents":
+            queue = asked.get("queue", "competitive")
+            band = asked.get("band", "")
+            map_id = asked.get("map", "")[:40]
+            if queue not in LINE_QUEUES or (band and band not in [name for name, _, _ in BANDS]):
+                abort(404)
+            found = activity.agents(queue, band, map_id)
+        elif kind == "ranks":
+            found = activity.ranks(_numbers_region())
+        elif kind == "servers":
+            try:
+                offset = max(-12.0, min(14.0, float(asked.get("offset", 9))))
+            except ValueError:
+                offset = 9.0
+            found = activity.servers(_numbers_region(), round(offset * 4) / 4)
+        elif kind == "yardstick":
+            try:
+                tier = max(0, min(27, int(asked.get("tier", 0))))
+            except ValueError:
+                tier = 0
+            stick, lines, band = activity.yardstick(tier)
+            # every 400th part of each sorted list is as good a yardstick as the whole (a megabyte of numbers)
+            thin = {
+                stat: values if len(values) <= 400 else [values[i * (len(values) - 1) // 399] for i in range(400)]
+                for stat, values in stick.items()
+            }
+            found = (thin, lines, band)
+        else:
+            abort(404)
+        answer = jsonify(found)
+        answer.headers["Cache-Control"] = "public, max-age=600"
+        return answer
 
     @app.get("/servers")
     def servers():

@@ -366,6 +366,23 @@ class OwnerTest(unittest.TestCase):
         for name in ("Secret Mate", "Foe One", "Pd Player"):
             self.assertNotIn(name, text)
 
+    def test_the_collector_reads_the_games_own_records(self):
+        """Matches the owner did not play, for the site's numbers: no HenrikDev key needed, no name read."""
+        collector = self.app.config["VAL_COLLECTOR"]
+        self.link()
+        activity = self.app.config["VAL_ACTIVITY"]
+        other = self.riot.pd["player"]
+        activity.candidates.append(("ap", other, 15))
+        new = collector.once()
+        self.assertGreater(new, 0)
+        self.assertTrue([url for _, url, _, _ in self.riot.asked if "/match-details/" in url], "from Riot")
+        self.assertIn(other, collector.looked)
+        asked = len(self.riot.asked)
+        collector.looked.discard(other)
+        collector.once()
+        after = [url for _, url, _, _ in self.riot.asked[asked:]]
+        self.assertFalse([url for url in after if "/match-details/" in url], "a match is read once")
+
     def played(self, queue: str = "competitive") -> str:
         """The owner's match is over and Riot's server has its record: the match's id."""
         match_id = self.riot.pd["coregame"]["MatchID"].lower()

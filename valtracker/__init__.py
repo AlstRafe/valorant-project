@@ -9,8 +9,10 @@ its mount (``/val``); ``python -m valtracker`` serves it on its own on this PC, 
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 from pathlib import Path
+from urllib.parse import urlencode
 
 from flask import Flask, current_app, g, request, url_for
 
@@ -80,12 +82,31 @@ def create_app(
     # the owner's saved loadouts (owner.py: the collection's sets)
     app.config["VAL_SETS"] = Settings(instance, "loadout_sets.json")
     app.config["VAL_ACTIVITY"] = activity = Activity(instance)
+    if local is not None:
+        # the PC app: the site's numbers (it looks at matches all day; the app's own file has its owner's only)
+        public = app.config["VAL_PUBLIC"]
+
+        def shared(kind: str, params: dict):
+            if not public.startswith("https://"):
+                return None
+            status, body = fetch(f"{public}/numbers/{kind}?{urlencode(params)}", {"Accept": "application/json"})
+            return json.loads(body) if status == 200 else None
+
+        activity.shared = shared
     # VAL_COLLECT_SECONDS=0 turns the background look at more players off (activity.py)
     seconds = float(os.environ.get("VAL_COLLECT_SECONDS", COLLECT_SECONDS) or 0)
-    app.config["VAL_COLLECTOR"] = collector = Collector(activity, app.config["VAL_HENRIK"], seconds)
+    game = app.config["VAL_CONTENT"]
+    # the site reads other players' matches from the game's own records too (the owner's linked account); the PC
+    # app does not (nothing more is asked of Riot beside the game): it shows the site's numbers
+    app.config["VAL_COLLECTOR"] = collector = Collector(
+        activity,
+        app.config["VAL_HENRIK"],
+        seconds,
+        app.config["VAL_RIOT"] if local is None else None,
+        lambda: game.map_index("en-GB"),
+    )
     app.config["VAL_ARCHIVE"] = archive = Archive(instance)
     # the background reading of a player's whole history (archive.py); VAL_FILL_SECONDS=0 turns it off
-    game = app.config["VAL_CONTENT"]
     app.config["VAL_FILLER"] = filler = Filler(
         archive,
         app.config["VAL_RIOT"],
