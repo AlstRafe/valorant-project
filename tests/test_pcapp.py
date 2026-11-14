@@ -464,9 +464,33 @@ class PagesTest(unittest.TestCase):
         site, _, _ = make_app()
         self.addCleanup(site._test_folder.cleanup)
         client = site.test_client()
-        for path in ("/friends", "/checkup"):
+        for path in ("/friends", "/checkup", "/friends/count"):
             self.assertEqual(client.get(path).status_code, 404)
         self.assertNotIn("/friends", client.get("/live").get_data(as_text=True))
+        tools = client.get("/tools").get_data(as_text=True)
+        self.assertNotIn("/friends", tools)
+        self.assertNotIn("/checkup", tools)
+
+    def test_the_tools_page_has_the_apps_own_pages(self):
+        text = self.client.get("/tools").get_data(as_text=True)
+        self.assertIn('href="/friends"', text)
+        self.assertIn('href="/checkup"', text)
+        self.assertIn("<strong>診断</strong><small>動作チェックとレポート</small>", text)
+
+    def test_the_top_page_counts_the_friends_who_are_on(self):
+        text = self.client.get("/").get_data(as_text=True)
+        self.assertIn('data-friends="/friends/count"', text, "asked once the page is drawn")
+        self.assertIn('data-playing="{count} 人がプレイ中" data-online="オンライン {count} 人"', text)
+        self.api.friends.append({"puuid": OTHER, "game_name": "Gone", "game_tag": "JP3"})
+        self.api.presences[1] = playing(FRIEND, sessionLoopState="INGAME", queueId="competitive", matchMap=ASCENT)
+        answer = self.client.get("/friends/count")
+        self.assertEqual(answer.headers["Cache-Control"], "no-store")
+        counted = answer.get_json()
+        self.assertTrue(counted["open"])
+        self.assertEqual(counted["playing"], 1, "the friend in a match; the one who is off is not counted")
+        self.assertGreaterEqual(counted["online"], counted["playing"])
+        self.lockfile.unlink()
+        self.assertEqual(self.client.get("/friends/count").get_json(), {"open": False})
 
     def test_the_checkup_reads_the_client_and_asks_no_server_until_asked(self):
         before = len(self.app.riot.asked)

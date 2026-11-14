@@ -34,7 +34,7 @@
 {% if me.linked and me.name %}<li><a href="{{ url_for('player', name=me.name, tag=me.tag) }}"><strong>{{ t('戦績') }}</strong><small>{{ me.name }}#{{ me.tag }}</small></a></li>{% endif %}
 <li><a href="{{ url_for('live') }}"><strong>{{ t('ライブ') }}</strong><small data-live-text>{{ t('キュー開始・エージェント選択') }}</small></a></li>
 <li><a href="{{ url_for('progress') }}"><strong>{{ t('進行状況') }}</strong><small>{{ t('バトルパス・ミッション') }}</small></a></li>
-{% if desktop %}<li><a href="{{ url_for('friends') }}"><strong>{{ t('フレンド') }}</strong><small>{{ t('オンライン状況') }}</small></a></li>{% endif %}
+{% if desktop %}<li><a href="{{ url_for('friends') }}"><strong>{{ t('フレンド') }}</strong><small data-friends="{{ url_for('friends_count') }}" data-playing="{{ t('{count} 人がプレイ中') }}" data-online="{{ t('オンライン {count} 人') }}">{{ t('オンライン状況') }}</small></a></li>{% endif %}
 <li><a href="{{ url_for('collection') }}"><strong>{{ t('所持品') }}</strong><small>{{ t('スキン・カードの装備') }}</small></a></li>
 </ul>
 {% if not me.linked %}<p class="note">{{ t('Riot アカウントを連携すると、戦績・ライブ・所持品が使えます。') }} <a href="{{ url_for('settings') }}#riot">{{ t('連携する') }}</a></p>{% endif %}

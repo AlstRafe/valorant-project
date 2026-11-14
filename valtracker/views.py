@@ -29,6 +29,7 @@ from valtracker import collection as owned_items
 from valtracker import heatmap, i18n, pc, release, score, security, stats
 from valtracker import rounds as rounds_module
 from valtracker.activity import BANDS, LINE_QUEUES, LINE_STATS, RANKS_ENOUGH
+from valtracker.content import todays_tier
 from valtracker.henrik import FRESH_AFTER, MODES, NAME, REGIONS, HenrikError, shows_rr, split_riot_id
 from valtracker.media import kind as media_kind
 from valtracker.pdmatch import MODE_TYPES
@@ -205,6 +206,26 @@ def _rank(tier: dict | None, old: bool = False) -> dict:
     known = current_app.config["VAL_CONTENT"].tiers(g.lang, old=old).get(number) or {}
     name = str(known.get("tierName") or tier.get("name") or "")
     return {"tier": number, "name": name.title() if name.isupper() else name, "icon": known.get("smallIcon")}
+
+
+def _peak(mmr: dict | None) -> dict | None:
+    """The player's best rank ever, over every act: v3 mmr's ``peak``, or a higher one among the acts' best wins
+    and final ranks. In today's numbers: an act before Episode 5 had no Ascendant (its Immortal 1 was 21, today's
+    24)."""
+    peak = (mmr or {}).get("peak") or {}
+    tier = peak.get("tier") if isinstance(peak.get("tier"), dict) else {}
+    try:
+        number = int(tier.get("id") or 0)
+    except (TypeError, ValueError):
+        number = 0
+    best = todays_tier(number, bool(peak.get("old")))
+    for act in (mmr or {}).get("seasons") or []:
+        best = max(
+            best, todays_tier(max([act.get("end_tier") or 0, *(act.get("best") or [])[:1]]), bool(act.get("old")))
+        )
+    if best <= 2:
+        return None
+    return _rank(tier if best == number else {"id": best})
 
 
 def _agent(agent: dict | None) -> dict:
@@ -663,7 +684,6 @@ def _player(
     page = min(max(1, page), pages)
     shown = rows[(page - 1) * LIFE_PAGE : page * LIFE_PAGE] if life else rows
     current = (mmr or {}).get("current") or {}
-    peak = (mmr or {}).get("peak") or {}
     rank = _rank(current.get("tier")) if current else None
     summary = stats.summary(rows)
     today = datetime.now(stats.JST).date()
@@ -701,7 +721,7 @@ def _player(
         "act": act_left() if rank else None,
         "rr_chart": _rr_chart(rr_all) if shows_rr(mode) else None,
         "last_change": current.get("last_change"),
-        "peak": _rank(peak.get("tier")) if peak else None,
+        "peak": _peak(mmr),
         "standing": _standing(current),
         "acts": _acts((mmr or {}).get("seasons") or []),
         "rows": rows,

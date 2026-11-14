@@ -422,10 +422,10 @@ TEXTS = {
     "コピー": {"ko": "복사", "en-GB": "Copy", "zh-TW": "複製"},
     "コピーしました": {"ko": "복사했습니다", "en-GB": "Copied", "zh-TW": "已複製"},
     "コードをコピー": {"ko": "코드 복사", "en-GB": "Copy code", "zh-TW": "複製代碼"},
-    "コードのプレビューと定番クロスヘア": {
-        "ko": "코드 미리보기와 인기 조준선",
-        "en-GB": "Preview a code, or copy a popular one",
-        "zh-TW": "預覽代碼與常用準星",
+    "プレビューと定番コード": {
+        "ko": "미리보기와 인기 코드",
+        "en-GB": "Preview and popular codes",
+        "zh-TW": "預覽與常用代碼",
     },
     "サーバー状況": {"ko": "서버 상태", "en-GB": "Server status", "zh-TW": "伺服器狀態"},
     "シアン": {"ko": "청록색", "en-GB": "Cyan", "zh-TW": "青色"},
@@ -1013,10 +1013,10 @@ TEXTS = {
         "en-GB": "e.g. Prime",
         "zh-TW": "例：Prime",
     },
-    "全スキンの動画・バリエーション・評価": {
-        "ko": "모든 스킨의 영상·변형·평가",
-        "en-GB": "Every skin: videos, variants, ratings",
-        "zh-TW": "所有造型的影片、變體與評價",
+    "全スキンの動画と評価": {
+        "ko": "모든 스킨의 영상과 평가",
+        "en-GB": "Every skin, with videos and ratings",
+        "zh-TW": "所有造型的影片與評價",
     },
     "動画 {count}": {
         "ko": "영상 {count}",
@@ -1762,11 +1762,6 @@ TEXTS = {
         "en-GB": "Battle pass, contracts, missions",
         "zh-TW": "戰鬥通行證、合約、任務",
     },
-    "スキン・ガンバディー・カードの装備": {
-        "ko": "스킨·총기 장식·카드 장착",
-        "en-GB": "Equip skins, buddies and cards",
-        "zh-TW": "裝備造型、吊飾與卡面",
-    },
     "API キーと Riot アカウント連携": {
         "ko": "API 키와 Riot 계정 연동",
         "en-GB": "API key and Riot account",
@@ -1816,11 +1811,7 @@ TEXTS = {
         "zh-TW": "對戰中",
     },
     "状態を取得できません": {"ko": "상태를 불러올 수 없음", "en-GB": "State unknown", "zh-TW": "無法取得狀態"},
-    "VALORANT は起動していません": {
-        "ko": "VALORANT 실행 안 됨",
-        "en-GB": "VALORANT isn't running",
-        "zh-TW": "VALORANT 未啟動",
-    },
+    "VALORANT 未起動": {"ko": "VALORANT 실행 안 됨", "en-GB": "VALORANT not running", "zh-TW": "VALORANT 未啟動"},
     # Live
     "ゲームと連動して、キュー開始とエージェント選択ができます。PC で VALORANT を起動していればスマホからも使えます。": {
         "ko": "게임과 연동해 대기열 시작과 요원 선택을 할 수 있습니다. PC에서 VALORANT를 실행 중이면 스마트폰에서도 쓸 수 있습니다.",
@@ -2066,11 +2057,7 @@ TEXTS = {
         "en-GB": "This act: {wins} wins in {games} matches ({rate}%)",
         "zh-TW": "本階段 {wins} 勝 / {games} 場（{rate}%）",
     },
-    "最高 {rank}": {
-        "ko": "최고 {rank}",
-        "en-GB": "Peak {rank}",
-        "zh-TW": "最高 {rank}",
-    },
+    "通算最高 {rank}": {"ko": "역대 최고 {rank}", "en-GB": "All-time peak {rank}", "zh-TW": "生涯最高 {rank}"},
     # What /live says after one of its buttons (owner.py LIVE_SAID)
     "キューを開始しました。": {
         "ko": "대기열을 시작했습니다.",
@@ -3103,11 +3090,6 @@ TEXTS = {
         "zh-TW": "好友 {total} 人",
     },
     "フレンドがいません。": {"ko": "친구가 없습니다.", "en-GB": "No friends yet.", "zh-TW": "沒有好友。"},
-    "フレンドのオンライン状況と試合の状況がわかります。": {
-        "ko": "친구의 접속 상태와 경기 상황을 볼 수 있습니다.",
-        "en-GB": "Who's online and what they're playing.",
-        "zh-TW": "查看好友的上線狀態與對戰情況。",
-    },
     "フレンドの状況がわかる（マッチング中、対戦中のスコア、パーティー人数）": {
         "ko": "친구의 상황 확인(매칭 중, 경기 중 스코어, 파티 인원)",
         "en-GB": "What your friends are doing (in queue, the score of their match, party size)",
@@ -3349,4 +3331,11 @@ TEXTS = {
         "en-GB": "In the game: Settings → Crosshair → Copy profile code.",
         "zh-TW": "在遊戲的「設定 → 準星 → 複製設定檔代碼」即可複製。",
     },
+    "動作チェックとレポート": {
+        "ko": "동작 점검과 리포트",
+        "en-GB": "Check what the app can read",
+        "zh-TW": "運作檢查與報告",
+    },
+    "{count} 人がプレイ中": {"ko": "{count}명 플레이 중", "en-GB": "{count} playing now", "zh-TW": "{count} 人遊玩中"},
+    "オンライン {count} 人": {"ko": "온라인 {count}명", "en-GB": "{count} online", "zh-TW": "{count} 人上線"},
 }

@@ -13,7 +13,7 @@ from datetime import datetime
 
 from valtracker import i18n
 from valtracker.activity import FEW
-from valtracker.content import Content
+from valtracker.content import Content, todays_tier
 
 #: valorant-api.com's roles, in the order a team usually fills them: smokes first, then information, a sentinel
 #: and an entry.
@@ -64,9 +64,26 @@ def _rank(mmr, act: str) -> tuple[int, int]:
     return 0, 0
 
 
+def best_ever(mmr, old_acts=frozenset()) -> int:
+    """The highest rank the player ever had, over every act they played (PD's mmr answer: each act's wins by
+    tier, and the tier it ended at), in today's numbers (``old_acts``: the acts before Ascendant). 0: none."""
+    if not isinstance(mmr, dict):
+        return 0
+    skills = ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
+    best = 0
+    for season, info in skills.items() if isinstance(skills, dict) else []:
+        if not isinstance(info, dict):
+            continue
+        won_at = info.get("WinsByTier") if isinstance(info.get("WinsByTier"), dict) else {}
+        tiers = [_number(tier) for tier, count in won_at.items() if _number(count) > 0]
+        tiers.append(_number(info.get("CompetitiveTier")))
+        best = max(best, todays_tier(max(tiers), _id(season) in old_acts))
+    return best
+
+
 def _record(mmr, act: str) -> dict | None:
     """The act's competitive record from PD's mmr answer, as the game's career page has it: ``{"wins", "games",
-    "win_rate", "peak": the highest tier won at this act}``, or None (no games)."""
+    "win_rate"}``, or None (no games)."""
     if not isinstance(mmr, dict) or not act:
         return None
     skills = ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
@@ -81,9 +98,7 @@ def _record(mmr, act: str) -> dict | None:
     if games <= 0:
         return None
     wins = _number(info.get("NumberOfWinsWithPlacements") or info.get("NumberOfWins"))
-    won_at = info.get("WinsByTier") if isinstance(info.get("WinsByTier"), dict) else {}
-    peak = max((_number(tier) for tier, count in won_at.items() if _number(count) > 0), default=0)
-    return {"wins": min(wins, games), "games": games, "win_rate": round(100 * min(wins, games) / games), "peak": peak}
+    return {"wins": min(wins, games), "games": games, "win_rate": round(100 * min(wins, games) / games)}
 
 
 def _rank_of(tier: int, look: dict) -> dict | None:
@@ -112,6 +127,7 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
     rank_name = str(known.get("tierName") or "")
     card = _id(identity.get("PlayerCardID"))
     title = look["titles"].get(_id(identity.get("PlayerTitleID"))) or {}
+    shown = bool(name) or subject == me
     return {
         "me": subject == me,
         "agent": agent.get("displayName") or "",
@@ -136,20 +152,15 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
         if tier > 2
         else None,
         "tier": tier if tier > 2 else 0,
-        # the act's record and best rank only for the owner and the players who show their name: as public as
-        # their page on this site, and nothing about the ones who hide who they are
-        "record": _with_peak(_record(look["ranks"].get(subject), look["act"]), look)
-        if (name or subject == me)
+        # the act's record and the best rank ever only for the owner and the players who show their name: as
+        # public as their page on this site, and nothing about the ones who hide who they are
+        "record": _record(look["ranks"].get(subject), look["act"]) if shown else None,
+        "peak": _rank_of(best_ever(look["ranks"].get(subject), look.get("old_acts") or frozenset()), look)
+        if shown
         else None,
         "team": str(item.get("TeamID") or ""),
         "owner": bool(item.get("IsOwner")),
     }
-
-
-def _with_peak(record: dict | None, look: dict) -> dict | None:
-    if record is not None:
-        record["peak_rank"] = _rank_of(record["peak"], look)
-    return record
 
 
 def _seconds_since(value, now: float) -> int | None:
@@ -201,6 +212,7 @@ def page(
         "names": found.get("names") or {},
         "ranks": found.get("ranks") or {},
         "act": (act or {}).get("uuid") or "",
+        "old_acts": content.old_acts(lang),
     }
     index = content.map_index(lang)
     address = str(match.get("MapID") or "").rsplit("/", 1)[-1].lower()
@@ -312,7 +324,7 @@ STATE_WORDS = {
     "pregame": "エージェント選択中",
     "ingame": "対戦中",
     "unknown": "状態を取得できません",
-    "closed": "VALORANT は起動していません",
+    "closed": "VALORANT 未起動",
 }
 
 

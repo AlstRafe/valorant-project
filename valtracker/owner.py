@@ -475,6 +475,25 @@ def register(app: Flask) -> None:
 
         return render_template("friends.html", closed=False, **friends_page.rows(found, look, time.time(), when))
 
+    @app.get("/friends/count")
+    def friends_count():
+        """The PC app only: how many friends are in VALORANT and how many are online, for the top page's card
+        (asked by the page once it is drawn: the same two local reads as the friends page, kept a few seconds)."""
+        security.owner_only()
+        local = current_app.config["VAL_LOCAL"]
+        if local is None:
+            abort(404)
+        found = local.friends()
+        answer = {"open": False}
+        if found is not None:
+            look = {"tiers": {}, "maps": {}, "queue_name": lambda queue: ""}
+            rows = friends_page.rows(found, look, time.time(), lambda moment: {"iso": "", "text": ""})
+            playing = len(rows["playing"])
+            answer = {"open": True, "playing": playing, "online": playing + len(rows["online"])}
+        response = jsonify(answer)
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
     @app.route("/checkup", methods=["GET", "POST"])
     def checkup():
         """The PC app only: what the app can read on this PC right now, thing by thing, and a report of it without

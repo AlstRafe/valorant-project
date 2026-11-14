@@ -13,7 +13,7 @@ import json
 import re
 import threading
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from valtracker import i18n, net
@@ -26,6 +26,16 @@ VIDEOS = ("https://valorant.dyn.riotcdn.net/", MEDIA)
 #: The marks the game colours its own texts with (an ability's "<whitebold>…</>", "<debuffred>…</>"): they mean
 #: nothing on a page.
 MARKS = re.compile(r"</?[A-Za-z][A-Za-z0-9_]*>|</>")
+
+
+#: Episode 5 (22 June 2022) put Ascendant between Diamond and Immortal: an act that began before it numbers
+#: Immortal 21-23 and Radiant 24, three less than today.
+ASCENDANT_SINCE = datetime(2022, 6, 21, tzinfo=UTC)
+
+
+def todays_tier(tier: int, old: bool) -> int:
+    """A rank's number as today's table has it; ``old``: it is from an act before Episode 5."""
+    return tier + 3 if old and tier >= 21 else tier
 
 
 def plain(text) -> str:
@@ -235,6 +245,10 @@ class Content:
                 }
             )
         return sorted(found, key=lambda item: item["starts"], reverse=True)
+
+    def old_acts(self, lang: str) -> frozenset[str]:
+        """The acts before Episode 5 (uuids): their ranks are numbered without Ascendant (todays_tier)."""
+        return frozenset(act["uuid"] for act in self.acts(lang) if act["starts"] < ASCENDANT_SINCE)
 
     def weapons(self, lang: str) -> list:
         return [weapon for weapon in self._list("weapons", lang) if isinstance(weapon, dict)]

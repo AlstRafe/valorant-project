@@ -1686,20 +1686,49 @@
     document.addEventListener("focusout", function () {
       document.body.classList.remove("typing");
     });
-    // "/" goes to the page's search box (as on GitHub and YouTube), unless one is being typed in already.
+    // "/" goes to the page's search box (as on GitHub and YouTube), unless one is being typed in already; from a
+    // page without one, to the search page's. The PC app has no address bar, so Ctrl+K does the same there.
     document.addEventListener("keydown", function (e) {
-      if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey || e.target.closest("input, textarea, select")) return;
+      var slash = e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey;
+      var inApp = document.body.classList.contains("app");
+      var palette = inApp && e.ctrlKey && !e.altKey && (e.key === "k" || e.key === "K");
+      if (!(slash || palette) || (slash && e.target.closest("input, textarea, select"))) return;
       var box = document.querySelector("form.search input:not([type=hidden])");
-      if (!box) return;
+      var brand = document.querySelector("a.brand");
+      if (!box && !brand) return;
       e.preventDefault();
-      box.focus();
-      box.select();
+      if (box) {
+        box.focus();
+        box.select();
+      } else {
+        location.href = brand.href.split("#")[0] + "#q";
+      }
     });
+    var asked = location.hash === "#q" && document.getElementById("q");
+    if (asked) asked.focus();
+  }
+
+  // The PC app's top page: how many friends are in VALORANT and online now, on the friends card.
+  function friendsCount() {
+    var words = document.querySelector("[data-friends]");
+    if (!words) return;
+    fetch(words.dataset.friends, { credentials: "same-origin" })
+      .then(function (answer) {
+        return answer.ok ? answer.json() : null;
+      })
+      .then(function (found) {
+        if (!found || !found.open) return;
+        // the friends in VALORANT now; when none is, the ones who are online
+        var said = found.playing ? words.dataset.playing : words.dataset.online;
+        words.textContent = said.replace("{count}", found.playing || found.online);
+      })
+      .catch(function () {});
   }
 
   document.addEventListener("DOMContentLoaded", function () {
     desktopApp();
     leaving();
+    friendsCount();
     prefs();
     part();
     chosen();
