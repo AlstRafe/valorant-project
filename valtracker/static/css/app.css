@@ -5831,3 +5831,17 @@ form.row {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* A player's numbers after each round (the match's page): the round's colour says who won it */
+.course-table th[scope="row"] {
+  border-left: 3px solid transparent;
+}
+.course-table tr.win th[scope="row"] {
+  border-left-color: var(--win);
+}
+.course-table tr.loss th[scope="row"] {
+  border-left-color: var(--loss);
+}
+.course-table tr.turn-row > * {
+  border-top: 2px solid var(--edge);
+}

@@ -312,7 +312,7 @@ class RoundsTest(unittest.TestCase):
         found = rounds.digest(older)
         self.assertEqual(
             found["rounds"][0] | {"l": None},
-            {"w": "Blue", "e": "defuse", "c": "", "s": "C", "p": 0, "d": 1, "a": "Red", "l": None},
+            {"w": "Blue", "e": "defuse", "c": "", "s": "C", "p": 0, "d": 1, "a": "Red", "l": None, "h": []},
         )
         self.assertEqual(found["kills"], [[0, 900, 1, 0, "Ghost", [], [100, -200], [300, 400]]])
         self.assertEqual(found["players"][1]["weapons"], {"Ghost": 1})

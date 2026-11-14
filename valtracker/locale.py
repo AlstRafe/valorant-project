@@ -3355,4 +3355,16 @@ TEXTS = {
     "現在": {"ko": "현재", "en-GB": "Now", "zh-TW": "目前"},
     "今アクト最高": {"ko": "이번 액트 최고", "en-GB": "Act peak", "zh-TW": "本章最高"},
     "通算最高": {"ko": "역대 최고", "en-GB": "All-time peak", "zh-TW": "生涯最高"},
+    "ラウンド": {"ko": "라운드", "en-GB": "Round", "zh-TW": "回合"},
+    "累計": {"ko": "누적", "en-GB": "So far", "zh-TW": "累計"},
+    "{name} のラウンドごとの推移": {
+        "ko": "{name}의 라운드별 추이",
+        "en-GB": "{name} round by round",
+        "zh-TW": "{name} 的逐回合變化",
+    },
+    "各ラウンドが終わった時点の数字です。": {
+        "ko": "각 라운드가 끝난 시점의 수치입니다.",
+        "en-GB": "The numbers as they stood after each round.",
+        "zh-TW": "各回合結束時的數字。",
+    },
 }
