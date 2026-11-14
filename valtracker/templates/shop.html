@@ -3,7 +3,7 @@
 <span class="price">{% if icon %}<img src="{{ media(icon) }}" alt="" width="16" height="16">{% endif %}{% if base and base > amount %}<s>{{ '{:,}'.format(base) }}</s> {% endif %}<strong>{{ '{:,}'.format(amount) }}</strong></span>
 {%- endmacro %}
 {% macro left(found) -%}
-{% if found %}<span class="left" data-until="{{ found.until }}" data-days="{{ t('残り {days} 日') }}" data-hours="{{ t('残り {hours} 時間 {minutes} 分') }}" data-over="{{ t('終わりました') }}">{{ found.text }}</span>{% endif %}
+{% if found %}<span class="left" data-until="{{ found.until }}" data-days="{{ t('残り {days} 日') }}" data-hours="{{ t('残り {hours} 時間 {minutes} 分') }}" data-over="{{ t('終了') }}">{{ found.text }}</span>{% endif %}
 {%- endmacro %}
 {% macro things(items, icon) -%}
 <ul class="items offers">
@@ -30,28 +30,28 @@
 {% endfor %}
 {%- endmacro %}
 {% block title %}{{ t('ショップ') }} · {{ site_name }}{% endblock %}
-{% block description %}{{ t('いまストアに並んでいるバンドルと、その値段（VALORANT ポイント）です。') }}{% endblock %}
+{% block description %}{{ t('販売中のバンドルと価格（VP）。') }}{% endblock %}
 {% block main %}
 <section class="hero">
 <h1>{{ t('ショップ') }}</h1>
-<p class="lead">{{ t('いまストアに並んでいるバンドルと、その値段（VALORANT ポイント）です。') }}</p>
+<p class="lead">{{ t('販売中のバンドルと価格（VP）。') }}</p>
 </section>
 {% include "_pages.html" %}
 {% if owner %}
 <div>
 {% if own_problem %}
 <p class="problem" role="alert">{{ own_problem }}{% if own_detail %} <code>{{ own_detail }}</code>{% endif %}</p>
-{% if own_settings %}<p><a class="button" href="{{ url_for('settings') }}#riot">{{ t('設定で Riot と連携する') }}</a></p>{% endif %}
+{% if own_settings %}<p><a class="button" href="{{ url_for('settings') }}#riot">{{ t('連携する') }}</a></p>{% endif %}
 {% elif own %}
 {% if own.wallet %}
 <ul class="wallet" aria-label="{{ t('残高') }}">
 {% for coin in own.wallet %}<li title="{{ coin.name }}">{% if coin.icon %}<img src="{{ media(coin.icon) }}" alt="" width="24" height="24">{% endif %}<span class="sr">{{ coin.name }}</span><strong>{{ '{:,}'.format(coin.amount) }}</strong></li>
 {% endfor %}</ul>
 {% endif %}
-{% if own.wanted %}<p class="verdict ok" role="status">{{ t('欲しいスキンが並んでいます: {skins}', skins=own.wanted|join(t('、'))) }}</p>{% endif %}
+{% if own.wanted %}<p class="verdict ok" role="status">{{ t('欲しいスキンが入荷: {skins}', skins=own.wanted|join(t('、'))) }}</p>{% endif %}
 <section class="shelf">
 <h2>{{ t('{name} さんの今日のスキン', name=own.name) }} {{ left(own.daily_left) }}</h2>
-<p class="meta">{% if own.streak > 1 %}{{ t('{days} 日連続でチェック', days=own.streak) }} · {% endif %}<a href="{{ url_for('shop_history') }}">{{ t('これまでのストア') }}</a> · <a href="{{ url_for('skins', wants=1) }}">{{ t('欲しいリスト') }}</a></p>
+<p class="meta">{% if own.streak > 1 %}{{ t('{days} 日連続でチェック', days=own.streak) }} · {% endif %}<a href="{{ url_for('shop_history') }}">{{ t('ストア履歴') }}</a> · <a href="{{ url_for('skins', wants=1) }}">{{ t('欲しいリスト') }}</a></p>
 {% if own.daily %}{{ things(own.daily, own.vp_icon) }}{% else %}<p class="note">{{ t('読み込めませんでした。') }}</p>{% endif %}
 </section>
 {% if own.night is not none %}
@@ -73,9 +73,8 @@
 {{ things(own.accessories, own.kingdom_icon) }}
 </section>
 {% endif %}
-{% if own.missing %}<p class="note">{{ t('読み込めなかったもの:') }} {{ own.missing|join(', ') }}{% if own.problem_detail %} <code>{{ own.problem_detail }}</code>{% endif %}</p>{% endif %}
-<p class="note">{{ t('ストアは 2 分ほどで新しくなります。「所持」は持っているもの。') }}</p>
-<p class="note"><a href="{{ url_for('shop_reminder') }}" download>{{ t('入れ替わりをカレンダーに入れる（毎日の通知）') }}</a></p>
+{% if own.missing %}<p class="note">{{ t('取得できなかった項目:') }} {{ own.missing|join(', ') }}{% if own.problem_detail %} <code>{{ own.problem_detail }}</code>{% endif %}</p>{% endif %}
+<p class="note"><a href="{{ url_for('shop_reminder') }}" download>{{ t('ストア更新をカレンダーに追加') }}</a></p>
 {% endif %}
 </div>
 {% endif %}
@@ -89,9 +88,9 @@
 {% else %}
 {{ bundles(featured, vp_icon) }}
 {% endif %}
-<p class="note">{{ t('毎日入れ替わる 4 つのスキンとナイトマーケットは人ごとに違うため、ゲームの中でだけ見られます。') }}</p>
-{% if reset %}<p class="note">{{ t('毎日のスキンの次の入れ替わり') }}: <time datetime="{{ reset.when.iso }}">{{ reset.when.text }}</time> {{ left(reset.left) }}</p>{% endif %}
-<p class="note"><a href="{{ url_for('shop_reminder') }}" download>{{ t('入れ替わりをカレンダーに入れる（毎日の通知）') }}</a></p>
+<p class="note">{{ t('デイリーの 4 スキンとナイトマーケットは人によって違うため、ここには表示されません。') }}</p>
+{% if reset %}<p class="note">{{ t('次のストア更新') }}: <time datetime="{{ reset.when.iso }}">{{ reset.when.text }}</time> {{ left(reset.left) }}</p>{% endif %}
+<p class="note"><a href="{{ url_for('shop_reminder') }}" download>{{ t('ストア更新をカレンダーに追加') }}</a></p>
 </section>
 {% endif %}
 {% endblock %}

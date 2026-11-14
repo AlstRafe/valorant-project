@@ -46,7 +46,7 @@ class CollectionTest(unittest.TestCase):
 
     def test_before_linking(self):
         text = self.page()
-        self.assertIn("まだ連携されていません", text)
+        self.assertIn("Riot アカウントが未連携です", text)
         self.assertIn('href="/settings#riot"', text)
         self.assertEqual(self.riot.asked, [])
 
@@ -73,12 +73,12 @@ class CollectionTest(unittest.TestCase):
         for pasted in ("", "hello world", "clid=uw1"):
             with self.subTest(pasted=pasted):
                 text = self.link(pasted).get_data(as_text=True)
-                self.assertIn("ssid ではありませんでした", text)
+                self.assertIn("ssid ではないようです", text)
         self.assertFalse((self.folder / "riot.json").exists())
 
     def test_an_old_ssid(self):
         text = self.link("ssid-old").get_data(as_text=True)
-        self.assertIn("ログインが切れています", text)
+        self.assertIn("Riot のログインが切れました", text)
         self.assertIn("未連携", text)
 
     def test_link_with_the_address_for_an_hour(self):
@@ -155,13 +155,13 @@ class CollectionTest(unittest.TestCase):
         self.link()
         vandal = self.page(f"/collection?weapon={VANDAL}")
         self.assertIn('<p class="worn-name">プライム ヴァンダル</p>', vandal)
-        self.assertNotIn("読めませんでした", vandal)
+        self.assertNotIn("取得できませんでした", vandal)
         asked = [url for _, url, _, _ in self.riot.asked if "playerloadout" in url]
         self.assertTrue(asked, "the loadout is asked")
         self.assertTrue(all("/personalization/v3/" in url for url in asked), asked)
         sprays = self.page("/collection?show=sprays")
         self.assertIn('<span class="badge">装備中</span>', sprays)
-        self.assertIn('<option value="0">1（いま GG スプレー）</option>', sprays, "a place is its position")
+        self.assertIn('<option value="0">1（現在: GG スプレー）</option>', sprays, "a place is its position")
         flex = self.page("/collection?show=flex")
         self.assertIn('<span class="badge">装備中</span>', flex, "the flex on the wheel is marked")
 
@@ -174,23 +174,23 @@ class CollectionTest(unittest.TestCase):
         ]
         self.link()
         self.assertIn('<p class="worn-name">プライム ヴァンダル</p>', self.page(f"/collection?weapon={VANDAL}"))
-        self.assertIn('<option value="x">1（いま GG スプレー）</option>', self.page("/collection?show=sprays"))
+        self.assertIn('<option value="x">1（現在: GG スプレー）</option>', self.page("/collection?show=sprays"))
 
     def test_what_is_worn_cannot_be_read(self):
         """No loadout (both answer 404): nothing is called worn or standard, and the page says why."""
         self.riot.loadout_version = 1
         self.link()
         text = self.page()
-        self.assertIn("いま装備しているものを Riot から読めませんでした", text)
+        self.assertIn("装備中のアイテムを取得できませんでした", text)
         self.assertIn("loadout 404 RESOURCE_NOT_FOUND", text)
         self.assertNotIn('<small class="worn">', text)
         self.assertIn('<ul class="guns"', text, "what is owned is still shown")
         vandal = self.page(f"/collection?weapon={VANDAL}")
         now = vandal[vandal.index('class="worn-now') : vandal.index('class="items skins rows"')]
-        self.assertIn('<p class="worn-name">読めませんでした</p>', now)
+        self.assertIn('<p class="worn-name">取得できませんでした</p>', now)
         self.assertNotIn("標準", now)
         self.assertNotIn('<span class="badge">装備中</span>', vandal)
-        self.assertNotIn("読めませんでした", self.page("/collection?show=agents"))
+        self.assertNotIn("取得できませんでした", self.page("/collection?show=agents"))
 
     def test_kept_a_while(self):
         self.link()
@@ -226,9 +226,9 @@ class CollectionTest(unittest.TestCase):
         self.app.config["VAL_RIOT"].store.save(token=None)
         self.riot.ssid = "changed-password"
         text = self.page()
-        self.assertIn("ログインが切れています", text)
+        self.assertIn("Riot のログインが切れました", text)
         self.assertIn('href="/settings#riot"', text)
-        self.assertIn("ログインが切れています", self.client.get("/settings").get_data(as_text=True))
+        self.assertIn("ログイン切れ", self.client.get("/settings").get_data(as_text=True))
         self.assertIn("ssid-2", self.saved()["cookies"]["ssid"], "kept: it may work again")
 
     def test_one_kind_missing(self):
@@ -243,7 +243,7 @@ class CollectionTest(unittest.TestCase):
         self.riot.broken = {"wallet", "loadout", *riot.ITEM_TYPES}
         answer = self.client.get("/collection")
         self.assertEqual(answer.status_code, 503)
-        self.assertIn("答えがありませんでした", answer.get_data(as_text=True))
+        self.assertIn("応答しません", answer.get_data(as_text=True))
 
     def test_unlink(self):
         self.link()
@@ -252,7 +252,7 @@ class CollectionTest(unittest.TestCase):
         text = self.client.post("/settings", data={"csrf": token, "do": "riot_off"}).get_data(as_text=True)
         self.assertIn("解除しました", text)
         self.assertEqual(self.saved(), {})
-        self.assertIn("まだ連携されていません", self.page())
+        self.assertIn("Riot アカウントが未連携です", self.page())
 
     def test_the_big_lists_are_kept_small(self):
         self.link()

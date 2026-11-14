@@ -178,7 +178,7 @@ def _esports_page() -> tuple[dict, int]:
             else:
                 code, values["problem"], values["settings_link"] = _failure(error.kind)
                 if error.kind == "down":
-                    values["problem"] = _t("eスポーツの日程を読み込めませんでした。時間をおいてもう一度どうぞ。")
+                    values["problem"] = _t("eスポーツの日程を読み込めませんでした。しばらくしてからお試しください。")
                 values["detail"] = error.detail if security.is_owner() else ""
                 return values, code
         if since:  # a new schedule did not come: the last one, saying when it came

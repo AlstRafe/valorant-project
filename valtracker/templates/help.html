@@ -1,66 +1,66 @@
 {% extends "base.html" %}
-{% block title %}{{ t('使い方・よくある質問') }} · {{ site_name }}{% endblock %}
-{% block description %}{{ t('VAL Tracker の使い方：Riot ID の探し方、見つからないとき、データの新しさ、数字の意味。') }}{% endblock %}
+{% block title %}{{ t('ヘルプ') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('VAL Tracker のヘルプ。Riot ID の確認方法、見つからない場合、データの更新、用語集。') }}{% endblock %}
 {% block main %}
 <section class="hero">
-<h1>{{ t('使い方・よくある質問') }}</h1>
+<h1>{{ t('ヘルプ') }}</h1>
 <nav class="quick help-index" aria-label="{{ t('目次') }}">
-<a href="#find">{{ t('プレイヤーを探す') }}</a>
-<a href="#riot-id">{{ t('Riot ID の見つけ方') }}</a>
-<a href="#not-found">{{ t('見つからないとき') }}</a>
-<a href="#fresh">{{ t('データの新しさ') }}</a>
-<a href="#hidden">{{ t('名前を隠しているプレイヤー') }}</a>
-<a href="#numbers">{{ t('数字の見かた') }}</a>
-<a href="#sources">{{ t('データの出どころ') }}</a>
+<a href="#find">{{ t('プレイヤー検索') }}</a>
+<a href="#riot-id">{{ t('Riot ID の確認方法') }}</a>
+<a href="#not-found">{{ t('見つからない場合') }}</a>
+<a href="#fresh">{{ t('データの更新') }}</a>
+<a href="#hidden">{{ t('非公開のプレイヤー') }}</a>
+<a href="#numbers">{{ t('用語集') }}</a>
+<a href="#sources">{{ t('データ提供元') }}</a>
 <a href="#app">{{ t('PC アプリ') }}</a>
 </nav>
 </section>
 
 <section class="help" id="find" aria-labelledby="find-title">
-<h2 id="find-title">{{ t('プレイヤーを探す') }}</h2>
-<p>{{ t('検索に Riot ID（名前#タグ）を入れます。例: Name#JP1。# やタグは全角で打ってもかまいません。') }}</p>
-<p>{{ t('プレイヤーのページで ☆ を押すとお気に入りに入り、検索の画面に並びます。見たプレイヤーは「最近見たプレイヤー」に残ります。どちらもこのブラウザだけに保存されます。') }}</p>
-<p><a class="button" href="{{ url_for('top') }}">{{ t('プレイヤーを探す') }}</a></p>
+<h2 id="find-title">{{ t('プレイヤー検索') }}</h2>
+<p>{{ t('Riot ID（名前#タグ）で検索します。例: Name#JP1。全角の # でも検索できます。') }}</p>
+<p>{{ t('☆ を押したプレイヤーはお気に入りに、開いたプレイヤーは履歴に残ります。保存先はこのブラウザだけです。') }}</p>
+<p><a class="button" href="{{ url_for('top') }}">{{ t('プレイヤー検索') }}</a></p>
 </section>
 
 <section class="help" id="riot-id" aria-labelledby="riot-id-title">
-<h2 id="riot-id-title">{{ t('Riot ID の見つけ方') }}</h2>
-<p>{{ t('自分の Riot ID は、VALORANT のメイン画面右のフレンド一覧の一番上に出ています。Riot のアカウント管理ページ（account.riotgames.com）の「Riot ID」でも見られます。') }}</p>
-<p>{{ t('フレンドの Riot ID はフレンド一覧に出ています。試合で一緒になった人は、このサイトの試合のページから開けます。') }}</p>
+<h2 id="riot-id-title">{{ t('Riot ID の確認方法') }}</h2>
+<p>{{ t('自分の Riot ID は、ゲームのフレンド一覧の一番上か、account.riotgames.com の「Riot ID」で確認できます。') }}</p>
+<p>{{ t('同じ試合にいたプレイヤーは、試合ページから開けます。') }}</p>
 </section>
 
 <section class="help" id="not-found" aria-labelledby="not-found-title">
-<h2 id="not-found-title">{{ t('見つからないとき') }}</h2>
+<h2 id="not-found-title">{{ t('見つからない場合') }}</h2>
 <ul>
-<li>{{ t('タグを入れたか確かめてください。名前だけでは探せません。') }}</li>
-<li>{{ t('打ち間違いがないか確かめてください（0 と O、1 と l と I など）。') }}</li>
-<li>{{ t('名前やタグを変えたばかりなら、新しい Riot ID で探してください。') }}</li>
-<li>{{ t('しばらく遊んでいないアカウントは、最近の試合が出ないことがあります。') }}</li>
-<li>{{ t('中国大陸版（无畏契约）のアカウントは調べられません。') }}</li>
+<li>{{ t('タグは必須です。名前だけでは検索できません。') }}</li>
+<li>{{ t('0 と O、1 と l と I などの打ち間違いに注意してください。') }}</li>
+<li>{{ t('名前を変更した場合は、新しい Riot ID で検索してください。') }}</li>
+<li>{{ t('長期間プレイしていないアカウントは、試合が表示されないことがあります。') }}</li>
+<li>{{ t('中国大陸版（无畏契约）のアカウントは検索できません。') }}</li>
 </ul>
 </section>
 
 <section class="help" id="fresh" aria-labelledby="fresh-title">
-<h2 id="fresh-title">{{ t('データの新しさ') }}</h2>
-<p>{{ t('試合が終わってから、ここに出るまで数分かかることがあります。') }}</p>
-<p>{{ t('ページをすぐ出すために、同じプレイヤーのランクは 5 分、試合は 3 分のあいだ覚えておきます。プレイヤーのページの「最新にする」で読み直せます（1 分に 1 回まで）。') }}</p>
+<h2 id="fresh-title">{{ t('データの更新') }}</h2>
+<p>{{ t('試合結果の反映には数分かかることがあります。') }}</p>
+<p>{{ t('ランクは 5 分、試合は 3 分キャッシュされます。プレイヤーページの「データを更新」ですぐ取得し直せます（1 分に 1 回）。') }}</p>
 </section>
 
 <section class="help" id="hidden" aria-labelledby="hidden-title">
-<h2 id="hidden-title">{{ t('名前を隠しているプレイヤー') }}</h2>
-<p>{{ t('ゲームの設定で名前を隠している人は、試合の中で「非公開のプレイヤー」と出ます。このサイトはその人の名前・カード・記録を出さず、ランキングでも名前では探せません。') }}</p>
+<h2 id="hidden-title">{{ t('非公開のプレイヤー') }}</h2>
+<p>{{ t('ゲームの設定で名前を非公開にしているプレイヤーは、名前・カード・戦績を表示しません。ランキングでも名前では検索できません。') }}</p>
 </section>
 
 <section class="help" id="numbers" aria-labelledby="numbers-title">
-<h2 id="numbers-title">{{ t('数字の見かた') }}</h2>
+<h2 id="numbers-title">{{ t('用語集') }}</h2>
 {% with open=true %}{% include "_glossary.html" %}{% endwith %}
 </section>
 
 <section class="help" id="sources" aria-labelledby="sources-title">
-<h2 id="sources-title">{{ t('データの出どころ') }}</h2>
+<h2 id="sources-title">{{ t('データ提供元') }}</h2>
 <ul>
 <li>{{ t('ニュース・パッチノート・サーバー状況：Riot Games の公式サイト') }}</li>
-<li>{{ t('ランキング：読めるときはゲームのデータ（Riot）から、読めないときは HenrikDev API から') }}</li>
+<li>{{ t('ランキング：Riot（取得できない場合は HenrikDev API）') }}</li>
 <li>{{ t('プレイヤーのランクと試合：HenrikDev API') }}</li>
 <li>{{ t('エージェント・武器・スキンの名前と画像：valorant-api.com') }}</li>
 </ul>
@@ -68,17 +68,17 @@
 
 <section class="help" id="app" aria-labelledby="app-title">
 <h2 id="app-title">{{ t('PC アプリ') }}</h2>
-<p>{{ t('Windows 用のアプリは、このサイトと同じページを PC の中で開きます。VALORANT を遊ぶ PC で使うと、サイトではできないことができます。') }}</p>
+<p>{{ t('Windows 用アプリです。VALORANT をプレイする PC で使うと、サイトにはない機能が使えます。') }}</p>
 <ul>
-<li>{{ t('Riot クライアントのサインインをそのまま使うので、何も貼らずに自分のライブ・所持品・ストアが開きます') }}</li>
-<li>{{ t('試合が見つかった瞬間に、ライブに切り替わります') }}</li>
-<li>{{ t('フレンドがいまどこにいるか（メニュー・マッチング中・対戦中とスコア・パーティーの人数）がわかります') }}</li>
-<li>{{ t('ほかのアプリを見ていても、試合が見つかるとタスクバーのボタンで知らせます（音も選べます）') }}</li>
-<li>{{ t('Windows の起動と一緒に、最小化して開けます') }}</li>
-<li>{{ t('新しい版が出ると知らせ、アプリの中のボタン 1 つで更新できます') }}</li>
-<li>{{ t('読めないものがあるときに、どこが読めていないかを「診断」で確かめられます') }}</li>
+<li>{{ t('設定なしでライブ・所持品・ストアが使える（Riot クライアントのサインインを利用）') }}</li>
+<li>{{ t('試合が見つかるとすぐライブに切り替わる') }}</li>
+<li>{{ t('フレンドの状況がわかる（マッチング中、対戦中のスコア、パーティー人数）') }}</li>
+<li>{{ t('試合が見つかるとタスクバーの点滅や音で通知') }}</li>
+<li>{{ t('Windows 起動時に自動で起動') }}</li>
+<li>{{ t('アプリ内からワンクリックでアップデート') }}</li>
+<li>{{ t('不具合の原因を「診断」で確認できる') }}</li>
 </ul>
-<p>{{ t('VALORANT そのものには触れません。ゲームの上に何も出さず、キーも送らず、ゲームより低い優先度で動きます。') }}</p>
+<p>{{ t('ゲーム本体には一切触れません。オーバーレイもキー入力もなく、ゲームより低い優先度で動作します。') }}</p>
 {% if not desktop %}<p><a class="button quiet" href="{{ app_page }}" rel="noopener noreferrer" target="_blank">{{ t('PC アプリをダウンロード（GitHub）') }}</a></p>{% endif %}
 </section>
 {% endblock %}

@@ -46,7 +46,7 @@ class CompareTest(unittest.TestCase):
 
     def test_the_form_alone(self):
         text = self.page("/compare")
-        self.assertIn("プレイヤーを比べる", text)
+        self.assertIn("プレイヤー比較", text)
         self.assertIn('name="a"', text)
         self.assertIn('<option value="premier"', text)
         self.assertNotIn('<option value="deathmatch"', text, "no teams to win")
@@ -60,12 +60,12 @@ class CompareTest(unittest.TestCase):
         row = row[: row.index("</tr>")]
         self.assertLess(row.index("Tier 21"), row.index('class="best"'), "the higher rank is the one marked")
         self.assertIn("Tier 24", row)
-        self.assertIn("1 項目で上", text, "the peak is the same, a level is no better")
+        self.assertIn("1 項目で優勢", text, "the peak is the same, a level is no better")
         self.assertIn("<td>+95</td>", text)
         self.assertIn("ACS", text)
         self.assertIn("ジェット", text)
         self.assertIn('href="/compare?a=Other%23KR1&amp;b=Tester%23JP1"', text)
-        self.assertIn("多くて 15 試合", text)
+        self.assertIn("最大 15 試合", text)
 
     def test_a_link_pasted(self):
         text = self.page("/compare?a=https://tracker.gg/valorant/profile/riot/Tester%2523JP1/overview&b=Other%23KR1")
@@ -76,7 +76,7 @@ class CompareTest(unittest.TestCase):
         self.page("/compare?a=nothing&b=Other%23KR1", 400)
         self.fetch.henrik_status = 404
         text = self.page("/compare?a=Tester%23JP1&b=Other%23KR1", 404)
-        self.assertIn("プレイヤーが見つかりませんでした", text)
+        self.assertIn("プレイヤーが見つかりません", text)
         self.assertIn('aria-invalid="true"', text)
 
     def test_the_mode(self):
@@ -90,10 +90,10 @@ class CompareTest(unittest.TestCase):
     def test_lifetime(self):
         text = self.page("/compare?a=Tester%23JP1&b=Other%23KR1&span=all")
         self.assertIn('<option value="all" selected>通算</option>', text)
-        self.assertIn("それぞれ通算の試合（2 試合と 2 試合。", text)
+        self.assertIn("通算の平均（2 試合と 2 試合）", text)
         self.assertIn('href="/p/Other/KR1?span=all"', text)
         self.assertIn('href="/compare?a=Other%23KR1&amp;b=Tester%23JP1&amp;span=all"', text)
-        self.assertNotIn("多くて 15 試合", text)
+        self.assertNotIn("最大 15 試合", text)
 
     def test_in_english(self):
         self.client.set_cookie("lang", "en-GB")

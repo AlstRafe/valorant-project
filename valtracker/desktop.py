@@ -64,22 +64,20 @@ MUTEX = "Local\\VALTracker.Desktop"
 #: The app's window among the windows with its title: WinForms names its windows' class so. Another program's
 #: window can have the same title (the data folder open in Explorer is "VAL Tracker" too).
 WINDOW_CLASS = "WindowsForms10."
-ALREADY_OPEN = (
-    "VAL Tracker はもう開いています（タスクバーにあります）。\nVAL Tracker is already open (see the taskbar)."
-)
-IN_BROWSER = "VAL Tracker をブラウザーで開きました。OK を押すと VAL Tracker は終わります。"
+ALREADY_OPEN = "VAL Tracker はすでに起動しています（タスクバーを確認してください）。\nVAL Tracker is already open (see the taskbar)."
+IN_BROWSER = "ブラウザーで開きました。OK を押すと VAL Tracker を終了します。"
 #: Why there is no window (window()'s answers; "" when it was shown), and what the owner is asked then: the
 #: browser is opened only when they say so (a browser beside the game is what the app is there to avoid).
 NO_RUNTIME, NO_PART = "runtime", "part"
 NO_WINDOW = {
     NO_RUNTIME: "アプリのウィンドウを開けませんでした。Microsoft Edge WebView2 Runtime が見つかりません。\n"
     "(The app's window could not be opened: Microsoft Edge WebView2 Runtime was not found.)",
-    NO_PART: "アプリのウィンドウを開けませんでした。ウィンドウの部品を読み込めませんでした。\n"
-    "理由はここに書きました: {log}\n"
+    NO_PART: "アプリのウィンドウを開けませんでした。必要な部品を読み込めません。\n"
+    "ログ: {log}\n"
     "(The app's window could not be opened: its parts could not be loaded. The reason is in that file.)",
 }
 IN_BROWSER_INSTEAD = (
-    "代わりにブラウザーで開きますか？「いいえ」を押すと、何も開かずに終わります。\n"
+    "代わりにブラウザーで開きますか？「いいえ」を選ぶと、何も開かずに終了します。\n"
     "(Open in the browser instead? No: the app ends and opens nothing.)"
 )
 #: Windows' mark on a file that came from the internet: a second stream of data beside the file's own.

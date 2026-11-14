@@ -38,8 +38,8 @@ class ToolsTest(unittest.TestCase):
         headings = re.findall(r'<h2 id="tools-\d">([^<]+)</h2>', text)
         self.assertEqual(headings, ["試合の前に", "プレイヤーとランク", "ニュースと大会", "スキンとショップ"])
         self.assertIn('href="/agents/stats"', text, "the pick and win rates are a tool too")
-        self.assertNotIn("自分のアカウント", text)
-        self.assertIn('<h2 id="tools-me">自分のアカウント</h2>', self.page("/tools"))
+        self.assertNotIn("マイアカウント", text)
+        self.assertIn('<h2 id="tools-me">マイアカウント</h2>', self.page("/tools"))
 
     # -- the leaderboard ------------------------------------------------------------------------------
 
@@ -94,7 +94,7 @@ class ToolsTest(unittest.TestCase):
         self.assertIn('data-source="riot"', part)
         self.assertIn('href="/p/RiotTop/AP1"', part)
         self.assertIn("1,301", part)
-        self.assertIn("ゲームのランキングを Riot から直接読んでいます。", part)
+        self.assertIn("Riot 公式データ", part)
         self.assertIn("650 RR から", part, "Radiant's RR, from Riot's tiers")
         self.assertIn("501 位から", part, "Immortal 3 from the 501st")
         self.assertNotIn("<small>0 RR から", part, "Immortal 1 has no place of its own on the list")
@@ -144,10 +144,10 @@ class ToolsTest(unittest.TestCase):
         # a hidden player is not found by the name they hide
         part = self.page("/leaderboard/part?region=ap&q=Hidden%20Name%23XX1", environ_base=VISITOR)
         self.assertNotIn("1,250", part)
-        self.assertIn("名前を隠している人は名前では探せません", part)
+        self.assertIn("非公開のプレイヤーは名前で検索できません", part)
         # not a Riot ID
         part = self.page("/leaderboard/part?region=ap&q=%23%23", 400, environ_base=VISITOR)
-        self.assertIn("「名前#タグ」の形で入れてください。", part)
+        self.assertIn("「名前#タグ」の形式で入力してください。", part)
 
     def test_leaderboard_without_a_key(self):
         self.app.config["VAL_SETTINGS"].save(henrik_key="")
@@ -187,7 +187,7 @@ class ToolsTest(unittest.TestCase):
     def test_no_notices(self):
         found = {"maintenances": [], "incidents": []}
         with mock.patch.object(self.app.config["VAL_RIOT_WEB"], "status", return_value=found):
-            self.assertIn("いまメンテナンスも障害もありません", self.page("/status?region=eu"))
+            self.assertIn("メンテナンス・障害ともにありません", self.page("/status?region=eu"))
             self.assertEqual(self.page("/status/notice").strip(), "")
 
     # -- crosshairs -----------------------------------------------------------------------------------
@@ -204,7 +204,7 @@ class ToolsTest(unittest.TestCase):
 
     def test_bad_crosshair_code(self):
         text = self.page("/crosshair?code=hello%20world", 400)
-        self.assertIn("クロスヘアのコードではありませんでした", text)
+        self.assertIn("クロスヘアコードとして読み取れません", text)
         self.assertNotIn('id="xh-save"', text, "nothing to keep")
         self.assertIn('id="xh-saved"', self.page("/crosshair"), "the ones kept are listed on every visit")
 
@@ -242,7 +242,7 @@ class ToolsTest(unittest.TestCase):
         text = self.page("/crosshair?code=0;P;c;5;h;0;0l;4;0o;2;0a;1;0f;0;1b;0")
         self.assertIn("射撃エラー オフ", text)
         self.assertNotIn("まだ知らない設定", text)
-        self.assertIn("撃っていないときの見た目", text)
+        self.assertIn("静止・非射撃時の見た目", text)
 
     def test_presets_read_back(self):
         for name, settings in crosshair.PRESETS.items():
@@ -266,7 +266,7 @@ class ToolsTest(unittest.TestCase):
 
     def test_owner_before_linking(self):
         text = self.page("/shop")
-        self.assertIn("まだ連携されていません", text)
+        self.assertIn("Riot アカウントが未連携です", text)
         self.assertIn("注目のバンドル", text, "the featured bundles, as everyone sees them")
 
     def test_owner_store(self):

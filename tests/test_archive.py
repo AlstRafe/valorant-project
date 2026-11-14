@@ -271,15 +271,15 @@ class LifetimePageTest(unittest.TestCase):
         whole = len(list(self.archive.matches("puuid-me")))
         thin = len([line for line in self.archive.thin("puuid-me") if line["rounds"]])
         self.assertIn(f"通算 {whole + thin} 試合", text)
-        self.assertIn(f"うち {thin} 試合は簡単な記録だけ", text)
-        self.assertIn(f"残りの {whole} 試合から", text)
+        self.assertIn(f"うち {thin} 試合は簡易データのため", text)
+        self.assertIn(f"残り {whole} 試合から集計", text)
         self.assertIn("からの", text)
         self.assertIn('aria-current="true">通算</a>', text)
         self.assertIn("すべての試合", text)
         self.assertIn('href="/p/Tester/JP1?mode=competitive&amp;span=all"', text)
         self.assertIn("RR の推移 · 通算", text)
         self.assertEqual(text.count('class="match '), whole + thin)
-        self.assertIn("残りの試合を読み込んでいます", text, "the background has not read them yet")
+        self.assertIn("残りの試合を取得中", text, "the background has not read them yet")
         # its reading was asked for
         self.assertEqual(self.archive.player("puuid-me")["name"], "Tester")
 
@@ -325,10 +325,10 @@ class LifetimePageTest(unittest.TestCase):
         text = self.page("/p/Tester/JP1?span=act&full=1")
         self.assertIn('aria-current="true">アクト</a>', text)
         self.assertIn("エピソード 9 · ACT III · 4 試合", text)  # the 2 recent matches and 2 of May and June
-        self.assertIn("エピソード 9 · ACT III（2026年3月1日 から）の 4 試合を数えています。", text)
+        self.assertIn("エピソード 9 · ACT III（2026年3月1日〜）の 4 試合を集計", text)
         self.assertIn("RR の推移 · エピソード 9 · ACT III", text)
         self.assertIn(
-            '<option value="aaaa0000-0000-4000-8000-000000000003" selected>エピソード 9 · ACT III （いま）', text
+            '<option value="aaaa0000-0000-4000-8000-000000000003" selected>エピソード 9 · ACT III （現在）', text
         )
         self.assertIn(f'<option value="{first}">エピソード 9 · ACT I</option>', text)
         self.assertIn('href="/p/Tester/JP1?mode=competitive&amp;span=act"', text)
@@ -344,9 +344,7 @@ class LifetimePageTest(unittest.TestCase):
 
     def test_the_recent_list_leads_on(self):
         text = self.page("/p/Tester/JP1?full=1")
-        self.assertIn(
-            '<a class="button quiet" href="/p/Tester/JP1?span=all#m-title">もっと前の試合（通算） →</a>', text
-        )
+        self.assertIn('<a class="button quiet" href="/p/Tester/JP1?span=all#m-title">過去の試合（通算） →</a>', text)
         self.assertIn('class="narrow"', text)  # the charts drawn for a phone too
         self.assertIn('<p class="chart-days">', text)
 

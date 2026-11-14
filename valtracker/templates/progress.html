@@ -4,28 +4,27 @@
 {% if entry.icon %}<img src="{{ media(entry.icon) }}" alt="" width="40" height="40" loading="lazy">{% endif %}
 <div class="contract-text">
 <p class="contract-head"><strong>{{ entry.name }}</strong> <span>{% if entry.complete %}{{ t('完了') }}{% else %}{{ t('レベル {reached} / {main}', reached=entry.reached, main=entry.main) }}{% if entry.epilogue %}{{ t('（エピローグ）') }}{% endif %}{% endif %}</span></p>
-<meter min="0" max="100" value="{{ entry.share }}" aria-label="{{ t('{name} の進み具合', name=entry.name) }}">{{ entry.share }}%</meter>
+<meter min="0" max="100" value="{{ entry.share }}" aria-label="{{ t('{name} の進行状況', name=entry.name) }}">{{ entry.share }}%</meter>
 <p class="contract-sub">{{ entry.share }}%{% if entry.next %} · {{ t('次のレベルまで {xp} XP', xp='{:,}'.format(entry.next - entry.toward)) }}{% endif %}</p>
 </div>
 </li>
 {%- endmacro %}
-{% block title %}{{ t('進み具合') }} · {{ site_name }}{% endblock %}
+{% block title %}{{ t('進行状況') }} · {{ site_name }}{% endblock %}
 {% block main %}
 <div>
 <section class="hero">
-<h1>{{ t('進み具合') }}</h1>
-<p class="lead">{{ t('バトルパス、イベントのパス、エージェントの契約、ミッションの進み具合です。') }}</p>
+<h1>{{ t('進行状況') }}</h1>
 </section>
 {% include "_play.html" %}
 {% if problem %}
 <p class="problem" role="alert">{{ problem }}{% if detail %} <code>{{ detail }}</code>{% endif %}</p>
-{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">{{ t('設定で Riot と連携する') }}</a></p>{% endif %}
+{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">{{ t('連携する') }}</a></p>{% endif %}
 {% elif not read %}
-<p class="problem" role="alert">{{ t('読み込めませんでした。時間をおいてもう一度どうぞ。') }}{% if problem_detail %} <code>{{ problem_detail }}</code>{% endif %}</p>
+<p class="problem" role="alert">{{ t('読み込めませんでした。しばらくしてからお試しください。') }}{% if problem_detail %} <code>{{ problem_detail }}</code>{% endif %}</p>
 {% else %}
 <section aria-labelledby="pass-title">
 <h2 id="pass-title">{{ t('バトルパス') }}{% if act %} <small>{{ act }}</small>{% endif %}</h2>
-{% if battle_pass %}<ul class="contracts">{{ bar(battle_pass) }}</ul>{% else %}<p class="note">{{ t('いまのアクトのバトルパスは見つかりませんでした。') }}</p>{% endif %}
+{% if battle_pass %}<ul class="contracts">{{ bar(battle_pass) }}</ul>{% else %}<p class="note">{{ t('今アクトのバトルパスが見つかりません。') }}</p>{% endif %}
 </section>
 {% if events %}
 <section aria-labelledby="event-title">
@@ -35,8 +34,8 @@
 {% endif %}
 <section aria-labelledby="mission-title">
 <h2 id="mission-title">{{ t('ミッション') }}</h2>
-{% if missions.count %}<p><strong>{{ missions.done }} / {{ missions.count }}</strong> {{ t('完了') }}{% if missions.ends %} · {{ t('次の締め切り') }} <time datetime="{{ missions.ends.iso }}">{{ missions.ends.text }}</time>{% endif %}</p>{% else %}<p class="note">{{ t('いまのミッションはありません。') }}</p>{% endif %}
-{% if missions.refill %}<p class="note">{{ t('週のミッションが補充されるのは') }} <time datetime="{{ missions.refill.iso }}">{{ missions.refill.text }}</time></p>{% endif %}
+{% if missions.count %}<p><strong>{{ missions.done }} / {{ missions.count }}</strong> {{ t('完了') }}{% if missions.ends %} · {{ t('次の期限') }} <time datetime="{{ missions.ends.iso }}">{{ missions.ends.text }}</time>{% endif %}</p>{% else %}<p class="note">{{ t('進行中のミッションはありません。') }}</p>{% endif %}
+{% if missions.refill %}<p class="note">{{ t('ウィークリーの補充:') }} <time datetime="{{ missions.refill.iso }}">{{ missions.refill.text }}</time></p>{% endif %}
 </section>
 {% if agents %}
 <section aria-labelledby="agent-title">
@@ -44,8 +43,8 @@
 <ul class="contracts">{% for entry in agents %}{{ bar(entry) }}{% endfor %}</ul>
 </section>
 {% endif %}
-{% if missing %}<p class="note">{{ t('読み込めなかったもの:') }} {{ missing|join(', ') }}{% if problem_detail %} <code>{{ problem_detail }}</code>{% endif %}</p>{% endif %}
-<p class="note">{{ t('ゲームで進めた分は 2 分ほどで出ます。レベルごとの XP は valorant-api.com から。') }}</p>
+{% if missing %}<p class="note">{{ t('取得できなかった項目:') }} {{ missing|join(', ') }}{% if problem_detail %} <code>{{ problem_detail }}</code>{% endif %}</p>{% endif %}
+<p class="note">{{ t('ゲームでの進行は 2 分ほどで反映されます。') }}</p>
 {% endif %}
 </div>
 {% endblock %}

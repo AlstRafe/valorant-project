@@ -8,51 +8,50 @@
 {% block main %}
 <section class="hero">
 <h1>{{ t('設定') }}</h1>
-<p class="lead">{% if desktop %}{{ t('この PC の VAL Tracker の設定です。') }}{% else %}{{ t('持ち主だけが見られるページです（公開の名前では、持ち主としてログインした端末だけ）。') }}{% endif %}</p>
+{% if not desktop %}<p class="lead">{{ t('サイトの持ち主専用のページです。') }}</p>{% endif %}
 {% if saved %}<p class="done" role="status">{{ saved }}</p>{% endif %}
 </section>
 {% if desktop %}
 <section class="panel" id="app" aria-labelledby="app-title">
 <h2 id="app-title">{{ t('PC アプリ') }}</h2>
-<p>{{ t('この版:') }} {% if config.VAL_BUILD %}<code>{{ config.VAL_BUILD.date }} · {{ config.VAL_BUILD.commit[:7] }}</code>{% else %}{{ t('ソースから実行中') }}{% endif %}{% if update and updating and updating.possible %} — {{ t('新しい版があります（上のボタンで更新できます）') }}{% elif update %} — <a href="{{ update.url }}">{{ t('新しい版をダウンロード') }}</a>{% elif config.VAL_UPDATE_LOOKED %} — {{ t('最新です') }}{% endif %}</p>
-<p class="pref"><label><input type="checkbox" data-pref="val.live.switch" checked> {{ t('試合が見つかったら、自動でライブを開く') }}</label></p>
-<p class="note">{{ t('ほかのページを見ているときに試合が見つかると、このウィンドウがライブに切り替わります（ウィンドウを前に出したりはしません）。') }}</p>
+<p>{{ t('バージョン:') }} {% if config.VAL_BUILD %}<code>{{ config.VAL_BUILD.date }} · {{ config.VAL_BUILD.commit[:7] }}</code>{% else %}{{ t('ソースから実行中') }}{% endif %}{% if update and updating and updating.possible %} — {{ t('アップデートあり（上のボタンから更新）') }}{% elif update %} — <a href="{{ update.url }}">{{ t('アップデートをダウンロード') }}</a>{% elif config.VAL_UPDATE_LOOKED %} — {{ t('最新です') }}{% endif %}</p>
+<p class="pref"><label><input type="checkbox" data-pref="val.live.switch" checked> {{ t('試合が見つかったらライブを開く') }}</label></p>
 <form method="post" class="app-prefs">
 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
-<p class="pref"><label><input type="checkbox" name="alert_flash"{% if pc.alert_flash %} checked{% endif %}> {{ t('試合が見つかったら、タスクバーのボタンを光らせる') }}</label></p>
-<p class="pref"><label><input type="checkbox" name="alert_sound"{% if pc.alert_sound %} checked{% endif %}> {{ t('試合が見つかったら、短い音を鳴らす') }}</label></p>
-<p class="note">{{ t('ほかのアプリを見ているときだけ知らせます。VALORANT が前にあるときは何もしません（ゲームが自分で知らせます）。ウィンドウを前に出すことも、ゲームの上に何かを出すこともありません。') }}</p>
-<p class="pref"><label><input type="checkbox" name="autostart"{% if autostart.on %} checked{% endif %}{% if not autostart.possible %} disabled{% endif %}> {{ t('Windows の起動と一緒に、最小化して開く') }}</label></p>
-{% if not autostart.possible %}<p class="note">{{ t('ダウンロードした VALTracker.exe で使えます。') }}</p>{% endif %}
-<div class="row"><button type="submit" name="do" value="app">{{ t('保存') }}</button><button type="submit" name="do" value="alert_test" class="quiet">{{ t('知らせを試す') }}</button>{% if config.VAL_BUILD %}<button type="submit" name="do" value="look" class="quiet">{{ t('新しい版を確かめる') }}</button>{% endif %}</div>
+<p class="pref"><label><input type="checkbox" name="alert_flash"{% if pc.alert_flash %} checked{% endif %}> {{ t('試合が見つかったらタスクバーを点滅') }}</label></p>
+<p class="pref"><label><input type="checkbox" name="alert_sound"{% if pc.alert_sound %} checked{% endif %}> {{ t('試合が見つかったら音を鳴らす') }}</label></p>
+<p class="note">{{ t('VALORANT が前面のときは通知しません。ウィンドウを前面に出すこともありません。') }}</p>
+<p class="pref"><label><input type="checkbox" name="autostart"{% if autostart.on %} checked{% endif %}{% if not autostart.possible %} disabled{% endif %}> {{ t('Windows 起動時に最小化で起動') }}</label></p>
+{% if not autostart.possible %}<p class="note">{{ t('VALTracker.exe 版でのみ使えます。') }}</p>{% endif %}
+<div class="row"><button type="submit" name="do" value="app">{{ t('保存') }}</button><button type="submit" name="do" value="alert_test" class="quiet">{{ t('通知をテスト') }}</button>{% if config.VAL_BUILD %}<button type="submit" name="do" value="look" class="quiet">{{ t('アップデートを確認') }}</button>{% endif %}</div>
 </form>
-<p class="note">{{ linked(t('ページが空のままのときは、{link}でどこが読めていないかを確かめられます。'), url_for('checkup'), t('診断'), false) }}</p>
-<p class="note">{{ t('設定・お気に入り・画像はこの PC の {folder} にあります。アプリを消すときは、このフォルダーも消してください。', folder=data_folder) }}</p>
+<p class="note">{{ linked(t('うまく表示されないときは、{link}で原因を確認できます。'), url_for('checkup'), t('診断'), false) }}</p>
+<p class="note">{{ t('データの保存先: {folder}（アンインストール時はこのフォルダーも削除してください）', folder=data_folder) }}</p>
 </section>
 {% endif %}
 <section class="panel" aria-labelledby="key-title">
 <h2 id="key-title">{{ t('HenrikDev API キー') }}</h2>
-<p>{{ linked(t('プレイヤーの検索と試合の取得に使います。{link}で「API Keys」→「Generate New Key」から無料で作れます。'), 'https://api.henrikdev.xyz/dashboard/', t('HenrikDev のダッシュボード')) }} {% if desktop %}{{ t('キーはこの PC にだけ保存し、画面には一部しか出しません。') }}{% else %}{{ t('キーはこのサーバーの instance/settings.json にだけ保存し、画面には一部しか出しません。') }}{% endif %}</p>
-<p>{{ t('いまのキー:') }} {% if shown %}<code>{{ shown }}</code>{% else %}{{ t('未設定') }}{% endif %}</p>
+<p>{{ linked(t('プレイヤー検索に使います。{link}の「API Keys」→「Generate New Key」で無料発行できます。'), 'https://api.henrikdev.xyz/dashboard/', t('HenrikDev のダッシュボード')) }} {% if desktop %}{{ t('キーはこの PC にのみ保存されます。') }}{% else %}{{ t('キーはこのサーバーにのみ保存されます。') }}{% endif %}</p>
+<p>{{ t('現在のキー:') }} {% if shown %}<code>{{ shown }}</code>{% else %}{{ t('未設定') }}{% endif %}</p>
 <form method="post" class="stack">
 <input type="hidden" name="csrf" value="{{ csrf_token() }}">
 <label for="henrik_key">{{ t('新しいキー') }}</label>
 <input id="henrik_key" name="henrik_key" type="password" autocomplete="off" spellcheck="false" maxlength="200">
-<div class="row"><button type="submit" name="do" value="save">{{ t('保存') }}</button>{% if shown %}<button type="submit" name="do" value="clear" class="quiet">{{ t('消す') }}</button>{% endif %}</div>
+<div class="row"><button type="submit" name="do" value="save">{{ t('保存') }}</button>{% if shown %}<button type="submit" name="do" value="clear" class="quiet">{{ t('削除') }}</button>{% endif %}</div>
 </form>
 </section>
 <section class="panel" id="riot" aria-labelledby="riot-title">
-<h2 id="riot-title">{{ t('Riot アカウント（所持品）') }}</h2>
-<p>{{ linked(t('あなたの Riot アカウントの所持品（スキン・バディー・カードなど）と残高を{link}のページに出すのに使います。パスワードは使いません。'), url_for('collection'), t('所持品'), false) }}</p>
-{% if desktop %}<p>{{ t('PC アプリでは、この PC の Riot クライアントでサインインしているアカウントを自動で使います（ssid を貼る必要はありません）。') }}</p>{% endif %}
-<p>{{ t('いまの状態:') }} {% if riot.linked %}{{ t('{account}（{shard}）と連携中', account=riot.name ~ '#' ~ riot.tag, shard=riot.shard|upper) }}{% if riot.client %} — {{ t('Riot クライアントから') }}{% elif riot.signed_out %} — <span class="down">{{ t('ログインが切れています。下の手順でもう一度貼ってください。') }}</span>{% elif riot_until %} — {{ t('{when} まで', when=riot_until) }}{% endif %}{% else %}{{ t('未連携') }}{% endif %}</p>
-{% if riot.problem %}<p class="note">{{ t('最後に読めなかったもの:') }} <code>{{ riot.problem }}</code></p>{% endif %}
+<h2 id="riot-title">{{ t('Riot アカウント') }}</h2>
+<p>{{ linked(t('{link}・ライブ・ショップの表示に使います。パスワードは不要です。'), url_for('collection'), t('所持品'), false) }}</p>
+{% if desktop %}<p>{{ t('Riot クライアントでサインイン中のアカウントを自動で使います。') }}</p>{% endif %}
+<p>{{ t('状態:') }} {% if riot.linked %}{{ t('{account}（{shard}）と連携中', account=riot.name ~ '#' ~ riot.tag, shard=riot.shard|upper) }}{% if riot.client %} — {{ t('Riot クライアント経由') }}{% elif riot.signed_out %} — <span class="down">{{ t('ログイン切れ。下の手順で貼り直してください。') }}</span>{% elif riot_until %} — {{ t('{when} まで', when=riot_until) }}{% endif %}{% else %}{{ t('未連携') }}{% endif %}</p>
+{% if riot.problem %}<p class="note">{{ t('直近のエラー:') }} <code>{{ riot.problem }}</code></p>{% endif %}
 {% if riot_problem %}<p class="problem" role="alert">{{ riot_problem }}{% if riot_detail %} <code>{{ riot_detail }}</code>{% endif %}</p>{% endif %}
-{% if desktop %}<details class="ssid-way"><summary>{{ t('Riot クライアントを使わずに ssid を貼って連携する') }}</summary>{% endif %}
+{% if desktop %}<details class="ssid-way"><summary>{{ t('ssid で連携する（Riot クライアントを使わない場合）') }}</summary>{% endif %}
 <ol class="steps">
-<li>{{ linked(t('PC の Chrome か Edge で{link}を開き、「サインインしたままにする」にチェックを入れてログイン（playvalorant.com に移れば成功）'), riot_link, t('Riot のサインイン')) }}</li>
-<li>{{ linked(t('同じブラウザで {link} を開く（中身は空やエラーでよい）'), 'https://auth.riotgames.com/userinfo', 'auth.riotgames.com/userinfo') }}</li>
-<li>{{ t('F12 →「アプリケーション」→「Cookie」→「https://auth.riotgames.com」→ 名前が ssid の行の「値」をコピー') }}</li>
+<li>{{ linked(t('PC の Chrome か Edge で{link}を開き、「サインインしたままにする」を選んでログイン'), riot_link, t('Riot のサインイン')) }}</li>
+<li>{{ linked(t('同じブラウザで {link} を開く（エラー表示でも問題ありません）'), 'https://auth.riotgames.com/userinfo', 'auth.riotgames.com/userinfo') }}</li>
+<li>{{ t('F12 →「アプリケーション」→「Cookie」→「https://auth.riotgames.com」で ssid の「値」をコピー') }}</li>
 <li>{{ t('下に貼って「連携」') }}</li>
 </ol>
 <form method="post" class="stack">
@@ -61,7 +60,7 @@
 <input id="riot-ssid" name="riot" type="password" autocomplete="off" spellcheck="false" maxlength="8000">
 <div class="row"><button type="submit" name="do" value="riot">{{ t('連携') }}</button>{% if riot.linked and not riot.client %}<button type="submit" name="do" value="riot_off" class="quiet">{{ t('解除') }}</button>{% endif %}</div>
 </form>
-<p class="note">{{ t('ssid はログインしたままの状態そのものなので、このサーバーの instance/riot.json にだけ保存し、画面には出しません。使うたびに Riot が新しいものに替え、サーバーが保存し直します。Riot でパスワードを変えるかログアウトすると使えなくなるので、そのときはもう一度貼ってください。ログイン後に移ったアドレス（playvalorant.com/opt_in#access_token=…）を貼っても 1 時間だけ使えます。') }}</p>
+<details class="more"><summary>{{ t('ssid について') }}</summary><p>{{ t('ssid はログイン状態そのものです。このサーバーにのみ保存し、画面には表示しません。Riot でパスワード変更やログアウトをすると無効になるので、その場合は貼り直してください。ログイン後の URL（playvalorant.com/opt_in#access_token=…）でも 1 時間だけ使えます。') }}</p></details>
 {% if desktop %}</details>{% endif %}
 </section>
 {% endblock %}

@@ -72,8 +72,8 @@ class PageTest(unittest.TestCase):
         text = self.page("/p/Tester/JP1/seasons")
         self.assertIn("シーズン別の成績", text)
         self.assertLess(text.index("E9 A3"), text.index("E9 A2"))
-        self.assertIn("保存されている全部", text)
-        self.assertIn("ここでは 8 試合", text, "how many matches were counted")
+        self.assertIn("全期間", text)
+        self.assertIn("今回は 8 試合", text, "how many matches were counted")
         self.assertIn('class="change up"', text)
         self.assertIn("ジェット", text, "the agents by name")
         self.assertIn("Tier 22", text, "the act's best rank")
@@ -93,7 +93,7 @@ class PageTest(unittest.TestCase):
     def test_none_stored_and_failures(self):
         henrik_api = self.app.config["VAL_HENRIK"]
         with mock.patch.object(henrik_api, "stored", side_effect=HenrikError("notfound")):
-            self.assertIn("まだ保存されていません", self.page("/p/Tester/JP1/seasons"))
+            self.assertIn("このモードの試合データがありません", self.page("/p/Tester/JP1/seasons"))
         with mock.patch.object(henrik_api, "stored", side_effect=HenrikError("busy")):
             self.assertIn('role="alert"', self.page("/p/Tester/JP1/seasons", 503))
         self.page("/p/bad%23name/JP1/seasons", 404)

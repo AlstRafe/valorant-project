@@ -4,13 +4,12 @@
 {%- elif row.kind == 'agents' %}{% if value %}<span class="agent-list">{% for agent in value %}<span title="{{ t('{games}試合', games=agent.games) }}">{% if agent.icon %}<img src="{{ media(agent.icon) }}" alt="" width="24" height="24" loading="lazy">{% endif %}{{ agent.name }}</span>{% endfor %}</span>{% else %}—{% endif %}
 {%- elif value is none %}—{% elif row.signed %}{{ '%+d'|format(value) }}{% else %}{{ value }}{{ row.unit }}{% endif %}
 {%- endmacro %}
-{% block title %}{% if rows %}{{ sides[0].asked }} vs {{ sides[1].asked }} · {% endif %}{{ t('プレイヤーを比べる') }} · {{ site_name }}{% endblock %}
-{% block description %}{{ t('2 人のランクと最近の試合の成績を並べて見られます。') }}{% endblock %}
+{% block title %}{% if rows %}{{ sides[0].asked }} vs {{ sides[1].asked }} · {% endif %}{{ t('プレイヤー比較') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('2 人の戦績を並べて比較') }}{% endblock %}
 {% block main %}
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">
-<h1>{{ t('プレイヤーを比べる') }}</h1>
-<p class="lead">{{ t('2 人のランクと最近の試合の成績を並べて見られます。') }}</p>
+<h1>{{ t('プレイヤー比較') }}</h1>
 </section>
 <form class="sens-form compare-form" action="{{ url_for('compare') }}" method="get">
 {% for side in sides %}<label><span>{{ t('プレイヤー {number}', number=loop.index) }}</span>
@@ -23,12 +22,12 @@
 <select name="span">
 {% for item in spans %}<option value="{{ item.key }}"{% if item.key == span %} selected{% endif %}>{{ item.name }}</option>
 {% endfor %}</select></label>
-<button type="submit">{{ t('比べる') }}</button>
+<button type="submit">{{ t('比較') }}</button>
 </form>
 {% for side in sides %}{% if side.problem %}<p class="problem" id="problem-{{ loop.index }}" role="alert">{{ side.asked }}: {{ side.problem }}</p>{% endif %}{% endfor %}
 {% if rows %}
 <ul class="compare-who">
-{% for side in sides %}<li><a href="{{ url_for('player', name=side.found.name, tag=side.found.tag, span=span or None) }}">{% if side.found.card %}<img src="{{ media('https://media.valorant-api.com/playercards/' ~ side.found.card ~ '/smallart.png') }}" alt="" width="48" height="48" loading="lazy">{% endif %}<span><strong>{{ side.found.name }}<span class="tag">#{{ side.found.tag }}</span></strong><small>{{ t('{count} 項目で上', count=wins[loop.index0]) }}</small></span></a></li>
+{% for side in sides %}<li><a href="{{ url_for('player', name=side.found.name, tag=side.found.tag, span=span or None) }}">{% if side.found.card %}<img src="{{ media('https://media.valorant-api.com/playercards/' ~ side.found.card ~ '/smallart.png') }}" alt="" width="48" height="48" loading="lazy">{% endif %}<span><strong>{{ side.found.name }}<span class="tag">#{{ side.found.tag }}</span></strong><small>{{ t('{count} 項目で優勢', count=wins[loop.index0]) }}</small></span></a></li>
 {% endfor %}</ul>
 <div class="table-wrap"><table class="board plain versus-two">
 <caption class="sr">{{ t('{a} と {b} の比較', a=sides[0].asked, b=sides[1].asked) }}</caption>
@@ -38,12 +37,12 @@
 <tbody>
 {% for row in rows %}<tr>
 <th scope="row">{{ row.name }}</th>
-{% for value in row['values'] %}<td{% if row.best == loop.index0 %} class="best"{% endif %}>{{ cell(row, value) }}{% if row.best == loop.index0 %}<span class="sr"> {{ t('（上）') }}</span>{% endif %}</td>
+{% for value in row['values'] %}<td{% if row.best == loop.index0 %} class="best"{% endif %}>{{ cell(row, value) }}{% if row.best == loop.index0 %}<span class="sr"> {{ t('（優勢）') }}</span>{% endif %}</td>
 {% endfor %}</tr>
 {% endfor %}</tbody>
 </table></div>
 <p class="compare-more"><a class="button quiet" href="{{ swap_url }}">{{ t('左右を入れ替える') }}</a></p>
-<p class="note">{% if span == 'act' %}{{ t('それぞれ今のアクトの試合（{a} 試合と {b} 試合。このサイトが読み込んだ分）の平均です。', a='{:,}'.format((sides[0].found.summary or {}).get('games', 0)), b='{:,}'.format((sides[1].found.summary or {}).get('games', 0))) }}{% elif span %}{{ t('それぞれ通算の試合（{a} 試合と {b} 試合。このサイトが読み込んだ分）の平均です。', a='{:,}'.format((sides[0].found.summary or {}).get('games', 0)), b='{:,}'.format((sides[1].found.summary or {}).get('games', 0))) }}{% else %}{{ t('それぞれ最近の試合（多くて {count} 試合）の平均です。試合の数が少ないと、たまたまの差が大きく出ます。', count=recent) }}{% endif %}</p>
+<p class="note">{% if span == 'act' %}{{ t('今アクトの平均（{a} 試合と {b} 試合）。', a='{:,}'.format((sides[0].found.summary or {}).get('games', 0)), b='{:,}'.format((sides[1].found.summary or {}).get('games', 0))) }}{% elif span %}{{ t('通算の平均（{a} 試合と {b} 試合）。', a='{:,}'.format((sides[0].found.summary or {}).get('games', 0)), b='{:,}'.format((sides[1].found.summary or {}).get('games', 0))) }}{% else %}{{ t('直近の試合（最大 {count} 試合）の平均。', count=recent) }}{% endif %}</p>
 {% set names = rows|map(attribute='name')|list %}
 {% set terms = ['kda'] + (['acs'] if 'ACS' in names else []) + (['adr'] if 'ADR' in names else []) + (['hs'] if t('HS率') in names else []) + (['kast'] if 'KAST' in names else []) + (['dd'] if 'DDΔ' in names else []) + (['kad'] if 'KAD' in names else []) + (['kpr'] if t('キル / ラウンド') in names else []) + (['econ'] if t('経済効率') in names else []) %}
 {% include "_glossary.html" %}

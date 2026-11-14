@@ -311,8 +311,8 @@ STATE_WORDS = {
     "found": "試合が見つかりました",
     "pregame": "エージェント選択中",
     "ingame": "対戦中",
-    "unknown": "ゲームの状態を読めません",
-    "closed": "VALORANT は開いていません",
+    "unknown": "状態を取得できません",
+    "closed": "VALORANT は起動していません",
 }
 
 

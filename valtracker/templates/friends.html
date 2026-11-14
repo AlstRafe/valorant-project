@@ -8,21 +8,21 @@
 {% block main %}
 <section class="hero">
 <h1>{{ t('フレンド') }}</h1>
-<p class="lead">{{ t('フレンドがいまどこにいるかを、この PC の Riot クライアントのフレンド一覧から読んでいます。PC アプリだけの機能です。') }}</p>
+<p class="lead">{{ t('フレンドのオンライン状況と試合の状況がわかります。') }}</p>
 </section>
 {% include "_play.html" %}
 {% if closed %}
-<p class="problem" role="alert">{{ t('Riot クライアントが開いていないので、フレンドを読めません。Riot クライアントか VALORANT を開くと、ここに出ます。') }}</p>
+<p class="problem" role="alert">{{ t('Riot クライアントが起動していません。起動するとフレンドが表示されます。') }}</p>
 <p><a class="button quiet" href="{{ url_for('checkup') }}">{{ t('診断を開く') }}</a></p>
 <div data-refresh="10"></div>
 {% else %}
 {% if total %}<p class="find" hidden><label for="find" class="sr">{{ t('名前で絞り込む') }}</label><input id="find" type="search" placeholder="{{ t('名前で絞り込む') }}" autocomplete="off" spellcheck="false" enterkeyhint="search"></p>{% endif %}
 <div data-refresh="10">
-<p class="friends-count">{{ t('フレンド {total} 人', total=total) }} · VALORANT {{ t('{count} 人', count=playing|length) }} · {{ t('ほかでオンライン {count} 人', count=online|length) }}</p>
-{% if not total %}<p class="empty">{{ t('フレンドがいません。VALORANT でフレンドを追加すると、ここに出ます。') }}</p>{% endif %}
+<p class="friends-count">{{ t('フレンド {total} 人', total=total) }} · VALORANT {{ t('{count} 人', count=playing|length) }} · {{ t('その他のオンライン {count} 人', count=online|length) }}</p>
+{% if not total %}<p class="empty">{{ t('フレンドがいません。') }}</p>{% endif %}
 {% if total %}
 <section class="friends" aria-labelledby="friends-playing" data-group>
-<h2 id="friends-playing">{{ t('VALORANT にいる') }} <small>{{ playing|length }}</small></h2>
+<h2 id="friends-playing">{{ t('VALORANT をプレイ中') }} <small>{{ playing|length }}</small></h2>
 {% if playing %}
 <ul class="seats">
 {% for row in playing %}
@@ -36,7 +36,7 @@
 {%- if row.score %}{% set _ = parts.append(row.score) %}{% endif %}
 <small class="friend-where"><span class="dot at-{{ row.where }}" aria-hidden="true"></span>{{ parts|join(' · ') }}</small>
 {%- set more = [] -%}
-{%- if row.party %}{% set _ = more.append(t('パーティー {count}人', count=row.party) ~ (t('（参加できます）') if row.open else '')) %}{% elif row.open %}{% set _ = more.append(t('パーティーに参加できます')) %}{% endif -%}
+{%- if row.party %}{% set _ = more.append(t('パーティー {count}人', count=row.party) ~ (t('（参加可）') if row.open else '')) %}{% elif row.open %}{% set _ = more.append(t('パーティー参加可')) %}{% endif -%}
 {%- if row.level %}{% set _ = more.append(t('レベル {level}', level=row.level)) %}{% endif -%}
 {%- if row.note %}{% set _ = more.append(row.note) %}{% endif %}
 {% if more %}<small>{{ more|join(' · ') }}</small>{% endif %}
@@ -45,11 +45,11 @@
 </li>
 {% endfor %}
 </ul>
-{% else %}<p class="empty">{{ t('いま VALORANT にいるフレンドはいません。') }}</p>{% endif %}
+{% else %}<p class="empty">{{ t('VALORANT をプレイ中のフレンドはいません。') }}</p>{% endif %}
 </section>
 {% if online %}
 <section class="friends" aria-labelledby="friends-online" data-group>
-<h2 id="friends-online">{{ t('ほかでオンライン') }} <small>{{ online|length }}</small></h2>
+<h2 id="friends-online">{{ t('その他のオンライン') }} <small>{{ online|length }}</small></h2>
 <ul class="seats friends-small">
 {% for row in online %}
 <li class="seat friend" data-name="{{ (row.name ~ '#' ~ row.tag)|lower }}"><span class="seat-text">{{ name_of(row) }}
@@ -64,7 +64,7 @@
 <ul class="seats friends-small">
 {% for row in offline %}
 <li class="seat friend friend-off" data-name="{{ (row.name ~ '#' ~ row.tag)|lower }}"><span class="seat-text">{{ name_of(row) }}
-<small>{% if row.last %}{{ t('最後のオンライン') }} <time datetime="{{ row.last.iso }}">{{ row.last.text }}</time>{% else %}{{ t('オフライン') }}{% endif %}{% if row.note %} · {{ row.note }}{% endif %}</small></span></li>
+<small>{% if row.last %}{{ t('最終オンライン') }} <time datetime="{{ row.last.iso }}">{{ row.last.text }}</time>{% else %}{{ t('オフライン') }}{% endif %}{% if row.note %} · {{ row.note }}{% endif %}</small></span></li>
 {% endfor %}
 </ul>
 </section>

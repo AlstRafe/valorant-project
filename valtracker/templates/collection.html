@@ -6,7 +6,7 @@
 <h1>{{ t('所持品') }}</h1>
 {% include "_pages.html" %}
 <p class="problem" role="alert">{{ problem }}{% if detail %} <code>{{ detail }}</code>{% endif %}</p>
-{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">{{ t('設定で Riot と連携する') }}</a></p>{% endif %}
+{% if settings_link %}<p><a class="button" href="{{ url_for('settings') }}#riot">{{ t('連携する') }}</a></p>{% endif %}
 </section>
 {% else %}
 <section class="profile mine">
@@ -36,30 +36,30 @@
 {# Sets: the whole loadout under a name, worn again in one press (the game has no such list). #}
 <form class="equip-form set-save" method="post" action="{{ url_for('loadout_sets') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}">
 <label for="set-name">{{ t('セットの名前') }}</label>
-<span class="wear"><input id="set-name" name="name" maxlength="30" placeholder="{{ t('例：ランク用') }}" autocomplete="off" spellcheck="false" enterkeyhint="done"{% if full %} disabled{% endif %}><button type="submit" name="do" value="save"{% if full %} disabled{% endif %}>{{ t('いまの装備を保存') }}</button></span>
+<span class="wear"><input id="set-name" name="name" maxlength="30" placeholder="{{ t('例：ランク用') }}" autocomplete="off" spellcheck="false" enterkeyhint="done"{% if full %} disabled{% endif %}><button type="submit" name="do" value="save"{% if full %} disabled{% endif %}>{{ t('現在の装備を保存') }}</button></span>
 </form>
-<p class="note">{{ t('いま付けているスキン・ガンバディー・スプレーとフレックス・カード・タイトルをまとめて保存し、あとで「使う」1 回で付け直せます（{count} 個まで）。', count=max_sets) }}</p>
+<p class="note">{{ t('現在の装備一式を保存して、ワンクリックで切り替えられます（{count} 個まで）。', count=max_sets) }}</p>
 {% if items %}
 <ul class="sets">
 {% for item in items %}<li class="set{% if item.same %} on{% endif %}" data-name="{{ item.search }}">
 {% if item.card %}<img src="{{ media(item.card) }}" alt="" width="64" height="64" loading="lazy">{% endif %}
 <div class="set-text">
-<p class="set-name">{{ item.name }}{% if item.same %} <span class="badge">{{ t('いまの装備') }}</span>{% endif %}</p>
+<p class="set-name">{{ item.name }}{% if item.same %} <span class="badge">{{ t('現在の装備') }}</span>{% endif %}</p>
 <p class="set-meta">{% if item.title %}<span>{{ item.title }}</span>{% endif %}<span>{{ t('スキン {count}', count=item.skins) }}</span><span>{{ t('ガンバディー {count}', count=item.buddies) }}</span>{% if item.when %}<span>{{ t('{when} 保存', when=item.when) }}</span>{% endif %}</p>
-{% if item.guns %}<details><summary>{{ t('中身') }}</summary><ul class="set-guns">{% for gun in item.guns %}<li><strong>{{ gun.weapon }}</strong> {{ gun.skin or t('標準') }}{% if gun.buddy %} · {{ gun.buddy }}{% endif %}</li>{% endfor %}</ul></details>{% endif %}
+{% if item.guns %}<details><summary>{{ t('内容') }}</summary><ul class="set-guns">{% for gun in item.guns %}<li><strong>{{ gun.weapon }}</strong> {{ gun.skin or t('標準') }}{% if gun.buddy %} · {{ gun.buddy }}{% endif %}</li>{% endfor %}</ul></details>{% endif %}
 </div>
-<form class="equip-form set-do" method="post" action="{{ url_for('loadout_sets') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="set" value="{{ item.id }}"><button type="submit" name="do" value="use"{% if item.same %} class="quiet"{% endif %} aria-label="{{ t('{name} を使う', name=item.name) }}">{{ t('使う') }}</button><button type="submit" name="do" value="delete" class="quiet" aria-label="{{ t('{name} を消す', name=item.name) }}">{{ t('消す') }}</button></form>
+<form class="equip-form set-do" method="post" action="{{ url_for('loadout_sets') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="set" value="{{ item.id }}"><button type="submit" name="do" value="use"{% if item.same %} class="quiet"{% endif %} aria-label="{{ t('{name} を使う', name=item.name) }}">{{ t('使う') }}</button><button type="submit" name="do" value="delete" class="quiet" aria-label="{{ t('{name} を削除', name=item.name) }}">{{ t('削除') }}</button></form>
 </li>
 {% endfor %}</ul>
 {% else %}
 <p class="note">{{ t('まだありません。') }}</p>
 {% endif %}
 {% elif missing %}
-<p class="problem" role="alert">{{ t('読み込めませんでした。時間をおいてもう一度どうぞ。') }}{% if problem_detail %} <code>{{ problem_detail }}</code>{% endif %}</p>
+<p class="problem" role="alert">{{ t('読み込めませんでした。しばらくしてからお試しください。') }}{% if problem_detail %} <code>{{ problem_detail }}</code>{% endif %}</p>
 {% elif not items %}
 <p class="note">{{ t('まだありません。') }}</p>
 {% else %}
-{% if not worn_read and show != 'agents' %}<p class="problem worn-unread" role="alert">{{ t('いま装備しているものを Riot から読めませんでした。装備中の印は出ていません。少し待ってから開き直してください。') }}{% if problem_detail %} <code>{{ problem_detail }}</code>{% endif %}</p>{% endif %}
+{% if not worn_read and show != 'agents' %}<p class="problem worn-unread" role="alert">{{ t('装備中のアイテムを取得できませんでした。少し待ってから開き直してください。') }}{% if problem_detail %} <code>{{ problem_detail }}</code>{% endif %}</p>{% endif %}
 {% set wear = show in ('skins', 'cards', 'titles') or (show in ('sprays', 'flex') and wheel) or (show == 'buddies' and guns) %}
 {% if wear %}<form class="equip-form" method="post" action="{{ url_for('equip') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="show" value="{{ show }}">{% endif %}
 {% if show == 'skins' %}
@@ -81,16 +81,16 @@
 <div class="worn-now">
 {% if picked.icon %}<img src="{{ media(picked.icon) }}" alt="" width="512" height="192">{% endif %}
 <div class="worn-text">
-<p class="worn-label">{{ t('いま装備中') }}</p>
-<p class="worn-name">{{ t('読めませんでした') }}</p>
-<p class="worn-meta"><span>{{ t('Riot から装備を読めなかったので、何を付けているかは出せません。') }}</span></p>
+<p class="worn-label">{{ t('装備中') }}</p>
+<p class="worn-name">{{ t('取得できませんでした') }}</p>
+<p class="worn-meta"><span>{{ t('装備情報を取得できませんでした。') }}</span></p>
 </div>
 </div>
 {% else %}
 <div class="worn-now{% if now.tier.key %} tier-{{ now.tier.key }}{% endif %}">
 {% if now.image %}<img src="{{ media(now.image) }}" alt="" width="512" height="192">{% endif %}
 <div class="worn-text">
-<p class="worn-label">{{ t('いま装備中') }}</p>
+<p class="worn-label">{{ t('装備中') }}</p>
 <p class="worn-name">{{ now.name or picked.name }}{% if now.standard %} <small>{{ t('（標準）') }}</small>{% endif %}</p>
 <p class="worn-meta">{% if now.tier.name %}<span>{% if now.tier.icon %}<img class="tier" src="{{ media(now.tier.icon) }}" alt="" width="16" height="16">{% endif %}{{ now.tier.name }}</span>{% endif %}{% if now.variant %}<span>{{ now.variant }}</span>{% endif %}{% if now.level %}<span>{{ t('レベル {level}/{levels}', level=now.level, levels=now.levels) }}</span>{% endif %}{% if now.buddy %}<span>{% if now.buddy.icon %}<img class="buddy" src="{{ media(now.buddy.icon) }}" alt="" width="20" height="20">{% endif %}{{ t('バディー：{name}', name=now.buddy.name) }}</span>{% endif %}</p>
 </div>
@@ -98,7 +98,7 @@
 {% endif %}
 {% set buddy = picked.buddy %}
 {% if worn_read and buddy and (buddy['items'] or buddy.worn) %}
-<p class="wear buddy-pick"><label for="buddy-pick">{{ t('ガンバディー') }}</label>{% if buddy['items'] %}<select id="buddy-pick" name="buddy.{{ picked.uuid }}">{% for item in buddy['items'] %}<option value="{{ item.uuid }}"{% if item.current %} selected{% endif %}>{% if item.current %}{{ t('{name}（付けている）', name=item.name) }}{% elif item.free %}{{ t('{name}（あと {count} 個）', name=item.name, count=item.free) }}{% elif item.from %}{{ t('{name}（{weapon} から付け替え）', name=item.name, weapon=item['from']) }}{% else %}{{ item.name }}{% endif %}</option>{% endfor %}</select><button type="submit" class="quiet" name="buddy" value="{{ picked.uuid }}" aria-label="{{ t('{weapon} にガンバディーを付ける', weapon=picked.name) }}">{{ t('付ける') }}</button>{% endif %}{% if buddy.worn %}<button type="submit" class="quiet" name="unbuddy" value="{{ picked.uuid }}" aria-label="{{ t('{weapon} のガンバディーを外す', weapon=picked.name) }}">{{ t('外す') }}</button>{% endif %}</p>
+<p class="wear buddy-pick"><label for="buddy-pick">{{ t('ガンバディー') }}</label>{% if buddy['items'] %}<select id="buddy-pick" name="buddy.{{ picked.uuid }}">{% for item in buddy['items'] %}<option value="{{ item.uuid }}"{% if item.current %} selected{% endif %}>{% if item.current %}{{ t('{name}（装備中）', name=item.name) }}{% elif item.free %}{{ t('{name}（あと {count} 個）', name=item.name, count=item.free) }}{% elif item.from %}{{ t('{name}（{weapon} から移動）', name=item.name, weapon=item['from']) }}{% else %}{{ item.name }}{% endif %}</option>{% endfor %}</select><button type="submit" class="quiet" name="buddy" value="{{ picked.uuid }}" aria-label="{{ t('{weapon} にガンバディーを付ける', weapon=picked.name) }}">{{ t('付ける') }}</button>{% endif %}{% if buddy.worn %}<button type="submit" class="quiet" name="unbuddy" value="{{ picked.uuid }}" aria-label="{{ t('{weapon} のガンバディーを外す', weapon=picked.name) }}">{{ t('外す') }}</button>{% endif %}</p>
 {% endif %}
 <ul class="items skins rows">
 {% for item in picked['items'] %}<li class="item{% if item.tier.key %} tier-{{ item.tier.key }}{% endif %}{% if item.equipped %} on{% endif %}" data-name="{{ item.name|lower }}">
@@ -110,7 +110,7 @@
 {% endfor %}</ul>
 </section>
 {% else %}
-<p class="note">{{ t('武器を選ぶと、持っているスキンが出ます。') }}</p>
+<p class="note">{{ t('武器を選ぶと所持スキンが表示されます。') }}</p>
 {% endif %}
 </div>
 {% elif show == 'titles' %}
@@ -132,14 +132,14 @@
 {% if item.copies > 1 %}<small>{{ t('{count} 個', count=item.copies) }}</small>{% endif %}
 {% if press %}</button>{% endif %}
 {% if item.equipped %}<span class="badge">{{ t('装備中') }}{% if item.equipped > 1 %} ×{{ item.equipped }}{% endif %}</span>{% endif %}
-{% if show in ('sprays', 'flex') and wheel %}<span class="wear"><select name="slot.{{ item.uuid }}" aria-label="{{ t('{name} を入れる場所', name=item.name) }}">{% for slot in wheel %}<option value="{{ slot.slot }}">{% if slot.name %}{{ t('{number}（いま {name}）', number=slot.number, name=slot.name) }}{% else %}{{ slot.number }}{% endif %}</option>{% endfor %}</select><button type="submit" class="quiet" name="item" value="{{ item.uuid }}" aria-label="{{ t('{name} を装備する', name=item.name) }}">{{ t('装備') }}</button></span>{% endif %}
-{% if show == 'buddies' and guns %}<span class="wear"><select name="weapon.{{ item.uuid }}" aria-label="{{ t('{name} を付ける武器', name=item.name) }}">{% for gun in guns %}<option value="{{ gun.uuid }}">{% if gun.buddy %}{{ t('{weapon}（いま {name}）', weapon=gun.name, name=gun.buddy) }}{% else %}{{ gun.name }}{% endif %}</option>{% endfor %}</select><button type="submit" class="quiet" name="item" value="{{ item.uuid }}" aria-label="{{ t('{name} を付ける', name=item.name) }}">{{ t('付ける') }}</button></span>{% endif %}
+{% if show in ('sprays', 'flex') and wheel %}<span class="wear"><select name="slot.{{ item.uuid }}" aria-label="{{ t('{name} のスロット', name=item.name) }}">{% for slot in wheel %}<option value="{{ slot.slot }}">{% if slot.name %}{{ t('{number}（現在: {name}）', number=slot.number, name=slot.name) }}{% else %}{{ slot.number }}{% endif %}</option>{% endfor %}</select><button type="submit" class="quiet" name="item" value="{{ item.uuid }}" aria-label="{{ t('{name} を装備する', name=item.name) }}">{{ t('装備') }}</button></span>{% endif %}
+{% if show == 'buddies' and guns %}<span class="wear"><select name="weapon.{{ item.uuid }}" aria-label="{{ t('{name} を付ける武器', name=item.name) }}">{% for gun in guns %}<option value="{{ gun.uuid }}">{% if gun.buddy %}{{ t('{weapon}（現在: {name}）', weapon=gun.name, name=gun.buddy) }}{% else %}{{ gun.name }}{% endif %}</option>{% endfor %}</select><button type="submit" class="quiet" name="item" value="{{ item.uuid }}" aria-label="{{ t('{name} を付ける', name=item.name) }}">{{ t('付ける') }}</button></span>{% endif %}
 </li>
 {% endfor %}</ul>
 {% endif %}
 {% if wear %}</form>{% endif %}
 {% endif %}
 </div>
-<p class="note">{{ t('ゲームで手に入れたものは 2 分ほどで出ます。名前と絵は valorant-api.com から。') }}</p>
+<p class="note">{{ t('ゲームで入手したアイテムは 2 分ほどで反映されます。') }}</p>
 {% endif %}
 {% endblock %}

@@ -1,14 +1,13 @@
 {% extends "base.html" %}
 {% block title %}{{ t('エージェント') }} · {{ site_name }}{% endblock %}
-{% block description %}{{ t('役割とアビリティの説明です。') }}{% endblock %}
+{% block description %}{{ t('VALORANT の全エージェントのロールとアビリティ。') }}{% endblock %}
 {% block main %}
 <section class="hero">
 <h1>{{ t('エージェント') }}</h1>
-<p class="lead">{{ t('役割とアビリティの説明です。') }}</p>
-<p class="meta"><a href="{{ url_for('agent_stats') }}">{{ t('使用率と勝率を見る') }}</a></p>
+<p class="meta"><a href="{{ url_for('agent_stats') }}">{{ t('ピック率と勝率') }}</a></p>
 </section>
 {% if not every %}
-<p class="problem" role="alert">{{ t('エージェントの一覧を取得できませんでした。時間をおいてもう一度どうぞ。') }}</p>
+<p class="problem" role="alert">{{ t('エージェント一覧を取得できませんでした。しばらくしてからお試しください。') }}</p>
 {% else %}
 {% if roles|length > 1 %}<nav class="modes" aria-label="{{ t('ロール') }}">
 <a href="{{ url_for('agents') }}"{% if not role %} aria-current="true"{% endif %}>{{ t('すべて') }}</a>

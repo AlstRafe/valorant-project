@@ -2977,13 +2977,6 @@ code {
   margin-right: 0.4rem;
   vertical-align: -0.3rem;
 }
-.estimate {
-  margin: 1rem 0 0;
-  padding: 0.6rem 0.9rem;
-  border-left: 4px solid var(--blue);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--blue) 8%, transparent);
-}
 .servers {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
@@ -4702,6 +4695,32 @@ html.leaving::after {
 .score-how p {
   margin-top: 0.3rem;
   color: var(--soft);
+}
+
+/* What only some visitors want to know (how a number is made, where it comes from): one closed line under the
+   short text, opened by those who ask. Pages stay short for everyone else. */
+.more {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+}
+.more summary {
+  width: fit-content;
+  padding: 0.3rem 0;
+  cursor: pointer;
+  color: var(--soft);
+}
+.more summary:hover,
+.more[open] summary {
+  color: var(--accent);
+}
+.more > :not(summary) {
+  max-width: 46rem;
+  margin-top: 0.3rem;
+  color: var(--soft);
+}
+.more > ul,
+.more > ol {
+  padding-left: 1.2rem;
 }
 .pct {
   white-space: nowrap;

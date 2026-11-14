@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ agent.displayName }} · {{ site_name }}{% endblock %}
-{% block description %}{{ agent.description|plain or t('役割とアビリティの説明です。') }}{% endblock %}
+{% block description %}{{ agent.description|plain or t('VALORANT の全エージェントのロールとアビリティ。') }}{% endblock %}
 {% block main %}
 <section class="agent-head">
 {% if agent.fullPortrait or agent.displayIcon %}<img class="portrait" src="{{ media(agent.fullPortrait or agent.displayIcon) }}" alt="" width="240" height="240">{% endif %}

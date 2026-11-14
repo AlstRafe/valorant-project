@@ -238,7 +238,7 @@
   function load(box, address, page) {
     function failed() {
       if (page) return location.assign(page); // the plain page for that mode
-      if (!box.querySelector(".wait")) return location.reload(); // "最新にする" on a page already shown
+      if (!box.querySelector(".wait")) return location.reload(); // "データを更新" on a page already shown
       var wait = box.querySelector(".wait");
       if (wait) wait.textContent = box.getAttribute("data-failed");
       var retry = box.querySelector(".retry");
@@ -958,7 +958,7 @@
   }
 
   // The owner's match being played: the page is read again every few seconds while it is in view.
-  // A player's "最新にする": the part is asked for again in place (the scroll stays); without JavaScript the link
+  // A player's "データを更新": the part is asked for again in place (the scroll stays); without JavaScript the link
   // opens the whole page read again.
   function readAgain() {
     var box = document.getElementById("player");
@@ -975,7 +975,7 @@
     });
   }
 
-  // "上へ戻る" on long pages: shown once the visitor is two screens down.
+  // "ページの先頭へ" on long pages: shown once the visitor is two screens down.
   function toTop() {
     var button = document.querySelector(".to-top");
     if (!button) return;
@@ -1382,7 +1382,7 @@
     var said = (tab.getAttribute("data-live-said") || "").split("|");
     var SAID = {
       began: said[0] || "エージェント選択が始まりました",
-      pick: said[1] || "ライブでピックする",
+      pick: said[1] || "ライブで選ぶ",
       close: said[2] || "閉じる",
       label: said[3] || "ライブ（{state}）",
       found: said[4] || "試合が見つかりました",

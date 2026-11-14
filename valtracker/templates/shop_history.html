@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}{{ t('これまでのストア') }} · {{ site_name }}{% endblock %}
+{% block title %}{{ t('ストア履歴') }} · {{ site_name }}{% endblock %}
 {% block main %}
 <div>
 <p class="crumb"><a href="{{ url_for('shop') }}">{{ t('ショップ') }}</a></p>
 <section class="hero">
-<h1>{{ t('これまでのストア') }}</h1>
-<p class="lead">{{ t('このページでショップを開いた日の、毎日のスキンとナイトマーケットです。') }}{% if streak > 1 %}{{ t('いま {days} 日連続でチェックしています。', days=streak) }}{% endif %}</p>
+<h1>{{ t('ストア履歴') }}</h1>
+<p class="lead">{{ t('ショップを開いた日のストアを記録しています。') }}{% if streak > 1 %}{{ t('{days} 日連続でチェック中。', days=streak) }}{% endif %}</p>
 </section>
 {% if not days %}
-<p class="note">{{ t('まだありません。ショップを開くとその日のストアがここに残ります。') }}</p>
+<p class="note">{{ t('まだ記録がありません。ショップを開くと記録されます。') }}</p>
 {% else %}
 {% for day in days %}
 <section class="shelf history-day">
@@ -40,6 +40,6 @@
 </section>
 {% endfor %}
 {% endif %}
-<p class="note">{{ t('「n 回目」はこのページに残っている日の中で並んだ回数です。日付はストアの日（日本時間の 9 時から翌朝 9 時まで）。') }}</p>
+<p class="note">{{ t('「n 回目」は記録の中で並んだ回数。日付は日本時間 9:00 区切りです。') }}</p>
 </div>
 {% endblock %}

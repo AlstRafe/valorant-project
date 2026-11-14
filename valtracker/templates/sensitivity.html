@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}{{ t('感度の換算') }} · {{ site_name }}{% endblock %}
-{% block description %}{{ t('ほかのゲームの感度を VALORANT に（その逆も）。マウスの DPI を変えたときの感度と、振り向きに要る長さも出します。') }}{% endblock %}
+{% block title %}{{ t('感度変換') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('他ゲームと VALORANT の感度を相互変換。DPI 変更後の感度と振り向き距離も計算します。') }}{% endblock %}
 {% block main %}
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">
-<h1>{{ t('感度の換算') }}</h1>
-<p class="lead">{{ t('ほかのゲームの感度を VALORANT に（その逆も）。マウスの DPI を変えたときの感度と、振り向きに要る長さも出します。') }}</p>
+<h1>{{ t('感度変換') }}</h1>
+<p class="lead">{{ t('他ゲームと VALORANT の感度を相互変換。DPI 変更後の感度と振り向き距離も計算します。') }}</p>
 </section>
 <form class="sens-form" action="{{ url_for('sensitivity') }}" method="get">
 <label><span>{{ t('ゲーム') }}</span>
@@ -15,7 +15,7 @@
 <label><span>{{ t('感度') }}</span><input name="sens" type="text" inputmode="decimal" value="{{ sens }}" placeholder="0.35" autocomplete="off" required{% if problem %} aria-invalid="true" aria-describedby="sens-problem"{% endif %}></label>
 <label><span>DPI</span><input name="dpi" type="text" inputmode="numeric" value="{{ dpi }}" placeholder="800" autocomplete="off" required></label>
 <label><span>{{ t('新しい DPI（任意）') }}</span><input name="new_dpi" type="text" inputmode="numeric" value="{{ new_dpi }}" placeholder="1600" autocomplete="off"></label>
-<button type="submit">{{ t('換算する') }}</button>
+<button type="submit">{{ t('変換') }}</button>
 </form>
 {% if problem %}<p class="problem" id="sens-problem" role="alert">{{ problem }}</p>{% endif %}
 {% if results %}
@@ -32,7 +32,7 @@
 {% for row in results.rows %}<tr{% if row.key == game %} class="here"{% endif %}><td>{{ row.name }}</td><td><strong>{{ row.sens }}</strong> <button type="button" class="quiet copy" data-copy="{{ row.sens }}" data-done="{{ t('コピーしました') }}">{{ t('コピー') }}</button></td></tr>
 {% endfor %}</tbody>
 </table></div>
-<p class="note">{{ t('視野角（FOV）は揃えていません。腰だめの感度です。') }}</p>
+<p class="note">{{ t('腰だめ時の感度です（FOV 差は補正していません）。') }}</p>
 </section>
 {% endif %}
 {% endblock %}

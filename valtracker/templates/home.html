@@ -2,48 +2,48 @@
 {% block main %}
 <div class="notice-box" data-load="{{ url_for('status_notice') }}" data-quiet hidden></div>
 <section class="hero">
-<h1>{{ t('プレイヤーを探す') }}</h1>
-<p class="lead">{% if desktop %}{{ t('Riot ID（名前#タグ）でランクと最近の試合を調べられます。☆を付けたプレイヤーはこの PC に保存され、ここに並びます。') }}{% else %}{{ t('Riot ID（名前#タグ）でランクと最近の試合を調べられます。☆を付けたプレイヤーはこのブラウザに保存され、ここに並びます。') }}{% endif %}</p>
-{% if no_key %}<p class="app-update first-key"><strong>{{ t('はじめに: HenrikDev の API キーを入れてください。') }}</strong> {{ t('プレイヤーの検索と戦績に使います（無料、1 分ほどで作れます）。ライブ・ショップ・所持品はキーなしで使えます。') }} <a href="{{ url_for('settings') }}">{{ t('設定でキーを入れる') }}</a></p>
+<h1>{{ t('プレイヤー検索') }}</h1>
+<p class="lead">{{ t('Riot ID でランクと戦績を検索できます。') }}</p>
+{% if no_key %}<p class="app-update first-key"><strong>{{ t('HenrikDev の API キーが未設定です。') }}</strong> {{ t('プレイヤー検索に必要です（無料）。ライブ・ショップ・所持品はキーなしで使えます。') }} <a href="{{ url_for('settings') }}">{{ t('キーを設定') }}</a></p>
 {% endif %}<form class="search" action="{{ url_for('search') }}" method="get" role="search">
 <label for="q" class="sr">{{ t('Riot ID') }}</label>
 <input id="q" name="q" type="search" value="{{ query }}" placeholder="{{ t('名前#タグ') }}" list="known" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" maxlength="40" required{% if problem %} aria-invalid="true" aria-describedby="q-problem"{% endif %}>
 <button type="submit">{{ t('検索') }}</button>
 <datalist id="known"></datalist>
 </form>
-{% if problem %}<p class="problem" id="q-problem" role="alert">{{ problem }}{% if name_only %} <a href="{{ url_for('help_page') }}#riot-id">{{ t('タグの見つけ方') }}</a>{% endif %}</p>{% endif %}
-{% if guess %}<p class="guess"><a class="button quiet" href="{{ url_for('player', name=guess[0], tag=guess[1]) }}">{{ t('「{id}」を探す', id=guess[0] ~ '#' ~ guess[1]) }}</a></p>{% endif %}
+{% if problem %}<p class="problem" id="q-problem" role="alert">{{ problem }}{% if name_only %} <a href="{{ url_for('help_page') }}#riot-id">{{ t('タグの確認方法') }}</a>{% endif %}</p>{% endif %}
+{% if guess %}<p class="guess"><a class="button quiet" href="{{ url_for('player', name=guess[0], tag=guess[1]) }}">{{ t('「{id}」で検索', id=guess[0] ~ '#' ~ guess[1]) }}</a></p>{% endif %}
 {% if name_only %}<div class="same-name" hidden>
-<p class="note">{{ t('このブラウザで見た「{name}」:', name=name_only) }}</p>
+<p class="note">{{ t('最近見た「{name}」:', name=name_only) }}</p>
 <ul class="people-list" id="same-name" data-name="{{ name_only }}" data-base="{{ request.script_root }}/p/"></ul>
 </div>{% endif %}
-<nav class="quick" aria-label="{{ t('ほかにできること') }}">
+<nav class="quick" aria-label="{{ t('その他の機能') }}">
 <a href="{{ url_for('leaderboard') }}">{{ t('ランキング') }}</a>
-<a href="{{ url_for('servers') }}">{{ t('サーバーの混み具合') }}</a>
+<a href="{{ url_for('servers') }}">{{ t('サーバーの混雑状況') }}</a>
 <a href="{{ url_for('queue_settings') }}">{{ t('マップとパーティー') }}</a>
 <a href="{{ url_for('crosshair') }}">{{ t('クロスヘア') }}</a>
-<a href="{{ url_for('sensitivity') }}">{{ t('感度の換算') }}</a>
+<a href="{{ url_for('sensitivity') }}">{{ t('感度変換') }}</a>
 </nav>
-<p class="note china-link"><a href="{{ url_for('tools') }}#china">{{ t('中国大陸版（无畏契约）のアカウントは？') }}</a></p>
+<p class="note china-link"><a href="{{ url_for('tools') }}#china">{{ t('中国大陸版（无畏契约）について') }}</a></p>
 </section>
 
 {% if me %}
 <section class="me-box" aria-labelledby="me-title">
-<h2 id="me-title">{{ t('自分') }}</h2>
+<h2 id="me-title">{{ t('マイアカウント') }}</h2>
 <ul class="me-links">
-{% if me.linked and me.name %}<li><a href="{{ url_for('player', name=me.name, tag=me.tag) }}"><strong>{{ t('自分の戦績') }}</strong><small>{{ me.name }}#{{ me.tag }}</small></a></li>{% endif %}
-<li><a href="{{ url_for('live') }}"><strong>{{ t('ライブ') }}</strong><small data-live-text>{{ t('キュー開始・ピックと確定') }}</small></a></li>
-<li><a href="{{ url_for('progress') }}"><strong>{{ t('進み具合') }}</strong><small>{{ t('バトルパス・ミッション') }}</small></a></li>
-{% if desktop %}<li><a href="{{ url_for('friends') }}"><strong>{{ t('フレンド') }}</strong><small>{{ t('いまどこにいるか') }}</small></a></li>{% endif %}
-<li><a href="{{ url_for('collection') }}"><strong>{{ t('所持品') }}</strong><small>{{ t('スキンやカードを装備') }}</small></a></li>
+{% if me.linked and me.name %}<li><a href="{{ url_for('player', name=me.name, tag=me.tag) }}"><strong>{{ t('戦績') }}</strong><small>{{ me.name }}#{{ me.tag }}</small></a></li>{% endif %}
+<li><a href="{{ url_for('live') }}"><strong>{{ t('ライブ') }}</strong><small data-live-text>{{ t('キュー開始・エージェント選択') }}</small></a></li>
+<li><a href="{{ url_for('progress') }}"><strong>{{ t('進行状況') }}</strong><small>{{ t('バトルパス・ミッション') }}</small></a></li>
+{% if desktop %}<li><a href="{{ url_for('friends') }}"><strong>{{ t('フレンド') }}</strong><small>{{ t('オンライン状況') }}</small></a></li>{% endif %}
+<li><a href="{{ url_for('collection') }}"><strong>{{ t('所持品') }}</strong><small>{{ t('スキン・カードの装備') }}</small></a></li>
 </ul>
-{% if not me.linked %}<p class="note">{{ t('Riot アカウントを設定で連携すると、自分の戦績・ライブ・進み具合・所持品をここから開けます。') }} <a href="{{ url_for('settings') }}#riot">{{ t('設定で Riot と連携する') }}</a></p>{% endif %}
+{% if not me.linked %}<p class="note">{{ t('Riot アカウントを連携すると、戦績・ライブ・所持品が使えます。') }} <a href="{{ url_for('settings') }}#riot">{{ t('連携する') }}</a></p>{% endif %}
 </section>
 {% endif %}
 <section class="people" aria-labelledby="fav-title">
 <h2 id="fav-title">{{ t('お気に入り') }}</h2>
-<ul class="people-list" id="favorites" data-base="{{ request.script_root }}/p/" data-empty="{{ t('まだありません。プレイヤーのページで ☆ を押すと、ここに並びます。') }}"></ul>
-<noscript><p class="note">{{ t('お気に入りを使うには JavaScript を有効にしてください。') }}</p></noscript>
+<ul class="people-list" id="favorites" data-base="{{ request.script_root }}/p/" data-empty="{{ t('プレイヤーページの ☆ で追加できます。') }}"></ul>
+<noscript><p class="note">{{ t('お気に入りには JavaScript が必要です。') }}</p></noscript>
 </section>
 
 <section class="people" aria-labelledby="recent-title">

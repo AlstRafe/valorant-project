@@ -104,7 +104,7 @@ class PagesTest(unittest.TestCase):
         self.assertIn("/media/maps/7eaecc1b-4337-bbf6-6ab9-04b8f06b3319/displayicon.png", text)
         self.assertGreater(text.count('<circle cx="'), 5)
         self.assertIn('<th scope="row">A ツリー</th>', text, "where the player died, by name")
-        self.assertIn("A ツリー で負けやすい", text)
+        self.assertIn("A ツリー でデスが多い", text)
         self.assertNotIn("<line", text, "no lines over many matches")
 
     def test_the_match_page_draws_the_players_with_lines(self):

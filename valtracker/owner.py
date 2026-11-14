@@ -50,51 +50,49 @@ IDENTITY = {"cards": "PlayerCardID", "titles": "PlayerTitleID"}
 #: What /live says after one of its buttons: (words, whether it worked).
 LIVE_SAID = {
     "ok-start": ("キューを開始しました。", True),
-    "ok-leave": ("キューをやめました。", True),
-    "ok-select": ("選びました。まだ確定していません。", True),
+    "ok-leave": ("キューをキャンセルしました。", True),
+    "ok-select": ("選択しました（未確定）。", True),
     "ok-lock": ("確定しました。", True),
     "notnow": (
-        "いまはできません（ゲームが開いていない、パーティーにいない、またはエージェント選択中ではない）。",
+        "今は実行できません（ゲームが未起動、パーティー外、またはエージェント選択外）。",
         False,
     ),
-    "unknown": ("そのボタンは使えません。", False),
+    "unknown": ("この操作はできません。", False),
 }
 #: The app updating itself (update.py), as the pages say it: while it goes, and why it stopped.
 UPDATE_SAID = {
-    "checking": "新しい版を確かめています…",
+    "checking": "アップデートを確認中…",
     "downloading": "ダウンロード中… {percent}%",
-    "ready": "ダウンロードできました。試合が終わったら「入れ替える」を押してください。",
-    "installing": "入れ替えます。アプリが数秒閉じて、新しい版で開き直ります。",
+    "ready": "ダウンロード完了。試合が終わったら「再起動して更新」を押してください。",
+    "installing": "更新中です。アプリが数秒後に再起動します。",
 }
 UPDATE_FAILURES = {
-    "notbuilt": "ダウンロードした VALTracker.exe でだけ更新できます。",
-    "unwritable": "アプリのフォルダーに書き込めないので、ここからは更新できません。"
-    "ダウンロードのページから入れ替えてください。",
-    "playing": "試合が終わってから更新できます（ダウンロードがゲームの回線を使わないように）。",
-    "nonewer": "いまの版が最新です。",
-    "notready": "新しい版はまだ作っている途中です。数分後にもう一度押してください。",
-    "network": "ダウンロードできませんでした。少ししてからもう一度押してください。",
-    "badfile": "ダウンロードしたファイルを確かめられなかったので、使いませんでした。もう一度押してください。",
-    "nostart": "新しい版を開けなかったので、いまの版のまま続けます。ダウンロードのページから入れ替えてください。",
+    "notbuilt": "VALTracker.exe 版でのみ更新できます。",
+    "unwritable": "アプリのフォルダーに書き込めないため更新できません。ダウンロードページから入れ直してください。",
+    "playing": "試合中は更新できません。試合後にお試しください。",
+    "nonewer": "最新バージョンです。",
+    "notready": "新しいバージョンを準備中です。数分後にお試しください。",
+    "network": "ダウンロードに失敗しました。少し待ってからお試しください。",
+    "badfile": "ダウンロードしたファイルを検証できませんでした。もう一度お試しください。",
+    "nostart": "新しいバージョンを起動できなかったため、今のバージョンのまま続けます。ダウンロードページから入れ直してください。",
 }
 #: The update's button: to start it, and to put a build downloaded during a match in place.
-UPDATE_BUTTONS = {"start": "いますぐ更新", "ready": "入れ替える"}
+UPDATE_BUTTONS = {"start": "いますぐ更新", "ready": "再起動して更新"}
 #: What the collection page says after a press that worked.
 EQUIP_SAID = {
-    "ok": "装備しました。Riot に保存されています。",
-    "okopen": "装備しました。Riot に保存されています。開いているゲームでは次の試合から使われます"
-    "（ゲームのコレクション画面は、開き直すまで前の装備のままのことがあります）。",
-    "saved": "いまの装備をセットに保存しました。",
-    "deleted": "セットを消しました。",
+    "ok": "装備しました。",
+    "okopen": "装備しました。ゲームには次の試合から反映されます。",
+    "saved": "現在の装備をセットに保存しました。",
+    "deleted": "セットを削除しました。",
 }
 #: Why wearing something did not work (shown on the collection page).
 EQUIP_FAILURES = {
-    "unknown": "持っていないものは装備できません。",
-    "noweapon": "その武器がロードアウトにありませんでした。",
-    "notsaved": "Riot は受け付けましたが、装備は変わっていませんでした。",
+    "unknown": "未所持のアイテムは装備できません。",
+    "noweapon": "その武器はロードアウトにありません。",
+    "notsaved": "装備が反映されませんでした。もう一度お試しください。",
     "melee": "近接武器にはガンバディーを付けられません。",
-    "full": "セットは {count} 個までです。使わないものを消してから保存してください。",
-    "noset": "そのセットはもうありません。",
+    "full": "セットは {count} 個までです。不要なものを削除してください。",
+    "noset": "そのセットは存在しません。",
 }
 
 

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% macro change(act, key, unit='') -%}
-{% set value = (act.change or {}).get(key) %}{% if value %}<small class="change {{ 'up' if value > 0 else 'down' }}"><span class="sr">{{ t('前のアクトから') }} </span>{{ ('%+.' ~ places[key] ~ 'f')|format(value) }}{{ unit }}</small>{% endif %}
+{% set value = (act.change or {}).get(key) %}{% if value %}<small class="change {{ 'up' if value > 0 else 'down' }}"><span class="sr">{{ t('前アクト比') }} </span>{{ ('%+.' ~ places[key] ~ 'f')|format(value) }}{{ unit }}</small>{% endif %}
 {%- endmacro %}
 {% macro card(act, title) -%}
 <li class="season-card{% if not act.key %} all{% endif %}">
@@ -15,32 +15,32 @@
 <div><dt>DDΔ</dt><dd class="{{ 'up' if act.dd and act.dd > 0 else ('down' if act.dd and act.dd < 0 else '') }}">{{ '%+d'|format(act.dd) if act.dd is not none else '–' }}</dd></div>
 <div><dt>{{ t('平均キル') }}</dt><dd>{{ act.kills }}</dd></div>
 </dl>
-{% if act.agents %}<ul class="season-agents" aria-label="{{ t('よく使ったエージェント') }}">
+{% if act.agents %}<ul class="season-agents" aria-label="{{ t('使用エージェント') }}">
 {% for agent in act.agents %}<li>{% if agent.agent.icon %}<img src="{{ media(agent.agent.icon) }}" alt="" width="28" height="28" loading="lazy">{% endif %}<span>{{ agent.agent.name }}</span><small>{{ t('{games}試合', games=agent.games) }} · {{ agent.win_rate }}%</small></li>
 {% endfor %}</ul>{% endif %}
 </li>
 {%- endmacro %}
 {% block title %}{{ t('シーズン別の成績') }} · {{ name }}#{{ tag }} · {{ site_name }}{% endblock %}
-{% block description %}{{ t('アクトごとの勝率・K/D・HS率・ADR・ACS と、前のアクトからの変化。') }}{% endblock %}
+{% block description %}{{ t('アクトごとの成績と、前アクトからの変化（取得できた試合のみ）。') }}{% endblock %}
 {% block main %}
 <p class="crumb"><a href="{{ url_for('player', name=name, tag=tag) }}">← {{ t('{name} の戦績', name=name ~ '#' ~ tag) }}</a></p>
 <section class="hero">
 <h1>{{ t('シーズン別の成績') }}</h1>
-<p class="lead">{{ t('アクトごとの勝率・K/D・HS率・ADR・ACS と、前のアクトからの変化。') }}</p>
+<p class="lead">{{ t('アクトごとの成績と、前アクトからの変化（取得できた試合のみ）。') }}</p>
 {% if problem %}<p class="problem" role="alert">{{ problem }}</p>{% endif %}
 </section>
 {% if not problem %}
 <nav class="modes" aria-label="{{ t('モード') }}">
 {% for item in modes %}<a href="{{ url_for('seasons_page', name=name, tag=tag, mode=None if item.key == 'competitive' else item.key) }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>
 {% endfor %}</nav>
-<p class="note estimate">{{ t('Riot は過去のアクトの成績を公開していないので、HenrikDev（非公式の API）が保存している試合から数えています。全部の試合ではありません（ここでは {count} 試合）。', count=total.games if total else 0) }}</p>
+<details class="more"><summary>{{ t('集計方法') }}</summary><p>{{ t('Riot は過去アクトの成績を公開していないため、HenrikDev（非公式 API）に残っている試合から集計しています。全試合ではありません（今回は {count} 試合）。', count=total.games if total else 0) }}</p></details>
 {% if not acts %}
-<p class="note">{{ t('このモードの試合はまだ保存されていません。') }}</p>
+<p class="note">{{ t('このモードの試合データがありません。') }}</p>
 {% else %}
 <ol class="season-cards">
 {% for act in acts %}{{ card(act, act.name) }}
 {% endfor %}
-{% if acts|length > 1 %}{{ card(total, t('保存されている全部')) }}{% endif %}
+{% if acts|length > 1 %}{{ card(total, t('全期間')) }}{% endif %}
 </ol>
 {% endif %}
 {% endif %}

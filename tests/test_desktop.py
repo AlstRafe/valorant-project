@@ -285,13 +285,14 @@ class DesktopAppTest(unittest.TestCase):
         self.riot.phase = "menus"
         text = self.client.get("/live").get_data(as_text=True)
         self.assertIn('class="seats"', text)
-        self.assertIn("この PC の Riot クライアントから直接読むので", text)
+        self.assertIn("ゲームと連動して、キュー開始とエージェント選択ができます。", text)
+        self.assertNotIn("スマホからも", text)
         self.assertIn('data-push="/live/next"', text)
         sent = [headers for _, url, headers, _ in self.riot.asked if url.startswith("https://glz-ap-1.ap.")]
         self.assertTrue(sent)
         self.assertEqual({headers["X-Riot-ClientVersion"] for headers in sent}, {VERSION})
         settings = self.client.get("/settings").get_data(as_text=True)
-        self.assertIn("Owner#JP1（AP）と連携中 — Riot クライアントから", settings)
+        self.assertIn("Owner#JP1（AP）と連携中 — Riot クライアント経由", settings)
         self.assertIn('<details class="ssid-way">', settings)
         self.assertNotIn('value="riot_off"', settings, "nothing to unlink: it is the client's")
         self.assertIn('data-live-push="/live/next"', self.client.get("/").get_data(as_text=True))
@@ -344,7 +345,7 @@ class DesktopAppTest(unittest.TestCase):
         """Nobody signed in to the client: the pages say to open it, not to paste an ssid."""
         self.lockfile.unlink()
         text = self.client.get("/live").get_data(as_text=True)
-        self.assertIn("Riot クライアントが開いていないか、サインインしていません。", text)
+        self.assertIn("Riot クライアントが起動していないか、サインインしていません。", text)
         self.assertEqual(self.client.get("/live/state").get_json()["problem"], "nologin")
         self.assertIn("未連携", self.client.get("/settings").get_data(as_text=True))
 
@@ -390,20 +391,20 @@ class AppPagesTest(unittest.TestCase):
     def test_the_first_start_says_where_the_key_goes(self):
         self.app.config["VAL_SETTINGS"].save(henrik_key="")
         text = self.client.get("/").get_data(as_text=True)
-        self.assertIn("はじめに: HenrikDev の API キーを入れてください。", text)
-        self.assertIn("この PC に保存され", text)
+        self.assertIn("HenrikDev の API キーが未設定です。", text)
+        self.assertIn("プレイヤー検索に必要です", text)
         self.app.config["VAL_SETTINGS"].save(henrik_key="HDEV-x")
-        self.assertNotIn("はじめに:", self.client.get("/").get_data(as_text=True))
+        self.assertNotIn("API キーが未設定です", self.client.get("/").get_data(as_text=True))
         visitor = self.site.test_client().get("/", environ_base={"homepage.visitor": True})
-        self.assertNotIn("はじめに:", visitor.get_data(as_text=True))
+        self.assertNotIn("API キーが未設定です", visitor.get_data(as_text=True))
 
     def test_settings_of_the_app(self):
         text = self.client.get("/settings").get_data(as_text=True)
-        self.assertIn("この PC の VAL Tracker の設定です。", text)
+        self.assertNotIn("サイトの持ち主専用", text)
         self.assertIn('data-pref="val.live.switch"', text)
         self.assertIn("ソースから実行中", text)
         self.assertIn(self.app.instance_path, text)
-        self.assertIn("キーはこの PC にだけ保存し", text)
+        self.assertIn("キーはこの PC にのみ保存されます", text)
         self.app.config["VAL_BUILD"] = {"commit": "a" * 40, "date": "2026-11-12"}
         self.app.config["VAL_UPDATE_LOOKED"] = 1.0
         self.assertIn("2026-11-12 · aaaaaaa</code> — 最新です", self.client.get("/settings").get_data(as_text=True))
