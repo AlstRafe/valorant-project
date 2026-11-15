@@ -34,5 +34,5 @@
 {% if later %}<a class="button quiet" href="{{ later }}" rel="next">{{ t('次の 50 人') }} →</a>{% endif %}
 </nav>
 {% endif %}
-{% if updated %}<p class="note">{{ t('更新') }}: <time datetime="{{ updated.iso }}">{{ updated.text }}</time> · {{ t('数分ごとに更新') }}{% if source == 'riot' %} {{ t('Riot 公式データ') }}{% endif %}</p>{% endif %}
+{% if board_updated %}<p class="note">{{ t('更新') }}: <time datetime="{{ board_updated.iso }}">{{ board_updated.text }}</time> · {{ t('数分ごとに更新') }}{% if source == 'riot' %} {{ t('Riot 公式データ') }}{% endif %}</p>{% endif %}
 {% endif %}

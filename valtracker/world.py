@@ -14,7 +14,7 @@ from valtracker.activity import BANDS, FEW, WINDOW_DAYS
 from valtracker.henrik import HenrikError
 from valtracker.riotweb import RiotWebError
 from valtracker.tools import moment_info
-from valtracker.views import QUEUES, failure_info, rank_family, rank_info, tr
+from valtracker.views import QUEUES, band_name, failure_info, tr
 
 #: こちらの言語ごとの Riot ニュースサイトの言語。
 NEWS_LANGS = {"ja": "ja-jp", "ko": "ko-kr", "en-GB": "en-gb", "zh-TW": "zh-tw"}
@@ -73,10 +73,7 @@ def _agent_stats() -> dict:
     sort = sort if sort in ("pick", "win") else "pick"
     if sort == "win":
         rows.sort(key=lambda row: (row["few"], -row["win"], -row["picks"]))
-    band_names = []
-    for name, (low, high) in bands.items():
-        first, last = (rank_family(rank_info({"id": tier})["name"]) for tier in (low, high))
-        band_names.append({"key": name, "name": first if first == last else f"{first} – {last}"})
+    band_names = [{"key": name, "name": band_name(name)} for name in bands]
     return {
         "rows": rows,
         "matches": found["matches"],
@@ -131,9 +128,7 @@ def _news_page() -> tuple[dict, int]:
     keys = sorted(counts, key=lambda key: (order.index(key) if key in order else len(order), key))
     values["categories"] = [
         {
-            "key": key,
             "name": _category(key),
-            "count": counts[key],
             "url": url_for("news", category=key, q=words or None),
             "current": key == chosen,
         }

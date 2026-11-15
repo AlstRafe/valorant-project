@@ -22,7 +22,6 @@ def contract(item: dict, definition: dict, agents: dict) -> dict:
         "type": definition.get("type") or "",
         "reached": reached,
         "main": main if main > 0 else len(levels),
-        "all": len(levels),
         "toward": toward if reached < len(levels) else 0,
         "next": levels[reached] if reached < len(levels) else 0,
         "share": round(100 * done / total) if total else 0,

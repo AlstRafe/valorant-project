@@ -921,14 +921,6 @@ button.quiet {
   background: var(--accent);
   border-radius: 999px;
 }
-.sr {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
 .up {
   color: var(--win);
 }
@@ -1269,7 +1261,7 @@ span.tri.down {
 }
 .match a {
   display: grid;
-  grid-template-columns: 2.75rem minmax(0, 1.3fr) minmax(0, 0.8fr) minmax(0, 1fr);
+  grid-template-columns: 2.75rem minmax(0, 1fr) minmax(5.5rem, auto) auto;
   align-items: center;
   gap: 0.8rem;
   padding: 0.55rem 0.9rem 0.55rem 0.55rem;
@@ -1330,8 +1322,7 @@ span.tri.down {
   color: var(--soft);
   font-size: 0.8rem;
 }
-.match .score strong,
-.match .kda strong {
+.match .score strong {
   font-variant-numeric: tabular-nums;
 }
 .match.win .score strong {
@@ -1350,13 +1341,6 @@ span.tri.down {
   /* サーバーより日付が大事（サーバーは試合ページに出す） */
   .match .srv {
     display: none;
-  }
-  .match a {
-    grid-template-columns: 2.75rem minmax(0, 1fr) auto;
-    gap: 0.6rem;
-  }
-  .match .kda {
-    grid-column: 2 / -1;
   }
 }
 
@@ -1693,7 +1677,6 @@ meter {
 :root:not([data-theme="dark"]) .rank-spread img,
 :root:not([data-theme="dark"]) .season-peak img,
 :root:not([data-theme="dark"]) .act-numbers img,
-:root:not([data-theme="dark"]) img.tri,
 :root:not([data-theme="dark"]) .seat-rank img,
 :root:not([data-theme="dark"]) .meta.avg img,
 :root:not([data-theme="dark"]) .ceilings img,
@@ -2534,7 +2517,7 @@ code {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
   gap: 0.7rem;
-  margin: 1rem 0 0;
+  margin: 0.6rem 0 0;
   padding: 0;
   list-style: none;
 }
@@ -2614,9 +2597,6 @@ code {
   letter-spacing: 0.04em;
 }
 .tool-section:first-of-type h2 {
-  margin-top: 0.6rem;
-}
-.tool-grid {
   margin-top: 0.6rem;
 }
 @media (max-width: 34rem) {
@@ -2706,9 +2686,6 @@ code {
   width: 1.5rem;
   height: 1.5rem;
   vertical-align: middle;
-}
-.hidden-name {
-  color: var(--soft);
 }
 .pages {
   display: flex;
@@ -5603,9 +5580,6 @@ html.leaving::after {
 .match .cell .row-score {
   min-width: 2.2rem;
   vertical-align: 0;
-}
-.match a {
-  grid-template-columns: 2.75rem minmax(0, 1fr) minmax(5.5rem, auto) auto;
 }
 .mvp.place {
   white-space: nowrap;

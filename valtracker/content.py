@@ -146,7 +146,7 @@ class Content:
         return sorted(agents, key=lambda agent: str(agent.get("displayName", "")))
 
     def agent(self, lang: str, uuid: str) -> dict | None:
-        return {str(agent["uuid"]).lower(): agent for agent in self.agents(lang)}.get(str(uuid).lower())
+        return self.agent_index(lang).get(str(uuid).lower())
 
     def agent_index(self, lang: str) -> dict:
         return {str(agent["uuid"]).lower(): agent for agent in self.agents(lang)}
@@ -203,7 +203,7 @@ class Content:
         return found
 
     def arsenal(self, lang: str) -> dict:
-        """全武器を uuid で: ``{"displayName", "category", "killStreamIcon", "displayIcon"}``。"""
+        """全武器を uuid で: ``{"displayName", "killStreamIcon"}``。"""
         return {
             str(item["uuid"]).lower(): item
             for item in self._list("arsenal", lang)
@@ -320,7 +320,7 @@ SLIM = {
         **_keep(item, ("uuid", "displayName", "displayIcon")),
         "levels": _parts(item, "levels", ("uuid",)),
     },
-    "arsenal": lambda item: _keep(item, ("uuid", "displayName", "category", "killStreamIcon", "displayIcon")),
+    "arsenal": lambda item: _keep(item, ("uuid", "displayName", "killStreamIcon")),
     "playercards": lambda item: _keep(item, ("uuid", "displayName", "smallArt", "wideArt")),
     "sprays": lambda item: {
         **_keep(item, ("uuid", "displayName", "displayIcon", "fullTransparentIcon")),
@@ -328,8 +328,8 @@ SLIM = {
     },
     "playertitles": lambda item: _keep(item, ("uuid", "displayName", "titleText")),
     "flex": lambda item: _keep(item, ("uuid", "displayName", "displayIcon")),
-    "contenttiers": lambda item: _keep(item, ("uuid", "displayName", "devName", "rank", "displayIcon")),
-    "currencies": lambda item: _keep(item, ("uuid", "displayName", "displayNameSingular", "displayIcon")),
+    "contenttiers": lambda item: _keep(item, ("uuid", "displayName", "devName", "displayIcon")),
+    "currencies": lambda item: _keep(item, ("uuid", "displayName", "displayIcon")),
     "bundles": lambda item: _keep(item, ("uuid", "displayName", "displayIcon", "displayIcon2")),
     "themes": lambda item: _keep(item, ("uuid", "displayName")),
     "seasons": lambda item: _keep(item, ("uuid", "displayName", "type", "startTime", "endTime", "parentUuid")),

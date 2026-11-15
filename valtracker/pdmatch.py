@@ -227,7 +227,7 @@ def _round(item: dict) -> dict:
                 "player": {"puuid": lower_id(line.get("subject"))},
                 "stats": _shots(line),
                 "economy": {
-                    "loadout_value": to_int((line.get("economy") or {}).get("loadoutValue"))
+                    "loadout_value": to_int(line["economy"].get("loadoutValue"))
                     if isinstance(line.get("economy"), dict)
                     else 0
                 },

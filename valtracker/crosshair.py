@@ -60,8 +60,6 @@ PRIMARY = {
 }
 SNIPER = {"c": 7, "u": "", "d": 1, "s": 1.0, "o": 0.75}
 SECTIONS = {"P": "primary", "A": "ads", "S": "sniper"}
-#: 絵の中心からの広さ（ピクセル）: どんなに長い線でも収まる。
-REACH = 50
 
 
 def _value(text: str):
@@ -79,7 +77,7 @@ def parse(code: str) -> dict | None:
     if not CODE.match(code):
         return None
     parts = code.split(";")
-    if not parts or not re.fullmatch(r"\d+", parts[0]):
+    if not re.fullmatch(r"\d+", parts[0]):
         return None
     found: dict[str, dict] = {"primary": {}, "ads": {}, "sniper": {}, "general": {}}
     section = "general"

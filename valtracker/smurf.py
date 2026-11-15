@@ -38,10 +38,7 @@ def guess(
     if tier <= 2 or not level:
         return None
     points, why = 0, []
-    if tier >= 15 and level < 50:
-        points += 2
-        why.append((NEW_ACCOUNT, {"level": level}))
-    elif tier >= 9 and level < 30:
+    if (tier >= 15 and level < 50) or (tier >= 9 and level < 30):
         points += 2
         why.append((NEW_ACCOUNT, {"level": level}))
     elif tier >= 15 and level < 100:
@@ -66,5 +63,5 @@ def guess(
         kind = "maybe"
     else:
         kind = "main"
-        why = [(FITS, {"level": level})] if not why else why
+        why = why or [(FITS, {"level": level})]
     return {"kind": kind, "why": why}

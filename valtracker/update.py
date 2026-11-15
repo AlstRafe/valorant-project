@@ -144,6 +144,11 @@ def _start(command: list[str]) -> None:
     subprocess.Popen(command, close_fds=True, creationflags=flags, cwd=str(Path(command[0]).parent))
 
 
+def _fresh(state: str) -> dict:
+    """進み具合の無い状態。"""
+    return {"state": state, "done": 0, "total": 0, "problem": "", "detail": ""}
+
+
 class Updater:
     """ページ用の更新の状態と、その手順。``app``: Flask アプリ（ビルド、聞くサイト、データフォルダー）。
     ``home``: 動いているアプリのフォルダー（None: ビルドしたアプリでない）。
@@ -160,7 +165,7 @@ class Updater:
         self.folder = Path(app.instance_path) / FOLDER
         self._lock = threading.Lock()
         #: state: idle、downloading、checking、ready（ダウンロード済み、試合が終わるのを待っている）、installing、failed
-        self._state: dict = {"state": "idle", "done": 0, "total": 0, "problem": "", "detail": ""}
+        self._state: dict = _fresh("idle")
         self._new: Path | None = None
 
     @property
@@ -173,7 +178,7 @@ class Updater:
 
     def _set(self, state: str, **more) -> None:
         with self._lock:
-            self._state = {"state": state, "done": 0, "total": 0, "problem": "", "detail": ""} | more
+            self._state = _fresh(state) | more
 
     def look(self) -> dict | None:
         """最新ビルドを今サイトに聞く（設定ページのボタン）: 新しいもの（{"commit", "date", "url", "ready"}）か None。
@@ -195,7 +200,7 @@ class Updater:
             now = self._state["state"]
             busy = now in ("downloading", "checking", "installing")
             if not busy:
-                self._state = {"state": "checking", "done": 0, "total": 0, "problem": "", "detail": ""}
+                self._state = _fresh("checking")
         if not busy:
             target = self._install if now == "ready" and self._new is not None else self._run
             threading.Thread(target=self._guarded, args=(target,), name="update", daemon=True).start()
@@ -232,16 +237,13 @@ class Updater:
         self._new = unpack(archive, self.folder / "new", found["commit"])
         with contextlib.suppress(OSError):
             archive.unlink()
-        if self._playing():
-            self._set("ready")  # その間に試合が始まった: 持ち主がもう一度押したら入れ替える
-            return
         self._install()
 
     def _install(self) -> None:
         if self.home is None or self._new is None or not (self._new / EXE).is_file():
             raise UpdateError("badfile", "nothing downloaded")
         if self._playing():
-            self._set("ready")
+            self._set("ready")  # その間に試合が始まった: 持ち主がもう一度押したら入れ替える
             return
         self._set("installing")
         try:

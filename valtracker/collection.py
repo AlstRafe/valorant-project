@@ -36,12 +36,11 @@ SKIN = ("SkinID", "SkinLevelID", "ChromaID")
 MAX_SETS = 20
 #: スキンのティア（安い順、valorant-api.com の devName）: それぞれページでの色を持つ。
 TIERS = ("Select", "Deluxe", "Premium", "Exclusive", "Ultra")
+VP = "85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741"
+RADIANITE = "e59aa87c-4cbf-517a-5983-6e81511be9b7"
+KINGDOM = "85ca954a-41f2-ce94-9b45-8ca3dd39a00d"
 #: VALORANT ポイント、レディアナイト、キングダムクレジット: ウォレットの順（ほかはその後）。
-CURRENCIES = (
-    "85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741",
-    "e59aa87c-4cbf-517a-5983-6e81511be9b7",
-    "85ca954a-41f2-ce94-9b45-8ca3dd39a00d",
-)
+CURRENCIES = (VP, RADIANITE, KINGDOM)
 #: どのアカウントも最初から持っているエージェント（PD はその後に解放したものしか出さない）: ブリムストーン、ジェット、
 #: フェニックス、セージ、ソーヴァ。
 STARTERS = {

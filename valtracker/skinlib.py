@@ -52,7 +52,6 @@ def _picture(skin: dict) -> str:
         skin.get("displayIcon")
         or next((level.get("displayIcon") for level in skin.get("levels") or [] if level.get("displayIcon")), "")
         or next((part.get("fullRender") for part in chromas if part.get("fullRender")), "")
-        or ""
     )
 
 
@@ -130,8 +129,8 @@ def _list_page(content: Content, lang: str) -> dict:
     ratings = current_app.config["VAL_RATINGS"]
     by_uuid = {entry["uuid"]: entry for entry in every}
     top = [
-        by_uuid[skin] | {"url": url_for("skin", uuid=skin), "average": average, "count": count}
-        for skin, average, count in ratings.top(8)
+        by_uuid[skin] | {"url": url_for("skin", uuid=skin), "average": average}
+        for skin, average, _ in ratings.top(8)
         if skin in by_uuid
     ]
     return {
@@ -149,15 +148,19 @@ def _list_page(content: Content, lang: str) -> dict:
     }
 
 
-def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
+def _known_skin(content: Content, lang: str, uuid: str) -> tuple[dict, dict] | None:
+    """図鑑のスキンなら (武器, スキン)。レベルやクロマの uuid は None（リンク先はスキン自身のページ）。"""
     found = content.skins(lang).get(uuid)
+    if not found or lower_id(found[1].get("uuid")) != uuid or not _is_skin(*found):
+        return None
+    return found
+
+
+def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
+    found = _known_skin(content, lang, uuid)
     if not found:
         return None
     weapon, skin = found
-    if lower_id(skin.get("uuid")) != uuid:
-        return None  # レベルやクロマの uuid: リンク先はスキン自身のページ
-    if not _is_skin(weapon, skin):
-        return None
     name = _words(skin.get("displayName"))
     tiers = content.index("contenttiers", lang)
     chosen = lower_id(request.args.get("chroma", ""))
@@ -241,7 +244,7 @@ def register(app: Flask) -> None:
         """持ち主のほしい物リスト（diary.py）: ストアに出たら印を付ける。"""
         security.owner_only()
         uuid = uuid.lower()
-        if not _UUID.match(uuid) or _skin_page(current_app.config["VAL_CONTENT"], g.lang, uuid) is None:
+        if not _UUID.match(uuid) or _known_skin(current_app.config["VAL_CONTENT"], g.lang, uuid) is None:
             abort(404)
         current_app.config["VAL_DIARY"].want(uuid, request.form.get("on") == "1")
         return redirect(url_for("skin", uuid=uuid) + "#want", 303)
@@ -250,7 +253,7 @@ def register(app: Flask) -> None:
     def rate_skin(uuid: str):
         uuid = uuid.lower()
         content = current_app.config["VAL_CONTENT"]
-        if not _UUID.match(uuid) or _skin_page(content, g.lang, uuid) is None:
+        if not _UUID.match(uuid) or _known_skin(content, g.lang, uuid) is None:
             abort(404)
         try:
             stars = int(request.form.get("stars", ""))

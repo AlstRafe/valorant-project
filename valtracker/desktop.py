@@ -507,12 +507,12 @@ def follow_look(window, put=title_bar) -> None:
     読み込み終わったページに 1 回聞くだけで、その間は何もしない。"""
 
     def loaded():
+        handle = window_handle(window)
         try:
             dark = window.evaluate_js(IS_DARK)
-            handle = int(window.native.Handle.ToInt64())
-        except Exception:  # ウィンドウが閉じる途中、または WinForms のものでない
+        except Exception:  # ウィンドウが閉じる途中
             return
-        if isinstance(dark, bool):
+        if handle and isinstance(dark, bool):
             put(handle, dark)
 
     window.events.loaded += loaded
@@ -669,7 +669,8 @@ def main(argv: list[str] | None = None) -> int:
     calmed = calm()
     print(f"{NAME}: {', '.join(calmed) or 'no Windows priorities (not Windows)'}", flush=True)
     # ダウンロードした zip から展開した: ウィンドウの部分を読む前に Windows の印を外す
-    unmarked = unmark(update.running_home())
+    home = update.running_home()
+    unmarked = unmark(home)
     if unmarked:
         print(f"{NAME}: {unmarked} of the app's files were marked as come from the internet: unmarked", flush=True)
     os.environ.setdefault("VAL_COLLECT_SECONDS", "0")  # 混む時間のコレクター: サイトの仕事で、PC の仕事ではない
@@ -696,13 +697,13 @@ def main(argv: list[str] | None = None) -> int:
         if shown:
             shown[0].destroy()
 
-    app.config["VAL_UPDATER"] = update.Updater(app, update.running_home(), where, close)
+    app.config["VAL_UPDATER"] = update.Updater(app, home, where, close)
     app.config["VAL_UPDATED"] = bool(args.updated)
     server, base = serve(app, args.port)
     local.start()
     if not args.check:
         look_for_updates(app, stopping)
-        update.clean(folder, update.running_home())
+        update.clean(folder, home)
     print(f"{NAME}: {base}/ (data: {folder})", flush=True)
     try:
         if args.check:

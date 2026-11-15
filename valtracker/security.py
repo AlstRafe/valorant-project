@@ -122,9 +122,8 @@ def init_app(app: Flask, instance: Path, mount: str) -> None:
             abort(403)
         expected = session.get("csrf")
         supplied = request.form.get("csrf", "") or request.headers.get("X-CSRF-Token", "")
-        if not expected or not hmac.compare_digest(str(supplied), str(expected)):
+        if not expected or not hmac.compare_digest(str(supplied).encode(), str(expected).encode()):
             abort(400)
-        return
 
     @app.after_request
     def _headers(response):

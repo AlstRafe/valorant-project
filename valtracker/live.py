@@ -39,12 +39,27 @@ def icon(agent: dict) -> str:
     return str(agent.get("displayIconSmall") or agent.get("displayIcon") or "")
 
 
+def _seasons(mmr) -> dict:
+    """PD の mmr の答えのコンペティティブのアクトごとの情報（アクト ID → 情報）。"""
+    skills = (
+        ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
+        if isinstance(mmr, dict)
+        else {}
+    )
+    return skills if isinstance(skills, dict) else {}
+
+
+def _act_info(mmr, act: str) -> dict | None:
+    """そのアクトの情報。無ければ None。"""
+    info = next((info for season, info in _seasons(mmr).items() if lower_id(season) == act), None) if act else None
+    return info if isinstance(info, dict) else None
+
+
 def _rank(mmr, act: str) -> tuple[int, int]:
     """PD の mmr の答えからの今のアクトでの (tier, RR)。無ければ (0, 0)。"""
     if not isinstance(mmr, dict):
         return 0, 0
-    skills = ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
-    for season, info in skills.items() if isinstance(skills, dict) else []:
+    for season, info in _seasons(mmr).items():
         if act and lower_id(season) == act and isinstance(info, dict) and to_int(info.get("CompetitiveTier")) > 2:
             return to_int(info.get("CompetitiveTier")), to_int(info.get("RankedRating"))
     latest = mmr.get("LatestCompetitiveUpdate") if isinstance(mmr.get("LatestCompetitiveUpdate"), dict) else {}
@@ -56,11 +71,8 @@ def _rank(mmr, act: str) -> tuple[int, int]:
 def best_ever(mmr, old_acts=frozenset()) -> int:
     """プレイヤーが今まで遊んだ全アクトでの最高ランク（PD の mmr の答え: アクトごとの tier 別の勝利と、
     終わったときの tier）を今の番号で（``old_acts``: アセンダント以前のアクト）。0: 無し。"""
-    if not isinstance(mmr, dict):
-        return 0
-    skills = ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
     best = 0
-    for season, info in skills.items() if isinstance(skills, dict) else []:
+    for season, info in _seasons(mmr).items():
         if not isinstance(info, dict):
             continue
         won_at = info.get("WinsByTier") if isinstance(info.get("WinsByTier"), dict) else {}
@@ -72,33 +84,21 @@ def best_ever(mmr, old_acts=frozenset()) -> int:
 
 def act_best(mmr, act: str) -> int:
     """プレイヤーのそのアクトでの最高ランク（勝った tier と、今の tier）。0: 無し。"""
-    if not isinstance(mmr, dict) or not act:
-        return 0
-    skills = ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
-    info = (
-        next((info for season, info in skills.items() if lower_id(season) == act), None)
-        if isinstance(skills, dict)
-        else None
-    )
-    if not isinstance(info, dict):
+    info = _act_info(mmr, act)
+    if info is None:
         return 0
     won_at = info.get("WinsByTier") if isinstance(info.get("WinsByTier"), dict) else {}
     tiers = [to_int(tier) for tier, count in won_at.items() if to_int(count) > 0]
     return max([*tiers, to_int(info.get("CompetitiveTier"))])
 
 
-def _smurf(tier: int, identity: dict, mmr, act: str) -> dict | None:
+def _smurf(tier: int, level: int | None, mmr, act: str) -> dict | None:
     """レベル、ランク戦のアクト、名前を出しているプレイヤー（``act``）
     なら今のアクトの戦績からのサブ垢の推測（smurf.guess）: 名前を隠している人は戦績無しで推測する。"""
-    level = None if identity.get("HideAccountLevel") else to_int(identity.get("AccountLevel")) or None
-    skills = (
-        ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
-        if isinstance(mmr, dict)
-        else {}
-    )
+    skills = _seasons(mmr)
     acts = (
         sum(1 for info in skills.values() if isinstance(info, dict) and to_int(info.get("NumberOfGames")) > 0)
-        if isinstance(skills, dict) and skills
+        if skills
         else None
     )
     record = _record(mmr, act) if act else None
@@ -114,15 +114,8 @@ def _smurf(tier: int, identity: dict, mmr, act: str) -> dict | None:
 def _record(mmr, act: str) -> dict | None:
     """PD の mmr の答えからのアクトのコンペティティブ戦績（ゲームのキャリアページと同じ）
     : ``{"wins", "games", "win_rate"}``。試合が無ければ None。"""
-    if not isinstance(mmr, dict) or not act:
-        return None
-    skills = ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
-    info = (
-        next((info for season, info in skills.items() if lower_id(season) == act), None)
-        if isinstance(skills, dict)
-        else None
-    )
-    if not isinstance(info, dict):
+    info = _act_info(mmr, act)
+    if info is None:
         return None
     games = to_int(info.get("NumberOfGames"))
     if games <= 0:
@@ -155,8 +148,8 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
     tier, rr = _rank(look["ranks"].get(subject), look["act"])
     if tier <= 2:
         tier, rr = to_int(item.get(rank_key) if rank_key in item else badge.get("Rank")), None
-    known = look["tiers"].get(tier) or {}
-    rank_name = str(known.get("tierName") or "")
+    rank = _rank_of(tier, look)
+    level = None if identity.get("HideAccountLevel") else to_int(identity.get("AccountLevel")) or None
     card = lower_id(identity.get("PlayerCardID"))
     title = look["titles"].get(lower_id(identity.get("PlayerTitleID"))) or {}
     shown = bool(name) or subject == me
@@ -169,21 +162,14 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
         "state": str(item.get("CharacterSelectionState") or ""),
         "name": name[0] if name else "",
         "tag": name[1] if name else "",
-        "hidden": hidden,
         "mate": mate,
         # 隠しているプレイヤーはカードと称号も出さない: 誰かわかってしまうことがある
         "card": f"https://media.valorant-api.com/playercards/{card}/smallart.png"
         if card and not hidden and len(card) == 36
         else "",
         "title": "" if hidden else str(title.get("titleText") or ""),
-        "level": None if identity.get("HideAccountLevel") else to_int(identity.get("AccountLevel")) or None,
-        "rank": {
-            "name": rank_name.title() if rank_name.isupper() else rank_name,
-            "icon": known.get("smallIcon"),
-            "rr": rr,
-        }
-        if tier > 2
-        else None,
+        "level": level,
+        "rank": {**rank, "rr": rr} if rank else None,
         "tier": tier if tier > 2 else 0,
         # アクトの戦績は持ち主と名前が出ているプレイヤー（パーティーの仲間も）だけ: このサイトのその人のページと同じ公開度。
         # 3 つのランク（今、アクト最高、通算最高）は全員: 持ち主が名前を隠している人にも出すよう頼んだ（2026-11-15）。
@@ -191,7 +177,7 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
         "record": _record(look["ranks"].get(subject), look["act"]) if shown else None,
         "peak": _rank_of(best_ever(look["ranks"].get(subject), look.get("old_acts") or frozenset()), look),
         "act_peak": _rank_of(act_best(look["ranks"].get(subject), look["act"]), look),
-        "smurf": _smurf(tier, identity, look["ranks"].get(subject), look["act"] if shown else ""),
+        "smurf": _smurf(tier, level, look["ranks"].get(subject), look["act"] if shown else ""),
         "team": str(item.get("TeamID") or ""),
         "owner": bool(item.get("IsOwner")),
     }

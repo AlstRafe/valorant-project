@@ -10,7 +10,7 @@ def to_int(value, default: int = 0) -> int:
     """整数に。"12"・12.7・"12.7" も読む（小数は切り捨て）。読めないもの（None・""・"abc"・nan）は ``default``。"""
     try:
         return int(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         pass
     try:
         return int(float(value))

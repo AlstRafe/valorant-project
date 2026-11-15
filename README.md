@@ -122,7 +122,7 @@ Home Page・News Site・Infra Game と共通のルール（1 行 120 字・ダ�
 uvx ruff@0.16.9 format .   # Python の整形
 uvx ruff@0.16.9 check .    # Python のチェック
 uvx taplo@0.9.3 fmt        # TOML の整形（確かめるだけなら --check）
-npm install                # 初回だけ（Prettier・ESLint。サイト自体は使わない）
+npm install                # 初回だけ（Prettier・ESLint・Playwright。サイト自体は使わない）
 npm run format             # JS・CSS・Markdown・JSON・YAML の整形
 npm run lint               # 整形済みかの確認と ESLint（警告 0 件まで）
 ```
