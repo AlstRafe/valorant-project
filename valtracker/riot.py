@@ -72,6 +72,9 @@ RANK_WAIT = 0.8
 ACTIONS = ("start", "leave", "select", "lock")
 #: プレイヤーのランク（PD の mmr）を聞くのは 1 試合 1 回まで: 試合が終わったときにしか変わらない。
 RANK_KEEP = 900
+#: 持ち主の試合でのパーティーの仲間（Riot.mates）を持つ秒数: 試合の間パーティーは変わらないので、1 試合に 1 回読む。
+#: 読めなかったときは MATES_RETRY 秒あとにまた聞く（その間、名前を隠している仲間の名前は出さない）。
+MATES_KEEP, MATES_RETRY = 600, 60
 #: リージョンのランキングの 1 ページを持つ秒数: Riot 自身が数分ごとに数え直す。
 BOARD_KEEP = 300
 #: Riot がランキングを出さなかったリージョンにまた聞くまでの時間（その間は HenrikDev のものを出す）。
@@ -151,6 +154,8 @@ class Riot:
         self.ranks = TTLCache(64)
         #: 持ち主のパーティーか試合のプレイヤーの名前: {puuid: [name, tag]}。
         self.names = TTLCache(64)
+        #: 持ち主の試合での同じパーティーのメンバー: {(持ち主, 試合の ID): frozenset(puuid)}。
+        self.mates = TTLCache(8)
         #: GLZ で最後に持ち主がいた場所（{"party": id, "pregame": id, "ingame": id}）: 次の確認では、
         #: まず持ち主の居場所を聞かずにすぐそこを聞く。
         self.where: dict[str, str] = {}
@@ -381,8 +386,10 @@ class Riot:
     def live(self) -> dict:
         """今の持ち主のゲームの状態（GLZ）
         : ``{"running": VALORANT が開いているか（None: わからない）, "phase": "menus"、"pregame"（エージェント選択）、"ingame"、""（プレイしていない）, "match": GLZ の試合か None, "party": GLZ のパーティー（メニュー）
-        か None, "names": {puuid: [name, tag]}, "ranks": {puuid: PD の mmr}, "at", "missing", "problem"}``。
-        名前は隠していない（``Incognito`` でない）プレイヤーのものだけ聞く。"""
+        か None, "names": {puuid: [name, tag]}, "ranks": {puuid: PD の mmr}, "mates": 持ち主と同じパーティーのプレイヤー（puuid）,
+        "at", "missing", "problem"}``。
+        名前は隠していない（``Incognito`` でない）プレイヤーと、持ち主と同じパーティーのプレイヤーのものだけ聞く
+        （ゲームも「パーティー外のプレイヤーに名前を隠す」: パーティーの仲間には名前を見せる）。"""
         if self.local is not None and self.local.version != self._local_version:
             # クライアントが変化（試合成立、エージェント選択、ピック）を知らせた: 持っている答えではなく今読む
             self._local_version = self.local.version
@@ -566,14 +573,16 @@ class Riot:
                 "party": None,
                 "names": {},
                 "ranks": {},
+                "mates": [],
                 "at": self.clock(),
                 "missing": [],
                 "problem": "",
             }
         if seen is not None:
             running, loop = True, seen["loop"]
-            if loop == "MENUS" and _UUID.match(seen.get("party") or ""):
-                self.where["party"] = seen["party"]  # すぐ聞く（そして確かめる: 持ち主がそこにいるはず）
+            if _UUID.match(seen.get("party") or ""):
+                # すぐ聞く（そして確かめる: 持ち主がそこにいるはず）。試合中も: パーティーの仲間を知るため
+                self.where["party"] = seen["party"]
         else:
             running, loop = self._session(glz, puuid, headers)
         # 前の確認で覚えた試合が持ち主のものなのは、セッションがまだその段階にいる間だけ
@@ -623,7 +632,7 @@ class Riot:
     def _menus(self, glz: str, puuid: str, headers: dict, saved: dict, quick: bool = False) -> dict:
         """メニューで: 持ち主のパーティー（キュー、マッチング中か、メンバー）。
         ``quick``: セッションが持ち主はメニューにいると言うので、前回の確認のパーティーをすぐ聞く。"""
-        empty = {"phase": "", "match": None, "party": None, "names": {}, "ranks": {}, "at": self.clock()}
+        empty = {"phase": "", "match": None, "party": None, "names": {}, "ranks": {}, "mates": [], "at": self.clock()}
         party = None
         if quick and self.where.get("party"):
             party = self._remembered("party", f"{glz}/parties/v1/parties/{self.where['party']}", headers)
@@ -641,12 +650,14 @@ class Riot:
             party = self._pd("party", f"{glz}/parties/v1/parties/{party_id}", headers)
             self.where["party"] = party_id
         members = [item for item in party.get("Members") or [] if isinstance(item, dict)]
-        names, problem = self._open_names(saved, headers, members)
+        mates = {str(item.get("Subject") or "").lower() for item in members} - {"", puuid}
+        names, problem = self._open_names(saved, headers, members, mates)
         return empty | {
             "running": True,
             "phase": "menus",
             "party": party,
             "names": names,
+            "mates": sorted(mates),
             "missing": ["names"] if problem else [],
             "problem": problem,
         }
@@ -660,14 +671,15 @@ class Riot:
                 raise
             return None
 
-    def _open_names(self, saved: dict, headers: dict, players: list) -> tuple[dict, str]:
-        """名前を隠していないプレイヤーの名前（ほかの人のものは決して聞かない）と、問題。"""
+    def _open_names(self, saved: dict, headers: dict, players: list, mates=frozenset()) -> tuple[dict, str]:
+        """名前を隠していないプレイヤーと、持ち主と同じパーティーのプレイヤー（``mates``）の名前と、問題。
+        ほかの名前を隠している人のものは決して聞かない。"""
         open_names = [
             str(item.get("Subject")).lower()
             for item in players
             if isinstance(item, dict)
             and item.get("Subject")
-            and not (item.get("PlayerIdentity") or {}).get("Incognito")
+            and (not (item.get("PlayerIdentity") or {}).get("Incognito") or str(item.get("Subject")).lower() in mates)
         ]
         try:
             return self._names(saved, headers, open_names), ""
@@ -739,7 +751,8 @@ class Riot:
                 for item in (team.get("Players") if phase == "pregame" else match.get("Players")) or []
                 if isinstance(item, dict)
             ]
-            names, problem = self._open_names(saved, headers, players)
+            mates = self._mates(glz, puuid, headers, match_id, players)
+            names, problem = self._open_names(saved, headers, players, mates)
             ranks = self._ranks(
                 saved, headers, [str(item.get("Subject") or "").lower() for item in players if not item.get("IsCoach")]
             )
@@ -749,6 +762,7 @@ class Riot:
                 "party": None,
                 "names": names,
                 "ranks": ranks,
+                "mates": sorted(mates),
                 "at": self.clock(),
                 "missing": ["names"] if problem else [],
                 "problem": problem,
@@ -759,10 +773,44 @@ class Riot:
             "party": None,
             "names": {},
             "ranks": {},
+            "mates": [],
             "at": self.clock(),
             "missing": [],
             "problem": "",
         }
+
+    def _mates(self, glz: str, puuid: str, headers: dict, match_id: str, players: list) -> set[str]:
+        """試合（エージェント選択、対戦中）で持ち主と同じパーティーにいるプレイヤー（持ち主を除く）。
+        推測ではなく Riot 自身の GLZ のパーティーのメンバーで決める。GLZ の試合にはパーティーが無いので、
+        持ち主のパーティーを試合ごとに 1 回だけ読む（MATES_KEEP）。読めなければ空: 名前は隠したまま。"""
+        key = (puuid, match_id)
+        members = self.mates.get(key)
+        if members is None:
+            found = self._party_members(glz, puuid, headers)
+            members = found if found is not None else frozenset()
+            self.mates.put(key, members, MATES_KEEP if found is not None else MATES_RETRY)
+        in_match = {str(item.get("Subject") or "").lower() for item in players if not item.get("IsCoach")}
+        return (members & in_match) - {puuid}
+
+    def _party_members(self, glz: str, puuid: str, headers: dict) -> frozenset[str] | None:
+        """持ち主の今の GLZ のパーティーのメンバー（puuid）。読めなければ None。"""
+        try:
+            party = None
+            if self.where.get("party"):
+                party = self._remembered("party", f"{glz}/parties/v1/parties/{self.where['party']}", headers)
+            members = (party or {}).get("Members") if isinstance(party, dict) else None
+            subjects = {str(item.get("Subject") or "").lower() for item in members or [] if isinstance(item, dict)}
+            if puuid not in subjects:  # 覚えたパーティーを離れた、またはまだ知らない: 今のパーティーを聞く
+                party_id = self._now("party", f"{glz}/parties/v1/players/{puuid}", headers, "CurrentPartyID")
+                party = self._pd("party", f"{glz}/parties/v1/parties/{party_id}", headers)
+                self.where["party"] = party_id
+                members = party.get("Members") if isinstance(party, dict) else None
+                subjects = {str(item.get("Subject") or "").lower() for item in members or [] if isinstance(item, dict)}
+        except RiotError as error:
+            if error.kind == "expired":
+                raise
+            return None
+        return frozenset(subjects - {""}) if puuid in subjects else None
 
     def _names(self, saved: dict, headers: dict, subjects: list[str]) -> dict:
         """PD の名前サービス: このプレイヤーたちの ``{puuid: [ゲーム名, タグ]}``。

@@ -1020,10 +1020,12 @@ def _buy(loadout: int, players: int) -> str:
     return "eco" if each < 1000 else "semi-eco" if each < 2000 else "semi-buy" if each < 3900 else "full"
 
 
-def _own_match(region: str, match_id: str) -> dict | None:
+def _own_match(region: str, match_id: str) -> tuple[dict, dict] | None:
     """HenrikDev が（まだ）持っていない（試合後数分かかり、届かない試合もある）か答えないときの、
-    持ち主用のゲーム自身のサーバー（PD）からの試合。 PD は全プレイヤーの名前を出すので、
-    持ち主自身の名前だけ残す（pdmatch）。訪問者、連携アカウントが無いとき、Riot が持っていないときは None。"""
+    持ち主用のゲーム自身のサーバー（PD）からの試合: （保存するもの, ページに出すもの）。 PD は全プレイヤーの名前を出すので、
+    保存するものには持ち主自身の名前だけ残す（pdmatch）。ページには持ち主と同じパーティーだった人の名前も出す
+    （ゲームもパーティーの仲間には名前を見せる）。保存した試合は誰でも見られるページ（通算）に使うので、そちらには入れない。
+    訪問者、連携アカウントが無いとき、Riot が持っていないときは None。"""
     if not security.is_owner():
         return None
     riot = current_app.config["VAL_RIOT"]
@@ -1038,7 +1040,9 @@ def _own_match(region: str, match_id: str) -> dict | None:
     raw = pdmatch.to_v4(details, region, maps, puuid, status["name"], status["tag"])
     if not raw or not raw["metadata"].get("is_completed", True):
         return None
-    return slim_match(raw)
+    mates = pdmatch.party_of(details, puuid)
+    shown = pdmatch.to_v4(details, region, maps, puuid, status["name"], status["tag"], mates) if mates else raw
+    return slim_match(raw), slim_match(shown)
 
 
 def _match_page(found: dict, me: str) -> dict:
@@ -1288,21 +1292,27 @@ def register(app: Flask) -> None:
     def match(region: str, match_id: str):
         if region not in REGIONS:
             abort(404)
+        own = False
         try:
             found = current_app.config["VAL_HENRIK"].match(region, match_id)
         except HenrikError as error:
-            found = _own_match(region, match_id)
-            if found is None:
+            both = _own_match(region, match_id)
+            if both is None:
                 status, problem, settings_link = failure_info(error.kind)
                 if error.kind == "notfound":
                     abort(404)
                 return render_template("match.html", problem=problem, settings_link=settings_link), status
-            current_app.config["VAL_ARCHIVE"].keep([found], "riot")
+            kept, found = both
+            own = True
+            current_app.config["VAL_ARCHIVE"].keep([kept], "riot")
         else:
             current_app.config["VAL_ACTIVITY"].seen([found])
             current_app.config["VAL_ARCHIVE"].keep([found], "henrik")
         me = request.args.get("me", "")  # 訪問者がその一覧から来たプレイヤー: その行を目立たせる
-        return render_template("match.html", problem="", **_match_page(found, me))
+        response = make_response(render_template("match.html", problem="", **_match_page(found, me)))
+        if own:  # 持ち主だけの名前（パーティーの仲間）が入っている: どこにも残さない
+            response.headers["Cache-Control"] = "no-store"
+        return response
 
     @app.get("/agents")
     def agents():
