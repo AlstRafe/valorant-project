@@ -3363,4 +3363,9 @@ TEXTS = {
         "zh-TW": "各回合結束時的數字。",
     },
     "確定": {"ko": "확정", "en-GB": "Locked in", "zh-TW": "已鎖定"},
+    "この試合時点のランク": {
+        "ko": "이 경기 시점의 랭크",
+        "en-GB": "Rank at the time of this match",
+        "zh-TW": "這場對戰當時的牌位",
+    },
 }

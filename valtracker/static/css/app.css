@@ -5883,3 +5883,17 @@ form.row {
 .locked-agent .badge {
   position: static;
 }
+
+/* A match's line: the rank (its picture) and RR the player had when it was played */
+.match .score .then {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  margin-top: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.match .score .then img {
+  width: 1.4rem;
+  height: 1.4rem;
+}

@@ -229,6 +229,39 @@ def _peak(mmr: dict | None) -> dict | None:
     return _rank(tier if best == number else {"id": best})
 
 
+def _own_rr(region: str, puuid: str) -> dict:
+    """The RR of the owner's latest competitive matches from the game's own server (PD), when the page is the
+    owner's own account and the owner is looking: HenrikDev's rank lags a match behind right after one ends.
+    {} for anyone else, or when Riot does not answer."""
+    if not puuid or not security.is_owner():
+        return {}
+    riot = current_app.config["VAL_RIOT"]
+    try:
+        if puuid not in {riot.me(), riot.me(game=True)}:
+            return {}
+        return riot.rr_updates(region, puuid)["changes"]
+    except RiotError:
+        return {}
+
+
+def _current(current: dict, rr_changes: dict, sure: bool) -> dict:
+    """The rank and RR now: v3 mmr's ``current``, or what the latest match of the RR history left when ``current``
+    is a match behind (it still says what the match before left; seen right after a match). ``sure``: the history
+    has the game's own record (the owner's page), so its latest match is the truth."""
+    ordered = sorted(
+        (item for item in rr_changes.values() if item.get("at") and item.get("tier", 0) > 2),
+        key=lambda item: -item["at"],
+    )
+    if not ordered:
+        return current
+    now = (_tier_number(current.get("tier")), current.get("rr"))
+    latest = (ordered[0]["tier"], ordered[0]["rr"])
+    before = (ordered[1]["tier"], ordered[1]["rr"]) if len(ordered) > 1 else None
+    if now == latest or not (sure or (now[0] > 2 and now == before)):
+        return current
+    return current | {"tier": {"id": latest[0]}, "rr": latest[1], "last_change": ordered[0]["change"]}
+
+
 def _act_peak(mmr: dict | None, rank: dict | None) -> dict | None:
     """The player's best rank of this act: the latest act's best win and final rank, and the rank now. Only for
     a player with a rank now: without one the latest act played is an earlier act."""
@@ -296,6 +329,7 @@ def _row(match: dict, player: dict, rr_changes: dict) -> dict:
         "result": result,
         "placing": stats.placing(match, player),
         "rr": (rr_changes.get(match_id) or {}).get("change"),
+        "then": _then(player, rr_changes.get(match_id)),
         "line": stats.line(player, rounds, adv),
         "adv": adv,
         "extra": rounds_module.extras(match, place) if result["rounds"] else {},
@@ -310,6 +344,15 @@ def _row(match: dict, player: dict, rr_changes: dict) -> dict:
         "queue_id": str((metadata.get("queue") or {}).get("id") or "").lower(),
         "tier": _tier_number(player.get("tier")),
     }
+
+
+def _then(player: dict, moved: dict | None) -> dict | None:
+    """The player's rank when the match was played, for its line in the list: the rank and RR the match left
+    them at (the RR history), or without it the rank they played the match at (no RR). None without a rank."""
+    tier, rr = _tier_number((moved or {}).get("tier")), (moved or {}).get("rr")
+    if tier <= 2:
+        tier, rr = _tier_number(player.get("tier")), None
+    return {"rank": _rank({"id": tier}), "rr": rr} if tier > 2 else None
 
 
 def _tier_number(tier) -> int:
@@ -671,6 +714,8 @@ def _player(
         rr_changes = asked_rr.result() if asked_rr else {}
     except HenrikError:
         rr_changes = {}  # the list only goes without the RR each match gave
+    own = _own_rr(region, str(account.get("puuid") or "").lower())
+    rr_changes = rr_changes | own  # the game's own record of the owner's matches: there before HenrikDev's
     rows, matches_problem, spots = [], "", {}
     try:
         listed = asked_matches.result()
@@ -695,7 +740,7 @@ def _player(
     pages = max(1, math.ceil(len(rows) / LIFE_PAGE)) if life else 1
     page = min(max(1, page), pages)
     shown = rows[(page - 1) * LIFE_PAGE : page * LIFE_PAGE] if life else rows
-    current = (mmr or {}).get("current") or {}
+    current = _current((mmr or {}).get("current") or {}, rr_changes, bool(own))
     rank = _rank(current.get("tier")) if current else None
     summary = stats.summary(rows)
     today = datetime.now(stats.JST).date()
@@ -878,6 +923,7 @@ def _thin_row(line: dict, region: str, rr_changes: dict) -> dict:
         "result": {"won": line.get("won"), "us": line.get("us") or 0, "them": line.get("them") or 0, "rounds": True},
         "placing": {"place": 0, "of": 0, "mvp": ""},
         "rr": (rr_changes.get(match_id) or {}).get("change"),
+        "then": _then({"tier": line.get("tier")}, rr_changes.get(match_id)),
         "line": stats.line(player, rounds),
         "adv": {},
         "extra": {},

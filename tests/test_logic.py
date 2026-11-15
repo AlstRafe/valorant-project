@@ -463,6 +463,26 @@ class TrackerNumbersTest(unittest.TestCase):
         self.assertEqual((summary["weapons"][0]["far"], summary["weapons"][0]["longest"]), (30, 50))
 
 
+class CurrentRankTest(unittest.TestCase):
+    """The rank now, when HenrikDev's own "current" is a match behind (seen right after a match)."""
+
+    def test_the_latest_match_of_the_history(self):
+        from valtracker.views import _current
+
+        history = {
+            "new": {"at": 200, "tier": 15, "rr": 60, "change": 18},
+            "old": {"at": 100, "tier": 15, "rr": 42, "change": -12},
+        }
+        behind = {"tier": {"id": 15}, "rr": 42, "last_change": -12}
+        self.assertEqual(_current(behind, history, False), behind | {"rr": 60, "last_change": 18})
+        same = {"tier": {"id": 15}, "rr": 60, "last_change": 18}
+        self.assertIs(_current(same, history, False), same)
+        other = {"tier": {"id": 15}, "rr": 55}  # neither: something the history does not know, left alone
+        self.assertIs(_current(other, history, False), other)
+        self.assertEqual(_current(other, history, True)["rr"], 60, "the game's own record is the truth")
+        self.assertIs(_current(behind, {}, True), behind)
+
+
 class HostingTest(unittest.TestCase):
     def test_site(self):
         made = site(mount="/val", host={"port": 5000})

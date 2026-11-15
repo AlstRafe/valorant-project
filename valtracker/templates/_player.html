@@ -293,6 +293,7 @@
 {% elif row.result.won is none %}<strong>–</strong>
 {% else %}<strong>{% if outcome == 'win' %}{{ t('勝利') }}{% else %}{{ t('敗北') }}{% endif %}</strong>{% endif %}
 <small>{% if not row.result.rounds and row.result.won is none %}{{ t('{count}人中', count=row.placing.of) }}{% elif row.result.rounds %}{% if outcome == 'win' %}{{ t('勝利') }}{% elif outcome == 'loss' %}{{ t('敗北') }}{% else %}{{ t('引き分け') }}{% endif %}{% endif %}{% if row.rr is not none %}{% if row.result.rounds %} · {% endif %}<span class="{{ 'up' if row.rr > 0 else ('down' if row.rr < 0 else '') }}">{{ '%+d'|format(row.rr) }} RR</span>{% endif %}</small>
+{% if row.then %}<small class="then" title="{{ t('この試合時点のランク') }}">{% if row.then.rank.icon %}<img src="{{ media(row.then.rank.icon) }}" alt="{{ row.then.rank.name }}" width="22" height="22" loading="lazy">{% else %}{{ row.then.rank.name }}{% endif %}{% if row.then.rr is not none %}<span>{{ row.then.rr }} RR</span>{% endif %}</small>{% endif %}
 </span>
 <span class="cells">
 <span class="cell"><small>K / D / A</small><strong>{{ row.line.kills }} / {{ row.line.deaths }} / {{ row.line.assists }}</strong></span>

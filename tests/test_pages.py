@@ -248,6 +248,8 @@ class PagesTest(unittest.TestCase):
         self.assertEqual(old.count('"></span>') - old.count(' won"'), 4, "5 wins: 4 places left")
         self.assertIn('<span class="up">+18 RR</span>', text)  # each competitive match's RR
         self.assertIn('<span class="down">-15 RR</span>', text)
+        # each match's line: the rank (its picture, or its name without one) and the RR it left the player at
+        self.assertRegex(text, r'<small class="then" title="この試合時点のランク">.*?<span>\d+ RR</span></small>')
         self.assertIn('<span class="mvp match" title="マッチ MVP">MVP', text)  # the best combat score of the match
         self.assertEqual(text.count('class="mvp match'), 1)
         self.assertIn('<span class="mvp place" title="4人中 3位">3位</span>', text)  # where the loss left the player
