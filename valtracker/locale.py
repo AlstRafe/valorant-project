@@ -3397,4 +3397,9 @@ TEXTS = {
         "en-GB": "Level {level}, numbers fit the rank",
         "zh-TW": "等級 {level}，成績與牌位相符",
     },
+    "ランク戦 {count} アクト・ランクに見合った成績": {
+        "ko": "경쟁전 {count}막, 랭크에 맞는 성적",
+        "en-GB": "{count} acts of ranked, numbers fit the rank",
+        "zh-TW": "競技 {count} 幕，成績與牌位相符",
+    },
 }
