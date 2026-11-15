@@ -1,5 +1,5 @@
 """Two players side by side (/compare?a=Name%23TAG&b=Name%23TAG): their ranks and what their recent matches of
-one mode say, the better of each line marked. Each player is read as on their own page (views._player), so a
+one mode say, the better of each line marked. Each player is read as on their own page (views.player_page), so a
 player just looked at costs nothing more."""
 
 from __future__ import annotations
@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, url_for
 
 from valtracker.henrik import MODES as HENRIK_MODES
 from valtracker.henrik import RECENT, split_riot_id
-from valtracker.views import MODE_FILTER, QUEUES, _from_link, _player, _t
+from valtracker.views import MODE_FILTER, QUEUES, from_link, player_page, tr
 
 #: The modes worth comparing: those with teams that win or lose (not Deathmatch).
 MODES = tuple(mode for mode in MODE_FILTER if mode and mode != "deathmatch")
@@ -35,12 +35,12 @@ LINES = (
 def _side(asked: str, mode: str, span: str = "") -> dict:
     """One player: ``{"asked", "found": the player page's values or None, "problem"}``; ``span`` "all": over
     their lifetime (views._lifetime), "act": over the act being played."""
-    asked = _from_link(" ".join(asked.split()))[:40]
+    asked = from_link(" ".join(asked.split()))[:40]
     parts = split_riot_id(asked)
     if not parts:
-        problem = _t("「名前#タグ」の形式で入力してください（例: Name#JP1）。") if asked else ""
+        problem = tr("「名前#タグ」の形式で入力してください（例: Name#JP1）。") if asked else ""
         return {"asked": asked, "found": None, "problem": problem, "status": 400 if asked else 200}
-    values, status = _player(parts[0], parts[1], mode, span=span)
+    values, status = player_page(parts[0], parts[1], mode, span=span)
     if not values.get("account"):
         return {"asked": asked, "found": None, "problem": values.get("problem") or "", "status": status}
     return {"asked": f"{values['name']}#{values['tag']}", "found": values, "problem": "", "status": 200}
@@ -62,25 +62,25 @@ def _rows(found: list[dict]) -> list[dict]:
     peaks = [_number((values.get("peak") or {}).get("tier")) for values in found]
     rows = [
         {
-            "name": _t("現在のランク"),
+            "name": tr("現在のランク"),
             "kind": "rank",
             "values": [v.get("rank") for v in found],
             "best": _best(tiers, True),
         },
         {
-            "name": _t("今アクト最高"),
+            "name": tr("今アクト最高"),
             "kind": "rank",
             "values": [v.get("act_peak") for v in found],
             "best": _best([_number((values.get("act_peak") or {}).get("tier")) for values in found], True),
         },
         {
-            "name": _t("通算最高"),
+            "name": tr("通算最高"),
             "kind": "rank",
             "values": [v.get("peak") for v in found],
             "best": _best(peaks, True),
         },
         {
-            "name": _t("アカウントレベル"),
+            "name": tr("アカウントレベル"),
             "kind": "number",
             "values": [_number((v.get("account") or {}).get("account_level")) for v in found],
             "unit": "",
@@ -94,7 +94,7 @@ def _rows(found: list[dict]) -> list[dict]:
             continue
         rows.append(
             {
-                "name": _t(name),
+                "name": tr(name),
                 "kind": "number",
                 "values": numbers,
                 "unit": unit,
@@ -104,7 +104,7 @@ def _rows(found: list[dict]) -> list[dict]:
         )
     rows.append(
         {
-            "name": _t("よく使うエージェント"),
+            "name": tr("よく使うエージェント"),
             "kind": "agents",
             "values": [summary.get("agents") or [] for summary in summaries],
             "best": None,
@@ -132,12 +132,12 @@ def page() -> tuple[dict, int]:
         "wins": wins,
         "recent": RECENT,
         "mode": mode,
-        "modes": [{"key": key, "name": _t(QUEUES[HENRIK_MODES[key]])} for key in MODES],
+        "modes": [{"key": key, "name": tr(QUEUES[HENRIK_MODES[key]])} for key in MODES],
         "span": span,
         "spans": [
-            {"key": "", "name": _t("直近 15 試合")},
-            {"key": "act", "name": _t("今のアクト")},
-            {"key": "all", "name": _t("通算")},
+            {"key": "", "name": tr("直近 15 試合")},
+            {"key": "act", "name": tr("今のアクト")},
+            {"key": "all", "name": tr("通算")},
         ],
         "swap_url": url_for(
             "compare",

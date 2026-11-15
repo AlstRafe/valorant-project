@@ -33,12 +33,12 @@ from valtracker import progress as progress_page
 from valtracker.activity import LINE_QUEUES
 from valtracker.collection import CHARM, STARTERS
 from valtracker.content import media_path
-from valtracker.henrik import REGIONS, _slim_match
+from valtracker.henrik import REGIONS, slim_match
 from valtracker.riot import ITEM_TYPES, RiotError
 from valtracker.stats import JST
-from valtracker.tools import _when
+from valtracker.tools import moment_info
 from valtracker.util import lower_id
-from valtracker.views import QUEUES, _row, _score, _t, riot_failure
+from valtracker.views import QUEUES, match_row, match_score, riot_failure, tr
 
 #: What can be worn from the collection page -> where the loadout keeps it.
 #: How long /live/next waits for the Riot Client's next event (seconds) before it answers with nothing new.
@@ -103,7 +103,7 @@ EQUIP_FAILURES = {
 
 def _queue_name(key: str) -> str:
     key = key.lower()
-    return _t(QUEUES[key]) if key in QUEUES else key
+    return tr(QUEUES[key]) if key in QUEUES else key
 
 
 def _agents_on_the_map(map_id: str, queue: str) -> dict:
@@ -158,7 +158,7 @@ def _last_played() -> str:
 
 def _last_result(match_id: str) -> dict | None:
     """The owner's last match from the game's own server, the moment it ends (its page here waits for HenrikDev,
-    which takes minutes): its line as a player's list shows one (views._row), with the RR it moved. None while
+    which takes minutes): its line as a player's list shows one (views.match_row), with the RR it moved. None while
     Riot does not have it, or when it is not a match with a record (the Range). Riot is asked for a match a few
     times at most, then no more; the match goes into the owner's archive (their lifetime numbers) at once."""
     if not match_id:
@@ -187,7 +187,7 @@ def _last_result(match_id: str) -> dict | None:
         raw = pdmatch.to_v4(details, region, maps, puuid, status["name"], status["tag"])
         if not raw or not raw["metadata"].get("is_completed", True):
             return None  # not a finished match (yet)
-        match = kept["match"] = _slim_match(raw)
+        match = kept["match"] = slim_match(raw)
         archive.keep([match], "riot")
     match = kept["match"]
     player = next((item for item in match.get("players") or [] if item.get("puuid") == puuid), None)
@@ -203,8 +203,8 @@ def _last_result(match_id: str) -> dict | None:
             kept["rr"] = riot.rr_updates(region, puuid)["changes"].get(match_id)
         if kept["rr"]:
             archive.keep_rr(puuid, {match_id: kept["rr"]})
-    row = _row(match, player, {match_id: kept["rr"]} if kept["rr"] else {})
-    row["score"] = _score(row["line"], row["rounds"], row["queue_id"], row["tier"], row["result"]["won"])
+    row = match_row(match, player, {match_id: kept["rr"]} if kept["rr"] else {})
+    row["score"] = match_score(row["line"], row["rounds"], row["queue_id"], row["tier"], row["result"]["won"])
     return row
 
 
@@ -377,19 +377,19 @@ def update_state() -> dict:
     now = updater.state()
     state = now["state"]
     if state == "failed":
-        words = _t(UPDATE_FAILURES.get(now["problem"]) or UPDATE_FAILURES["network"])
+        words = tr(UPDATE_FAILURES.get(now["problem"]) or UPDATE_FAILURES["network"])
     elif state == "downloading":
         percent = round(100 * now["done"] / now["total"]) if now["total"] else 0
-        words = _t(UPDATE_SAID["downloading"], percent=percent)
+        words = tr(UPDATE_SAID["downloading"], percent=percent)
     else:
-        words = _t(UPDATE_SAID[state]) if state in UPDATE_SAID else ""
+        words = tr(UPDATE_SAID[state]) if state in UPDATE_SAID else ""
     return {
         "possible": True,
         "state": state,
         "busy": state in ("checking", "downloading", "installing"),
         "words": words,
         "failed": state == "failed",
-        "button": _t(UPDATE_BUTTONS["ready" if state == "ready" else "start"]),
+        "button": tr(UPDATE_BUTTONS["ready" if state == "ready" else "start"]),
     }
 
 
@@ -402,7 +402,7 @@ def register(app: Flask) -> None:
         except RiotError as error:
             values = _problem(error)
             return render_template("progress.html", **values), 503 if error.kind in ("busy", "down") else 200
-        values = progress_page.page(found, current_app.config["VAL_CONTENT"], g.lang, time.time(), _when)
+        values = progress_page.page(found, current_app.config["VAL_CONTENT"], g.lang, time.time(), moment_info)
         return render_template("progress.html", **values)
 
     @app.get("/live")
@@ -436,7 +436,7 @@ def register(app: Flask) -> None:
         last = _last_match(found)
         said = session.pop("live_said", "")  # once: the page is asked again every few seconds
         words, worked = LIVE_SAID.get(said) or (riot_failure(said) if said else "", False)
-        words = _t(words) if said in LIVE_SAID else words
+        words = tr(words) if said in LIVE_SAID else words
         return render_template(
             "live.html",
             **values,
@@ -661,7 +661,7 @@ def register(app: Flask) -> None:
                 loadout = current_app.config["VAL_RIOT"].loadout()
             except RiotError as error:
                 return back(error.kind, error.detail)
-            name = " ".join(request.form.get("name", "").split())[:30] or _t("セット {number}", number=len(sets) + 1)
+            name = " ".join(request.form.get("name", "").split())[:30] or tr("セット {number}", number=len(sets) + 1)
             when = datetime.now(JST).isoformat(timespec="minutes")
             saved = {"id": secrets.token_hex(8), "name": name, "at": when, "account": me}
             store.save(sets=[*every, saved | owned_items.snapshot(loadout)])
@@ -711,7 +711,7 @@ def equip_said(kind: str) -> tuple[str, bool]:
     if not kind:
         return "", False
     if kind in EQUIP_SAID:
-        return _t(EQUIP_SAID[kind]), True
+        return tr(EQUIP_SAID[kind]), True
     if kind in EQUIP_FAILURES:
-        return _t(EQUIP_FAILURES[kind], count=owned_items.MAX_SETS), False
+        return tr(EQUIP_FAILURES[kind], count=owned_items.MAX_SETS), False
     return riot_failure(kind), False

@@ -30,7 +30,7 @@ from valtracker import heatmap, i18n, pc, pdmatch, release, score, security, smu
 from valtracker import rounds as rounds_module
 from valtracker.activity import BANDS, LINE_QUEUES, LINE_STATS, RANKS_ENOUGH
 from valtracker.content import todays_tier
-from valtracker.henrik import FRESH_AFTER, MODES, NAME, REGIONS, HenrikError, _slim_match, shows_rr, split_riot_id
+from valtracker.henrik import FRESH_AFTER, MODES, NAME, REGIONS, HenrikError, shows_rr, slim_match, split_riot_id
 from valtracker.media import kind as media_kind
 from valtracker.pdmatch import MODE_TYPES
 from valtracker.riot import ACCOUNTS_MAX, AUTHORIZE, RiotError
@@ -133,7 +133,7 @@ RIOT_FAILURES = {
 }
 
 
-def _t(ja: str, **values) -> str:
+def tr(ja: str, **values) -> str:
     return i18n.text(getattr(g, "lang", i18n.DEFAULT), ja, **values)
 
 
@@ -141,21 +141,21 @@ def riot_failure(kind: str) -> str:
     """Why the owner's Riot account could not be read (RiotError's kind), in the page's language."""
     if kind == "nologin" and current_app.config.get("VAL_LOCAL") is not None:
         kind = "noclient"
-    return _t(RIOT_FAILURES.get(kind, RIOT_FAILURES["down"]), count=ACCOUNTS_MAX)
+    return tr(RIOT_FAILURES.get(kind, RIOT_FAILURES["down"]), count=ACCOUNTS_MAX)
 
 
-def _failure(kind: str) -> tuple[int, str, bool]:
+def failure_info(kind: str) -> tuple[int, str, bool]:
     """(status, the words in the visitor's language, whether a link to the settings helps)."""
     status, visitor, owner = FAILURES.get(kind, FAILURES["down"])
     if owner and security.is_owner():
-        return status, _t(owner), kind in ("nokey", "badkey")
-    return status, _t(visitor), False
+        return status, tr(owner), kind in ("nokey", "badkey")
+    return status, tr(visitor), False
 
 
 def cluster(name) -> str:
     """A server's name in the visitor's language."""
     name = str(name or "")
-    return _t(CLUSTERS[name]) if name in CLUSTERS else name
+    return tr(CLUSTERS[name]) if name in CLUSTERS else name
 
 
 #: A profile's address pasted into the search instead of a Riot ID: tracker.gg's, and this site's own.
@@ -165,7 +165,7 @@ PROFILE_LINKS = (
 )
 
 
-def _from_link(text: str) -> str:
+def from_link(text: str) -> str:
     """``Name#TAG`` out of a pasted profile address; anything else as it is."""
     if "/" not in text:
         return text
@@ -185,19 +185,19 @@ def act_left() -> dict | None:
     if seconds <= 0:
         return None
     if seconds >= 2 * 86400:
-        text = _t("{act} 終了まであと {days} 日", act=found["name"], days=int(seconds // 86400))
+        text = tr("{act} 終了まであと {days} 日", act=found["name"], days=int(seconds // 86400))
     else:
-        text = _t("{act} 終了まであと {hours} 時間", act=found["name"], hours=max(1, math.ceil(seconds / 3600)))
+        text = tr("{act} 終了まであと {hours} 時間", act=found["name"], hours=max(1, math.ceil(seconds / 3600)))
     return {"name": found["name"], "text": text, "ends": found["ends"]}
 
 
 def _queue(metadata: dict) -> str:
     queue = metadata.get("queue") or {}
     key = str(queue.get("id") or "").lower()
-    return _t(QUEUES[key]) if key in QUEUES else str(queue.get("name") or key or "")
+    return tr(QUEUES[key]) if key in QUEUES else str(queue.get("name") or key or "")
 
 
-def _rank(tier: dict | None, old: bool = False) -> dict:
+def rank_info(tier: dict | None, old: bool = False) -> dict:
     """HenrikDev's ``{"id": 21, "name": "Ascendant 1"}`` in the visitor's language, with its picture."""
     tier = tier or {}
     try:
@@ -209,7 +209,7 @@ def _rank(tier: dict | None, old: bool = False) -> dict:
     return {"tier": number, "name": name.title() if name.isupper() else name, "icon": known.get("smallIcon")}
 
 
-def _peak(mmr: dict | None) -> dict | None:
+def peak_info(mmr: dict | None) -> dict | None:
     """The player's best rank ever, over every act: v3 mmr's ``peak``, or a higher one among the acts' best wins
     and final ranks. In today's numbers: an act before Episode 5 had no Ascendant (its Immortal 1 was 21, today's
     24)."""
@@ -226,7 +226,7 @@ def _peak(mmr: dict | None) -> dict | None:
         )
     if best <= 2:
         return None
-    return _rank(tier if best == number else {"id": best})
+    return rank_info(tier if best == number else {"id": best})
 
 
 def _own_rr(region: str, puuid: str) -> dict:
@@ -270,10 +270,10 @@ def _act_peak(mmr: dict | None, rank: dict | None) -> dict | None:
         return None
     act = seasons[0]
     best = todays_tier(max([act.get("end_tier") or 0, *(act.get("best") or [])[:1]]), bool(act.get("old")))
-    return rank if best <= rank["tier"] else _rank({"id": best})
+    return rank if best <= rank["tier"] else rank_info({"id": best})
 
 
-def _agent(agent: dict | None) -> dict:
+def agent_info(agent: dict | None) -> dict:
     agent = agent or {}
     known = current_app.config["VAL_CONTENT"].agent_index(g.lang).get(str(agent.get("id") or "").lower()) or {}
     role = known.get("role") if isinstance(known.get("role"), dict) else {}
@@ -301,12 +301,12 @@ def _map(metadata: dict) -> dict:
     }
 
 
-def _row(match: dict, player: dict, rr_changes: dict) -> dict:
+def match_row(match: dict, player: dict, rr_changes: dict) -> dict:
     """One match in a player's list."""
     metadata = match.get("metadata") or {}
     match_id = str(metadata.get("match_id") or "")
     rounds = stats.rounds_played(match)
-    agent = _agent(player.get("agent"))
+    agent = agent_info(player.get("agent"))
     moment = stats.started(match)
     adv = stats.advanced(match, player)
     result = stats.team_result(match, str(player.get("team_id") or ""))
@@ -352,7 +352,7 @@ def _then(player: dict, moved: dict | None) -> dict | None:
     tier, rr = _tier_number((moved or {}).get("tier")), (moved or {}).get("rr")
     if tier <= 2:
         tier, rr = _tier_number(player.get("tier")), None
-    return {"rank": _rank({"id": tier}), "rr": rr} if tier > 2 else None
+    return {"rank": rank_info({"id": tier}), "rr": rr} if tier > 2 else None
 
 
 def _tier_number(tier) -> int:
@@ -367,14 +367,14 @@ def _band_name(name: str) -> str:
     """A rank band (activity.BANDS) in the visitor's words: "Platinum – Diamond"; every band for ""."""
     for key, low, high in BANDS:
         if key == name:
-            first, last = (_family(_rank({"id": tier})["name"]) for tier in (low, high))
+            first, last = (rank_family(rank_info({"id": tier})["name"]) for tier in (low, high))
             return first if first == last else f"{first} – {last}"
-    return _t("すべてのランク")
+    return tr("すべてのランク")
 
 
-def _family(name: str) -> str:
+def rank_family(name: str) -> str:
     """A rank's name without its number: "Gold 2" -> "Gold"."""
-    return re.sub(r"\s*\d+$", "", name)
+    return re.sub(r"\s*\d+$", "", name) or name
 
 
 def share_text(value: float) -> str:
@@ -392,7 +392,7 @@ def rank_top(region: str, tier: int) -> str | None:
     return share_text(100 * above / found["lines"])
 
 
-def _score(line: dict, rounds: int, queue: str, tier: int, won) -> dict | None:
+def match_score(line: dict, rounds: int, queue: str, tier: int, won) -> dict | None:
     """A match's score (score.py) against the lines of the player's rank band: ``{"value", "grade", "standings":
     {stat: 0..1}, "lines", "band"}``, or None (another mode, a remake, too few lines seen yet)."""
     if queue not in LINE_QUEUES or rounds < 5:
@@ -418,7 +418,7 @@ def _scores(rows: list[dict]) -> dict | None:
         row["score"] = (
             None
             if row.get("thin")
-            else _score(row["line"], row["rounds"], row["queue_id"], row["tier"], row["result"]["won"])
+            else match_score(row["line"], row["rounds"], row["queue_id"], row["tier"], row["result"]["won"])
         )
     scored = [row for row in rows if row["score"]]
     if not scored:
@@ -505,7 +505,7 @@ def _lobby_rows(compared: list[dict]) -> list[dict]:
     for item in compared:
         label, number = LOBBY_LABELS[item["key"]]
         found.append(
-            dict(item, label=_t(label), mine_text=number.format(item["mine"]), lobby_text=number.format(item["lobby"]))
+            dict(item, label=tr(label), mine_text=number.format(item["mine"]), lobby_text=number.format(item["lobby"]))
         )
     best = max(found, key=lambda item: item["score"], default=None)
     worst = min(found, key=lambda item: item["score"], default=None)
@@ -557,7 +557,7 @@ def _rr_drawing(points: list[dict], width: int, height: int, most: int) -> dict:
             "x": round(pad + number * step, 1),
             "y": y(item["elo"]),
             "change": item["change"],
-            "rank": _rank({"id": item["tier"]}),
+            "rank": rank_info({"id": item["tier"]}),
             "rr": item["rr"],
         }
         for number, item in enumerate(points)
@@ -566,7 +566,7 @@ def _rr_drawing(points: list[dict], width: int, height: int, most: int) -> dict:
     gap = max(1, math.ceil(len(every) / most))
     dots = [dot for number, dot in enumerate(every) if number % gap == 0 or number == len(every) - 1]
     lines = [
-        {"y": y(elo), "rank": _rank({"id": elo // 100 + 3})}
+        {"y": y(elo), "rank": rank_info({"id": elo // 100 + 3})}
         for elo in range(int(low // 100 + 1) * 100, int(high) + 1, 100)
     ]
     return {
@@ -591,7 +591,7 @@ def _next_rank(rank: dict | None, rr, rr_changes: dict) -> dict | None:
     per_match = (sum(gains) - sum(losses)) / len(changes) if changes else 0
     return {
         "need": need,
-        "rank": _rank({"id": rank["tier"] + 1}),
+        "rank": rank_info({"id": rank["tier"] + 1}),
         "gain": gain,
         "loss": round(sum(losses) / len(losses)) if losses else 0,
         "wins": -(-need // gain) if gain else None,
@@ -626,7 +626,7 @@ def _mode() -> str:
 
 def _modes(mode: str) -> list[dict]:
     return [
-        {"key": key, "name": _t(QUEUES[MODES[key]]) if key else _t("すべて"), "current": key == mode}
+        {"key": key, "name": tr(QUEUES[MODES[key]]) if key else tr("すべて"), "current": key == mode}
         for key in MODE_FILTER
     ]
 
@@ -676,7 +676,7 @@ def _acts(seasons: list) -> list[dict]:
                 "games": games,
                 "wins": wins,
                 "win_rate": round(100 * wins / games) if games else 0,
-                "end": _rank({"id": season.get("end_tier")}, old=season.get("old", False)),
+                "end": rank_info({"id": season.get("end_tier")}, old=season.get("old", False)),
                 "board": season.get("board", 0),
                 "rows": rows,
                 "shown": len(season.get("best") or []),
@@ -685,7 +685,7 @@ def _acts(seasons: list) -> list[dict]:
     return acts
 
 
-def _player(
+def player_page(
     name: str, tag: str, mode: str = "", fresh: bool = False, span: str = "", page: int = 1, act: str = ""
 ) -> tuple[dict, int]:
     """What the player page shows, and its HTTP status. The account comes first (its region is needed); then
@@ -697,7 +697,7 @@ def _player(
     try:
         account = henrik.account(name, tag)
     except HenrikError as error:
-        status, problem, settings_link = _failure(error.kind)
+        status, problem, settings_link = failure_info(error.kind)
         return {"name": name, "tag": tag, "problem": problem, "settings_link": settings_link, "account": None}, status
     region = str(account.get("region") or "ap")
     name, tag = str(account.get("name") or name), str(account.get("tag") or tag)
@@ -725,10 +725,10 @@ def _player(
         for match in listed:
             found = stats.find_player(match, str(account.get("puuid") or ""), name, tag)
             if found:
-                rows.append(_row(match, found, rr_changes))
+                rows.append(match_row(match, found, rr_changes))
                 _add_spots(spots, match, found)
     except HenrikError as error:
-        matches_problem = _failure(error.kind)[1]
+        matches_problem = failure_info(error.kind)[1]
     life, heat_maps, rr_all = None, None, rr_changes
     puuid = str(account.get("puuid") or "").lower()
     window = _act_window(act) if span == "act" else None
@@ -742,7 +742,7 @@ def _player(
     page = min(max(1, page), pages)
     shown = rows[(page - 1) * LIFE_PAGE : page * LIFE_PAGE] if life else rows
     current = _current((mmr or {}).get("current") or {}, rr_changes, bool(own))
-    rank = _rank(current.get("tier")) if current else None
+    rank = rank_info(current.get("tier")) if current else None
     summary = stats.summary(rows)
     today = datetime.now(stats.JST).date()
     played_today = [row for row in rows if row["started"] and row["started"].astimezone(stats.JST).date() == today]
@@ -787,7 +787,7 @@ def _player(
         "act": act_left() if rank else None,
         "rr_chart": _rr_chart(rr_all) if shows_rr(mode) else None,
         "last_change": current.get("last_change"),
-        "peak": _peak(mmr),
+        "peak": peak_info(mmr),
         "act_peak": _act_peak(mmr, rank),
         "smurf": guessed,
         "standing": _standing(current),
@@ -867,7 +867,7 @@ def _lifetime(
                 continue
             found = stats.find_player(match, puuid)
             if found:
-                row = _row(match, found, rr_all)
+                row = match_row(match, found, rr_all)
                 # Riot's records name no one but the player (pdmatch.py): their party is left out
                 row["mates"] = [mate for mate in row["mates"] if mate["name"] and mate["tag"]]
                 rows.append(row)
@@ -916,12 +916,12 @@ def _thin_row(line: dict, region: str, rr_changes: dict) -> dict:
             "damage": {"dealt": line.get("made"), "received": line.get("received")},
         }
     }
-    agent = _agent({"id": line.get("agent")})
+    agent = agent_info({"id": line.get("agent")})
     return {
         "id": match_id,
         "region": region,
         "map": _map({"map": {"id": line.get("map_id") or "", "name": line.get("map") or ""}}),
-        "queue": _t(QUEUES[queue_id]) if queue_id in QUEUES else queue_id,
+        "queue": tr(QUEUES[queue_id]) if queue_id in QUEUES else queue_id,
         "server": cluster(line.get("cluster")),
         "started": moment,
         "when": i18n.when(g.lang, moment) if moment else "",
@@ -1045,7 +1045,7 @@ def _own_match(region: str, match_id: str) -> dict | None:
     raw = pdmatch.to_v4(details, region, maps, puuid, status["name"], status["tag"])
     if not raw or not raw["metadata"].get("is_completed", True):
         return None
-    return _slim_match(raw)
+    return slim_match(raw)
 
 
 def _match_page(found: dict, me: str) -> dict:
@@ -1074,8 +1074,8 @@ def _match_page(found: dict, me: str) -> dict:
             "name": str(player.get("name") or ""),
             "tag": str(player.get("tag") or ""),
             "team": str(player.get("team_id") or ""),
-            "agent": _agent(player.get("agent")),
-            "rank": _rank(player.get("tier")),
+            "agent": agent_info(player.get("agent")),
+            "rank": rank_info(player.get("tier")),
             "line": stats.line(player, rounds, stats.advanced(found, player)),
             "tier": _tier_number(player.get("tier")),
             "won": stats.team_result(found, str(player.get("team_id") or ""))["won"],
@@ -1088,7 +1088,7 @@ def _match_page(found: dict, me: str) -> dict:
 
     queue_id = str((metadata.get("queue") or {}).get("id") or "").lower()
     for person in people:
-        person["score"] = _score(person["line"], rounds, queue_id, person["tier"], person["won"])
+        person["score"] = match_score(person["line"], rounds, queue_id, person["tier"], person["won"])
 
     def lines(team_id: str | None) -> list[dict]:
         listed = [person for person in people if team_id is None or person["team"] == team_id]
@@ -1136,7 +1136,7 @@ def _match_page(found: dict, me: str) -> dict:
                 "winner": item["w"],
                 "won": won,
                 "end": item["e"],
-                "end_words": _t(ENDINGS[item["e"]]) if item["e"] in ENDINGS else "",
+                "end_words": tr(ENDINGS[item["e"]]) if item["e"] in ENDINGS else "",
                 "ceremony": item["c"],
                 "site": item["s"],
                 "attack": item["a"],
@@ -1159,7 +1159,7 @@ def _match_page(found: dict, me: str) -> dict:
                 duels.append({"person": person, "took": took, "lost": lost})
         duels.sort(key=lambda duel: (-(duel["took"] - duel["lost"]), -duel["took"]))
     tiers = [person["rank"]["tier"] for person in people if person["rank"]["tier"] > 2]
-    average = _rank({"id": round(sum(tiers) / len(tiers))}) if tiers else None
+    average = rank_info({"id": round(sum(tiers) / len(tiers))}) if tiers else None
     # the player's numbers as they stood after each round (the game shows none of this while it is played)
     course = []
     if mine >= 0 and digest.get("kills") and digest.get("rounds"):
@@ -1209,7 +1209,7 @@ def _match_page(found: dict, me: str) -> dict:
         "average": average,
         "me": people[mine] if mine >= 0 else None,
         "parties": bool(parties),
-        "buy_words": {key: _t(words) for key, words in BUYS.items()},
+        "buy_words": {key: tr(words) for key, words in BUYS.items()},
     }
 
 
@@ -1233,7 +1233,7 @@ def register(app: Flask) -> None:
 
     @app.get("/search")
     def search():
-        query = _from_link(request.args.get("q", "").strip())[:40]
+        query = from_link(request.args.get("q", "").strip())[:40]
         found = split_riot_id(query)
         if not found:
             # a name without its tag: say what is missing, with that name for the example; "Name JP1" (a space
@@ -1243,9 +1243,9 @@ def register(app: Flask) -> None:
             guess = split_riot_id(f"{head}#{last}") if head.strip() else None
             if name_only:
                 example = "#".join(guess) if guess else f"{name_only}#JP1"
-                problem = _t("タグも入力してください。例: {example}", example=example)
+                problem = tr("タグも入力してください。例: {example}", example=example)
             else:
-                problem = _t("「名前#タグ」の形式で入力してください（例: Name#JP1）。") if query else ""
+                problem = tr("「名前#タグ」の形式で入力してください（例: Name#JP1）。") if query else ""
             values = {"query": query, "problem": problem, "name_only": name_only, "guess": guess, "me": _me()}
             values["no_key"] = _no_key()
             return render_template("home.html", **values), 400 if query else 200
@@ -1261,7 +1261,7 @@ def register(app: Flask) -> None:
         henrik, mode, fresh = current_app.config["VAL_HENRIK"], _mode(), bool(request.args.get("fresh"))
         kept = henrik.has_player(name, tag, mode) and not fresh
         if request.args.get("full") or not henrik.key() or kept:  # an answer at once
-            values, status = _player(name, tag, mode, fresh, _span(), _page(), _act())
+            values, status = player_page(name, tag, mode, fresh, _span(), _page(), _act())
             return render_template("player.html", **values), status
         return render_template(
             "player.html",
@@ -1284,7 +1284,7 @@ def register(app: Flask) -> None:
         if not split_riot_id(f"{name}#{tag}"):
             abort(404)
         start = time.monotonic()
-        values, status = _player(name, tag, _mode(), bool(request.args.get("fresh")), _span(), _page(), _act())
+        values, status = player_page(name, tag, _mode(), bool(request.args.get("fresh")), _span(), _page(), _act())
         response = make_response(render_template("_player.html", **values), status)
         response.headers["Cache-Control"] = "no-store"
         # how long HenrikDev took, for the browser's developer tools (Network -> Timing)
@@ -1300,7 +1300,7 @@ def register(app: Flask) -> None:
         except HenrikError as error:
             found = _own_match(region, match_id)
             if found is None:
-                status, problem, settings_link = _failure(error.kind)
+                status, problem, settings_link = failure_info(error.kind)
                 if error.kind == "notfound":
                     abort(404)
                 return render_template("match.html", problem=problem, settings_link=settings_link), status
@@ -1401,14 +1401,14 @@ def register(app: Flask) -> None:
             do = request.form.get("do")
             if do == "clear":
                 store.save(henrik_key="")
-                saved = _t("API キーを削除しました。")
+                saved = tr("API キーを削除しました。")
             elif do == "riot":
                 from valtracker.owner import claim
 
                 claim(riot.me())  # what was kept so far is the account's that was in use until now
                 try:
                     linked = riot.sign_in(request.form.get("riot", ""))
-                    saved = _t(
+                    saved = tr(
                         "Riot アカウント {account} と連携しました。", account=f"{linked['name']}#{linked['tag']}"
                     )
                 except RiotError as error:
@@ -1419,41 +1419,41 @@ def register(app: Flask) -> None:
                 claim(riot.me())
                 try:
                     shown = riot.switch(request.form.get("account", "")[:36])
-                    saved = _t("{account} に切り替えました。", account=f"{shown['name']}#{shown['tag']}")
+                    saved = tr("{account} に切り替えました。", account=f"{shown['name']}#{shown['tag']}")
                 except RiotError as error:
                     riot_problem = riot_failure(error.kind)
             elif do == "riot_off":
                 riot.sign_out(request.form.get("account", "")[:36])
-                saved = _t("Riot アカウントとの連携を解除しました。")
+                saved = tr("Riot アカウントとの連携を解除しました。")
             elif do == "look" and current_app.config["VAL_UPDATER"] is not None:
                 # the PC app: ask the site now whether a newer build is out (update.py)
                 try:
                     found = current_app.config["VAL_UPDATER"].look()
                 except UpdateError:
-                    riot_problem = _t("アップデートを確認できませんでした。少し待ってからお試しください。")
+                    riot_problem = tr("アップデートを確認できませんでした。少し待ってからお試しください。")
                 else:
                     if found and found["ready"]:
-                        saved = _t("アップデートがあります。上の「いますぐ更新」から更新できます。")
+                        saved = tr("アップデートがあります。上の「いますぐ更新」から更新できます。")
                     elif found:
-                        saved = _t("新しいバージョンを準備中です。数分後にもう一度確認してください。")
+                        saved = tr("新しいバージョンを準備中です。数分後にもう一度確認してください。")
                     else:
-                        saved = _t("最新バージョンです。")
+                        saved = tr("最新バージョンです。")
             elif do in ("app", "alert_test") and current_app.config["VAL_LOCAL"] is not None:
                 # the PC app's own choices (pc.py): the match-found alert, the start with Windows
                 store.save(**{key: request.form.get(key) == "on" for key in pc.DEFAULTS})
-                saved = _t("設定を保存しました。")
+                saved = tr("設定を保存しました。")
                 if autostart is not None and autostart.possible:
                     wanted = request.form.get("autostart") == "on"
                     if not autostart.set(wanted):
-                        saved, riot_problem = "", _t("スタートアップに登録できませんでした。")
+                        saved, riot_problem = "", tr("スタートアップに登録できませんでした。")
                 if do == "alert_test" and current_app.config["VAL_ALERT"] is not None:
                     current_app.config["VAL_ALERT"]("found", always=True)
-                    saved = _t("通知をテストしました。")
+                    saved = tr("通知をテストしました。")
             else:
                 key = request.form.get("henrik_key", "").strip()
                 if key:
                     store.save(henrik_key=key[:200])
-                    saved = _t("API キーを保存しました。")
+                    saved = tr("API キーを保存しました。")
         key = store.henrik_key()
         shown = f"{key[:4]}…{key[-4:]}" if len(key) > 12 else ("●●●●" if key else "")
         status = riot.status()
@@ -1486,9 +1486,9 @@ def register(app: Flask) -> None:
 
     @app.errorhandler(404)
     def not_found(error):
-        return render_template("error.html", status=404, message=_t("ページが見つかりません")), 404
+        return render_template("error.html", status=404, message=tr("ページが見つかりません")), 404
 
     @app.errorhandler(400)
     @app.errorhandler(403)
     def refused(error):
-        return render_template("error.html", status=error.code, message=_t("この操作はできませんでした。")), error.code
+        return render_template("error.html", status=error.code, message=tr("この操作はできませんでした。")), error.code

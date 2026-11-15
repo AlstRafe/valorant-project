@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 from datetime import UTC, datetime
 
-from valtracker.localclient import _private
+from valtracker.localclient import decode_private
 from valtracker.util import to_int
 
 #: The parts of a presence's private part a field can be in (after the top).
@@ -82,7 +82,7 @@ def place(data: dict, away: bool) -> str:
 
 def _playing(item: dict, look: dict, my_party: str) -> dict:
     """What a VALORANT presence tells of a friend."""
-    data = _private(item.get("private"))
+    data = decode_private(item.get("private"))
     where = place(data, str(item.get("state") or "") == "away")
     queue = str(_field(data, "queueId") or "").lower()
     address = str(_field(data, "matchMap") or _field(data, "partyOwnerMatchMap") or "").rsplit("/", 1)[-1].lower()
@@ -136,7 +136,7 @@ def rows(found: dict, look: dict, now: float, when) -> dict:
     for item in found.get("presences") or []:
         presences.setdefault(str(item.get("puuid") or "").lower(), []).append(item)
     mine = next((item for item in presences.get(me, []) if str(item.get("product") or "").lower() == "valorant"), None)
-    my_party = _id(_field(_private(mine.get("private")), "partyId")) if mine else ""
+    my_party = _id(_field(decode_private(mine.get("private")), "partyId")) if mine else ""
     playing, online, offline, seen = [], [], [], set()
     for friend in found.get("friends") or []:
         puuid = str(friend.get("puuid") or "").lower()

@@ -13,8 +13,8 @@ from valtracker import security
 from valtracker.activity import BANDS, FEW, WINDOW_DAYS
 from valtracker.henrik import HenrikError
 from valtracker.riotweb import RiotWebError
-from valtracker.tools import _family, _when
-from valtracker.views import QUEUES, _failure, _rank, _t
+from valtracker.tools import moment_info
+from valtracker.views import QUEUES, failure_info, rank_family, rank_info, tr
 
 #: The language of Riot's news site for each of ours.
 NEWS_LANGS = {"ja": "ja-jp", "ko": "ko-kr", "en-GB": "en-gb", "zh-TW": "zh-tw"}
@@ -75,13 +75,13 @@ def _agent_stats() -> dict:
         rows.sort(key=lambda row: (row["few"], -row["win"], -row["picks"]))
     band_names = []
     for name, (low, high) in bands.items():
-        first, last = (_family(_rank({"id": tier})["name"]) for tier in (low, high))
+        first, last = (rank_family(rank_info({"id": tier})["name"]) for tier in (low, high))
         band_names.append({"key": name, "name": first if first == last else f"{first} – {last}"})
     return {
         "rows": rows,
         "matches": found["matches"],
         "queue": queue,
-        "queues": [{"key": key, "name": _t(QUEUES[key])} for key in STAT_QUEUES],
+        "queues": [{"key": key, "name": tr(QUEUES[key])} for key in STAT_QUEUES],
         "band": chosen_band,
         "bands": band_names,
         "map": chosen_map,
@@ -97,7 +97,7 @@ def _agent_stats() -> dict:
 
 
 def _category(key: str) -> str:
-    return _t(CATEGORIES[key]) if key in CATEGORIES else key.replace("_", " ").title()
+    return tr(CATEGORIES[key]) if key in CATEGORIES else key.replace("_", " ").title()
 
 
 def _news_page() -> tuple[dict, int]:
@@ -121,7 +121,7 @@ def _news_page() -> tuple[dict, int]:
             found = henrik.news("en-gb")
             values["english"] = True
     except HenrikError as error:
-        code, values["problem"], values["settings_link"] = _failure(error.kind)
+        code, values["problem"], values["settings_link"] = failure_info(error.kind)
         return values, code
     counts: dict[str, int] = {}
     for item in found:
@@ -147,11 +147,11 @@ def _news_page() -> tuple[dict, int]:
             continue
         if words and words.lower() not in item["title"].lower():
             continue
-        shown.append(item | {"when": _when(item["at"]), "category_name": _category(item["category"])})
+        shown.append(item | {"when": moment_info(item["at"]), "category_name": _category(item["category"])})
     values["articles"] = shown[:NEWS_SHOWN]
     patches = [item for item in found if item["category"] == "patch_notes"]
     if patches and not values["category"] and not words:
-        values["patch"] = patches[0] | {"when": _when(patches[0]["at"])}
+        values["patch"] = patches[0] | {"when": moment_info(patches[0]["at"])}
     return values, 200
 
 
@@ -176,13 +176,13 @@ def _esports_page() -> tuple[dict, int]:
                 values["detail"] = error.detail if security.is_owner() else ""
                 found, since = [], None
             else:
-                code, values["problem"], values["settings_link"] = _failure(error.kind)
+                code, values["problem"], values["settings_link"] = failure_info(error.kind)
                 if error.kind == "down":
-                    values["problem"] = _t("eスポーツの日程を読み込めませんでした。しばらくしてからお試しください。")
+                    values["problem"] = tr("eスポーツの日程を読み込めませんでした。しばらくしてからお試しください。")
                 values["detail"] = error.detail if security.is_owner() else ""
                 return values, code
         if since:  # a new schedule did not come: the last one, saying when it came
-            values["since"] = _when(datetime.fromtimestamp(since, UTC).isoformat())
+            values["since"] = moment_info(datetime.fromtimestamp(since, UTC).isoformat())
     counts: dict[str, list] = {}
     for item in found:
         if item["league"]["id"]:
@@ -210,7 +210,7 @@ def _esports_page() -> tuple[dict, int]:
         games = [item for item in picked if item["state"] == "inProgress"]
         games += [item for item in picked if item["state"] not in ("completed", "inProgress")]
     values["live"] = sum(1 for item in picked if item["state"] == "inProgress")
-    values["games"] = [item | {"when": _when(item["at"])} for item in games[:GAMES_SHOWN]]
+    values["games"] = [item | {"when": moment_info(item["at"])} for item in games[:GAMES_SHOWN]]
     return values, 200
 
 

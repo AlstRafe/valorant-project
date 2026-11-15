@@ -10,10 +10,10 @@ import secrets
 from flask import Flask, abort, current_app, g, redirect, render_template, request, url_for
 
 from valtracker import security
-from valtracker.collection import TIERS, _tier, _weapon_order
+from valtracker.collection import TIERS, tier_info, weapon_order
 from valtracker.content import Content, variant_name
 from valtracker.util import lower_id
-from valtracker.views import _t
+from valtracker.views import tr
 
 #: Shown when the visitor has chosen nothing: the weapon most skins are bought for.
 VANDAL = "9c82e19d-4575-0200-1a81-3eacf00cf872"
@@ -69,7 +69,7 @@ def library(content: Content, lang: str) -> list[dict]:
     "weapon": {"uuid", "name"}, "theme", "videos"}]``."""
     tiers = content.index("contenttiers", lang)
     found = []
-    for weapon in sorted(content.weapons(lang), key=_weapon_order):
+    for weapon in sorted(content.weapons(lang), key=weapon_order):
         about = {"uuid": lower_id(weapon.get("uuid")), "name": weapon.get("displayName") or ""}
         skins = [skin for skin in weapon.get("skins") or [] if _is_skin(weapon, skin)]
         entries = [
@@ -77,7 +77,7 @@ def library(content: Content, lang: str) -> list[dict]:
                 "uuid": lower_id(skin.get("uuid")),
                 "name": _words(skin.get("displayName")),
                 "image": _picture(skin),
-                "tier": _tier(skin, tiers),
+                "tier": tier_info(skin, tiers),
                 "weapon": about,
                 "theme": lower_id(skin.get("themeUuid")),
                 "videos": sum(
@@ -166,7 +166,7 @@ def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
         chromas.append(
             {
                 "uuid": lower_id(part.get("uuid")),
-                "name": _t("標準") if number == 0 else variant_name(part.get("displayName"), name),
+                "name": tr("標準") if number == 0 else variant_name(part.get("displayName"), name),
                 "swatch": part.get("swatch") or "",
                 "image": part.get("fullRender") or part.get("displayIcon") or "",
                 "video": part.get("streamedVideo") or "",
@@ -184,7 +184,7 @@ def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
         levels.append(
             {
                 "number": number,
-                "item": _t(LEVEL_ITEMS[item]) if item in LEVEL_ITEMS else "",
+                "item": tr(LEVEL_ITEMS[item]) if item in LEVEL_ITEMS else "",
                 "about": " ".join(lines[1:])[:200],
                 "video": part.get("streamedVideo") or "",
                 "poster": part.get("displayIcon") or "",
@@ -205,7 +205,7 @@ def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
             "name": weapon.get("displayName") or "",
             "url": url_for("skins", weapon=lower_id(weapon.get("uuid"))),
         },
-        "tier": _tier(skin, tiers),
+        "tier": tier_info(skin, tiers),
         "theme": _words((themes.get(theme) or {}).get("displayName")),
         "image": picture,
         "chromas": chromas if len(chromas) > 1 else [],

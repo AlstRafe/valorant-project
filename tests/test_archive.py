@@ -36,7 +36,7 @@ class PdMatchTest(unittest.TestCase):
         self.assertEqual(metadata["cluster"], "Tokyo")
         self.assertEqual(metadata["started_at"], "2025-11-06T03:33:20Z")
         self.assertEqual(len(raw["players"]), 4, "the observer is not a player")
-        slim = henrik._slim_match(raw)
+        slim = henrik.slim_match(raw)
         me = stats.find_player(slim, PLAYER)
         line = stats.line(me, stats.rounds_played(slim), stats.advanced(slim, me))
         self.assertEqual((line["kills"], line["deaths"], line["assists"]), (3, 1, 1))
@@ -61,7 +61,7 @@ class PdMatchTest(unittest.TestCase):
         named = {player["puuid"]: (player["name"], player["tag"]) for player in raw["players"]}
         self.assertEqual(named[PLAYER], ("Pd Player", "PD1"))
         self.assertEqual({value for key, value in named.items() if key != PLAYER}, {("", "")})
-        self.assertNotIn("Secret Mate", json.dumps(henrik._slim_match(raw)))
+        self.assertNotIn("Secret Mate", json.dumps(henrik.slim_match(raw)))
 
     def test_kills_from_the_rounds_when_the_match_has_none(self):
         details = json.loads(json.dumps(PD["matches"][M1]))
@@ -109,7 +109,7 @@ class ArchiveTest(unittest.TestCase):
         self.archive = self.app.config["VAL_ARCHIVE"]
 
     def test_kept_once_and_henriks_wins(self):
-        slim = henrik._slim_match(converted())
+        slim = henrik.slim_match(converted())
         self.assertEqual(self.archive.keep([slim], "riot"), 1)
         self.assertEqual(self.archive.keep([slim], "riot"), 0)
         self.assertEqual(self.archive.known([M1, M2]), {M1})
@@ -126,7 +126,7 @@ class ArchiveTest(unittest.TestCase):
         self.assertEqual(list(self.archive.matches(PLAYER, "unrated")), [])
 
     def test_unfinished_matches_are_not_kept(self):
-        slim = henrik._slim_match(converted())
+        slim = henrik.slim_match(converted())
         slim["metadata"]["is_completed"] = False
         self.assertEqual(self.archive.keep([slim, {"metadata": {}}, "x"]), 0)
 

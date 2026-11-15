@@ -165,7 +165,7 @@ def _claims(token: str) -> dict:
     return value if isinstance(value, dict) else {}
 
 
-def _private(value) -> dict:
+def decode_private(value) -> dict:
     """A presence's ``private`` part: base64 of a JSON object (or the object itself)."""
     if isinstance(value, dict):
         return value
@@ -184,7 +184,7 @@ def where(item: dict) -> dict:
     """The owner's presence -> ``{"loop": MENUS / PREGAME / INGAME or "", "party": the party's id, "party_state":
     e.g. MATCHMAKING or MATCHMADE_GAME_STARTING, "queue"}``. Both shapes the game has used: everything at the top
     (before 2024), or in matchPresenceData / partyPresenceData."""
-    data = _private(item.get("private"))
+    data = decode_private(item.get("private"))
     match = data.get("matchPresenceData") if isinstance(data.get("matchPresenceData"), dict) else data
     party = data.get("partyPresenceData") if isinstance(data.get("partyPresenceData"), dict) else data
     party_id = str(party.get("partyId") or data.get("partyId") or "").lower()
@@ -420,7 +420,7 @@ class LocalClient:
             ),
             None,
         )
-        private = _private(mine.get("private")) if mine else {}
+        private = decode_private(mine.get("private")) if mine else {}
         seen = where(mine) if mine else None
         found["presence"] = {
             "status": status,

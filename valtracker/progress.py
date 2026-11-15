@@ -33,7 +33,7 @@ def contract(item: dict, definition: dict, agents: dict) -> dict:
 
 
 def page(found: dict, content: Content, lang: str, now: float, when) -> dict:
-    """What progress.html shows; ``when(iso)``: a moment in the owner's clock (tools._when)."""
+    """What progress.html shows; ``when(iso)``: a moment in the owner's clock (tools.moment_info)."""
     answer = found.get("contracts") if isinstance(found.get("contracts"), dict) else {}
     known = content.index("contracts", lang)
     agents = content.agent_index(lang)

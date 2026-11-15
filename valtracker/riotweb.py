@@ -15,7 +15,7 @@ from urllib.parse import urlencode
 
 from valtracker import net
 from valtracker.cache import TTLCache
-from valtracker.henrik import _https, _region, _slim_status
+from valtracker.henrik import https_only, known_region, slim_status
 from valtracker.util import to_int
 
 SITE = "https://playvalorant.com"
@@ -66,9 +66,9 @@ class RiotWeb:
         return listed
 
     def status(self, region: str) -> dict:
-        """A region's notices: ``{"maintenances": [...], "incidents": [...]}`` (henrik._slim_status)."""
-        region = _region(region)
-        return self._get(("status", region), STATUS.format(region=region), KEEP["status"], _slim_status)
+        """A region's notices: ``{"maintenances": [...], "incidents": [...]}`` (henrik.slim_status)."""
+        region = known_region(region)
+        return self._get(("status", region), STATUS.format(region=region), KEEP["status"], slim_status)
 
     def esports(self, lang: str) -> list:
         """The esports matches to come (about the next 40, of every league), in the shape of henrik._slim_esports,
@@ -137,8 +137,8 @@ def _slim_news(data: dict) -> list:
                 "title": str(item["title"])[:200],
                 "at": str(item.get("publishedAt") or ""),
                 "category": "patch_notes" if "patch_notes" in tags else str(category.get("machineName") or "").lower(),
-                "url": _https(url),
-                "banner": _https(media.get("url")),
+                "url": https_only(url),
+                "banner": https_only(media.get("url")),
             }
         )
     return sorted(articles, key=lambda item: item["at"], reverse=True)
@@ -149,7 +149,7 @@ def _picture(value) -> str:
     value = str(value or "")
     if value.startswith("http://static.lolesports.com/"):
         value = "https://" + value.removeprefix("http://")
-    return _https(value)
+    return https_only(value)
 
 
 def _slim_schedule(page: str) -> list:

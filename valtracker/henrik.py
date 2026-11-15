@@ -141,13 +141,13 @@ class Henrik:
     def mmr(self, region: str, name: str, tag: str) -> dict:
         """``{"current": {"tier": {"id", "name"}, "rr", "last_change", "games_needed_for_rating",
         "leaderboard_placement", ...}, "peak": ..., "seasons": every act played, the latest first (_slim_act)}``."""
-        path = f"/valorant/v3/mmr/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}"
+        path = f"/valorant/v3/mmr/{known_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}"
         return self._get(("mmr", region, name.lower(), tag.lower()), path, KEEP["mmr"], _slim_mmr)
 
     def rr_changes(self, region: str, name: str, tag: str) -> dict:
         """The recent competitive matches' RR: ``{match id: {"change": +18, "tier": 21, "rr": 42, "elo": 1842,
         "at": unix seconds}}`` (elo: the rank and RR as one number, 100 a rank)."""
-        path = f"/valorant/v1/mmr-history/{_region(region)}/{_part(name)}/{_part(tag)}"
+        path = f"/valorant/v1/mmr-history/{known_region(region)}/{_part(name)}/{_part(tag)}"
         return self._get(("rr", region, name.lower(), tag.lower()), path, KEEP["rr"], _slim_rr)
 
     def matches(self, region: str, name: str, tag: str, mode: str = "") -> list:
@@ -176,7 +176,7 @@ class Henrik:
     def _matches(self, region: str, name: str, tag: str, mode: str, start: int) -> list:
         size = min(PAGE, RECENT - start)
         query = {"size": size} | ({"start": start} if start else {}) | ({"mode": mode} if mode in MODES else {})
-        path = f"/valorant/v4/matches/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}?" + urlencode(query)
+        path = f"/valorant/v4/matches/{known_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}?" + urlencode(query)
         key = _matches_key(region, name, tag, mode, start)
         return self._get(key, path, KEEP["matches"], _slim_matches)
 
@@ -185,24 +185,24 @@ class Henrik:
         matches it has read, a growing part of the history, not all of it), each as ``_slim_stored`` keeps it."""
         mode = mode if mode in STORED_MODES else "competitive"
         query = urlencode({"mode": mode})
-        path = f"/valorant/v1/stored-matches/{_region(region)}/{_part(name)}/{_part(tag)}?{query}"
-        key = ("stored", _region(region), name.lower(), tag.lower(), mode)
+        path = f"/valorant/v1/stored-matches/{known_region(region)}/{_part(name)}/{_part(tag)}?{query}"
+        key = ("stored", known_region(region), name.lower(), tag.lower(), mode)
         return self._get(key, path, KEEP["stored"], _slim_stored)
 
     def older(self, region: str, name: str, tag: str, start: int) -> list:
         """PAGE of the player's matches from ``start`` on (newest first, any mode), each as ``match`` gives it: the
         archive's (archive.py) when Riot cannot be asked."""
         query = urlencode({"size": PAGE, "start": max(0, int(start))})
-        path = f"/valorant/v4/matches/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}?{query}"
-        key = ("older", _region(region), name.lower(), tag.lower(), max(0, int(start)))
+        path = f"/valorant/v4/matches/{known_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}?{query}"
+        key = ("older", known_region(region), name.lower(), tag.lower(), max(0, int(start)))
         found = self._get(key, path, KEEP["matches"], _slim_matches)
         return [match for match in found if match["metadata"].get("is_completed", True)]
 
     def stored_all(self, region: str, name: str, tag: str) -> list:
         """Every match of any mode that HenrikDev keeps of the player (``stored`` without a mode): the archive's
         thin lines, for the matches Riot no longer gives."""
-        path = f"/valorant/v1/stored-matches/{_region(region)}/{_part(name)}/{_part(tag)}"
-        key = ("stored", _region(region), name.lower(), tag.lower(), "")
+        path = f"/valorant/v1/stored-matches/{known_region(region)}/{_part(name)}/{_part(tag)}"
+        key = ("stored", known_region(region), name.lower(), tag.lower(), "")
         return self._get(key, path, KEEP["stored"], _slim_stored)
 
     def has_player(self, name: str, tag: str, mode: str = "") -> bool:
@@ -247,8 +247,8 @@ class Henrik:
         kept = self.cache.get(("match", match_id))
         if kept is not None:
             return kept
-        path = f"/valorant/v4/match/{_region(region)}/{match_id}"
-        return self._get(("match", match_id), path, KEEP["match"], _slim_match)
+        path = f"/valorant/v4/match/{known_region(region)}/{match_id}"
+        return self._get(("match", match_id), path, KEEP["match"], slim_match)
 
     def leaderboard(self, region: str, start: int = 0, name: str = "", tag: str = "") -> dict:
         """One page of a region's ranked leaderboard: ``{"players": [{"rank", "name", "tag", "puuid", "card",
@@ -259,26 +259,28 @@ class Henrik:
         asked = {"size": BOARD_PAGE, "start_index": start, "page": start // BOARD_PAGE + 1}
         if name:
             asked |= {"name": name} | ({"tag": tag} if tag else {})
-        path = f"/valorant/v3/leaderboard/{_region(region)}/{PLATFORM}?{urlencode(asked)}"
-        key = ("leaderboard", _region(region), start) + ((name.casefold(), tag.casefold()) if name else ())
+        path = f"/valorant/v3/leaderboard/{known_region(region)}/{PLATFORM}?{urlencode(asked)}"
+        key = ("leaderboard", known_region(region), start) + ((name.casefold(), tag.casefold()) if name else ())
         return self._get(key, path, KEEP["leaderboard"], _slim_board)
 
     def matches_by_puuid(self, region: str, puuid: str, size: int = 5) -> list:
         """A player's latest matches by their puuid, only what activity.py keeps of them (the start, server,
         queue, length, and each player's puuid and rank): for the background collector, which has no names."""
         query = urlencode({"size": size})
-        path = f"/valorant/v4/by-puuid/matches/{_region(region)}/{PLATFORM}/{_part(puuid)}?{query}"
+        path = f"/valorant/v4/by-puuid/matches/{known_region(region)}/{PLATFORM}/{_part(puuid)}?{query}"
         return self._get(("by-puuid", puuid), path, KEEP["matches"], _slim_collected)
 
     def has_board(self, region: str, start: int = 0, name: str = "", tag: str = "") -> bool:
         """Whether that page of the leaderboard (or that player looked for) is kept: it needs no call."""
-        key = ("leaderboard", _region(region), max(0, int(start))) + ((name.casefold(), tag.casefold()) if name else ())
+        key = ("leaderboard", known_region(region), max(0, int(start))) + (
+            (name.casefold(), tag.casefold()) if name else ()
+        )
         return self.cache.get(key) is not None
 
     def status(self, region: str) -> dict:
-        """Riot's notices for a region: ``{"maintenances": [...], "incidents": [...]}`` (_slim_status)."""
-        path = f"/valorant/v1/status/{_region(region)}"
-        return self._get(("status", _region(region)), path, KEEP["status"], _slim_status)
+        """Riot's notices for a region: ``{"maintenances": [...], "incidents": [...]}`` (slim_status)."""
+        path = f"/valorant/v1/status/{known_region(region)}"
+        return self._get(("status", known_region(region)), path, KEEP["status"], slim_status)
 
     def featured(self) -> list:
         """The store's featured bundles (the same for everyone): ``[{"uuid", "price", "until", "items"}]``."""
@@ -613,7 +615,7 @@ def _slim_board(data) -> dict:
     }
 
 
-def _https(value) -> str:
+def https_only(value) -> str:
     """An https address, or "" (nothing else is linked to or shown)."""
     value = str(value or "")
     return value if value.startswith("https://") else ""
@@ -629,8 +631,8 @@ def _slim_news(data) -> list:
                 "title": str(item["title"])[:200],
                 "at": str(item.get("date") or ""),
                 "category": str(item.get("category") or "").lower(),
-                "url": _https(item.get("external_link")) or _https(item.get("url")),
-                "banner": _https(item.get("banner_url")),
+                "url": https_only(item.get("external_link")) or https_only(item.get("url")),
+                "banner": https_only(item.get("banner_url")),
             }
         )
     return sorted(articles, key=lambda item: item["at"], reverse=True)
@@ -656,16 +658,16 @@ def _slim_esports(data) -> list:
                     "name": str(league.get("name") or ""),
                     "id": str(league.get("identifier") or league.get("name") or "").lower(),
                     "region": str(league.get("region") or ""),
-                    "icon": _https(league.get("icon")),
+                    "icon": https_only(league.get("icon")),
                 },
                 "tournament": str(tournament.get("name") or ""),
                 "best_of": int(kind.get("count") or 0) if str(kind.get("count") or "").isdigit() else 0,
-                "vod": _https(item.get("vod")),
+                "vod": https_only(item.get("vod")),
                 "teams": [
                     {
                         "name": str(team.get("name"))[:60],
                         "code": str(team.get("code") or "")[:8],
-                        "icon": _https(team.get("icon")),
+                        "icon": https_only(team.get("icon")),
                         "won": bool(team.get("has_won")),
                         "wins": int(team.get("game_wins") or 0) if str(team.get("game_wins") or 0).isdigit() else 0,
                     }
@@ -676,7 +678,7 @@ def _slim_esports(data) -> list:
     return sorted(games, key=lambda item: item["at"])
 
 
-def _slim_status(data) -> dict:
+def slim_status(data) -> dict:
     """Each notice: ``{"kind": maintenance / incident, "severity", "status", "titles": {locale: words},
     "updates": [{"at", "words": {locale: words}}] (latest first), "at"}``."""
 
@@ -753,7 +755,7 @@ def _pick(item, keys) -> dict:
     return {key: item.get(key) for key in keys} if isinstance(item, dict) else {}
 
 
-def _slim_match(match) -> dict:
+def slim_match(match) -> dict:
     """A match with what the pages use only (METADATA, PLAYER, TEAM)."""
     if not isinstance(match, dict) or not isinstance(match.get("metadata"), dict):
         raise HenrikError("down")
@@ -788,13 +790,13 @@ def _slim_collected(matches) -> list:
 def _slim_matches(matches) -> list:
     if not isinstance(matches, list):
         raise HenrikError("down")
-    return [_slim_match(match) for match in matches if isinstance(match, dict) and match.get("metadata")]
+    return [slim_match(match) for match in matches if isinstance(match, dict) and match.get("metadata")]
 
 
 def _part(text: str) -> str:
     return quote(text, safe="")
 
 
-def _region(region: str) -> str:
+def known_region(region: str) -> str:
     region = str(region or "").lower()
     return region if region in REGIONS else "ap"

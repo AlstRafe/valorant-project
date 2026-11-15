@@ -33,7 +33,7 @@ from datetime import datetime
 from pathlib import Path
 
 from valtracker import pdmatch, stats
-from valtracker.henrik import _slim_match
+from valtracker.henrik import slim_match
 from valtracker.riot import RiotError
 
 #: The regions the collector goes round (HenrikDev's names).
@@ -640,7 +640,7 @@ class Collector:
                 self.read.add(match_id)
                 raw = pdmatch.to_v4(self.riot.match_details(region, match_id), region, self.maps())
                 if raw and raw["metadata"].get("is_completed", True):
-                    matches.append(_slim_match(raw))
+                    matches.append(slim_match(raw))
         except RiotError:
             return None
         if len(self.read) > 5000:

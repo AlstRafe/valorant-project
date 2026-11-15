@@ -1,5 +1,5 @@
 """The game's own match records (Riot's PD: ``match-history`` and ``match-details``) in HenrikDev v4's shape, so that
-the rest of the site (henrik._slim_match, rounds.py, stats.py, heatmap.py) reads them as it reads HenrikDev's.
+the rest of the site (henrik.slim_match, rounds.py, stats.py, heatmap.py) reads them as it reads HenrikDev's.
 
 PD names every player of a match, even one who hides their name in the game. This site never shows a hidden name,
 and PD does not say who hides theirs, so every name is left out here except the one of the player whose record is
@@ -106,7 +106,7 @@ def rr_updates(answer) -> dict:
 
 
 def to_v4(details, region: str, maps: dict, puuid: str = "", name: str = "", tag: str = "") -> dict:
-    """PD's match-details -> a HenrikDev v4 match (what henrik._slim_match reads). ``maps``: valorant-api.com's
+    """PD's match-details -> a HenrikDev v4 match (what henrik.slim_match reads). ``maps``: valorant-api.com's
     maps by their address name ("ascent"; content.Content.map_index). Only ``puuid`` keeps a name: ``name``,
     ``tag``. {} for what is not a finished match."""
     if not isinstance(details, dict) or not isinstance(details.get("matchInfo"), dict):

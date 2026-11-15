@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import math
 
-from valtracker.collection import _tier, _wallet
+from valtracker.collection import tier_info, wallet_info
 from valtracker.content import Content
 from valtracker.riot import ITEM_TYPES
 from valtracker.util import lower_id, to_int
@@ -52,7 +52,7 @@ def item(kind: str, uuid: str, content: Content, lang: str, said: dict | None = 
                 or level.get("displayIcon")
                 or next((part.get("fullRender") for part in skin.get("chromas") or [] if part.get("fullRender")), "")
             )
-            tier = _tier(skin, content.index("contenttiers", lang))
+            tier = tier_info(skin, content.index("contenttiers", lang))
             return {
                 "kind": "skins",
                 "name": skin.get("displayName") or "",
@@ -182,7 +182,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
     return {
         "name": found.get("name") or "",
         "tag": found.get("tag") or "",
-        "wallet": _wallet(found.get("wallet"), content, lang),
+        "wallet": wallet_info(found.get("wallet"), content, lang),
         "daily": daily,
         "daily_until": _until(at, panel.get("SingleItemOffersRemainingDurationInSeconds")),
         "night": night,

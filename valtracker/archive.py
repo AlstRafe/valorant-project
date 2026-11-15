@@ -12,7 +12,7 @@ Where the matches come from:
 - for what Riot no longer gives: HenrikDev's stored matches (v1), one line of the player per match without its
   rounds (no KAST, first kills, weapons or places: "thin").
 
-Kept in instance/archive.sqlite: each match once (compressed, as henrik._slim_match keeps it), who played in it,
+Kept in instance/archive.sqlite: each match once (compressed, as henrik.slim_match keeps it), who played in it,
 the thin lines, the RR changes, the matches still to read, and how far each player's history has been read.
 """
 
@@ -27,7 +27,7 @@ from datetime import datetime
 from pathlib import Path
 
 from valtracker import pdmatch
-from valtracker.henrik import PAGE, HenrikError, _slim_match
+from valtracker.henrik import PAGE, HenrikError, slim_match
 from valtracker.riot import HISTORY_PAGE, RiotError
 
 #: Seconds between two of the background's calls to Riot (0: off): slow enough to leave the owner's own pages
@@ -114,7 +114,7 @@ class Archive:
     # -- what is kept -----------------------------------------------------------------------------------
 
     def keep(self, matches: list, source: str = "henrik") -> int:
-        """Finished matches (henrik._slim_match's shape) into the archive; how many were new. A match kept from
+        """Finished matches (henrik.slim_match's shape) into the archive; how many were new. A match kept from
         HenrikDev is not replaced by Riot's (which names no one but the player)."""
         rank = SOURCES.get(source, 0)
         rows, played = [], []
@@ -203,7 +203,7 @@ class Archive:
         return {row[0] for row in self._read(f"SELECT id FROM matches WHERE id IN ({marks})", tuple(ids))}
 
     def matches(self, puuid: str, queue: str = ""):
-        """The player's whole matches, newest first (of one queue, or of all): each as henrik._slim_match keeps it."""
+        """The player's whole matches, newest first (of one queue, or of all): each as henrik.slim_match keeps it."""
         query = "SELECT m.data FROM played p JOIN matches m ON m.id = p.id WHERE p.puuid = ?"
         values: tuple = (puuid,)
         if queue:
@@ -399,7 +399,7 @@ class Filler:
                 details = {}  # a match Riot no longer has: the others are still read
             raw = pdmatch.to_v4(details, region, self.maps(), puuid, state["name"], state["tag"])
             if raw:
-                self.archive.keep([_slim_match(raw)], "riot")
+                self.archive.keep([slim_match(raw)], "riot")
             self.archive.drop_todo(puuid, match_id)
             return "match"
         if state["total"] < 0 or state["scanned"] < state["total"]:

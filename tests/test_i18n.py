@@ -34,7 +34,7 @@ def used_texts() -> set[str]:
         tree = ast.parse(module.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if isinstance(node, ast.Call) and getattr(node.func, "id", getattr(node.func, "attr", "")) in (
-                "_t",
+                "tr",
                 "text",
             ):
                 arguments = [arg for arg in node.args if isinstance(arg, ast.Constant) and isinstance(arg.value, str)]

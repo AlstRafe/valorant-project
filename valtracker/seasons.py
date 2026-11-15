@@ -14,7 +14,7 @@ import re
 from flask import Flask, abort, current_app, render_template, request
 
 from valtracker.henrik import MODES, STORED_MODES, HenrikError, split_riot_id
-from valtracker.views import QUEUES, _agent, _failure, _peak, _rank, _t
+from valtracker.views import QUEUES, agent_info, failure_info, peak_info, rank_info, tr
 
 #: The agents shown for each act, the most played first.
 AGENTS_SHOWN = 3
@@ -83,8 +83,8 @@ def seasons(matches: list[dict]) -> list[dict]:
 
 def _named(act: dict, mode: str) -> dict:
     """An act's agents and peak rank with their names and pictures in the visitor's language."""
-    act["agents"] = [agent | {"agent": _agent({"id": agent["id"]})} for agent in act["agents"]]
-    act["peak_rank"] = _rank({"id": act["peak"]}) if mode == "competitive" and act["peak"] > 2 else None
+    act["agents"] = [agent | {"agent": agent_info({"id": agent["id"]})} for agent in act["agents"]]
+    act["peak_rank"] = rank_info({"id": act["peak"]}) if mode == "competitive" and act["peak"] > 2 else None
     return act
 
 
@@ -95,21 +95,21 @@ def register(app: Flask) -> None:
             abort(404)
         mode = request.args.get("mode", "competitive")
         mode = mode if mode in STORED_MODES else "competitive"
-        modes = [{"key": key, "name": _t(QUEUES[MODES[key]]), "current": key == mode} for key in STORED_MODES]
+        modes = [{"key": key, "name": tr(QUEUES[MODES[key]]), "current": key == mode} for key in STORED_MODES]
         values = {"name": name, "tag": tag, "mode": mode, "modes": modes, "acts": [], "total": None, "problem": ""}
         values["places"] = CHANGES
         henrik = current_app.config["VAL_HENRIK"]
         try:
             account = henrik.account(name, tag)
         except HenrikError as error:
-            status, values["problem"], _ = _failure(error.kind)
+            status, values["problem"], _ = failure_info(error.kind)
             return render_template("seasons.html", **values), status
         values["name"], values["tag"] = str(account.get("name") or name), str(account.get("tag") or tag)
         try:
             stored = henrik.stored(str(account.get("region") or "ap"), values["name"], values["tag"], mode)
         except HenrikError as error:
             if error.kind != "notfound":
-                status, values["problem"], _ = _failure(error.kind)
+                status, values["problem"], _ = failure_info(error.kind)
                 return render_template("seasons.html", **values), status
             stored = []  # the player is there, but HenrikDev keeps none of their matches of this mode
         values["acts"] = [_named(act, mode) for act in seasons(stored)]
@@ -118,7 +118,7 @@ def register(app: Flask) -> None:
         if values["total"] and mode == "competitive":
             # the lifetime card: the best rank ever (as the player page says it), not the best of the kept matches
             try:
-                ever = _peak(henrik.mmr(str(account.get("region") or "ap"), values["name"], values["tag"]))
+                ever = peak_info(henrik.mmr(str(account.get("region") or "ap"), values["name"], values["tag"]))
             except HenrikError:
                 ever = None
             if ever and ever["tier"] >= values["total"]["peak"]:

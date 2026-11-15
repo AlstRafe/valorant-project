@@ -5,7 +5,6 @@ each server usually is and the wait for a match (activity.py), the maps in rotat
 
 from __future__ import annotations
 
-import re
 import time
 from datetime import UTC, datetime
 
@@ -20,7 +19,17 @@ from valtracker.henrik import BOARD_PAGE, HenrikError
 from valtracker.riot import RiotError
 from valtracker.riotweb import RiotWebError
 from valtracker.stats import JST
-from valtracker.views import QUEUES, _failure, _rank, _t, act_left, cluster, riot_failure, share_text
+from valtracker.views import (
+    QUEUES,
+    act_left,
+    cluster,
+    failure_info,
+    rank_family,
+    rank_info,
+    riot_failure,
+    share_text,
+    tr,
+)
 
 #: The leaderboard's and the notices' regions, in the order of the tabs -> their names (translated).
 REGION_NAMES = {
@@ -33,7 +42,7 @@ REGION_NAMES = {
 }
 #: The region shown when none is chosen: the one most of a language's players are in.
 HOME_REGION = {"ja": "ap", "ko": "kr", "en-GB": "eu", "zh-TW": "ap"}
-#: Riot writes its notices in each of these (HenrikDev's names, see henrik._slim_status); English otherwise.
+#: Riot writes its notices in each of these (HenrikDev's names, see henrik.slim_status); English otherwise.
 NOTICE_LOCALES = {"ja": "ja_jp", "ko": "ko_kr", "en-GB": "en_gb", "zh-TW": "zh_tw"}
 #: Pages of the leaderboard that can be asked for (HenrikDev lists about the top 10,000 of a region).
 BOARD_PAGES = 200
@@ -68,7 +77,7 @@ def _region() -> str:
 
 def _regions(endpoint: str, current: str, **values) -> list[dict]:
     return [
-        {"key": key, "name": _t(name), "url": url_for(endpoint, region=key, **values), "current": key == current}
+        {"key": key, "name": tr(name), "url": url_for(endpoint, region=key, **values), "current": key == current}
         for key, name in REGION_NAMES.items()
     ]
 
@@ -82,7 +91,7 @@ def _moment(value) -> datetime | None:
     return found.astimezone(JST) if found.tzinfo else found.replace(tzinfo=JST)
 
 
-def _when(value) -> dict | None:
+def moment_info(value) -> dict | None:
     found = _moment(value)
     return {"iso": found.isoformat(), "text": i18n.when(g.lang, found)} if found else None
 
@@ -122,7 +131,7 @@ def _board(region: str, page: int) -> tuple[dict, int]:
     values = {"region": region, "page": page, "problem": "", "settings_link": False, "loading": False}
     values |= {"q": typed, "searched": bool(typed)}
     if typed and not name:
-        values["problem"] = _t("「名前#タグ」の形式で入力してください。")
+        values["problem"] = tr("「名前#タグ」の形式で入力してください。")
         return values | {"players": [], "thresholds": []}, 400
     start = 0 if typed else (page - 1) * BOARD_PAGE
     found, source = None, ""
@@ -138,9 +147,9 @@ def _board(region: str, page: int) -> tuple[dict, int]:
             found = current_app.config["VAL_HENRIK"].leaderboard(region, start, name, tag)
             source = "henrik"
         except HenrikError as error:
-            status, values["problem"], values["settings_link"] = _failure(error.kind)
+            status, values["problem"], values["settings_link"] = failure_info(error.kind)
             if error.kind == "notfound":
-                values["problem"], status = _t("このページにはプレイヤーがいません。"), 404
+                values["problem"], status = tr("このページにはプレイヤーがいません。"), 404
                 if typed:
                     values["problem"], status = "", 200
                     return values | {"players": [], "thresholds": [], "source": source}, status
@@ -154,13 +163,15 @@ def _board(region: str, page: int) -> tuple[dict, int]:
         players.append(
             item
             | {
-                "rank_shown": _rank({"id": item["tier"]}) if item["tier"] else None,
+                "rank_shown": rank_info({"id": item["tier"]}) if item["tier"] else None,
                 "url": url_for("player", name=item["name"], tag=item["tag"])
                 if item["name"] and item["tag"] and not item["hidden"]
                 else "",
             }
         )
-    thresholds = [item | {"rank_shown": _rank({"id": item["tier"]})} for item in found["thresholds"] if item["tier"]]
+    thresholds = [
+        item | {"rank_shown": rank_info({"id": item["tier"]})} for item in found["thresholds"] if item["tier"]
+    ]
     more = not typed and len(found["players"]) >= BOARD_PAGE and page < BOARD_PAGES
     if found["total"]:
         more = more and page * BOARD_PAGE < found["total"]
@@ -168,7 +179,7 @@ def _board(region: str, page: int) -> tuple[dict, int]:
         "players": players,
         "thresholds": thresholds,
         "source": source,
-        "updated": _when(found["updated"]),
+        "updated": moment_info(found["updated"]),
         "earlier": url_for("leaderboard", region=region, page=page - 1 if page > 2 else None)
         if page > 1 and not typed
         else "",
@@ -201,9 +212,9 @@ def _notices(found: dict) -> list[dict]:
             listed.append(
                 {
                     "kind": item["kind"],
-                    "title": pick(item.get("titles") or {}) or _t("お知らせ"),
+                    "title": pick(item.get("titles") or {}) or tr("お知らせ"),
                     "words": pick(latest.get("words") or {}),
-                    "when": _when(latest.get("at") or item.get("at")),
+                    "when": moment_info(latest.get("at") or item.get("at")),
                     "severity": item.get("severity") or "",
                     "status": item.get("status") or "",
                 }
@@ -218,17 +229,17 @@ def _shapes(settings: dict | None) -> list[dict] | None:
 def _crosshair_page(code: str) -> dict:
     found = crosshairs.parse(code) if code else None
     shown = found or crosshairs.parse("0")
-    table = [("primary", _t("通常"), shown["primary"])]
+    table = [("primary", tr("通常"), shown["primary"])]
     if shown["ads"] is not None:
-        table.append(("ads", _t("ADS"), shown["ads"]))
+        table.append(("ads", tr("ADS"), shown["ads"]))
     described = []
     for key, name, settings in table:
         about = crosshairs.describe(settings)
-        about["colour_name"] = _t(about["colour_name"])
+        about["colour_name"] = tr(about["colour_name"])
         described.append({"key": key, "name": name, "about": about})
     return {
         "code": code,
-        "problem": _t("クロスヘアコードとして読み取れません。ゲームでコピーしたものをそのまま貼ってください。")
+        "problem": tr("クロスヘアコードとして読み取れません。ゲームでコピーしたものをそのまま貼ってください。")
         if code and not found
         else "",
         "unknown": found["unknown"] if found else [],
@@ -239,7 +250,7 @@ def _crosshair_page(code: str) -> dict:
         "described": described,
         "presets": [
             {
-                "name": _t(name),
+                "name": tr(name),
                 "code": crosshairs.code(settings),
                 "shapes": crosshairs.shapes(crosshairs.PRIMARY | settings),
             }
@@ -256,20 +267,15 @@ def _left(until: float) -> dict | None:
     parts = store.left(seconds)
     days = parts["hours"] // 24
     words = (
-        _t("残り {days} 日", days=days)
+        tr("残り {days} 日", days=days)
         if days >= 2
-        else _t("残り {hours} 時間 {minutes} 分", hours=parts["hours"], minutes=parts["minutes"])
+        else tr("残り {hours} 時間 {minutes} 分", hours=parts["hours"], minutes=parts["minutes"])
     )
     return {"until": int(until), "text": words}
 
 
 def _clock_text(seconds: int) -> str:
     return f"{seconds // 60}:{seconds % 60:02d}"
-
-
-def _family(name: str) -> str:
-    """A rank's name without its division ("Gold 3" -> "Gold")."""
-    return re.sub(r"\s*\d+$", "", name) or name
 
 
 def _zone() -> tuple[float, str]:
@@ -279,12 +285,12 @@ def _zone() -> tuple[float, str]:
     try:
         minutes = int(request.cookies.get("tz", ""))
     except ValueError:
-        return offset, _t(name)
+        return offset, tr(name)
     if minutes % 15 or not -720 <= minutes <= 840 or minutes == offset * 60:
-        return offset, _t(name)
+        return offset, tr(name)
     hours, rest = divmod(abs(minutes), 60)
     zone = f"UTC{'+' if minutes >= 0 else '−'}{hours}" + (f":{rest:02d}" if rest else "")
-    return minutes / 60, _t("現地時間（{zone}）", zone=zone)
+    return minutes / 60, tr("現地時間（{zone}）", zone=zone)
 
 
 def _numbers_region() -> str:
@@ -311,7 +317,7 @@ def _ranks_page(region: str) -> dict:
         above += count
         values["rows"].append(
             {
-                "rank": _rank({"id": number}),
+                "rank": rank_info({"id": number}),
                 "count": count,
                 "share": share_text(100 * count / total),
                 "bar": round(100 * count / widest, 1),
@@ -331,7 +337,7 @@ def _servers_page(region: str) -> dict:
             server
             | {
                 "shown": cluster(server["name"]),
-                "rank": _rank({"id": server["tier"]}) if server["tier"] else None,
+                "rank": rank_info({"id": server["tier"]}) if server["tier"] else None,
                 "bars": [
                     {"x": hour * 10 + 1, "h": round(44 * share / top, 1), "share": share, "hour": hour}
                     for hour, share in enumerate(server["hours"])
@@ -344,14 +350,14 @@ def _servers_page(region: str) -> dict:
     for item in found["waits"]:
         band = ""
         if item["band"]:
-            low, high = (_family(_rank({"id": tier})["name"]) for tier in labels[item["band"]])
+            low, high = (rank_family(rank_info({"id": tier})["name"]) for tier in labels[item["band"]])
             band = low if low == high else f"{low} – {high}"
-        queue = _t(QUEUES[item["queue"]]) if item["queue"] in QUEUES else item["queue"]
+        queue = tr(QUEUES[item["queue"]]) if item["queue"] in QUEUES else item["queue"]
         waits.append(item | {"queue_name": queue, "band_name": band, "text": _clock_text(item["seconds"])})
     lengths = [
         item
         | {
-            "queue_name": _t(QUEUES[item["queue"]]) if item["queue"] in QUEUES else item["queue"],
+            "queue_name": tr(QUEUES[item["queue"]]) if item["queue"] in QUEUES else item["queue"],
             "text": _clock_text(item["seconds"]),
         }
         for item in found.get("lengths", [])
@@ -381,12 +387,12 @@ def _sensitivity(args) -> dict:
         new_dpi = int(float(args.get("new_dpi", "") or 0))
     except ValueError:
         sens, dpi, new_dpi = 0, 0, 0
-        values["problem"] = _t("数値を入力してください。")
+        values["problem"] = tr("数値を入力してください。")
     values |= {"sens": args.get("sens", ""), "dpi": args.get("dpi", ""), "new_dpi": args.get("new_dpi", "")}
     if not sens or not dpi:
         return values
     if not (0 < sens <= 1000 and 50 <= dpi <= 64000) or (new_dpi and not 50 <= new_dpi <= 64000):
-        values["problem"] = _t("感度は 0 より大きい値、DPI は 50〜64000 で入力してください。")
+        values["problem"] = tr("感度は 0 より大きい値、DPI は 50〜64000 で入力してください。")
         return values
     turn = sens * GAMES[game][1]  # degrees a count turns
     rows = []
@@ -413,25 +419,25 @@ def _queues_page() -> tuple[dict, int]:
             values["problem"] = riot_failure(error.kind)
             values["settings_link"] = error.kind not in ("busy", "down")
         else:
-            values["problem"] = _t("ゲームの設定を取得できません。しばらくしてからお試しください。")
+            values["problem"] = tr("ゲームの設定を取得できません。しばらくしてからお試しください。")
         return values, 200 if error.kind == "nologin" else 503
     data = queues.settings(found.get("config") or {}, current_app.config["VAL_CONTENT"].map_index(g.lang))
     for queue in data["queues"]:
-        queue["name"] = _t(QUEUES[queue["id"]]) if queue["id"] in QUEUES else queue["id"]
+        queue["name"] = tr(QUEUES[queue["id"]]) if queue["id"] in QUEUES else queue["id"]
     values["queues"] = data["queues"]
-    values["read_at"] = _when(datetime.fromtimestamp(float(found.get("at") or time.time()), JST).isoformat())
+    values["read_at"] = moment_info(datetime.fromtimestamp(float(found.get("at") or time.time()), JST).isoformat())
     competitive = data["competitive"]
     if competitive and competitive["ceilings"]:
         values["competitive"] = competitive | {
             "table": [
-                {"rank": _rank({"id": tier}), "top": _rank({"id": top})}
+                {"rank": rank_info({"id": tier}), "top": rank_info({"id": top})}
                 for tier, top in competitive["ceilings"].items()
             ],
-            "high_rank": _rank({"id": competitive["high_tier"]}) if competitive["high_tier"] else None,
+            "high_rank": rank_info({"id": competitive["high_tier"]}) if competitive["high_tier"] else None,
         }
         tiers = current_app.config["VAL_CONTENT"].tiers(g.lang)
-        values["choices"] = [{"tier": 0, "name": _t("未ランク")}] + [
-            {"tier": tier, "name": _rank({"id": tier})["name"]} for tier in sorted(tiers) if tier >= queues.IRON
+        values["choices"] = [{"tier": 0, "name": tr("未ランク")}] + [
+            {"tier": tier, "name": rank_info({"id": tier})["name"]} for tier in sorted(tiers) if tier >= queues.IRON
         ]
         picked = []
         for value in request.args.getlist("rank")[:5]:
@@ -446,11 +452,11 @@ def _queues_page() -> tuple[dict, int]:
             why, said = verdict["why"], dict(verdict["values"])
             for key in ("low", "high", "top"):
                 if key in said:
-                    said[key] = _rank({"id": said[key]})["name"]
+                    said[key] = rank_info({"id": said[key]})["name"]
             if why == "high":
-                said["rank"] = _rank({"id": said.pop("tier")})["name"]
+                said["rank"] = rank_info({"id": said.pop("tier")})["name"]
                 why = "high" if competitive["bypass"] else "high_strict"
-            values["verdict"] = {"ok": verdict["ok"], "words": _t(PARTY_WORDS[why], **said)}
+            values["verdict"] = {"ok": verdict["ok"], "words": tr(PARTY_WORDS[why], **said)}
     return values, 200
 
 
@@ -499,15 +505,15 @@ def _reminder():
     now = time.time()
     start = datetime.fromtimestamp(_next_reset(now), UTC).strftime("%Y%m%dT%H%M%SZ")
     stamp = datetime.fromtimestamp(now, UTC).strftime("%Y%m%dT%H%M%SZ")
-    title = _ics(_t("VALORANT のストアが更新されました"))
-    about = _ics(_t("デイリーの 4 スキンが入れ替わりました。") + " " + shared_url("shop"))
+    title = _ics(tr("VALORANT のストアが更新されました"))
+    about = _ics(tr("デイリーの 4 スキンが入れ替わりました。") + " " + shared_url("shop"))
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
         "PRODID:-//VAL Tracker//Store//EN",
         "CALSCALE:GREGORIAN",
         "METHOD:PUBLISH",
-        "X-WR-CALNAME:" + _ics(_t("VALORANT のストア")),
+        "X-WR-CALNAME:" + _ics(tr("VALORANT のストア")),
         "BEGIN:VEVENT",
         "UID:daily-store@val-tracker",
         "DTSTAMP:" + stamp,
@@ -557,7 +563,7 @@ def register(app: Flask) -> None:
         start = 0 if typed else (page - 1) * BOARD_PAGE
         common = {
             "regions": _regions("leaderboard", region, q=typed or None),
-            "region_name": _t(REGION_NAMES[region]),
+            "region_name": tr(REGION_NAMES[region]),
             "act": act_left(),
         }
         if act:
@@ -582,11 +588,11 @@ def register(app: Flask) -> None:
     @app.get("/status")
     def status():
         region = _region()
-        values = {"regions": _regions("status", region), "region_name": _t(REGION_NAMES[region]), "notices": []}
+        values = {"regions": _regions("status", region), "region_name": tr(REGION_NAMES[region]), "notices": []}
         try:
             found = _status(region)
         except HenrikError as error:
-            code, problem, settings_link = _failure(error.kind)
+            code, problem, settings_link = failure_info(error.kind)
             return render_template("status.html", **values, problem=problem, settings_link=settings_link), code
         return render_template("status.html", **values | {"notices": _notices(found)}, problem="")
 
@@ -656,7 +662,7 @@ def register(app: Flask) -> None:
         values = _servers_page(region)
         values["regions"] = _regions("servers", region)
         values["region"] = region
-        values["region_name"] = _t(REGION_NAMES[region])
+        values["region_name"] = tr(REGION_NAMES[region])
         return render_template("servers.html", **values)
 
     @app.get("/ranks")
@@ -665,7 +671,7 @@ def register(app: Flask) -> None:
         values = _ranks_page(region)
         values["regions"] = _regions("ranks", region)
         values["region"] = region
-        values["region_name"] = _t(REGION_NAMES[region])
+        values["region_name"] = tr(REGION_NAMES[region])
         return render_template("ranks.html", **values)
 
     @app.get("/queues")
@@ -687,12 +693,12 @@ def register(app: Flask) -> None:
         try:
             values["featured"] = store.featured(current_app.config["VAL_HENRIK"].featured(), content, g.lang)
         except HenrikError:
-            values["featured_problem"] = _t("読み込めませんでした。")
+            values["featured_problem"] = tr("読み込めませんでした。")
         for bundle in values["featured"]:
             bundle["left"] = _left(bundle["until"])
         values["vp_icon"] = (content.index("currencies", g.lang).get(store.VP) or {}).get("displayIcon")
         reset = _next_reset(time.time())
-        values["reset"] = {"left": _left(reset), "when": _when(datetime.fromtimestamp(reset, JST).isoformat())}
+        values["reset"] = {"left": _left(reset), "when": moment_info(datetime.fromtimestamp(reset, JST).isoformat())}
         if security.is_owner():
             riot = current_app.config["VAL_RIOT"]
             try:
