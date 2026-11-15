@@ -79,10 +79,10 @@ TEXTS = {
         "en-GB": "Busy right now. Try again in a moment.",
         "zh-TW": "目前流量較大，請稍後再試。",
     },
-    "戦績サーバーが応答しません。しばらくしてからお試しください。": {
-        "ko": "전적 서버가 응답하지 않습니다. 잠시 후 다시 시도하세요.",
-        "en-GB": "The stats service isn't answering. Try again shortly.",
-        "zh-TW": "戰績伺服器沒有回應，請稍後再試。",
+    "戦績データの取得元（HenrikDev）が応答しません。このサイトは動いています。しばらくしてからお試しください。": {
+        "ko": "전적 데이터 제공처(HenrikDev)가 응답하지 않습니다. 이 사이트는 정상입니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "HenrikDev, where the stats come from, isn't answering. This site is fine. Try again shortly.",
+        "zh-TW": "戰績資料來源（HenrikDev）沒有回應，本網站運作正常。請稍後再試。",
     },
     # 検索とお気に入り（トップ）
     "プレイヤー検索": {"ko": "플레이어 검색", "en-GB": "Find a player", "zh-TW": "搜尋玩家"},

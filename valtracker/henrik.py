@@ -52,6 +52,10 @@ FRESH_AFTER = 60
 SPARE_KEEP = 120
 #: HenrikDev が答えないとき用に、各呼び出しの最後の答えを手元に置く秒数。
 LAST_KEEP = 24 * 3600
+#: HenrikDev 全体が答えない（10 秒の無応答、Cloudflare の 520〜526: あちらのサーバーに届かない）とわかってから、
+#: 聞かずにすぐ「down」と答える秒数。落ちている間に 1 ページで何回も 10 秒待たせず、こちらのサーバーの
+#: スレッドも待ちで埋めない（2026-11-15、HenrikDev の API が 1 時間以上無応答）。
+DOWN_WAIT = 60
 #: ランキング 1 ページの人数。
 BOARD_PAGE = 50
 #: Riot ID: 名前（3〜16 文字、空白可）とタグ（英数字 3〜5 文字）。
@@ -124,6 +128,8 @@ class Henrik:
         self.key = key
         self.fetch = fetch
         self.budget = budget or Budget(25, 60.0)
+        #: この時刻（unix 秒）までは HenrikDev に聞かない（DOWN_WAIT）と、そのときの理由。
+        self.down_until, self.down_detail = 0.0, ""
         self.cache = TTLCache(1024)
         #: キャッシュのキー -> 答えを読んだ時刻（unix 秒）。答えと同じ間持つ。
         self.read_times = TTLCache(1024)
@@ -334,7 +340,8 @@ class Henrik:
         path = "/valorant/v1/esports/schedule"
         if not self.cache.get(("no-esports",)):
             try:
-                return self._get(("esports",), path, KEEP["esports"], _slim_esports, last=False)
+                # 全部の予定の無応答は大きさのせいのことが多い: HenrikDev 全体が落ちたとはしない（trip）
+                return self._get(("esports",), path, KEEP["esports"], _slim_esports, last=False, trip=False)
             except HenrikError as error:
                 if not (error.kind == "down" or _refused(error)):
                     raise
@@ -361,12 +368,12 @@ class Henrik:
             raise HenrikError("down", f"{first.detail or first.kind}; leagues: no matches")
         return games
 
-    def _get(self, cache_key, path: str, seconds: float, shape=None, last: bool = True):
+    def _get(self, cache_key, path: str, seconds: float, shape=None, last: bool = True, trip: bool = True):
         kept = self.cache.get(cache_key)
         if kept is not None:
             return kept
         try:
-            return self._ask(cache_key, path, seconds, shape)
+            return self._ask(cache_key, path, seconds, shape, trip)
         except HenrikError as error:
             # HenrikDev が今は答えられない: エラーにせず、
             # ページは前に出したものを出し続ける（「データを更新」を押した場合）か、その日の最後の答えを出す（``last``。
@@ -381,17 +388,24 @@ class Henrik:
             self.read_times.put(cache_key, at, FRESH_AFTER)
             return data
 
-    def _ask(self, cache_key, path: str, seconds: float, shape):
+    def _ask(self, cache_key, path: str, seconds: float, shape, trip: bool = True):
+        """``trip``: 無応答と 520〜526 を HenrikDev 全体の問題とみなし、DOWN_WAIT の間ほかの呼び出しも止める。"""
         key = self.key()
         if not key:
             raise HenrikError("nokey")
+        if time.time() < self.down_until:
+            raise HenrikError("down", self.down_detail)
         if not self.budget.take():
             raise HenrikError("busy")
         status, body = self.fetch(BASE + path, {"Authorization": key, "Accept": "application/json"})
-        if status >= 500 and self.budget.take():
+        if 500 <= status < 520 and self.budget.take():
             # HenrikDev 自身の一時的な問題（502、503、504 は出たり消えたりする）: もう 1 回聞く。
-            # 10 秒の無応答のあとは聞き直さない（2 回目の 10 秒で倍になるだけ）
+            # 10 秒の無応答と 520〜526 のあとは聞き直さない（2 回目の 10 秒で倍になるだけ）
             status, body = self.fetch(BASE + path, {"Authorization": key, "Accept": "application/json"})
+        if trip and (status == 0 or 520 <= status <= 526):
+            # 1 人のプレイヤーではなく HenrikDev 全体の問題: しばらく誰の分も聞かない
+            self.down_until = time.time() + DOWN_WAIT
+            self.down_detail = f"HTTP {status}" if status else "no answer within 10 s"
         if status in (401, 403):
             raise HenrikError("badkey")
         if status == 404:
