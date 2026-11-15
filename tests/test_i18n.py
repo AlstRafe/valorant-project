@@ -5,7 +5,7 @@ import re
 import unittest
 from pathlib import Path
 
-from valtracker import checkup, crosshair, i18n
+from valtracker import checkup, crosshair, i18n, smurf
 from valtracker.collection import TABS
 from valtracker.compare import LINES
 from valtracker.live import STATE_WORDS
@@ -49,6 +49,7 @@ def used_texts() -> set[str]:
     found.update(LEVEL_ITEMS.values())
     found.update(name for _, name, _, _ in LINES if re.search(r"[ぁ-んァ-ヶ一-龯]", name))
     found.update(name for _, name in CLOCKS.values())
+    found.update(smurf.WORDS)
     found.update(crosshair.COLOUR_NAMES)
     found.update(crosshair.PRESETS)
     found.update(label for label, _ in LOBBY_LABELS.values() if re.search(r"[ぁ-んァ-ヶ一-龯]", label))

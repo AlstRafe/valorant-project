@@ -15,7 +15,7 @@
 {% if card %}<img class="card" src="{{ media('https://media.valorant-api.com/playercards/' ~ card ~ '/smallart.png') }}" alt="" width="64" height="64">{% endif %}
 <div class="who">
 <h1>{{ name }}<span class="tagged"><span class="tag">#{{ tag }}</span><button type="button" class="id-copy" data-copy="{{ name }}#{{ tag }}" data-done="{{ t('Riot ID をコピーしました') }}" title="{{ t('Riot ID をコピー') }}" aria-label="{{ t('Riot ID をコピー') }}" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2"/><path d="M15.5 8.5V6a1.5 1.5 0 0 0-1.5-1.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></svg></button></span></h1>
-<p class="meta">{{ t('レベル {level}', level=account.account_level or '–') }} · {{ region|upper }}</p>
+<p class="meta">{{ t('レベル {level}', level=account.account_level or '–') }} · {{ region|upper }}{% if smurf %} {% with guess=smurf %}{% include "_smurf.html" %}{% endwith %}{% endif %}</p>
 </div>
 <button type="button" class="fav" id="share" data-copied="{{ t('リンクをコピーしました') }}" title="{{ t('共有') }}" aria-label="{{ t('共有') }}" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1"/></svg></button>
 <button type="button" class="fav" id="fav" aria-pressed="false" data-on="{{ t('お気に入りから外す') }}" data-off="{{ t('お気に入りに追加') }}" title="{{ t('お気に入りに追加') }}" aria-label="{{ t('お気に入りに追加') }}" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg></button>

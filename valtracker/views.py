@@ -26,7 +26,7 @@ from flask import (
 
 from valtracker import archive as archive_module
 from valtracker import collection as owned_items
-from valtracker import heatmap, i18n, pc, pdmatch, release, score, security, stats
+from valtracker import heatmap, i18n, pc, pdmatch, release, score, security, smurf, stats
 from valtracker import rounds as rounds_module
 from valtracker.activity import BANDS, LINE_QUEUES, LINE_STATS, RANKS_ENOUGH
 from valtracker.content import todays_tier
@@ -759,6 +759,14 @@ def _player(
             "minutes": round(sum(row["length"] for row in played_today) / 60000),
         }
     scores = _scores(rows) if rows else None
+    guessed = smurf.guess(
+        rank["tier"] if rank else 0,
+        _tier_number(account.get("account_level")) or None,
+        len((mmr or {}).get("seasons") or []) if mmr else None,
+        summary.get("games", 0) if summary else 0,
+        summary.get("win_rate") if summary else None,
+        scores["value"] if scores and scores["games"] >= 5 else None,
+    )
     if summary:
         summary["score"] = scores
         summary["streak"] = _streak(rows)
@@ -780,6 +788,7 @@ def _player(
         "last_change": current.get("last_change"),
         "peak": _peak(mmr),
         "act_peak": _act_peak(mmr, rank),
+        "smurf": guessed,
         "standing": _standing(current),
         "acts": _acts((mmr or {}).get("seasons") or []),
         "rows": rows,

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from valtracker import i18n
+from valtracker import i18n, smurf
 from valtracker.activity import FEW
 from valtracker.content import Content, todays_tier
 
@@ -98,6 +98,30 @@ def act_best(mmr, act: str) -> int:
     return max([*tiers, _number(info.get("CompetitiveTier"))])
 
 
+def _smurf(tier: int, identity: dict, mmr, act: str) -> dict | None:
+    """The guess at a second account (smurf.guess) from the level, the acts of ranked play and, for a player who
+    shows their name (``act``), this act's record: one who hides it gets the guess without their record."""
+    level = None if identity.get("HideAccountLevel") else _number(identity.get("AccountLevel")) or None
+    skills = (
+        ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
+        if isinstance(mmr, dict)
+        else {}
+    )
+    acts = (
+        sum(1 for info in skills.values() if isinstance(info, dict) and _number(info.get("NumberOfGames")) > 0)
+        if isinstance(skills, dict) and skills
+        else None
+    )
+    record = _record(mmr, act) if act else None
+    return smurf.guess(
+        tier if tier > 2 else 0,
+        level,
+        acts,
+        record["games"] if record else 0,
+        record["win_rate"] if record else None,
+    )
+
+
 def _record(mmr, act: str) -> dict | None:
     """The act's competitive record from PD's mmr answer, as the game's career page has it: ``{"wins", "games",
     "win_rate"}``, or None (no games)."""
@@ -175,6 +199,7 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
         "record": _record(look["ranks"].get(subject), look["act"]) if shown else None,
         "peak": _rank_of(best_ever(look["ranks"].get(subject), look.get("old_acts") or frozenset()), look),
         "act_peak": _rank_of(act_best(look["ranks"].get(subject), look["act"]), look),
+        "smurf": _smurf(tier, identity, look["ranks"].get(subject), look["act"] if shown else ""),
         "team": str(item.get("TeamID") or ""),
         "owner": bool(item.get("IsOwner")),
     }

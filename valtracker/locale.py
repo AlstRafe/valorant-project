@@ -3368,4 +3368,34 @@ TEXTS = {
         "en-GB": "Rank at the time of this match",
         "zh-TW": "這場對戰當時的牌位",
     },
+    "サブ垢の可能性: 高": {"ko": "부계정 가능성: 높음", "en-GB": "Likely a smurf", "zh-TW": "可能是小帳: 高"},
+    "サブ垢の可能性: あり": {"ko": "부계정 가능성: 있음", "en-GB": "Maybe a smurf", "zh-TW": "可能是小帳"},
+    "本垢らしい": {"ko": "본계정으로 보임", "en-GB": "Looks like a main", "zh-TW": "看似主帳"},
+    "推測": {"ko": "추정", "en-GB": "A guess", "zh-TW": "推測"},
+    "レベル {level} でこのランク": {
+        "ko": "레벨 {level}에 이 랭크",
+        "en-GB": "This rank at level {level}",
+        "zh-TW": "等級 {level} 就有這個牌位",
+    },
+    "ランクの割にレベルが低い（{level}）": {
+        "ko": "랭크에 비해 레벨이 낮음({level})",
+        "en-GB": "A low level for the rank ({level})",
+        "zh-TW": "以牌位來說等級偏低（{level}）",
+    },
+    "ランク戦は {count} アクトだけ": {
+        "ko": "랭크전은 {count}개 액트뿐",
+        "en-GB": "Ranked in only {count} acts",
+        "zh-TW": "只打過 {count} 章牌位戰",
+    },
+    "最近の勝率 {rate}%": {"ko": "최근 승률 {rate}%", "en-GB": "Recent win rate {rate}%", "zh-TW": "近期勝率 {rate}%"},
+    "同じランク帯の中で VAL スコア {score}": {
+        "ko": "같은 랭크대에서 VAL 점수 {score}",
+        "en-GB": "VAL score {score} among the same ranks",
+        "zh-TW": "同牌位帶中 VAL 分數 {score}",
+    },
+    "レベル {level}・ランクに見合った成績": {
+        "ko": "레벨 {level}, 랭크에 맞는 성적",
+        "en-GB": "Level {level}, numbers fit the rank",
+        "zh-TW": "等級 {level}，成績與牌位相符",
+    },
 }
