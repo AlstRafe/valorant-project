@@ -1,10 +1,10 @@
-// ESLint for the scripts in valtracker/static (npm run lint). Prettier owns the layout (npm run format); these rules
-// catch mistakes. The rules block is the same as News Site's and Infra Game's.
+// valtracker/static のスクリプト用の ESLint（npm run lint）。レイアウトは Prettier（npm run format）、
+// ルールはミスを拾う。rules ブロックは News Site と Infra Game のものと同じ。
 import js from "@eslint/js";
 import globals from "globals";
 
 export default [
-  // This PC's data is not ours to lint.
+  // この PC のデータは lint しない。
   { ignores: ["instance/"] },
   js.configs.recommended,
   {
@@ -24,12 +24,12 @@ export default [
     files: ["valtracker/static/**/*.js"],
     languageOptions: {
       sourceType: "script",
-      // VT: the namespace the scripts share (window.VT).
+      // VT: スクリプトが共有する名前空間（window.VT）。
       globals: { ...globals.browser, VT: "readonly" },
     },
   },
   {
-    // The layout check: Node, with one function (inspect) that runs in the page.
+    // レイアウトの確認: Node と、ページの中で動く関数 1 つ（inspect）。
     files: ["tests/ui/**/*.js"],
     languageOptions: {
       sourceType: "commonjs",

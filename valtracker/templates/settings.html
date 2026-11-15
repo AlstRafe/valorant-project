@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# A sentence of the page's language with one link in it: the link's place is {link} in the words. #}
+{# リンクを 1 つ含むページの言語の文: 文の中の {link} がリンクの場所。 #}
 {% macro linked(words, href, label, outside=true) -%}
 {%- set parts = words.split('{link}', 1) -%}
 {{ parts[0] }}<a href="{{ href }}"{% if outside %} rel="noopener noreferrer" target="_blank"{% endif %}>{{ label }}</a>{{ parts[1] if parts|length > 1 else '' }}

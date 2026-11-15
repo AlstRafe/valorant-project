@@ -1,7 +1,7 @@
-# The PC app's screenshots (docs/screenshots, shown in the README): the app's real window on a Windows runner, on
-# made-up players and matches with the game's real names and pictures (tests/ui/shots.py, played.py). Run by hand
-# (Actions -> Screenshots -> Run workflow, on a branch), or by a push that changes how they are taken; the pictures
-# are committed to that branch, for a pull request.
+# PC アプリのスクリーンショット（docs/screenshots、README に出す）: Windows のランナーで本物のウィンドウを、
+# 作りもののプレイヤーと試合、ゲームの本物の名前と絵で（tests/ui/shots.py、played.py）。
+# 手動（Actions -> Screenshots -> Run workflow、ブランチで）か、撮り方を変える push で実行する。
+# 画像はプルリクエスト用にそのブランチへコミットする。
 name: Screenshots
 
 on:

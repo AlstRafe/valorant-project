@@ -1,7 +1,6 @@
-// VAL Tracker's pages: favourite and recently viewed players with their rank (kept in this browser), match times in
-// the visitor's own time zone and the matches by day, sharing a page, the collection's name filter, and the phone's
-// tab bar hidden while typing. The pages work without it, except for the lists of players, which live only in this
-// browser.
+// VAL Tracker のページのスクリプト: お気に入りと最近見たプレイヤー（ランクつき、このブラウザーに保存）、
+// 訪問者のタイムゾーンでの試合時刻と日ごとの試合、ページの共有、コレクションの名前の絞り込み、
+// 入力中はスマホのタブバーを隠す。プレイヤーの一覧（このブラウザーにしか無い）以外は、これが無くてもページは動く。
 (function () {
   "use strict";
 
@@ -23,7 +22,7 @@
     }
   }
 
-  // A rank picture is one of our own (/val/media/...): anything else kept in the store is not shown.
+  // ランクの絵はこちらのもの（/val/media/...）だけ: 保存の中のほかのものは出さない。
   function ownPicture(address) {
     return typeof address === "string" && address.charAt(0) === "/" && address.charAt(1) !== "/" ? address : "";
   }
@@ -32,7 +31,7 @@
     try {
       localStorage.setItem(key, JSON.stringify(list));
     } catch (e) {
-      // private browsing or a full store: the list is just not kept
+      // プライベートブラウズかストレージがいっぱい: 一覧を残さないだけ
     }
   }
 
@@ -46,7 +45,7 @@
     });
   }
 
-  // The lists on the top page, built from a <template> (text only: names are never read as HTML).
+  // トップページの一覧。<template> から作る（テキストだけ: 名前を HTML として読まない）。
   function fill(list, people) {
     people = people || read(list.id === "favorites" ? FAVORITES : RECENT);
     var template = document.getElementById("person");
@@ -83,7 +82,7 @@
     known();
   }
 
-  // Everyone kept in this browser, each once: the favourites first.
+  // このブラウザーに保存した全員を 1 回ずつ: お気に入りが先。
   function kept() {
     var found = [];
     read(FAVORITES)
@@ -99,8 +98,8 @@
     return found;
   }
 
-  // The search box suggests the players kept here as "Name#TAG" (typing a name shows its tag), and a search with a
-  // name but no tag shows the kept players of that name, whose tag the visitor may have forgotten.
+  // 検索ボックスはここに保存したプレイヤーを "Name#TAG" で候補に出し（名前を入れるとタグが出る）、
+  // タグ無しで名前だけの検索では、その名前の保存したプレイヤーを出す（タグを忘れたときのため）。
   function known() {
     var choices = document.getElementById("known");
     if (choices) {
@@ -122,7 +121,7 @@
     list.parentNode.hidden = false;
   }
 
-  // A player's page: remember the visit, and the ☆ button.
+  // プレイヤーページ: 訪問を覚え、☆ ボタン。
   function profile() {
     var box = document.getElementById("profile");
     if (!box) return;
@@ -132,7 +131,7 @@
       person.icon = ownPicture(box.getAttribute("data-icon"));
     }
     write(RECENT, [person].concat(without(read(RECENT), person)).slice(0, RECENT_MAX));
-    // a favourite keeps the rank it was last seen with
+    // お気に入りは最後に見たときのランクを持つ
     var kept = read(FAVORITES);
     if (
       person.rank &&
@@ -173,14 +172,14 @@
     });
   }
 
-  // A player's page comes at once without the rank and matches (HenrikDev takes seconds): asked for here and put
-  // in place. A failure leaves the way to the page that waits for them (?full=1).
+  // プレイヤーページはランクと試合無しですぐ来る（HenrikDev は数秒かかる）: ここで頼んで差し込む。失敗したら、
+  // それを待つページ（?full=1）への道を残す。
   function part() {
     var box = document.getElementById("player");
     if (!box) return;
     var address = box.getAttribute("data-part");
     if (address) load(box, address, "");
-    // The mode filter: only the matches change, so only they are asked for again (the account and rank are kept).
+    // モードの絞り込み: 変わるのは試合だけなので、頼み直すのも試合だけ（アカウントとランクはそのまま）。
     box.addEventListener("click", function (e) {
       var link = e.target.closest ? e.target.closest(".modes a") : null;
       if (!link || !window.fetch || e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
@@ -198,7 +197,7 @@
     });
   }
 
-  // The act rank: every act is on the page; the list shows the one chosen (without a script, the latest).
+  // アクトランク: 全アクトがページにあり、一覧は選んだものを出す（スクリプト無しでは最新）。
   function acts() {
     var pick = document.getElementById("act-pick");
     if (!pick || !pick.hidden) return;
@@ -210,8 +209,8 @@
     });
   }
 
-  // A choice that is a page of its own (the act a player's numbers are counted over): shown when chosen, without
-  // the button a browser without a script needs.
+  // それ自体が別のページになる選択（プレイヤーの数値を数えるアクト）: 選んだら移動し、
+  // スクリプトの無いブラウザー用のボタンは隠す。
   function autoSubmit() {
     document.querySelectorAll("select[data-auto-submit]").forEach(function (pick) {
       var button = pick.form && pick.form.querySelector("button[type=submit]");
@@ -223,7 +222,7 @@
     });
   }
 
-  // A mode further along the row (Premier on a phone) is scrolled into sight.
+  // 並びの先の方のモード（スマホでのプレミア）は見えるところまでスクロールする。
   function chosen() {
     var current = document.querySelector(".modes a[aria-current]");
     var row = current && current.parentNode;
@@ -234,11 +233,11 @@
     }
   }
 
-  // page: the address the visitor chose with the filter ("" for the first load).
+  // page: 訪問者が絞り込みで選んだアドレス（最初の読み込みなら ""）。
   function load(box, address, page) {
     function failed() {
-      if (page) return location.assign(page); // the plain page for that mode
-      if (!box.querySelector(".wait")) return location.reload(); // "データを更新" on a page already shown
+      if (page) return location.assign(page); // そのモードの普通のページ
+      if (!box.querySelector(".wait")) return location.reload(); // すでに出しているページでの「データを更新」
       var wait = box.querySelector(".wait");
       if (wait) wait.textContent = box.getAttribute("data-failed");
       var retry = box.querySelector(".retry");
@@ -247,13 +246,13 @@
     if (!window.fetch) return failed();
     fetch(address, { headers: { Accept: "text/html" }, credentials: "same-origin" })
       .then(function (answer) {
-        // a missing player or a busy HenrikDev is a part of the page too (404, 503), with its words
+        // プレイヤーがいない、HenrikDev が混んでいるのもページの一部（404、503）で、その文つき
         if (answer.status >= 500 && answer.status !== 503) throw new Error(String(answer.status));
         return answer.text();
       })
       .then(function (html) {
         var fresh = document.createElement("template");
-        fresh.innerHTML = html; // our own server's page, escaped by its templates
+        fresh.innerHTML = html; // こちらのサーバーのページ。テンプレートでエスケープ済み
         var games = page ? document.getElementById("games") : null;
         var found = fresh.content.getElementById("games");
         if (games && found) {
@@ -265,7 +264,7 @@
           box.removeAttribute("aria-busy");
           profile();
           if (/[?&]fresh=/.test(location.search)) {
-            var here = new URL(location.href); // read again once: a reload or a shared link need not
+            var here = new URL(location.href); // 1 回だけ読み直す: 再読み込みや共有したリンクでは要らない
             here.searchParams.delete("fresh");
             history.replaceState(null, "", here.href);
           }
@@ -283,8 +282,8 @@
       .catch(failed);
   }
 
-  // Other parts that HenrikDev takes seconds for (a page of the leaderboard, the top page's notice) are asked for
-  // the same way: [data-load] is their address. A quiet one ([data-quiet]) shows nothing when it fails.
+  // HenrikDev が数秒かかるほかの部分（ランキングの 1 ページ、トップページのお知らせ）
+  // も同じように頼む: [data-load] がそのアドレス。静かなもの（[data-quiet]）は失敗しても何も出さない。
   function parts() {
     document.querySelectorAll("[data-load]").forEach(function (box) {
       var address = box.getAttribute("data-load");
@@ -303,7 +302,7 @@
           return answer.text();
         })
         .then(function (html) {
-          box.innerHTML = html; // our own server's part, escaped by its templates
+          box.innerHTML = html; // こちらのサーバーの部分。テンプレートでエスケープ済み
           box.hidden = !html.trim();
           times();
         })
@@ -311,8 +310,8 @@
     });
   }
 
-  // [data-copy]: its words to the clipboard (a crosshair code, a Riot ID), and the button says so for a moment.
-  // One that is only a picture (an icon) keeps it, and says so to screen readers and in its title instead.
+  // [data-copy]: その文をクリップボードへ（クロスヘアコード、Riot ID）。ボタンはしばらくそう表示する。
+  // 絵だけ（アイコン）のボタンは絵のまま、スクリーンリーダーと title でそう伝える。
   function showCopies() {
     if (!navigator.clipboard) return;
     document.querySelectorAll("[data-copy][hidden]").forEach(function (button) {
@@ -350,7 +349,7 @@
     });
   }
 
-  // The store's offers end at a set time: the time left is counted down each minute.
+  // ストアのオファーは決まった時刻に終わる: 残り時間を 1 分ごとに減らす。
   function countdowns() {
     var boxes = document.querySelectorAll("[data-until]");
     if (!boxes.length) return;
@@ -374,7 +373,7 @@
     setInterval(tick, 30000);
   }
 
-  // Share a player's or a match's page: the phone's own share sheet, else the address copied.
+  // プレイヤーや試合のページを共有: スマホ自身の共有シート、無ければアドレスをコピー。
   function share() {
     var button = document.getElementById("share");
     if (!button || !button.hidden) return;
@@ -383,7 +382,7 @@
     button.hidden = false;
     button.addEventListener("click", function () {
       var address = location.href.split("#")[0];
-      // the PC app's own address (127.0.0.1) leads nowhere for anyone else: the public site's
+      // PC アプリ自身のアドレス（127.0.0.1）はほかの人にはどこにも行かない: 公開サイトのものにする
       var site = document.body.getAttribute("data-public");
       if (site) address = site + location.pathname + location.search;
       if (navigator.share) {
@@ -405,16 +404,16 @@
     });
   }
 
-  // A player's matches by day in the visitor's own time zone, each day with its wins, losses and RR.
+  // 訪問者のタイムゾーンでの日ごとのプレイヤーの試合。日ごとに勝ち・負け・RR。
   function days() {
     var list = document.querySelector(".match-list[data-day]");
     if (!list || !window.Intl) return;
-    // asked again after the map filter: the heads are made anew for the matches shown
+    // マップの絞り込みのあと頼み直した: 出している試合の見出しを作り直す
     list.querySelectorAll(".day").forEach(function (head) {
       head.remove();
     });
     var format;
-    var dated; // a day of another year (a lifetime goes back years): with its year
+    var dated; // 別の年の日（通算は何年も前までさかのぼる）: 年つきで
     try {
       format = new Intl.DateTimeFormat(document.documentElement.lang, {
         month: "short",
@@ -474,7 +473,7 @@
       head.appendChild(title);
       head.appendChild(record);
       if (kills || deaths) {
-        // the day's K/D, as tracker.gg's day heads have it
+        // tracker.gg の日の見出しと同じく、その日の K/D
         record.appendChild(document.createTextNode(" · K/D " + (deaths ? kills / deaths : kills).toFixed(2)));
       }
       if (rated) {
@@ -488,7 +487,7 @@
     });
   }
 
-  // A match: a round of the line at the top opens its kills further down (the address's #r5 too).
+  // 試合: 上の線のラウンドを押すと、下でそのキルが開く（アドレスの #r5 も）。
   function rounds() {
     function open(hash) {
       var target = /^#r\d+$/.test(hash) ? document.getElementById(hash.slice(1)) : null;
@@ -505,7 +504,7 @@
     });
   }
 
-  // Times are written in Japan's time by the server; shown in the visitor's own zone and language.
+  // 時刻はサーバーが日本時間で書く。訪問者のタイムゾーンと言語で出す。
   function times() {
     if (!window.Intl || !Intl.DateTimeFormat) return;
     var format;
@@ -525,8 +524,8 @@
     });
   }
 
-  // The servers page counts the hours in the visitor's own clock: their offset from UTC in a cookie (minutes), and
-  // the page once more when it was counted in another clock. Only when the cookie changed, so never in a loop.
+  // サーバーのページは訪問者自身の時計で時間を数える: UTC からのずれを cookie に（分）入れ、
+  // 別の時計で数えていたらページをもう 1 回読む。cookie が変わったときだけなので、繰り返しにはならない。
   function zone() {
     var minutes = -new Date().getTimezoneOffset();
     if (!isFinite(minutes)) return;
@@ -538,8 +537,8 @@
     if (page && page.getAttribute("data-offset") !== String(minutes)) location.reload();
   }
 
-  // Esports: the teams the visitor marked (kept in this browser), their matches lit up and, if asked, alone; the
-  // matches by day in the visitor's own clock.
+  // eスポーツ: 訪問者が印を付けたチーム（このブラウザーに保存）の試合を目立たせ、頼まれればそれだけ出す。
+  // 試合は訪問者自身の時計で日ごとに。
   var TEAMS = "val.teams";
 
   function marked() {
@@ -595,11 +594,11 @@
     dayHeads(list, ".game");
   }
 
-  // A heading before each day's first item: the day in the visitor's own clock and language.
+  // 各日の最初の項目の前の見出し: 訪問者自身の時計と言語での日付。
   function dayHeads(list, items) {
     if (!window.Intl || list.querySelector(".day")) return;
     var format;
-    var dated; // a day of another year (a lifetime goes back years): with its year
+    var dated; // 別の年の日（通算は何年も前までさかのぼる）: 年つきで
     try {
       format = new Intl.DateTimeFormat(document.documentElement.lang, {
         month: "short",
@@ -633,8 +632,7 @@
     });
   }
 
-  // A player's matches by map: the maps they were played on, as a choice above the list (the matches stay on the
-  // page, only hidden).
+  // マップ別のプレイヤーの試合: 試合をしたマップを一覧の上の選択肢に（試合はページに残り、隠すだけ）。
   function mapPick() {
     var list = document.querySelector(".match-list");
     var box = document.getElementById("map-pick");
@@ -660,8 +658,8 @@
     });
   }
 
-  // A picture of a player's numbers to save or send (1200 × 630, the size link previews use). Every picture on it is
-  // this site's own (/media/), so the canvas can be saved.
+  // 保存・送信用のプレイヤーの数値の絵（1200 × 630、リンクのプレビューの大きさ）。
+  // 中の絵はどれもこのサイトのもの（/media/）なので、キャンバスを保存できる。
   function picture(address) {
     return new Promise(function (done) {
       if (!address) return done(null);
@@ -812,7 +810,7 @@
     });
   }
 
-  // Crosshairs kept in this browser: the one shown can be saved with a name, and the list is on the page.
+  // このブラウザーに保存するクロスヘア: 表示中のものを名前を付けて保存でき、一覧はページに出る。
   var CROSSHAIRS = "val.crosshairs";
   var CROSSHAIRS_MAX = 30;
 
@@ -900,8 +898,8 @@
     });
   }
 
-  // The night market: the cards the game has not shown yet lie face down until turned, one by one or all at once,
-  // as in the game. Which ones were turned is remembered for that night market only.
+  // ナイトマーケット: ゲームがまだ見せていないカードは、ゲームと同じく 1 枚ずつか全部まとめてめくるまで伏せておく。
+  // めくったものはそのナイトマーケットの間だけ覚える。
   var NIGHT = "val.night";
 
   function turned(key) {
@@ -930,7 +928,7 @@
       try {
         localStorage.setItem(NIGHT, JSON.stringify({ key: key, turned: list }));
       } catch (e) {
-        // not kept: they lie face down again next time
+        // 残さない: 次はまた伏せた状態
       }
       if (all) all.hidden = !shelf.querySelector(".face-down");
     }
@@ -957,9 +955,9 @@
     }
   }
 
-  // The owner's match being played: the page is read again every few seconds while it is in view.
-  // A player's "データを更新": the part is asked for again in place (the scroll stays); without JavaScript the link
-  // opens the whole page read again.
+  // プレイ中の持ち主の試合: 見えている間は数秒ごとにページを読み直す。
+  // プレイヤーの「データを更新」: その部分をその場で頼み直す（スクロールはそのまま）。
+  // JavaScript 無しではリンクでページまるごと読み直す。
   function readAgain() {
     var box = document.getElementById("player");
     if (!box) return;
@@ -967,7 +965,7 @@
       var link = e.target.closest ? e.target.closest("a.refresh") : null;
       if (!link || !window.fetch || e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
       e.preventDefault();
-      if (!link.getAttribute("href")) return; // already asked
+      if (!link.getAttribute("href")) return; // もう頼んだ
       link.removeAttribute("href");
       link.textContent = link.getAttribute("data-busy");
       box.setAttribute("aria-busy", "true");
@@ -975,7 +973,7 @@
     });
   }
 
-  // "ページの先頭へ" on long pages: shown once the visitor is two screens down.
+  // 長いページの「ページの先頭へ」: 2 画面分下に行ったら出す。
   function toTop() {
     var button = document.querySelector(".to-top");
     if (!button) return;
@@ -994,24 +992,23 @@
     });
   }
 
-  // Pictures fetched ahead (the agents' squares while the party is matchmaking): agent select then shows them at
-  // once, from the browser's own store. Each is asked once a page.
+  // 先に取っておく絵（パーティーがマッチング中のエージェントの四角）
+  // : エージェント選択でブラウザー自身の保存からすぐ出る。1 ページにつき 1 回ずつ頼む。
   var warmed = {};
   function warm(addresses) {
     (addresses || []).forEach(function (address) {
       address = ownPicture(address);
       if (!address || warmed[address]) return;
       var picture = new Image();
-      warmed[address] = picture; // held until it is loaded
+      warmed[address] = picture; // 読み込み終わるまで持つ
       picture.decoding = "async";
       picture.src = address;
     });
   }
 
-  // Puts into `old` what changed in `fresh` (the same part, read again), keeping every element that stays: a
-  // picture already shown is not made again (the agents' squares blinked and were fetched again at each look), a
-  // button keeps its focus. Children are matched by their tag, id, first class and label; the rest are added or
-  // taken away.
+  // ``fresh``（同じ部分を読み直したもの）で変わったところを ``old`` に入れる。
+  // 残る要素はそのまま: 出している絵は作り直さず（エージェントの四角が確認のたびに点滅して取り直されていた）、
+  // ボタンはフォーカスを保つ。子はタグ・id・最初のクラス・ラベルで対応させ、残りは足すか取り除く。
   function morph(old, fresh) {
     function key(node) {
       return node.nodeType === 1
@@ -1032,7 +1029,7 @@
       var match = a;
       while (match && key(match) !== wanted) match = match.nextSibling;
       if (!match) {
-        old.insertBefore(b, a); // new here (at the end when a is null)
+        old.insertBefore(b, a); // ここで新しく（a が null なら最後に）
       } else {
         if (match !== a) old.insertBefore(match, a);
         if (match.nodeType === 1) {
@@ -1058,10 +1055,10 @@
     }
   }
 
-  // The PC app (desktop.py): the Riot Client on the PC tells the app the moment the game changes (the match found,
-  // agent select, a pick), and the app tells the page (/live/next answers then, or after 25 s with nothing new):
-  // the page reads itself again at once instead of at its next look. Nothing is asked while the window is hidden or
-  // minimised. On the site there is no address and nothing happens.
+  // PC アプリ（desktop.py）: PC の Riot Client がゲームの変化（試合成立、エージェント選択、ピック）
+  // を瞬時にアプリに伝え、アプリがページに伝える（/live/next がそのとき、または 25 秒何も無ければ答える）
+  // : ページは次の確認を待たずにすぐ読み直す。ウィンドウが隠れているか最小化されている間は何も聞かない。
+  // サイトにはこのアドレスが無く、何も起きない。
   function pushed(address, version, changed) {
     if (!address || !window.fetch) return;
     var waiting = false;
@@ -1083,7 +1080,7 @@
             version = found.version;
             changed();
           }
-          // a burst of events (picks at agent select) reads the page a few times a second at most
+          // イベントの集中（エージェント選択でのピック）でも、ページを読むのは 1 秒に数回まで
           setTimeout(wait, 250);
         })
         .catch(function () {
@@ -1095,19 +1092,19 @@
     wait();
   }
 
-  // /live is read again in the background (as often as the moment needs: each second once a match is found), and
-  // only what changed is put in place: no reload, so the scroll, a mode chosen in the menu, the focused button and
-  // the pictures stay. Its buttons (queue, pick, lock) are sent the same way and the answer (the page after the
-  // press, with its note) is put in place at once. Never while a button is being pressed or the mode menu is open.
-  // Without a script, the buttons send the page as before.
+  // /live は裏で読み直し（その時に必要な頻度で: 試合が見つかったら毎秒）、
+  // 変わったところだけ差し込む: 再読み込みしないので、スクロール、メニューで選んだモード、フォーカスのあるボタン、
+  // 絵はそのまま。ボタン（キュー、ピック、ロック）も同じように送り、答え（押したあとのページと説明）をすぐ差し込む。
+  // ボタンを押している途中やモードのメニューが開いている間はしない。スクリプト無しでは、
+  // ボタンは今までどおりページを送る。
   function refresh() {
     var box = document.querySelector("[data-refresh]");
     if (!box || !window.fetch || !window.DOMParser) return;
     var timer = null;
     var asking = false;
-    var again = false; // the game changed while the page was being read: read it once more
+    var again = false; // ページを読んでいる間にゲームが変わった: もう 1 回読む
     var sending = false;
-    var pressed = 0; // when a button was pressed down (a press that never ends stops nothing after 3 s)
+    var pressed = 0; // ボタンを押し下げた時刻（終わらない押下があっても 3 秒後には何も止めない）
     var last = box.innerHTML;
 
     function pressing() {
@@ -1119,7 +1116,7 @@
       timer = setTimeout(ask, Math.max(1, Number(box.getAttribute("data-refresh")) || 10) * 1000);
     }
 
-    // the button that had the focus, or one the same (its name and value) in the new part
+    // フォーカスがあったボタン、または新しい部分の同じもの（名前と値）
     function twin(old) {
       if (box.contains(old)) return old;
       var found = null;
@@ -1138,7 +1135,7 @@
       warm((fresh.getAttribute("data-warm") || "").split(" "));
       if (fresh.innerHTML === last) return true;
       last = fresh.innerHTML;
-      // a mode chosen in the menu but not started yet is kept
+      // メニューで選んだがまだ始めていないモードは保つ
       var chosen = {};
       box.querySelectorAll("select[name]").forEach(function (select) {
         var start = select.querySelector("option[selected]");
@@ -1206,7 +1203,7 @@
       fetch(form.action, { method: "POST", body: data, credentials: "same-origin" })
         .then(function (answer) {
           return answer.text().then(function (text) {
-            if (!put(text)) throw new Error("no page"); // a refusal or Riot busy is a /live page too
+            if (!put(text)) throw new Error("no page"); // 断られた、Riot が混んでいるのも /live のページ
           });
         })
         .catch(function () {
@@ -1229,9 +1226,8 @@
     });
   }
 
-  // The PC app updates itself (update.py): the button is sent in the background and the notice says how far the
-  // update is, asked every second while it goes, until the app closes to open again as the new build. Without a
-  // script the button sends the form and the settings page says it.
+  // PC アプリの自動更新（update.py）: ボタンは裏で送り、お知らせに進み具合を出す。進んでいる間は毎秒聞き、
+  // アプリが閉じて新しいビルドとして開くまで。スクリプト無しではボタンがフォームを送り、設定ページで伝える。
   function updating() {
     var box = document.querySelector("[data-update]");
     if (!box || !window.fetch) return;
@@ -1265,7 +1261,7 @@
         .then(read)
         .then(show)
         .catch(function () {
-          // the app is closing to open again as the new build: nothing more to ask
+          // アプリが閉じて新しいビルドとして開くところ: もう聞くことは無い
         });
     }
     if (form)
@@ -1281,7 +1277,7 @@
           .then(read)
           .then(function (found) {
             if (found) show(found);
-            else location.reload(); // a refusal (the form's token is old): the page as it is now
+            else location.reload(); // 断られた（フォームのトークンが古い）: 今のページのまま
           })
           .catch(function () {
             if (button) button.disabled = false;
@@ -1290,7 +1286,7 @@
     if (box.hasAttribute("data-busy")) ask();
   }
 
-  // The owner's collection lists every item of a tab at once: the names are narrowed as they are typed.
+  // 持ち主のコレクションはタブのアイテムを全部一度に出す: 入力に合わせて名前を絞る。
   function finder() {
     var input = document.getElementById("find");
     if (!input) return;
@@ -1301,24 +1297,23 @@
         item.hidden = words !== "" && item.getAttribute("data-name").indexOf(words) < 0;
       });
       document.querySelectorAll("[data-group]").forEach(function (group) {
-        // a group with nothing to narrow (an empty one says so itself) stays
+        // 絞るものの無いグループ（空なら自分でそう言う）は残す
         group.hidden = words !== "" && !group.querySelector("[data-name]:not([hidden])");
       });
     }
     input.addEventListener("input", narrow);
-    // a list read again in the background (the PC app's friends) stays narrowed
+    // 裏で読み直した一覧（PC アプリのフレンド）も絞ったまま
     document.addEventListener("val:refreshed", function () {
       if (input.value.trim()) narrow();
     });
   }
 
-  // Wearing something from the collection leaves the page where it is: the form goes in the background and the
-  // list is replaced with the answer's (the same page, now with the new look marked). Without a script the page
-  // reloads and comes back to the same weapon.
+  // コレクションからの装備ではページを動かさない: フォームは裏で送り、一覧を答えのもの（同じページで、
+  // 新しい見た目に印）で置き換える。スクリプト無しではページを読み直し、同じ武器に戻る。
   function wearInPlace() {
     if (!window.fetch || !window.DOMParser || !document.querySelector(".equip-form")) return;
     var busy = false;
-    // the note after wearing: long enough to read (a refusal longer; a tap closes it), not again on a reload
+    // 装備後の説明: 読めるだけの長さ（断られたときは長め。タップで閉じる）、再読み込みではもう出さない
     function fade(said) {
       if (!said) return;
       setTimeout(
@@ -1372,13 +1367,13 @@
     });
   }
 
-  // The owner's game on every page: the header's ライブ tab shows where it is (a dot: the menus, matchmaking, agent
-  // select, the match), and agent select starting brings a note with the way to pick. /live itself is read again
-  // every few seconds (refresh), so there the page says where the game is and nothing is asked.
+  // 全ページでの持ち主のゲーム: ヘッダーのライブタブに状態を出し（点: メニュー、マッチング中、エージェント選択、試合）
+  // 、エージェント選択が始まったらピックへの道を示す説明を出す。/live 自体は数秒ごとに読み直す（refresh）ので、
+  // そこではページが状態を出し、何も聞かない。
   function liveWatch() {
     var tab = document.querySelector("[data-live-state]");
     if (!tab) return;
-    // the words in the page's language (base.html): agent select began, pick on ライブ, close, ライブ（{state}）
+    // ページの言語の文（base.html）: エージェント選択が始まった、ライブでピック、閉じる、ライブ（{state}）
     var said = (tab.getAttribute("data-live-said") || "").split("|");
     var SAID = {
       began: said[0] || "エージェント選択が始まりました",
@@ -1387,11 +1382,11 @@
       label: said[3] || "ライブ（{state}）",
       found: said[4] || "試合が見つかりました",
     };
-    var FOUND = 60000; // closing the note when the match is found closes it for that match's agent select too
+    var FOUND = 60000; // 試合成立のときに説明を閉じたら、その試合のエージェント選択でも閉じたまま
     var STOP = { nologin: true, signedout: true, badpaste: true };
     var TOLD = "val.live.told";
     var SWITCHED = "val.live.switched";
-    var SWITCH_KEEP = 150000; // agent select (85 s) after the match is found: not switched to again in that time
+    var SWITCH_KEEP = 150000; // 試合成立後のエージェント選択（85 秒）: その間はもう切り替えない
     var page = document.querySelector("[data-live-phase]");
     var timer = null;
     var asking = false;
@@ -1406,8 +1401,8 @@
       }
     }
 
-    // The PC app (unless turned off in 設定): the window goes to ライブ by itself when the match is found, once a
-    // match (the owner may go back to another page during agent select). The window is not brought to the front.
+    // PC アプリ（設定でオフにしていなければ）: 試合が成立したらウィンドウが自分でライブに行く。
+    // 1 試合 1 回（エージェント選択の間に持ち主がほかのページに戻ってもよい）。ウィンドウは前面に出さない。
     function switchToLive(state) {
       if (!document.body.classList.contains("app") || page) return false;
       if (state.phase !== "found" && state.phase !== "pregame") return false;
@@ -1436,13 +1431,13 @@
       return true;
     }
 
-    // the note from the moment the match is found (the game's 5-second count) through agent select
+    // 試合成立の瞬間（ゲームの 5 秒カウント）からエージェント選択の間の説明
     function note(state) {
       if (switchToLive(state)) return;
       var box = document.getElementById("live-alert");
       var was = told();
       var closed = was.indexOf("found@") === 0 && Date.now() - Number(was.slice(6)) < FOUND;
-      if (closed && state.match) told(state.match); // closed when the match was found: this agent select's
+      if (closed && state.match) told(state.match); // 試合成立のときに閉じた: このエージェント選択のもの
       if (
         (state.phase !== "found" && state.phase !== "pregame") ||
         page ||
@@ -1452,7 +1447,7 @@
         if (box) box.remove();
         return;
       }
-      var wide = /^(ja|zh)/.test(document.documentElement.lang); // full-width brackets in Japanese and Chinese
+      var wide = /^(ja|zh)/.test(document.documentElement.lang); // 日本語と中国語は全角の括弧
       var words = (state.phase === "found" ? SAID.found : SAID.began) + "|";
       if (state.map) words += wide ? "（" + state.map + "）" : " (" + state.map + ")";
       if (box) {
@@ -1501,7 +1496,7 @@
       tab.setAttribute("data-phase", state.phase || "off");
       tab.setAttribute("aria-label", state.words ? SAID.label.replace("{state}", state.words) : tab.textContent.trim());
       tab.title = state.words || "";
-      // the top page's 自分 box says it too
+      // トップページの自分の枠もそう言う
       document.querySelectorAll("[data-live-text]").forEach(function (words) {
         if (state.words) words.textContent = state.words;
       });
@@ -1528,8 +1523,8 @@
           if (state) show(state);
           if (state && STOP[state.problem]) return;
           if (state) warm(state.icons);
-          // as often as the server says the moment needs (each second once a match is found); else while the game
-          // is open, often, and closed, now and then
+          // その時に必要だとサーバーが言う頻度（試合が見つかったら毎秒）。無ければゲームが開いている間はこまめに、
+          // 閉じていればたまに
           var every = state && Number(state.every) > 0 ? Number(state.every) * 1000 : 0;
           timer = setTimeout(ask, every || (state && state.phase ? 8000 : 30000));
         })
@@ -1544,7 +1539,7 @@
         show({ phase: page.getAttribute("data-live-phase"), words: page.getAttribute("data-live-words") });
       };
       here();
-      document.addEventListener("val:refreshed", here); // the page's new part (refresh)
+      document.addEventListener("val:refreshed", here); // ページの新しい部分（refresh）
       return;
     }
     ask();
@@ -1557,7 +1552,7 @@
     });
   }
 
-  // A choice kept in this browser (the PC app's 設定): its value, or "" when never made.
+  // このブラウザーに保存した選択（PC アプリの設定）: その値、選んだことが無ければ ""。
   function pref(key) {
     try {
       return localStorage.getItem(key) || "";
@@ -1565,7 +1560,7 @@
       return "";
     }
   }
-  // 設定's boxes with data-pref: ticked unless turned "off", kept when changed.
+  // data-pref の付いた設定のチェックボックス: "off" にしていなければチェック、変えたら保存。
   function prefs() {
     document.querySelectorAll("input[data-pref]").forEach(function (box) {
       var key = box.getAttribute("data-pref");
@@ -1581,10 +1576,9 @@
     });
   }
 
-  // The PC app (body.app, desktop.py): its window has no browser bar and does not take the browser's keys, and a
-  // page of another site opened in it would have no way back. Back, forward and reload as buttons and keys
-  // (Alt+←, Alt+→, F5, Ctrl+R), and other sites' links open in the default browser (a new window's address goes
-  // there).
+  // PC アプリ（body.app、desktop.py）: ウィンドウにはブラウザーのバーが無く、ブラウザーのキーも効かず、
+  // 中で開いたほかのサイトのページからは戻る手段が無い。戻る・進む・再読み込みをボタンとキー（Alt+←、Alt+→、F5、
+  // Ctrl+R）にし、ほかのサイトのリンクは既定のブラウザーで開く（新しいウィンドウのアドレスもそちらへ）。
   function desktopApp() {
     if (!document.body.classList.contains("app")) return;
     document.querySelectorAll("[data-go]").forEach(function (button) {
@@ -1623,11 +1617,11 @@
     );
   }
 
-  // A page on its way: a thin bar across the top (html.leaving, app.css) once the wait is long enough to be felt.
-  // The PC app's window has no browser tab that turns, and without the bar a slow page looks like a press that
-  // did nothing. Links and forms that lead to another page of the site, and the app's own back, forward and
-  // reload; not what opens elsewhere or is saved. The bar goes when this page is shown again (Back), and by
-  // itself after LEFT_ALONE ms (an answer that was a file to save leaves the page where it is).
+  // 移動中のページ: 待ちが感じられるくらい長くなったら上に細いバー（html.leaving、app.css）。
+  // PC アプリのウィンドウには回るブラウザーのタブが無く、バーが無いと遅いページは押しても何も起きなかったように見える。
+  // サイトのほかのページへ行くリンクとフォーム、アプリ自身の戻る・進む・再読み込みが対象。
+  // ほかで開くものや保存するものは対象外。このページがまた表示されたら（戻る）バーは消え、
+  // LEFT_ALONE ms 後にも自分で消える（保存するファイルだった答えはページをそのままにする）。
   var LEAVING = 150;
   var LEFT_ALONE = 12000;
   function leaving() {
@@ -1663,8 +1657,8 @@
         return;
       }
       if (address.origin !== location.origin) return;
-      if (address.pathname === location.pathname && address.search === location.search) return; // a place on this page
-      // after the page's own handlers: a link they answer themselves (in place) leads nowhere
+      if (address.pathname === location.pathname && address.search === location.search) return; // このページの中の場所
+      // ページ自身のハンドラーの後: そこが自分で（その場で）答えるリンクはどこにも行かない
       setTimeout(function () {
         if (!e.defaultPrevented) start();
       }, 0);
@@ -1678,7 +1672,7 @@
     addEventListener("pageshow", stop);
   }
 
-  // Phones: the tab bar at the bottom would sit on the keyboard while typing.
+  // スマホ: 入力中は下のタブバーがキーボードの上に乗ってしまう。
   function typing() {
     document.addEventListener("focusin", function (e) {
       if (e.target.matches("input, textarea")) document.body.classList.add("typing");
@@ -1686,8 +1680,8 @@
     document.addEventListener("focusout", function () {
       document.body.classList.remove("typing");
     });
-    // "/" goes to the page's search box (as on GitHub and YouTube), unless one is being typed in already; from a
-    // page without one, to the search page's. The PC app has no address bar, so Ctrl+K does the same there.
+    // "/" でページの検索ボックスへ（GitHub や YouTube と同じ）。もう入力中なら何もしない。
+    // 検索ボックスの無いページからは検索ページのものへ。PC アプリにはアドレスバーが無いので、そこでは Ctrl+K も同じ。
     document.addEventListener("keydown", function (e) {
       var slash = e.key === "/" && !e.ctrlKey && !e.metaKey && !e.altKey;
       var inApp = document.body.classList.contains("app");
@@ -1708,7 +1702,7 @@
     if (asked) asked.focus();
   }
 
-  // The PC app's top page: how many friends are in VALORANT and online now, on the friends card.
+  // PC アプリのトップページ: 今 VALORANT にいるフレンドとオンラインのフレンドの数をフレンドのカードに。
   function friendsCount() {
     var words = document.querySelector("[data-friends]");
     if (!words) return;
@@ -1718,7 +1712,7 @@
       })
       .then(function (found) {
         if (!found || !found.open) return;
-        // the friends in VALORANT now; when none is, the ones who are online
+        // 今 VALORANT にいるフレンド。いなければオンラインのフレンド
         var said = found.playing ? words.dataset.playing : words.dataset.online;
         words.textContent = said.replace("{count}", found.playing || found.online);
       })
@@ -1761,7 +1755,7 @@
   addEventListener("storage", function (e) {
     if (e.key === FAVORITES || e.key === RECENT || e.key === null) lists();
   });
-  // Coming back with the browser's Back button shows the page as it was: the lists may have changed since.
+  // ブラウザーの戻るで帰ってきたらページは前のまま出る: その後一覧が変わっているかもしれない。
   addEventListener("pageshow", function (e) {
     if (e.persisted) lists();
   });

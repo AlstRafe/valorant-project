@@ -47,7 +47,7 @@
 {% else %}
 <p class="game-state{% if playing %} sr{% endif %}"><span class="dot {{ 'on' if running else 'off' }}" aria-hidden="true"></span>VALORANT: {% if phase == 'pregame' %}{{ t('エージェント選択') }}{% elif phase == 'ingame' %}{{ t('対戦中') }}{% elif phase == 'menus' %}{{ t('マッチング中') if party and party.state == 'matchmaking' else t('メニュー') }}{% elif running %}{{ t('起動中') }}{% elif running is none %}{{ t('不明') }}{% else %}{{ t('未起動') }}{% endif %}</p>
 {% if last_result and not playing %}
-{#- the match just played, from the game's own server the moment it ends: the result, the owner's line, the RR #}
+{#- 今終わった試合を、終わった瞬間にゲーム自身のサーバーから: 結果、持ち主の行、RR #}
 {% set row = last_result %}
 {% set outcome = 'win' if row.result.won is sameas true or (row.result.won is none and not row.result.rounds and row.placing.place == 1) else ('loss' if row.result.won is sameas false else 'draw') %}
 <section class="last-result" aria-labelledby="last-title">
@@ -79,7 +79,7 @@
 {% if not phase %}
 <p class="note">{% if running is none %}{{ t('ゲームの状態を取得できませんでした。') }}{% else %}{{ t('VALORANT を起動すると、ここからキューを開始できます。') }}{% endif %}</p>
 {% if account and account.linked %}
-{#- nothing to do here until the game opens: the owner's other pages, a click away (the PC app opens on this page) #}
+{#- ゲームが開くまでここですることは無い: 持ち主のほかのページへクリック 1 つ（PC アプリはこのページで開く） #}
 <section class="me-box" aria-labelledby="me-title">
 <h2 id="me-title">{{ t('マイアカウント') }}</h2>
 {% if desktop %}{% include "_accounts.html" %}{% endif %}

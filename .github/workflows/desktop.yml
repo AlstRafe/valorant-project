@@ -1,7 +1,7 @@
-# The PC app (VALTracker.exe, valtracker/desktop.py): built on Windows at every push that touches it, then checked
-# (the built app answers its pages; its window is opened and how much memory and processor the app takes, and at
-# which priority, is printed). The run keeps the zip as its download; on master it also goes on the release
-# "desktop" (Releases -> desktop -> VALTracker-windows.zip), replaced each time.
+# PC アプリ（VALTracker.exe、valtracker/desktop.py）: それに触れる push のたびに Windows でビルドし、
+# 確かめる（ビルドしたアプリがページに答える。ウィンドウを開き、アプリが使うメモリとプロセッサーと優先度を出力する）。
+# 実行は zip をダウンロードとして残し、master ではリリース "desktop" にも毎回置き換えて置く（Releases -> desktop
+# -> VALTracker-windows.zip）。
 name: Desktop app
 
 on:
@@ -37,10 +37,10 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      # Pillow: PyInstaller turns the site's icon (PNG) into the .exe's
+      # Pillow: PyInstaller がサイトのアイコン（PNG）を .exe のものにする
       - run: python -m pip install -r requirements.txt -r requirements-desktop.txt pyinstaller==6.22.3 pillow==12.2.0
-      # which commit the app is built from and when it was made, shown in the app's 設定 and compared with what the
-      # site says is the newest (valtracker/release.py: the last commit that changed the app's files)
+      # アプリのビルド元のコミットと作った時刻。アプリの設定に出し、
+      # サイトが言う最新と比べる（valtracker/release.py: アプリのファイルを最後に変えたコミット）
       - name: Stamp the build
         run: python -m valtracker.release valtracker/BUILD
       - name: Build
@@ -61,10 +61,10 @@ jobs:
           if (-not $done) { Stop-Process -Id $app.Id -Force; "Still running after 3 minutes." }
           Get-ChildItem "$env:VAL_DESKTOP_HOME\*.log" | ForEach-Object { "--- $($_.Name)"; Get-Content $_ }
           if (-not $done -or $app.ExitCode -ne 0) { exit 1 }
-      # the way the app reaches a PC: a browser downloads the zip and marks it as come from the internet, Explorer
-      # passes the mark on to every file it unpacks, and .NET refuses to load a marked library (the window's part).
-      # The .exe is left unmarked: its mark is gone once the owner has answered Windows' "run anyway?", a question
-      # that would wait for ever here.
+      # アプリが PC に届く形: ブラウザーが zip をダウンロードしてインターネットから来たと印を付け、
+      # エクスプローラーが展開したすべてのファイルに印を引き継ぎ、.NET は印の付いたライブラリ（ウィンドウの部分）
+      # を読まない。.exe は印を付けないでおく: 持ち主が Windows の「実行しますか」に答えると印は消えるが、
+      # ここではその問いが永遠に待つことになる。
       - name: Unpacked from a downloaded zip (every file marked by Windows), the app still opens its own window
         shell: pwsh
         run: |
@@ -122,15 +122,15 @@ jobs:
           "Processes: $($after.Count), memory $memory MB counted per process, $private MB its own (private)"
           "Processor while idle: $([math]::Round($used, 2)) s in 40 s = $share % of one core"
           if (-not ($after | Where-Object ProcessName -eq "msedgewebview2")) { "No WebView2 window opened here." }
-          # opened a second time: it finds the first one's window, brings it back and ends (a message box that
-          # nobody closes would keep it running)
+          # 2 回目に開いた: 1 つ目のウィンドウを見つけて戻し、
+          # 終わる（誰も閉じないメッセージボックスがあると動き続けてしまう）
           $second = Start-Process dist\VALTracker\VALTracker.exe -PassThru
           if ($second.WaitForExit(20000)) { "Opened twice: the second start found the window and ended." }
           else { Stop-Process -Id $second.Id -Force; "Opened twice: THE WINDOW WAS NOT FOUND (the second start waits in its message box)." }
           Get-Content "$env:VAL_DESKTOP_HOME\desktop.log"
           if (-not $app.WaitForExit(60000)) { Stop-Process -Id $app.Id -Force }
-      # the update's last step, on a real Windows: the new build takes the place of a running, older one once that
-      # has closed, leaves the owner's other files alone, and opens the app again (here: only to check its pages)
+      # 本物の Windows での更新の最後の手順: 新しいビルドが、動いている古いものが閉じたらその場所に入り、
+      # 持ち主のほかのファイルには触らず、アプリをまた開く（ここではページを確かめるだけ）
       - name: The app replaces itself (update.py)
         shell: pwsh
         run: |
@@ -146,10 +146,10 @@ jobs:
           $app = Start-Process "$old\VALTracker.exe" -ArgumentList "--close-after", "25" -PassThru
           Start-Sleep -Seconds 10
           $swap = Start-Process "$new\VALTracker.exe" -ArgumentList "--install-over", "`"$old`"", "--wait-pid", $app.Id -PassThru
-          # the old app closes by itself (its window, after 25 s); one that cannot open a window here is ended
+          # 古いアプリは自分で閉じる（ウィンドウは 25 秒後）。ここでウィンドウを開けないものは終わらせる
           if (-not $app.WaitForExit(40000)) { Stop-Process -Id $app.Id -Force; "The old app was ended by hand." }
           if (-not $swap.WaitForExit(150000)) { Stop-Process -Id $swap.Id -Force; "The new build did not finish."; exit 1 }
-          # the app opened after it checks its pages and ends
+          # そのあと開いたアプリはページを確かめて終わる
           $left = 90
           while ($left -gt 0 -and (Get-Process VALTracker -ErrorAction SilentlyContinue)) { Start-Sleep -Seconds 3; $left -= 3 }
           Get-Process VALTracker -ErrorAction SilentlyContinue | Stop-Process -Force
@@ -180,7 +180,7 @@ jobs:
           gh release create desktop VALTracker-windows.zip --target "$GITHUB_SHA" --prerelease \
             --title "VAL Tracker（PC アプリ）" \
             --notes "Windows 10 / 11。VALTracker-windows.zip を展開して VALTracker.exe を開く。使い方と VALORANT への影響を抑える仕組みは README の「PC アプリ」。"
-      # the app asks the site which build is the newest: what the site answers now (it follows master every minute)
+      # アプリは最新ビルドをサイトに聞く: サイトの今の答え（サイトは毎分 master を追う）
       - name: What the site says the newest build is
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         continue-on-error: true
