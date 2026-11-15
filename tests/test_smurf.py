@@ -18,4 +18,11 @@ class SmurfTest(unittest.TestCase):
 
     def test_nothing_to_go_on(self):
         self.assertIsNone(guess(0, 50), "no rank")
-        self.assertIsNone(guess(18, None), "the level hidden")
+        self.assertIsNone(guess(18, None), "the level hidden and nothing else")
+
+    def test_hidden_level(self):
+        """A hidden level leaves the acts and the win rate."""
+        self.assertEqual(guess(18, None, acts=1, games=12, win_rate=80)["kind"], "likely")
+        main = guess(18, None, acts=10)
+        self.assertEqual(main["kind"], "main")
+        self.assertEqual(main["why"][0][1], {"count": 10})

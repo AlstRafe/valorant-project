@@ -7,8 +7,8 @@ Signs of a second account, each with its weight:
 - winning much more than half of the matches (a rank still climbing to where the player belongs)
 - numbers far above the players of the same rank (the VAL score, measured against the same rank band)
 
-A main account is the other way round: many levels and acts, a win rate near half. With too little to go on
-(no rank, no level) there is no guess.
+A main account is the other way round: many levels and acts, a win rate near half. A hidden level leaves the
+other signs. With too little to go on (no rank, or no level, acts or recent matches) there is no guess.
 """
 
 from __future__ import annotations
@@ -20,8 +20,9 @@ FEW_ACTS = "ランク戦は {count} アクトだけ"
 WINNING = "最近の勝率 {rate}%"
 ABOVE_RANK = "同じランク帯の中で VAL スコア {score}"
 FITS = "レベル {level}・ランクに見合った成績"
+FITS_ACTS = "ランク戦 {count} アクト・ランクに見合った成績"
 #: Every reason (tests/test_i18n.py).
-WORDS = (NEW_ACCOUNT, LOW_LEVEL, FEW_ACTS, WINNING, ABOVE_RANK, FITS)
+WORDS = (NEW_ACCOUNT, LOW_LEVEL, FEW_ACTS, WINNING, ABOVE_RANK, FITS, FITS_ACTS)
 #: Points from which the guess says "likely a second account", and "maybe".
 LIKELY, MAYBE = 3, 2
 
@@ -37,10 +38,12 @@ def guess(
     """``{"kind": "likely" | "maybe" | "main", "why": [(Japanese words, values)]}`` or None (nothing to go on).
     ``tier``: the rank now; ``level``: the account level (None when hidden); ``acts``: acts with ranked matches;
     ``games``/``win_rate``: recent matches; ``score``: the average VAL score (the same rank band's yardstick)."""
-    if tier <= 2 or not level:
+    if tier <= 2 or (not level and acts is None and games < 10):
         return None
     points, why = 0, []
-    if tier >= 15 and level < 50:
+    if not level:
+        pass
+    elif tier >= 15 and level < 50:
         points += 2
         why.append((NEW_ACCOUNT, {"level": level}))
     elif tier >= 9 and level < 30:
@@ -68,5 +71,6 @@ def guess(
         kind = "maybe"
     else:
         kind = "main"
-        why = [(FITS, {"level": level})] if not why else why
+        if not why:
+            why = [(FITS, {"level": level})] if level else [(FITS_ACTS, {"count": acts if acts is not None else "–"})]
     return {"kind": kind, "why": why}

@@ -8,7 +8,7 @@
 {%- if row.agent %}{% set _ = parts.append(t('{agent}（選択中）', agent=row.agent) if row.state == 'selected' else t('{agent}（確定）', agent=row.agent) if row.state == 'locked' else row.agent) %}{% elif phase != 'menus' %}{% set _ = parts.append(t('未選択')) %}{% endif -%}
 {%- if row.title %}{% set _ = parts.append(row.title) %}{% endif -%}
 {%- if row.level %}{% set _ = parts.append(t('レベル {level}', level=row.level)) %}{% endif %}
-{% if parts or row.smurf %}<small>{{ parts|join(' · ') }}{% if row.smurf and row.smurf.kind != 'main' %} {% with guess=row.smurf %}{% include "_smurf.html" %}{% endwith %}{% endif %}</small>{% endif %}
+{% if parts or row.smurf %}<small>{{ parts|join(' · ') }}{% if row.smurf %} {% with guess=row.smurf %}{% include "_smurf.html" %}{% endwith %}{% endif %}</small>{% endif %}
 {% if row.record %}<small class="seat-record">{{ t('今アクト {wins}勝 / {games}試合（{rate}%）', wins=row.record.wins, games=row.record.games, rate=row.record.win_rate) }}</small>{% endif %}
 </span>
 {% if row.rank or row.act_peak or row.peak %}<span class="seat-ranks">
