@@ -1,4 +1,4 @@
-"""Where a player's kills and deaths happened (heatmap.py) and the pages that draw them."""
+"""プレイヤーのキルとデスの場所（heatmap.py）と、それを描くページ。"""
 
 import json
 import os
@@ -16,7 +16,7 @@ TREE, LOBBY = [3981, -5939], [4489, -3014]
 
 
 def digest_match(kills: list, rounds: list | None = None) -> dict:
-    """A match of four players (0 and 1 Red, 2 and 3 Blue) with ``kills`` as rounds.py keeps them."""
+    """4 人の試合（0 と 1 が Red、2 と 3 が Blue）。``kills`` は rounds.py が持つ形のラウンドごと。"""
     players = [{"team_id": team} for team in ("Red", "Red", "Blue", "Blue")]
     rounds = rounds or [{"a": "Red"}, {"a": "Blue"}]
     return {"players": players, "digest": {"rounds": rounds, "kills": kills}}
@@ -29,7 +29,7 @@ class PlanTest(unittest.TestCase):
         self.assertEqual(
             [name for name, _, _ in drawn["callouts"]], ["A ツリー", "A ロビー", "アタック側 メインエントランス"]
         )
-        # across from the game's y, down from its x
+        # 横はゲームの y、縦はゲームの x
         self.assertEqual(heatmap.onto(drawn, TREE), (39.8, 29.5))
         self.assertIsNone(heatmap.onto(drawn, [99999, 0]), "off the picture")
         self.assertEqual(heatmap.callout(drawn, [4000, -5900]), "A ツリー")
@@ -44,12 +44,12 @@ class PlanTest(unittest.TestCase):
 class PointsTest(unittest.TestCase):
     def test_kills_where_the_player_stood_and_deaths_where_they_died(self):
         kills = [
-            [0, 100, 0, 2, "v", [], TREE, LOBBY],  # the round's first: a kill
-            [0, 900, 3, 0, "v", [], LOBBY, TREE],  # a death
-            [0, 950, 0, 1, "v", [], TREE, TREE],  # a team-mate: not counted
-            [1, 100, 3, 0, "v", [], TREE, None],  # the next round's first: a death, on defence
-            [1, 200, 0, 2, "v", []],  # kept before the places were
-            [1, 300, 0, 3, "v", [], TREE, None],  # where the player stood is not known
+            [0, 100, 0, 2, "v", [], TREE, LOBBY],  # ラウンド最初: キル
+            [0, 900, 3, 0, "v", [], LOBBY, TREE],  # デス
+            [0, 950, 0, 1, "v", [], TREE, TREE],  # 味方: 数えない
+            [1, 100, 3, 0, "v", [], TREE, None],  # 次のラウンド最初: デス（防衛側）
+            [1, 200, 0, 2, "v", []],  # 場所を持つ前に保存したもの
+            [1, 300, 0, 3, "v", [], TREE, None],  # プレイヤーの立ち位置が不明
         ]
         found = heatmap.points(digest_match(kills), 0)
         self.assertEqual(

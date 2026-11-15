@@ -1,6 +1,6 @@
-"""Two players side by side (/compare?a=Name%23TAG&b=Name%23TAG): their ranks and what their recent matches of
-one mode say, the better of each line marked. Each player is read as on their own page (views.player_page), so a
-player just looked at costs nothing more."""
+"""2 人の比較（/compare?a=Name%23TAG&b=Name%23TAG）: ランクと、1 つのモードの最近の試合の成績。
+行ごとに良い方に印を付ける。各プレイヤーは本人のページと同じように読む（views.player_page）ので、
+見たばかりの人なら追加の呼び出しは無い。"""
 
 from __future__ import annotations
 
@@ -10,9 +10,9 @@ from valtracker.henrik import MODES as HENRIK_MODES
 from valtracker.henrik import RECENT, split_riot_id
 from valtracker.views import MODE_FILTER, QUEUES, from_link, player_page, tr
 
-#: The modes worth comparing: those with teams that win or lose (not Deathmatch).
+#: 比べる意味のあるモード: チームで勝ち負けがあるもの（デスマッチ以外）。
 MODES = tuple(mode for mode in MODE_FILTER if mode and mode != "deathmatch")
-#: The lines from the matches: (key in stats.summary, its name, whether more is better (None: neither), unit).
+#: 試合から出す行: （stats.summary のキー, 名前, 大きい方が良いか（None はどちらでもない）, 単位）。
 LINES = (
     ("games", "試合数", None, ""),
     ("win_rate", "勝率", True, "%"),
@@ -33,8 +33,8 @@ LINES = (
 
 
 def _side(asked: str, mode: str, span: str = "") -> dict:
-    """One player: ``{"asked", "found": the player page's values or None, "problem"}``; ``span`` "all": over
-    their lifetime (views._lifetime), "act": over the act being played."""
+    """1 人分: ``{"asked", "found": プレイヤーページの値か None, "problem"}``。 ``span`` "all": 通算（views._lifetime）
+    、"act": 今のアクト。"""
     asked = from_link(" ".join(asked.split()))[:40]
     parts = split_riot_id(asked)
     if not parts:
@@ -51,7 +51,7 @@ def _number(value):
 
 
 def _best(numbers: list, more: bool | None) -> int | None:
-    """Which side (0 or 1) is better, or None for a tie, a missing number or a line with no better."""
+    """どちら（0 か 1）が良いか。同じ・数値が無い・良し悪しの無い行は None。"""
     if more is None or any(number is None for number in numbers) or numbers[0] == numbers[1]:
         return None
     return 0 if (numbers[0] > numbers[1]) == more else 1

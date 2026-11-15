@@ -1,4 +1,4 @@
-"""Every text the pages show has its Korean, English and Chinese, the owner's own pages too."""
+"""ページに出る文はすべて韓国語・英語・中国語の訳がある（持ち主専用のページも）。"""
 
 import ast
 import re
@@ -62,7 +62,7 @@ def used_texts() -> set[str]:
     found.update(EQUIP_FAILURES.values())
     found.update(words for words, _ in LIVE_SAID.values())
     found.update((*UPDATE_SAID.values(), *UPDATE_FAILURES.values(), *UPDATE_BUTTONS.values()))
-    found.update(checkup.TEXTS)  # the PC app's checkup, and where a friend is (friends.WORDS)
+    found.update(checkup.TEXTS)  # PC アプリのチェックアップと、フレンドの居場所（friends.WORDS）
     found.add("{state}（{map}）")
     return found
 

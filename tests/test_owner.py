@@ -1,4 +1,4 @@
-"""The owner's progress (/progress), the match being played (/live) and wearing from the collection."""
+"""持ち主の進み具合（/progress）、進行中の試合（/live）、コレクションからの装備。"""
 
 import json
 import os
@@ -106,7 +106,7 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("キューをキャンセルしました", self.page("/live"))
 
     def test_each_press_is_sent_on_a_slow_clock(self):
-        """Windows' clock moves in 16 ms steps: two presses in one step are still two presses."""
+        """Windows の時計は 16 ms 刻み: 同じ刻みの中の 2 回の押下も 2 回として数える。"""
         self.link()
         self.riot.phase = "menus"
         riot = self.app.config["VAL_RIOT"]
@@ -178,7 +178,7 @@ class OwnerTest(unittest.TestCase):
         self.assertEqual(self.state()["words"], "対戦中（アセント）")
 
     def look(self) -> int:
-        """Riot's calls of one look at the game (riot.Riot.live), asked anew."""
+        """ゲームを 1 回見るときの Riot の呼び出し（riot.Riot.live）を新しく。"""
         riot = self.app.config["VAL_RIOT"]
         riot.cache.put("live", None, 0)
         before = len(self.riot.asked)
@@ -186,8 +186,8 @@ class OwnerTest(unittest.TestCase):
         return len(self.riot.asked) - before
 
     def test_a_found_match_is_told_at_once(self):
-        """DailyVal shows agent select from the game's 5-second count when the match is found: so does /live, without
-        waiting for the session to say agent select."""
+        """DailyVal は試合が見つかったときのゲームの 5 秒カウントからエージェント選択を出す: /live も同じく、
+        セッションがエージェント選択と言うのを待たない。"""
         self.link()
         self.riot.phase = "menus"
         party = self.riot.pd["party"]
@@ -198,13 +198,13 @@ class OwnerTest(unittest.TestCase):
         self.assertTrue(all(url.startswith("/media/agents/") for url in found["icons"]), found["icons"])
         self.assertIn('data-refresh="2"', self.page("/live"))
         self.assertIn('data-warm="/media/agents/', self.page("/live"))
-        party["State"] = "MATCHMADE_GAME_STARTING"  # the match is found; agent select not made yet
+        party["State"] = "MATCHMADE_GAME_STARTING"  # 試合が見つかった。エージェント選択はまだ作られていない
         found = self.state()
         self.assertEqual((found["phase"], found["words"], found["every"]), ("found", "試合が見つかりました", 1))
         text = self.page("/live")
         self.assertIn("試合が見つかりました。まもなくエージェント選択です。", text)
         self.assertIn('data-refresh="1"', text, "every second until agent select")
-        self.riot.early_pregame = True  # agent select made: shown while the session still says the menus
+        self.riot.early_pregame = True  # エージェント選択ができた: セッションがまだメニューと言っていても出す
         found = self.state()
         self.assertEqual((found["phase"], found["map"]), ("pregame", "アセント"))
         self.assertEqual(found["icons"], [])
@@ -215,8 +215,8 @@ class OwnerTest(unittest.TestCase):
         self.assertNotIn("data-warm", text)
 
     def test_agent_select_opens_without_reading_the_collection(self):
-        """The owner's agents are read while matchmaking (one call, kept), not the whole collection at agent
-        select: the pick screen opens without waiting for ten calls."""
+        """持ち主のエージェントはマッチング中に読む（1 回、保持）。
+        エージェント選択でコレクション全部は読まない: ピック画面は 10 回の呼び出しを待たずに開く。"""
         self.link()
         self.riot.phase = "menus"
         self.riot.pd["party"]["State"] = "MATCHMAKING"
@@ -231,8 +231,8 @@ class OwnerTest(unittest.TestCase):
         self.assertFalse([url for url in asked if "/store/" in url or "playerloadout" in url], asked)
 
     def test_each_look_asks_riot_little(self):
-        """Matchmaking and agent select are looked at every second or two: each look asks Riot one or two
-        things (the session, and the party or agent select remembered from the last look), names once."""
+        """マッチング中とエージェント選択は 1〜2 秒ごとに見る: 1 回で Riot に聞くのは 1〜2 つ（セッションと、
+        前回覚えたパーティーかエージェント選択）、名前は 1 回だけ。"""
         self.link()
         self.riot.phase = "menus"
         self.riot.pd["party"]["State"] = "MATCHMAKING"
@@ -247,8 +247,8 @@ class OwnerTest(unittest.TestCase):
         self.assertNotEqual(self.state()["phase"], "pregame", "the session says the match: agent select is over")
 
     def test_pictures_are_kept_whatever_the_cookie(self):
-        """A picture answered with "Vary: Cookie" is kept by the browser only until the session cookie changes:
-        the agents' squares were fetched again and again."""
+        """ "Vary: Cookie" 付きで答えた絵は、セッション cookie が変わるまでしかブラウザーに残らない:
+        エージェントの四角が何度も取り直されていた。"""
         self.link()
         fresh = self.client.get("/media/agents/11111111-1111-4111-8111-111111111111/displayicon.png")
         self.assertNotIn("Cookie", fresh.headers.get("Vary", ""))
@@ -297,7 +297,7 @@ class OwnerTest(unittest.TestCase):
         acts = {
             "act-now": {"CompetitiveTier": 21, "WinsByTier": {"18": 3, "22": 2, "23": 0}},
             "act-before": {"CompetitiveTier": 24, "WinsByTier": {"25": 1}},
-            "act-old": {"CompetitiveTier": 0, "WinsByTier": {"23": 4}},  # Immortal 3 of Episode 3
+            "act-old": {"CompetitiveTier": 0, "WinsByTier": {"23": 4}},  # エピソード 3 のイモータル 3
         }
         mmr = {"QueueSkills": {"competitive": {"SeasonalInfoBySeasonID": acts}}}
         self.assertEqual(best_ever(mmr), 25, "an earlier act's, not only this act's")
@@ -336,13 +336,13 @@ class OwnerTest(unittest.TestCase):
             kept["live_match"] = [match_id, time.time() - 4 * 3600]
         self.assertNotIn("直前の試合を見る", self.page("/live"), "hours ago: not the last match any more")
         self.riot.phase = "ingame"
-        self.state()  # played while another page was open: the tab's asking keeps it
+        self.state()  # 別のページを開いている間にプレイした: タブの問い合わせで残る
         self.riot.phase = "menus"
         self.app.config["VAL_RIOT"].cache.put("live", None, 0)
         self.assertIn("直前の試合を見る", self.page("/live"))
 
     def test_the_last_match_no_page_saw(self):
-        """The PC app reads nothing behind the game: the last match comes from the game's own history."""
+        """PC アプリはゲームの裏で何も読まない: 最後の試合はゲーム自身の履歴から。"""
         self.link()
         match_id = "cccccccc-0000-4000-8000-000000000009"
         record = json.loads(json.dumps(self.riot.pd["matches"]["bbbbbbbb-0000-4000-8000-000000000001"]))
@@ -357,7 +357,7 @@ class OwnerTest(unittest.TestCase):
         self.riot.phase = "menus"
         text = self.page("/live")
         self.assertIn(f'<a href="/m/ap/{match_id}?me=Owner%23JP1">', text)
-        # its page, although HenrikDev does not have the match: from Riot, with no one else's name
+        # HenrikDev がその試合を持っていなくても、そのページを出す: Riot から、ほかの人の名前は無しで
         self.fetch.fail = 404
         page = self.client.get(f"/m/ap/{match_id}?me=Owner%23JP1")
         self.assertEqual(page.status_code, 200)
@@ -367,7 +367,7 @@ class OwnerTest(unittest.TestCase):
             self.assertNotIn(name, text)
 
     def test_the_collector_reads_the_games_own_records(self):
-        """Matches the owner did not play, for the site's numbers: no HenrikDev key needed, no name read."""
+        """サイトの数字用の、持ち主がプレイしていない試合: HenrikDev のキー不要、名前は読まない。"""
         collector = self.app.config["VAL_COLLECTOR"]
         self.link()
         activity = self.app.config["VAL_ACTIVITY"]
@@ -384,7 +384,7 @@ class OwnerTest(unittest.TestCase):
         self.assertFalse([url for url in after if "/match-details/" in url], "a match is read once")
 
     def played(self, queue: str = "competitive") -> str:
-        """The owner's match is over and Riot's server has its record: the match's id."""
+        """持ち主の試合が終わり、Riot のサーバーに記録がある: その試合の ID。"""
         match_id = self.riot.pd["coregame"]["MatchID"].lower()
         other = self.riot.pd["player"]
         record = json.loads(json.dumps(self.riot.pd["matches"]["bbbbbbbb-0000-4000-8000-000000000001"]))
@@ -400,7 +400,7 @@ class OwnerTest(unittest.TestCase):
         return match_id
 
     def test_the_last_matchs_result_the_moment_it_ends(self):
-        """From the game's own server: no waiting for HenrikDev, no key needed."""
+        """ゲーム自身のサーバーから: HenrikDev を待たず、キーも不要。"""
         self.link()
         match_id = self.played()
         text = self.page("/live")
@@ -418,7 +418,7 @@ class OwnerTest(unittest.TestCase):
         self.page("/live")
         after = [url for _, url, _, _ in self.riot.asked[asked:]]
         self.assertFalse([url for url in after if "/match-details/" in url or "competitiveupdates" in url], "kept")
-        # in the owner's lifetime numbers at once
+        # すぐに持ち主の通算に入る
         self.assertEqual(self.app.config["VAL_ARCHIVE"].known([match_id]), {match_id})
         self.assertEqual(self.app.config["VAL_ARCHIVE"].rr(PUUID)[match_id]["change"], 18)
 
@@ -449,7 +449,7 @@ class OwnerTest(unittest.TestCase):
             self.assertNotIn('id="last-title"', answer.get_data(as_text=True))
 
     def test_riot_is_asked_for_a_result_a_few_times_only(self):
-        """The Range is a "match" without a record."""
+        """射撃場は記録の無い「試合」。"""
         self.link()
         match_id = self.played()
         del self.riot.pd["matches"][match_id]
@@ -469,8 +469,8 @@ class OwnerTest(unittest.TestCase):
         self.assertFalse([url for _, url, _, _ in self.riot.asked if "competitiveupdates" in url], "not asked for")
 
     def test_nothing_explained_again_during_a_match(self):
-        """Agent select and a match: the lobby takes the screen. What the page does is said while the game is
-        closed and in the menus."""
+        """エージェント選択と試合: ロビーが画面を占める。ページが何をするかは、
+        ゲームが閉じているときとメニューで説明する。"""
         self.link()
         for phase, wide in (("", False), ("menus", False), ("pregame", True), ("ingame", True)):
             self.riot.phase = phase
@@ -542,7 +542,7 @@ class OwnerTest(unittest.TestCase):
         self.riot.pd["entitlements"]["agents"].append(sova)
         started = time.time() - 3600
         games = []
-        for number in range(8):  # on Ascent, Sova's team wins 6 of 8, Jett's 2 of 8
+        for number in range(8):  # アセントで、ソーヴァのチームが 8 戦 6 勝、ジェットのチームが 8 戦 2 勝
             game = {
                 "metadata": {
                     "match_id": f"asc{number}",
@@ -638,7 +638,7 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("equip=ok", answer.headers["Location"])
         self.assertNotIn("weapon=", answer.headers["Location"])
         self.assertEqual(self.riot.worn[0]["Identity"]["PlayerCardID"], found[0])
-        # the cards stay where they were: only the mark moves
+        # カードは元の場所のまま: 動くのは印だけ
         after = self.page("/collection?show=cards&equip=ok")
         self.assertEqual(re.findall(r'data-name="([^"]+)"', after), re.findall(r'data-name="([^"]+)"', text))
         self.assertNotIn(f'value="{found[0]}"', after, "now worn")
@@ -675,7 +675,7 @@ class OwnerTest(unittest.TestCase):
         self.assertEqual(len(self.riot.worn), 1)
 
     def test_wear_with_the_loadout_v2(self):
-        """Where PD still has playerloadout v2 only (v3 answers 404), wearing goes back to v2."""
+        """PD が playerloadout v2 しか持たない場合（v3 は 404）、装備は v2 に戻す。"""
         self.riot.loadout_version = 2
         loadout = self.riot.pd["loadout"]
         del loadout["ActiveExpressions"], loadout["DynamicOptions"]
@@ -703,7 +703,7 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("Riot のサーバーが応答しません", self.page("/collection?show=titles&equip=down"))
 
     def test_wear_that_pd_does_not_keep(self):
-        """PD answers 200 but with the loadout it had: the page does not say it was worn."""
+        """PD は 200 で答えるが元のロードアウトのまま: ページは装備したとは言わない。"""
         self.link()
         self.riot.ignore_put = True
         title = "ee000000-0000-4000-8000-000000000002"
@@ -722,13 +722,13 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("equip=down", answer.headers["Location"])
         text = self.page(answer.headers["Location"])
         self.assertIn("<code>equip 500 SERVER_ERROR</code>", text)
-        # the words are only shown with a failure, and only plain ones
+        # 文は失敗のときだけ、それも素のものだけ出す
         ok = self.page("/collection?show=titles&equip=ok&riot=x")
         self.assertNotIn("<code>x</code>", ok)
         self.assertIn("装備しました。", ok)
 
     def test_wear_while_the_game_is_open(self):
-        """The open game draws the loadout it started with: the note says the next match takes the new one."""
+        """開いているゲームは開始時のロードアウトで描く: 次の試合から新しいものになると書く。"""
         self.link()
         title = "ee000000-0000-4000-8000-000000000002"
         closed = self.client.post("/collection/equip", data={"csrf": self.token(), "show": "titles", "item": title})
@@ -746,7 +746,7 @@ class OwnerTest(unittest.TestCase):
         return next(gun for gun in loadout["Guns"] if gun["ID"] == weapon)
 
     def test_put_a_buddy_on_a_weapon(self):
-        """The open weapon's buddy, as the game's weapon screen changes it: a free copy goes on."""
+        """開いている武器のガンバディを、ゲームの武器画面と同じように変える: 空いているコピーを着ける。"""
         self.link()
         text = self.page(f"/collection?weapon={CLASSIC}")
         self.assertIn(f'name="buddy.{CLASSIC}"', text)
@@ -829,7 +829,8 @@ class OwnerTest(unittest.TestCase):
         self.assertEqual((self.gun(VANDAL)["CharmID"], self.gun(VANDAL)["CharmInstanceID"]), (HEART, "i3"))
 
     def test_wear_a_flex(self):
-        """playerloadout v3 lets any place of the wheel hold a spray or a flex; one already there swaps places."""
+        """playerloadout v3 はホイールのどの場所にもスプレーかフレックスを入れられる。
+        すでにあるものとは場所を入れ替える。"""
         self.link()
         flex = "ff000000-0000-4000-8000-000000000001"
         text = self.page("/collection?show=flex")
@@ -881,7 +882,7 @@ class OwnerTest(unittest.TestCase):
         self.assertIn('<span class="badge">現在の装備</span>', text, "it is what is worn")
         self.assertIn("<strong>ヴァンダル</strong> プライム ヴァンダル · チリ バディー", text)
         self.assertIn(">セット <small>1</small>", text, "the tab counts the sets")
-        # something else is worn, then the set brings it all back
+        # 別のものを着けてから、セットで全部戻す
         token = self.token()
         self.client.post("/collection/equip", data={"csrf": token, "show": "skins", "item": REAVER})
         self.client.post("/collection/equip", data={"csrf": token, "show": "skins", "unbuddy": VANDAL})
@@ -902,7 +903,8 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("equip=noset", answer.headers["Location"])
 
     def test_a_set_is_read_from_riot_now(self):
-        """A set holds what is worn this moment, not the collection's kept answer (changed in the game since)."""
+        """セットに入るのは今着けているもの。コレクションの保持していた答え（その後ゲームで変わったかもしれない）
+        ではない。"""
         self.link()
         self.page("/collection")
         self.riot.pd["loadout"]["Guns"][0]["SkinID"] = REAVER
@@ -930,7 +932,7 @@ class OwnerTest(unittest.TestCase):
         self.assertIn(answer.status_code, (400, 404))
 
     def test_the_owners_pages_in_other_languages(self):
-        """The owner's own pages are in the page's language too (not Japanese whatever the language)."""
+        """持ち主専用ページもページの言語で出す（言語にかかわらず日本語、ではない）。"""
         self.link()
         self.riot.phase = "menus"
         pages = {

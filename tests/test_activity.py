@@ -1,5 +1,5 @@
-"""How busy the servers are (activity.py), the game's queue settings (queues.py) and the pages that show them, the
-sensitivity converter, and the countdowns (the act's end, the daily store)."""
+"""サーバーの混み具合（activity.py）、ゲームのキュー設定（queues.py）とそのページ、感度の換算、
+カウントダウン（アクトの終わり、デイリーストア）。"""
 
 import json
 import os
@@ -16,7 +16,7 @@ from valtracker import queues
 from valtracker.activity import ENOUGH, FEW, Activity, Collector
 
 VISITOR = {"homepage.visitor": True}
-#: 2026-11-04 12:00 UTC (21:00 in Japan)
+#: 2026-11-04 12:00 UTC（日本時間 21:00）
 NOON = int(datetime(2026, 11, 4, 12, tzinfo=UTC).timestamp())
 
 
@@ -77,7 +77,7 @@ class ActivityTest(unittest.TestCase):
         self.assertEqual(self.activity.count(), 1)
 
     def test_waits_between_one_players_matches(self):
-        # 30 min match, then 4 min until the next; a 2 h break; a deathmatch in between of another queue
+        # 30 分の試合、次まで 4 分、2 時間の休み。間に別キューのデスマッチ
         listed = [
             match(1, NOON),
             match(2, NOON + 1800 + 240),
@@ -87,7 +87,7 @@ class ActivityTest(unittest.TestCase):
         self.activity.seen(listed, "me")
         rows = self.activity._connect().execute("SELECT before, after, seconds FROM gaps").fetchall()
         self.assertEqual(rows, [("m1", "m2", 240)])
-        self.activity.seen(listed)  # without whose list it is: no waits
+        self.activity.seen(listed)  # 誰の一覧か無い: 待ち時間は無し
         self.assertEqual(self.activity._connect().execute("SELECT COUNT(*) FROM gaps").fetchone()[0], 1)
 
     def test_servers_by_hour_in_the_visitors_time(self):
@@ -103,7 +103,7 @@ class ActivityTest(unittest.TestCase):
         self.assertEqual(tokyo["peak"], 21)
         self.assertEqual(self.activity.servers("ap", 0)["servers"][0]["hours"][12], 100.0)
         self.assertEqual(self.activity.servers("eu", 0)["servers"], [])
-        # one match is no pattern: no busy or quiet hours claimed
+        # 1 試合では傾向にならない: 混む・空く時間は出さない
         self.assertEqual((hong_kong["level"], hong_kong["peak"], hong_kong["quiet"]), ("few", None, None))
 
     def test_busy_at_its_usual_hour(self):
@@ -167,7 +167,7 @@ class StreakTest(unittest.TestCase):
 
 
 class SharedTest(unittest.TestCase):
-    """The PC app shows the site's numbers: its own file holds only what its owner opened."""
+    """PC アプリはサイトの数字を出す（アプリ自身のファイルには持ち主が開いたものしか無い）。"""
 
     def setUp(self):
         folder = tempfile.TemporaryDirectory()
@@ -193,7 +193,7 @@ class SharedTest(unittest.TestCase):
         self.assertEqual(self.activity.agents("competitive")["matches"], 9)
         self.activity.ranks("ap")
         self.assertEqual([kind for kind, _ in self.asked].count("ranks"), 1, "kept a while")
-        # the site does not answer: the app's own numbers, and the site is left alone for a while
+        # サイトが答えない: アプリ自身の数字を出し、しばらくサイトには聞かない
         self.assertEqual(self.activity.servers("ap")["matches"], 0)
         self.activity.servers("ap")
         self.assertEqual([kind for kind, _ in self.asked].count("servers"), 1)
@@ -310,7 +310,7 @@ class PagesTest(unittest.TestCase):
     def test_agent_stats_page(self):
         text = self.page("/agents/stats", environ_base=VISITOR)
         self.assertIn("集計できる試合がまだ足りません", text)
-        self.page("/p/Player/JP1?full=1")  # a player's page keeps their matches, and who played what
+        self.page("/p/Player/JP1?full=1")  # プレイヤーページはその人の試合と、誰が何を使ったかを残す
         text = self.page("/agents/stats", environ_base=VISITOR)
         self.assertIn("ジェット", text)
         self.assertIn("2 試合の集計", text)
@@ -332,7 +332,7 @@ class PagesTest(unittest.TestCase):
         text = self.page("/servers")
         self.assertIn("この地域のデータがまだ足りません", text)
         self.assertIn("Riot は接続人数や待ち時間を公開していません", text)
-        self.page("/p/Player/JP1?full=1")  # a player's page keeps their matches
+        self.page("/p/Player/JP1?full=1")  # プレイヤーページはその人の試合を残す
         text = self.page("/servers?region=ap")
         self.assertIn("東京", text)
         self.assertIn('class="hours"', text)
@@ -342,7 +342,7 @@ class PagesTest(unittest.TestCase):
         self.client.set_cookie("lang", "en-GB")
         self.assertIn("Tokyo", self.page("/servers?region=ap"))
         self.assertIn("UTC", self.page("/servers?region=ap"))
-        # the visitor's own clock, which the page's script puts in a cookie (minutes from UTC)
+        # 訪問者自身の時計（ページのスクリプトが cookie に入れる。UTC からの分）
         self.client.set_cookie("tz", "-300")
         text = self.page("/servers?region=ap")
         self.assertIn("your time (UTC−5)", text)

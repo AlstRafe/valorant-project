@@ -1,4 +1,4 @@
-"""A player's seasons (seasons.py) from HenrikDev's stored matches (henrik._slim_stored)."""
+"""HenrikDev の保存済み試合（henrik._slim_stored）からのシーズンごとの成績（seasons.py）。"""
 
 import json
 import os

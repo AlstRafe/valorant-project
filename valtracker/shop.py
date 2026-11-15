@@ -1,7 +1,6 @@
-"""The store page: the featured bundles everyone sees (HenrikDev), and for the owner today's store from their own Riot
-account (riot.Riot.shop): the four skins of the day, the night market, the bundles and the accessories, each with
-its price and the time left, and what is already owned marked. Names and pictures come from content.py.
-"""
+"""ストアのページ: 全員に見えるおすすめバンドル（HenrikDev）と、
+持ち主には自分の Riot アカウントの今日のストア（riot.Riot.shop）。その日の 4 スキン、ナイトマーケット、バンドル、
+アクセサリーを、値段・残り時間・所持済みの印つきで出す。名前と絵は content.py から。"""
 
 from __future__ import annotations
 
@@ -14,9 +13,9 @@ from valtracker.util import lower_id, to_int
 
 VP = "85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741"
 KINGDOM = "85ca954a-41f2-ce94-9b45-8ca3dd39a00d"
-#: PD's item types -> our kinds (riot.ITEM_TYPES the other way round).
+#: PD のアイテムタイプ -> こちらの種類（riot.ITEM_TYPES の逆）。
 KINDS = {uuid: kind for kind, uuid in ITEM_TYPES.items()}
-#: HenrikDev's names of the kinds in a featured bundle -> ours.
+#: HenrikDev のおすすめバンドル内の種類の名前 -> こちらの種類。
 FEATURED_KINDS = {
     "skin_level": "skins",
     "skin_chroma": "chromas",
@@ -26,7 +25,7 @@ FEATURED_KINDS = {
     "player_title": "titles",
     "flex": "flex",
 }
-#: Our kinds -> valorant-api.com's list (content.py) and what of an item is its picture.
+#: こちらの種類 -> valorant-api.com の一覧（content.py）と、どれを絵にするか。
 LISTS = {
     "buddies": ("buddies", "displayIcon"),
     "cards": ("playercards", "wideArt"),
@@ -37,8 +36,8 @@ LISTS = {
 
 
 def item(kind: str, uuid: str, content: Content, lang: str, said: dict | None = None) -> dict:
-    """One thing on sale: ``{"kind", "name", "image", "tier"}``, a skin's uuid too (``"skin"``: its page in
-    the skin library) (HenrikDev's own words, ``said``, when valorant-api.com does not know it)."""
+    """売り物ひとつ: ``{"kind", "name", "image", "tier"}``、スキンなら uuid も（``"skin"``: 図鑑のページ）。
+    valorant-api.com が知らないものは HenrikDev の文（``said``）を使う。"""
     uuid, said = lower_id(uuid), said or {}
     if kind in ("skins", "chromas"):
         found = content.skins(lang).get(uuid)
@@ -71,7 +70,7 @@ def item(kind: str, uuid: str, content: Content, lang: str, said: dict | None = 
 
 
 def _reward(offer: dict) -> tuple[str, str, int]:
-    """An offer's first reward: (our kind, its uuid, how many)."""
+    """オファーの最初の報酬: （こちらの種類, uuid, 数）。"""
     rewards = [reward for reward in (offer or {}).get("Rewards") or [] if isinstance(reward, dict)]
     if not rewards:
         return "", "", 0
@@ -92,14 +91,13 @@ def _until(at: float, seconds) -> float:
 
 
 def left(seconds: float) -> dict:
-    """``{"hours", "minutes"}`` left (rounded up to the minute)."""
+    """残り ``{"hours", "minutes"}``（分単位で切り上げ）。"""
     minutes = max(0, math.ceil(seconds / 60))
     return {"hours": minutes // 60, "minutes": minutes % 60}
 
 
 def page(found: dict, content: Content, lang: str, owned: dict | None = None) -> dict:
-    """What shop.html shows of the owner's store (riot.Riot.shop); ``owned`` (the collection's) marks what they
-    have already."""
+    """shop.html に出す持ち主のストア（riot.Riot.shop）。``owned``（コレクションのもの）で所持済みに印を付ける。"""
     front = found.get("storefront") if isinstance(found.get("storefront"), dict) else {}
     at = float(found.get("at") or 0)
     owned = owned or {}
@@ -109,7 +107,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
     for offer in offers:
         kind, uuid, _ = _reward(offer)
         daily.append(item(kind or "skins", uuid, content, lang) | {"price": to_int((offer.get("Cost") or {}).get(VP))})
-    if not offers:  # an older answer: the skins' uuids without their prices
+    if not offers:  # 古い形の答え: 値段なしのスキン uuid
         daily = [item("skins", uuid, content, lang) | {"price": 0} for uuid in panel.get("SingleItemOffers") or []]
     night = None
     bonus = front.get("BonusStore") if isinstance(front.get("BonusStore"), dict) else None
@@ -177,7 +175,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
                 }
             )
     for entry in daily:
-        entry["owned"] = False  # the game does not offer what is owned
+        entry["owned"] = False  # ゲームは所持済みのものを出さない
     currencies = content.index("currencies", lang)
     return {
         "name": found.get("name") or "",
@@ -198,7 +196,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
 
 
 def featured(bundles: list, content: Content, lang: str) -> list[dict]:
-    """HenrikDev's featured bundles (henrik.Henrik.featured) with the game's names in the visitor's language."""
+    """HenrikDev のおすすめバンドル（henrik.Henrik.featured）に、訪問者の言語でのゲームの名前を付ける。"""
     known = content.index("bundles", lang)
     listed = []
     for bundle in bundles or []:

@@ -1,8 +1,7 @@
-"""VALTracker.exe's start (PyInstaller, .github/workflows/desktop.yml): the desktop app, valtracker/desktop.py.
+"""VALTracker.exe の入口（PyInstaller、.github/workflows/desktop.yml）。本体は valtracker/desktop.py。
 
-A start that fails is written to crash.log in the app's folder and told in a message box (the .exe has no console),
-or, for the build's --check, ends with 1 instead of a box nobody can close.
-"""
+起動に失敗したら、アプリのフォルダーの crash.log に書いてメッセージボックスで知らせる（.exe にはコンソールが無い）。
+ビルドの --check のときは、誰も閉じられないボックスを出さずに 1 で終わる。"""
 
 import os
 import sys
@@ -33,6 +32,6 @@ try:
     from valtracker.desktop import main
 
     code = main()
-except Exception:  # anything that stops the start is told
+except Exception:  # 起動を止めたものは何でも知らせる
     code = _failed()
 sys.exit(code)

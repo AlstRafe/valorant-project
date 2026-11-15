@@ -1,4 +1,4 @@
-"""Where things are: the repository, and instance/ (this machine's data, never in Git)."""
+"""ファイルの場所: リポジトリと instance/（このマシンのデータ。Git には入れない）。"""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ INSTANCE = ROOT / "instance"
 
 
 def deployed_version() -> str:
-    """The commit checked out (the VM resets the clone to master's): Home Page's server restarts into new code
-    when this changes. Read from .git by hand, without starting git every few seconds."""
+    """チェックアウトしているコミット（VM は master に合わせてリセットする）。
+    これが変わると Home Page のサーバーが新しいコードで再起動する。数秒ごとに git を起動しないよう、.git を直接読む。"""
     git = ROOT / ".git"
     try:
         head = (git / "HEAD").read_text(encoding="utf-8").strip()

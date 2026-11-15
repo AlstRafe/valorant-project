@@ -1,4 +1,4 @@
-"""What the tests share: the outside APIs' answers from tests/fixtures/, and an app that uses them."""
+"""テストで共通のもの: tests/fixtures/ からの外部 API の答えと、それを使うアプリ。"""
 
 from __future__ import annotations
 
@@ -19,16 +19,16 @@ def fixture(name: str) -> bytes:
 
 
 class FakeFetch:
-    """Answers like HenrikDev and valorant-api.com would, from the fixtures; ``fail`` makes everything fail
-    with that status; every asked URL is in ``asked``."""
+    """HenrikDev と valorant-api.com のような答えをフィクスチャから返す。``fail`` なら全部そのステータスで失敗させる。
+    頼まれた URL は全部 ``asked`` に入る。"""
 
     def __init__(self):
         self.asked: list[tuple[str, dict]] = []
         self.fail = None
         self.henrik_status = None
-        #: Riot's own news list and status files (riotweb.py) answer this status instead, when set.
+        #: 設定されていれば、Riot 自身のニュース一覧とステータスファイル（riotweb.py）は代わりにこのステータスで答える。
         self.riot_web_status = None
-        #: Riot's esports schedule page answers (from the fixture) only when this is set; else HTTP 404.
+        #: Riot の eスポーツ予定ページは、これが設定されているときだけ（フィクスチャから）答える。でなければ HTTP 404。
         self.esports_page = False
 
     def __call__(self, url: str, headers: dict) -> tuple[int, bytes]:
@@ -105,13 +105,13 @@ PUUID = "0c0c0c0c-1111-4222-8333-444444444444"
 
 
 def _token(claims: dict) -> str:
-    """A JWT's shape (Riot's tokens are read, never checked, by us)."""
+    """JWT の形（Riot のトークンは読むだけで確かめない）。"""
     part = base64.urlsafe_b64encode(json.dumps(claims).encode()).decode().rstrip("=")
     return f"eyJhbGciOiJSUzI1NiJ9.{part}.c2lnbmF0dXJl"
 
 
 ACCESS = _token({"sub": PUUID, "scp": ["account", "openid"]})
-#: A second account of the owner's (Smurf#JP2, its cookie "sub-1"): PD answers for it as for the first.
+#: 持ち主の 2 つ目のアカウント（Smurf#JP2、cookie "sub-1"）: PD は 1 つ目と同じように答える。
 PUUID2 = "0d0d0d0d-1111-4222-8333-555555555555"
 ACCESS2 = _token({"sub": PUUID2, "scp": ["account", "openid"]})
 ID_TOKEN = _token({"sub": PUUID, "nonce": "1"})
@@ -119,36 +119,36 @@ ENTITLEMENTS = _token({"entitlements": [], "sub": PUUID})
 
 
 class FakeRiot:
-    """Answers like Riot's sign-in and PD would. ``ssid``: the cookie it takes (a new one each time it is used,
-    as Riot does); ``refuse``: PD says the token is bad that many times; ``broken``: kinds PD fails for."""
+    """Riot のサインインと PD のような答え。``ssid``: 受け取る cookie（Riot と同じく使うたびに新しくなる）、
+    ``refuse``: PD がトークンを悪いと言う回数、``broken``: PD が失敗する種類。"""
 
     def __init__(self):
         self.asked: list[tuple[str, str, dict, bytes | None]] = []
         self.ssid = "ssid-1"
         self.renewals = 0
-        #: The second account's cookie (renewed at each use, like the first's).
+        #: 2 つ目のアカウントの cookie（1 つ目と同じく使うたびに更新）。
         self.second = "sub-1"
         self.second_renewals = 0
         self.refuse = 0
         self.broken: set[str] = set()
         self.pd = json.loads(fixture("riot_pd.json"))
-        #: Another player's match history, two of their matches and their RR (riot_match.json).
+        #: 別のプレイヤーの試合履歴、試合 2 つと RR（riot_match.json）。
         self.pd |= json.loads(fixture("riot_match.json"))
-        #: Whether VALORANT is open, and where the owner is: "" (nowhere: closed), "menus", "pregame" (agent
-        #: select) or "ingame". A phase other than "" means the game is open.
+        #: VALORANT が開いているか、持ち主がどこにいるか: ""（どこにもいない＝閉じている）、"menus"、
+        #: "pregame"（エージェント選択）、"ingame"。"" 以外ならゲームは開いている。
         self.phase = ""
-        #: GLZ's session cannot be read (its address answers 500): the party tells whether the game is open.
+        #: GLZ のセッションが読めない（アドレスが 500）: パーティーでゲームが開いているかわかる。
         self.no_session = False
-        #: Agent select is there as soon as the party's match is found (State MATCHMADE_GAME_STARTING, the game's
-        #: 5-second count), while the session still says MENUS.
+        #: パーティーの試合が見つかった時点でエージェント選択になる（State MATCHMADE_GAME_STARTING、
+        #: ゲームの 5 秒カウント）。セッションはまだ MENUS。
         self.early_pregame = False
-        #: The owner's buttons as GLZ got them: (what, value).
+        #: GLZ が受けた持ち主のボタン操作: （何を, 値）。
         self.pressed: list[tuple[str, str]] = []
-        #: The loadouts sent back (PUT playerloadout).
+        #: 送り返したロードアウト（PUT playerloadout）。
         self.worn: list[dict] = []
-        #: The playerloadout PD gives: 3 (since September 2026; v2 answers 404) or 2 (before: v3 answers 404).
+        #: PD が出す playerloadout: 3（2026 年 9 月から。v2 は 404）か 2（それ以前。v3 は 404）。
         self.loadout_version = 3
-        #: PD answers a PUT playerloadout with 200 but keeps the loadout it had.
+        #: PD は PUT playerloadout に 200 で答えるが、元のロードアウトのままにする。
         self.ignore_put = False
 
     def address(self, access: str = ACCESS) -> str:
@@ -157,7 +157,7 @@ class FakeRiot:
     def __call__(self, method: str, url: str, headers: dict, body):
         self.asked.append((method, url, headers, body))
         if url.endswith(f"/store/v3/storefront/{PUUID}") and method != "POST":
-            return 404, [], b"{}"  # v2's GET is gone
+            return 404, [], b"{}"  # v2 の GET はもう無い
         if url.startswith("https://auth.riotgames.com/authorize"):
             if f"ssid={self.second}" in headers.get("Cookie", "").split("; "):
                 self.second_renewals += 1
@@ -234,7 +234,7 @@ class FakeRiot:
         if "/mmr/v1/leaderboards/affinity/" in url:
             board = json.loads(json.dumps(self.pd["leaderboard"]))
             query = parse_qs(urlsplit(url).query).get("query", [""])[0]
-            if query:  # Riot looks for names that start so
+            if query:  # Riot はそう始まる名前を探す
                 board["Players"] = [p for p in board["Players"] if p["gameName"].lower().startswith(query.lower())]
             return self._answer("leaderboard", board)
         if f"/match-history/v1/history/{self.pd['player']}?" in url:
@@ -275,7 +275,7 @@ class FakeRiot:
             self.worn.append(json.loads(body))
             if self.ignore_put:
                 return self._answer("equip", self.pd["loadout"])
-            self.pd["loadout"] = json.loads(body) | {"Version": 8}  # what the game wears from now on
+            self.pd["loadout"] = json.loads(body) | {"Version": 8}  # ここからゲームが着けるもの
             return self._answer("equip", self.pd["loadout"])
         if url.endswith(f"/store/v3/storefront/{PUUID}"):
             return self._answer("storefront", self.pd["storefront"])
@@ -288,7 +288,7 @@ class FakeRiot:
         for kind, item_type in ITEM_TYPES.items():
             if url.endswith(f"/store/v1/entitlements/{PUUID}/{item_type}"):
                 items = [{"TypeID": item_type, "ItemID": item} for item in self.pd["entitlements"][kind]]
-                if kind == "buddies":  # each copy has its own instance (a weapon's CharmInstanceID)
+                if kind == "buddies":  # コピーごとに別のインスタンス（武器の CharmInstanceID）
                     for number, item in enumerate(items, 1):
                         item["InstanceID"] = f"i{number}"
                 return self._answer(kind, {"ItemTypeID": item_type, "Entitlements": items})
@@ -304,8 +304,8 @@ class FakeRiot:
 
 
 def make_app(key: str = "HDEV-test-key", mount: str = "", local=None):
-    """(app, fetch, instance folder) with a fresh instance/ in a temporary folder; the Riot fake is app.riot.
-    ``local``: the Riot Client on the PC (the desktop app's localclient.LocalClient), else None (the site)."""
+    """一時フォルダーに新しい instance/ を作った（app, fetch, インスタンスフォルダー）。Riot の偽物は app.riot。
+    ``local``: PC の Riot Client（デスクトップアプリの localclient.LocalClient）、サイトなら None。"""
     folder = tempfile.TemporaryDirectory()
     fetch = FakeFetch()
     riot = FakeRiot()
@@ -323,5 +323,5 @@ def make_app(key: str = "HDEV-test-key", mount: str = "", local=None):
         remove()
 
     folder.cleanup = cleanup
-    app._test_folder = folder  # removed with the app
+    app._test_folder = folder  # アプリと一緒に消す
     return app, fetch, Path(folder.name)

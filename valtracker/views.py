@@ -1,5 +1,5 @@
-"""The pages: the search and favourites (top), a player, a match, the agents, the owner's collection and settings
-(the leaderboard, the server status, crosshairs and the store are tools.py's)."""
+"""ページ: 検索とお気に入り（トップ）、プレイヤー、試合、エージェント、持ち主のコレクションと設定（ランキング、
+サーバーステータス、クロスヘア、ストアは tools.py）。"""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ from valtracker.riot import ACCOUNTS_MAX, AUTHORIZE, RiotError
 from valtracker.update import UpdateError
 from valtracker.util import to_int
 
-#: HenrikDev's queue ids -> what the game calls them (translated in locale.py).
+#: HenrikDev のキュー ID -> ゲームでの呼び名（訳は locale.py）。
 QUEUES = {
     "competitive": "コンペティティブ",
     "unrated": "アンレート",
@@ -54,8 +54,7 @@ QUEUES = {
     "skirmish_1v1": "スカーミッシュ",
     "skirmish_2v2": "スカーミッシュ",
 }
-#: The servers (HenrikDev's ``cluster``, the game's names in English) -> the city in Japanese (translated); any
-#: other is shown as HenrikDev names it.
+#: サーバー（HenrikDev の ``cluster``、ゲームの英語名）-> 日本語の都市名（訳す）。ほかは HenrikDev の名前のまま出す。
 CLUSTERS = {
     "Tokyo": "東京",
     "Hong Kong": "香港",
@@ -83,7 +82,7 @@ CLUSTERS = {
     "Santiago": "サンティアゴ",
     "São Paulo": "サンパウロ",
 }
-#: The filter above a player's matches, in the game's order ("" is every mode; the names are QUEUES').
+#: プレイヤーの試合の上の絞り込み（ゲームの順。"" は全モード、名前は QUEUES のもの）。
 MODE_FILTER = (
     "",
     "competitive",
@@ -95,16 +94,16 @@ MODE_FILTER = (
     "escalation",
     "premier",
 )
-#: A player's lifetime list: matches on one page of it; the RR chart's and the score chart's points at most (a
-#: longer line is drawn whole, with fewer dots, or in averages); the dots on each kill map (the newest).
+#: プレイヤーの通算の一覧: 1 ページの試合数、RR とスコアのグラフの最大点数（長い線は点を減らすか平均にして全体を描く）、
+#: 各キルマップの点数（新しいものから）。
 LIFE_PAGE = 20
 RR_DOTS = 60
 SCORE_POINTS = 40
 HEAT_DOTS = 800
-#: How long a player's lifetime, once worked out, is kept when nothing of theirs is added (seconds).
+#: 計算したプレイヤーの通算を、その人のものが何も増えなければ持つ秒数。
 LIFE_KEEP = 900
 
-#: Why a player or match could not be shown -> (HTTP status, the visitor's words, the owner's words).
+#: プレイヤーや試合を出せなかった理由 -> （HTTP ステータス, 訪問者への文, 持ち主への文）。
 FAILURES = {
     "nokey": (
         503,
@@ -121,10 +120,10 @@ FAILURES = {
     "down": (503, "戦績サーバーが応答しません。しばらくしてからお試しください。", None),
 }
 
-#: Why the owner's Riot account could not be read (riot_failure: in the page's language).
+#: 持ち主の Riot アカウントを読めなかった理由（riot_failure: ページの言語で）。
 RIOT_FAILURES = {
     "nologin": "Riot アカウントが未連携です。設定から連携してください。",
-    # the PC app: the account is the Riot Client's
+    # PC アプリ: アカウントは Riot Client のもの
     "noclient": "Riot クライアントが起動していないか、サインインしていません。",
     "badpaste": "ssid ではないようです。手順 3 の値をそのまま貼ってください。",
     "signedout": "Riot のログインが切れました。設定で ssid を貼り直してください。",
@@ -139,14 +138,14 @@ def tr(ja: str, **values) -> str:
 
 
 def riot_failure(kind: str) -> str:
-    """Why the owner's Riot account could not be read (RiotError's kind), in the page's language."""
+    """持ち主の Riot アカウントを読めなかった理由（RiotError の kind）をページの言語で。"""
     if kind == "nologin" and current_app.config.get("VAL_LOCAL") is not None:
         kind = "noclient"
     return tr(RIOT_FAILURES.get(kind, RIOT_FAILURES["down"]), count=ACCOUNTS_MAX)
 
 
 def failure_info(kind: str) -> tuple[int, str, bool]:
-    """(status, the words in the visitor's language, whether a link to the settings helps)."""
+    """（ステータス, 訪問者の言語の文, 設定へのリンクが役立つか）。"""
     status, visitor, owner = FAILURES.get(kind, FAILURES["down"])
     if owner and security.is_owner():
         return status, tr(owner), kind in ("nokey", "badkey")
@@ -154,12 +153,12 @@ def failure_info(kind: str) -> tuple[int, str, bool]:
 
 
 def cluster(name) -> str:
-    """A server's name in the visitor's language."""
+    """訪問者の言語でのサーバー名。"""
     name = str(name or "")
     return tr(CLUSTERS[name]) if name in CLUSTERS else name
 
 
-#: A profile's address pasted into the search instead of a Riot ID: tracker.gg's, and this site's own.
+#: Riot ID の代わりに検索に貼られたプロフィールのアドレス: tracker.gg のものと、このサイトのもの。
 PROFILE_LINKS = (
     re.compile(r"tracker\.gg/valorant/profile/riot/([^/?#\s]+)", re.IGNORECASE),
     re.compile(r"/p/([^/?#\s]+)/([^/?#\s]+)"),
@@ -167,7 +166,7 @@ PROFILE_LINKS = (
 
 
 def from_link(text: str) -> str:
-    """``Name#TAG`` out of a pasted profile address; anything else as it is."""
+    """貼られたプロフィールのアドレスから ``Name#TAG`` を取り出す。ほかはそのまま。"""
     if "/" not in text:
         return text
     for pattern in PROFILE_LINKS:
@@ -178,7 +177,7 @@ def from_link(text: str) -> str:
 
 
 def act_left() -> dict | None:
-    """The act being played and the time left in it (content.Content.act): ``{"name", "text", "ends"}``."""
+    """今のアクトと残り時間（content.Content.act）: ``{"name", "text", "ends"}``。"""
     found = current_app.config["VAL_CONTENT"].act(g.lang)
     if not found:
         return None
@@ -199,7 +198,7 @@ def _queue(metadata: dict) -> str:
 
 
 def rank_info(tier: dict | None, old: bool = False) -> dict:
-    """HenrikDev's ``{"id": 21, "name": "Ascendant 1"}`` in the visitor's language, with its picture."""
+    """HenrikDev の ``{"id": 21, "name": "Ascendant 1"}`` を訪問者の言語で、絵つきで。"""
     tier = tier or {}
     try:
         number = int(tier.get("id") or 0)
@@ -211,9 +210,8 @@ def rank_info(tier: dict | None, old: bool = False) -> dict:
 
 
 def peak_info(mmr: dict | None) -> dict | None:
-    """The player's best rank ever, over every act: v3 mmr's ``peak``, or a higher one among the acts' best wins
-    and final ranks. In today's numbers: an act before Episode 5 had no Ascendant (its Immortal 1 was 21, today's
-    24)."""
+    """プレイヤーの全アクトでの最高ランク: v3 mmr の ``peak``、またはアクトの良い勝利と最終ランクの中のもっと高いもの。
+    今の番号で: エピソード 5 より前のアクトにはアセンダントが無かった（その頃のイモータル 1 は 21、今の 24）。"""
     peak = (mmr or {}).get("peak") or {}
     tier = peak.get("tier") if isinstance(peak.get("tier"), dict) else {}
     try:
@@ -231,9 +229,9 @@ def peak_info(mmr: dict | None) -> dict | None:
 
 
 def _own_rr(region: str, puuid: str) -> dict:
-    """The RR of the owner's latest competitive matches from the game's own server (PD), when the page is the
-    owner's own account and the owner is looking: HenrikDev's rank lags a match behind right after one ends.
-    {} for anyone else, or when Riot does not answer."""
+    """ページが持ち主自身のアカウントで、持ち主が見ているときの、ゲーム自身のサーバー（PD）
+    からの持ち主の最近のコンペティティブの RR: HenrikDev のランクは試合直後に 1 試合遅れる。ほかの人や、
+    Riot が答えないときは {}。"""
     if not puuid or not security.is_owner():
         return {}
     riot = current_app.config["VAL_RIOT"]
@@ -246,9 +244,9 @@ def _own_rr(region: str, puuid: str) -> dict:
 
 
 def _current(current: dict, rr_changes: dict, sure: bool) -> dict:
-    """The rank and RR now: v3 mmr's ``current``, or what the latest match of the RR history left when ``current``
-    is a match behind (it still says what the match before left; seen right after a match). ``sure``: the history
-    has the game's own record (the owner's page), so its latest match is the truth."""
+    """今のランクと RR: v3 mmr の ``current``。``current`` が 1 試合遅れている（まだ前の試合後の値。試合直後に起きる）
+    ときは RR 履歴の最新の試合後の値。 ``sure``: 履歴にゲーム自身の記録がある（持ち主のページ）ので、
+    その最新の試合が正しい。"""
     ordered = sorted(
         (item for item in rr_changes.values() if item.get("at") and item.get("tier", 0) > 2),
         key=lambda item: -item["at"],
@@ -264,8 +262,8 @@ def _current(current: dict, rr_changes: dict, sure: bool) -> dict:
 
 
 def _act_peak(mmr: dict | None, rank: dict | None) -> dict | None:
-    """The player's best rank of this act: the latest act's best win and final rank, and the rank now. Only for
-    a player with a rank now: without one the latest act played is an earlier act."""
+    """プレイヤーのこのアクトの最高ランク: 最新アクトの良い勝利と最終ランク、今のランク。
+    今ランクがある人だけ: 無ければ最後にプレイしたアクトは前のアクト。"""
     seasons = (mmr or {}).get("seasons") or []
     if not rank or rank["tier"] <= 2 or not seasons:
         return None
@@ -287,7 +285,7 @@ def agent_info(agent: dict | None) -> dict:
 
 
 def _map_item(metadata: dict) -> dict:
-    """valorant-api.com's map that a match was played on ({} when not known)."""
+    """試合をしたマップ（valorant-api.com のもの。不明なら {}）。"""
     found = metadata.get("map") or {}
     index = current_app.config["VAL_CONTENT"].map_index(g.lang)
     return index.get(str(found.get("id") or "").lower()) or index.get(str(found.get("name") or "").lower()) or {}
@@ -303,7 +301,7 @@ def _map(metadata: dict) -> dict:
 
 
 def match_row(match: dict, player: dict, rr_changes: dict) -> dict:
-    """One match in a player's list."""
+    """プレイヤーの一覧の試合 1 つ。"""
     metadata = match.get("metadata") or {}
     match_id = str(metadata.get("match_id") or "")
     rounds = stats.rounds_played(match)
@@ -340,7 +338,7 @@ def match_row(match: dict, player: dict, rr_changes: dict) -> dict:
         "weapon_names": (match.get("digest") or {}).get("weapons") or {},
         "lobby": stats.lobby(match, player, rounds) if result["rounds"] else None,
         "mates": stats.mates(match, player),
-        # Deathmatch, Skirmish and the like would skew the averages: the summary counts the standard games.
+        # デスマッチ、スカーミッシュなどは平均をゆがめる: まとめは通常の試合で数える。
         "standard": str((metadata.get("queue") or {}).get("mode_type") or "Standard") == "Standard",
         "queue_id": str((metadata.get("queue") or {}).get("id") or "").lower(),
         "tier": _tier_number(player.get("tier")),
@@ -348,8 +346,8 @@ def match_row(match: dict, player: dict, rr_changes: dict) -> dict:
 
 
 def _then(player: dict, moved: dict | None) -> dict | None:
-    """The player's rank when the match was played, for its line in the list: the rank and RR the match left
-    them at (the RR history), or without it the rank they played the match at (no RR). None without a rank."""
+    """一覧の行用の、試合をしたときのプレイヤーのランク: その試合後のランクと RR（RR 履歴）、
+    無ければ試合をしたときのランク（RR 無し）。ランクが無ければ None。"""
     tier, rr = _tier_number((moved or {}).get("tier")), (moved or {}).get("rr")
     if tier <= 2:
         tier, rr = _tier_number(player.get("tier")), None
@@ -361,7 +359,7 @@ def _tier_number(tier) -> int:
 
 
 def _band_name(name: str) -> str:
-    """A rank band (activity.BANDS) in the visitor's words: "Platinum – Diamond"; every band for ""."""
+    """訪問者の言葉でのランク帯（activity.BANDS）: 「プラチナ – ダイヤモンド」。"" なら全帯。"""
     for key, low, high in BANDS:
         if key == name:
             first, last = (rank_family(rank_info({"id": tier})["name"]) for tier in (low, high))
@@ -370,18 +368,18 @@ def _band_name(name: str) -> str:
 
 
 def rank_family(name: str) -> str:
-    """A rank's name without its number: "Gold 2" -> "Gold"."""
+    """番号を除いたランク名: "Gold 2" -> "Gold"。"""
     return re.sub(r"\s*\d+$", "", name) or name
 
 
 def share_text(value: float) -> str:
-    """A percentage for the page: one decimal under 1% (0.4), else whole (12); none at all is 0."""
+    """ページ用のパーセント: 1% 未満は小数 1 桁（0.4）、ほかは整数（12）。無ければ 0。"""
     return "0" if value <= 0 else f"{value:.1f}" if value < 1 else str(round(value))
 
 
 def rank_top(region: str, tier: int) -> str | None:
-    """ "Top X%" of a rank in a region: the share of the competitive lines seen there at that rank or above
-    (activity.Activity.ranks), or None with fewer than RANKS_ENOUGH of them."""
+    """リージョンでのランクの「上位 X%」: そこで見たコンペティティブの成績のうち、
+    そのランク以上の割合（activity.Activity.ranks）。RANKS_ENOUGH 件未満なら None。"""
     found = current_app.config["VAL_ACTIVITY"].ranks(region)
     if tier <= 2 or found["lines"] < RANKS_ENOUGH:
         return None
@@ -390,8 +388,9 @@ def rank_top(region: str, tier: int) -> str | None:
 
 
 def match_score(line: dict, rounds: int, queue: str, tier: int, won) -> dict | None:
-    """A match's score (score.py) against the lines of the player's rank band: ``{"value", "grade", "standings":
-    {stat: 0..1}, "lines", "band"}``, or None (another mode, a remake, too few lines seen yet)."""
+    """プレイヤーのランク帯の成績と比べた試合のスコア（score.py）
+    : ``{"value", "grade", "standings": {stat: 0..1}, "lines", "band"}``。別のモード、リメイク、
+    見た成績がまだ少なすぎるなら None。"""
     if queue not in LINE_QUEUES or rounds < 5:
         return None
     stick, lines, band = current_app.config["VAL_ACTIVITY"].yardstick(tier)
@@ -408,10 +407,10 @@ def match_score(line: dict, rounds: int, queue: str, tier: int, won) -> dict | N
 
 
 def _scores(rows: list[dict]) -> dict | None:
-    """Each row's score, and over them the average, its grade, "top X%" for each number and the trend (oldest
-    first): ``{"value", "grade", "games", "lines", "band", "tops": {stat: X}, "chart"}``, or None."""
+    """各行のスコアと、全体の平均・その評価・各数値の「上位 X%」・推移（古い順）
+    : ``{"value", "grade", "games", "lines", "band", "tops": {stat: X}, "chart"}``。無ければ None。"""
     for row in rows:
-        # a stored line (archive.py) has no KAST: it would not be scored as the others are
+        # 保存した成績（archive.py）には KAST が無い: ほかと同じようには採点できない
         row["score"] = (
             None
             if row.get("thin")
@@ -441,7 +440,7 @@ def _scores(rows: list[dict]) -> dict | None:
 
 
 def _averages(values: list[int], most: int) -> list[int]:
-    """At most ``most`` values: a longer list in that many runs of about the same length, each its average."""
+    """最大 ``most`` 個の値: それより長い一覧は、ほぼ同じ長さの ``most`` 区間に分けてそれぞれの平均にする。"""
     if len(values) <= most:
         return values
     size = len(values) / most
@@ -454,16 +453,15 @@ def _averages(values: list[int], most: int) -> list[int]:
 
 
 def _score_chart(values: list[int], size: tuple[int, int] = (420, 130)) -> dict:
-    """The scores of the matches as a line, oldest first (an SVG drawn here), with a line where each grade
-    begins. Narrower than the RR's (at most SCORE_POINTS dots: a lifetime's in averages), so it stays tall enough
-    on a phone; ``size``: the drawing's width and height."""
+    """試合のスコアの線（古い順、ここで描く SVG）。各評価の始まりに線を引く。RR のものより細い（最大 SCORE_POINTS 点。
+    通算は平均で）ので、スマホでも十分な高さになる。``size``: 絵の幅と高さ。"""
     width, height = size
     pad = 12
 
     def y(value: float) -> float:
         return round(pad + (1000 - value) * (height - 2 * pad) / 1000, 1)
 
-    left = 26  # room for the grades' letters
+    left = 26  # 評価の文字の場所
     step = (width - left - pad) / (len(values) - 1)
     dots = [
         {"x": round(left + number * step, 1), "y": y(value), "value": value, "grade": score.grade(value)}
@@ -479,12 +477,12 @@ def _score_chart(values: list[int], size: tuple[int, int] = (420, 130)) -> dict:
 
 
 def _weapon(key: str, said: str = "") -> dict:
-    """A weapon (or what else killed: an ability) in the visitor's language, with its kill-feed picture."""
+    """訪問者の言語での武器（またはアビリティなど倒したもの）と、そのキルフィードの絵。"""
     known = current_app.config["VAL_CONTENT"].arsenal(g.lang).get(str(key).lower()) or {}
     return {"name": str(known.get("displayName") or said or key), "icon": known.get("killStreamIcon")}
 
 
-#: The lobby comparison's rows: key -> what it is called, and how its numbers are written.
+#: ロビー比較の行: キー -> 呼び名と、数値の書き方。
 LOBBY_LABELS = {
     "acs": ("ACS", "{:.0f}"),
     "adr": ("ADR", "{:.0f}"),
@@ -497,7 +495,7 @@ LOBBY_LABELS = {
 
 
 def _lobby_rows(compared: list[dict]) -> list[dict]:
-    """The player beside their lobbies, worded; the best and the weakest of them marked."""
+    """プレイヤーとロビーの比較を文に。一番良いものと一番弱いものに印。"""
     found = []
     for item in compared:
         label, number = LOBBY_LABELS[item["key"]]
@@ -513,9 +511,9 @@ def _lobby_rows(compared: list[dict]) -> list[dict]:
 
 
 def _rr_chart(rr_changes: dict) -> dict | None:
-    """The RR of the competitive matches as a line (an SVG drawn here: no script), oldest first, with a
-    line where each rank begins (elo: 100 a rank, rank 3 at 0): the wide drawing, and in ``narrow`` one for a phone
-    (taller for its width, so its words stay readable), the first and last days under it."""
+    """コンペティティブの試合の RR の線（ここで描く SVG、スクリプト無し）、古い順。
+    各ランクの始まりに線（elo: 1 ランク 100、ランク 3 が 0）: 横長の絵と、``narrow`` にスマホ用のもの（幅の割に高く、
+    文字が読める）。下に最初と最後の日付。"""
     points = sorted(
         (item for item in rr_changes.values() if item.get("elo") and item.get("at")), key=lambda item: item["at"]
     )
@@ -532,7 +530,7 @@ def _rr_chart(rr_changes: dict) -> dict | None:
     }
 
 
-#: A chart's size on a phone (wide 800 × 150 would be 65 px tall there, its words 5 px), and its dots at most.
+#: スマホでのグラフの大きさ（横長の 800 × 150 だとそこでは高さ 65 px、文字 5 px になる）と、最大の点数。
 NARROW = (360, 190)
 NARROW_DOTS = 20
 
@@ -559,7 +557,7 @@ def _rr_drawing(points: list[dict], width: int, height: int, most: int) -> dict:
         }
         for number, item in enumerate(points)
     ]
-    # a lifetime's line: drawn through every match, with a dot on some of them (the first and the latest too)
+    # 通算の線: 全試合を通して描き、一部に点を打つ（最初と最新にも）
     gap = max(1, math.ceil(len(every) / most))
     dots = [dot for number, dot in enumerate(every) if number % gap == 0 or number == len(every) - 1]
     lines = [
@@ -576,7 +574,7 @@ def _rr_drawing(points: list[dict], width: int, height: int, most: int) -> dict:
 
 
 def _next_rank(rank: dict | None, rr, rr_changes: dict) -> dict | None:
-    """How far the next rank is: the RR it needs and, at the player's average gain, about how many wins."""
+    """次のランクまでの距離: 必要な RR と、プレイヤーの平均の上がり幅で約何勝か。"""
     if not rank or not 3 <= rank["tier"] < 24 or rr is None:
         return None
     changes = [item.get("change", 0) for item in rr_changes.values()]
@@ -584,7 +582,7 @@ def _next_rank(rank: dict | None, rr, rr_changes: dict) -> dict | None:
     losses = [-change for change in changes if change < 0]
     need = max(1, 100 - int(rr))
     gain = round(sum(gains) / len(gains)) if gains else 0
-    # at the player's own win rate and average gain and loss, the RR a match brings on average
+    # プレイヤー自身の勝率と平均の上がり・下がり幅での、1 試合あたりの平均 RR
     per_match = (sum(gains) - sum(losses)) / len(changes) if changes else 0
     return {
         "need": need,
@@ -598,7 +596,7 @@ def _next_rank(rank: dict | None, rr, rr_changes: dict) -> dict | None:
 
 
 def _streak(rows: list[dict]) -> dict | None:
-    """The wins or losses in a row up to the latest match (newest first; a draw ends it): two or more, or None."""
+    """最新の試合までの連勝・連敗（新しい順。引き分けで切れる）: 2 以上、無ければ None。"""
     results = [row["result"]["won"] for row in rows if row["standard"]]
     if not results or results[0] is None:
         return None
@@ -607,7 +605,7 @@ def _streak(rows: list[dict]) -> dict | None:
 
 
 def _weapon_said(rows: list[dict], key: str) -> str:
-    """HenrikDev's own name of a weapon (English), for one valorant-api.com does not know."""
+    """valorant-api.com が知らない武器用の、HenrikDev 自身の武器名（英語）。"""
     for row in rows:
         said = (row.get("weapon_names") or {}).get(key)
         if said:
@@ -616,7 +614,7 @@ def _weapon_said(rows: list[dict], key: str) -> str:
 
 
 def _mode() -> str:
-    """The mode the visitor narrowed a player's matches to (``?mode=``), or "" for all of them."""
+    """訪問者がプレイヤーの試合を絞ったモード（``?mode=``）。全部なら ""。"""
     mode = request.args.get("mode", "")
     return mode if mode in MODES else ""
 
@@ -629,7 +627,7 @@ def _modes(mode: str) -> list[dict]:
 
 
 def _standing(current: dict) -> dict:
-    """What else the rank card says: the placement games left and the leaderboard place."""
+    """ランクカードのその他の情報: 残りの配置試合とランキングの順位。"""
 
     def number(value) -> int:
         try:
@@ -644,13 +642,12 @@ def _standing(current: dict) -> dict:
     }
 
 
-#: The act rank badge: rows of 1, 3 and 5 triangles, pointing up and down in turn; the best wins fill it
-#: from the top, left to right.
+#: アクトランクのバッジ: 三角 1・3・5 個の行で、上向きと下向きが交互。良い勝利で上から、左から右へ埋める。
 BADGE_ROWS = ((True,), (True, False, True), (True, False, True, False, True))
 
 
 def _acts(seasons: list) -> list[dict]:
-    """Each act played, the latest first: its name, record, final rank and badge."""
+    """プレイしたアクト（新しい順）: 名前、戦績、最終ランク、バッジ。"""
     acts = []
     for season in seasons:
         tiers = current_app.config["VAL_CONTENT"].tiers(g.lang, old=season.get("old", False))
@@ -685,11 +682,11 @@ def _acts(seasons: list) -> list[dict]:
 def player_page(
     name: str, tag: str, mode: str = "", fresh: bool = False, span: str = "", page: int = 1, act: str = ""
 ) -> tuple[dict, int]:
-    """What the player page shows, and its HTTP status. The account comes first (its region is needed); then
-    the rank and the matches are asked for at the same time. ``fresh``: the visitor pressed "データを更新", so
-    what is kept of the rank and the matches is asked for again (when it was read over a minute ago). ``span``
-    "all": every match kept of the player (archive.py), not the latest RECENT; "act": those of one act (``act``,
-    its uuid; the act being played when not given), as tracker.gg counts a season; ``page``: of its list."""
+    """プレイヤーページに出すものと HTTP ステータス。まずアカウント（リージョンが必要）、次にランクと試合を同時に頼む。
+    ``fresh``: 訪問者が「データを更新」を押したので、持っているランクと試合を頼み直す（読んでから 1 分以上経っていれば）
+    。 ``span`` "all": 最新 RECENT ではなく、持っている全試合（archive.py）。
+    "act": 1 つのアクトの試合（``act`` はその uuid。無ければ今のアクト）。tracker.gg のシーズンの数え方と同じ。
+    ``page``: その一覧のページ。"""
     henrik = current_app.config["VAL_HENRIK"]
     try:
         account = henrik.account(name, tag)
@@ -707,13 +704,13 @@ def player_page(
     try:
         mmr = asked_mmr.result()
     except HenrikError:
-        mmr = None  # unranked, or the rank could not be read: the matches are still worth showing
+        mmr = None  # ランクなし、またはランクが読めなかった: 試合はそれでも出す価値がある
     try:
         rr_changes = asked_rr.result() if asked_rr else {}
     except HenrikError:
-        rr_changes = {}  # the list only goes without the RR each match gave
+        rr_changes = {}  # 一覧に各試合の RR が付かないだけ
     own = _own_rr(region, str(account.get("puuid") or "").lower())
-    rr_changes = rr_changes | own  # the game's own record of the owner's matches: there before HenrikDev's
+    rr_changes = rr_changes | own  # 持ち主の試合のゲーム自身の記録: HenrikDev より先にある
     rows, matches_problem, spots = [], "", {}
     try:
         listed = asked_matches.result()
@@ -734,7 +731,7 @@ def player_page(
         life = _lifetime(puuid, region, name, tag, mode, rr_changes, window)
         rows, heat_maps, rr_all = life.pop("rows"), life.pop("heat_maps"), life.pop("rr")
         if rows:
-            matches_problem = ""  # HenrikDev did not answer now, but the matches kept of the player are there
+            matches_problem = ""  # HenrikDev は今答えなかったが、プレイヤーの持っている試合はある
     pages = max(1, math.ceil(len(rows) / LIFE_PAGE)) if life else 1
     page = min(max(1, page), pages)
     shown = rows[(page - 1) * LIFE_PAGE : page * LIFE_PAGE] if life else rows
@@ -809,9 +806,9 @@ def player_page(
 
 
 def _act_window(uuid: str = "") -> dict | None:
-    """The act a player's numbers are counted over (span "act"): the one asked for, else the one being played, else
-    the latest: ``{"uuid", "name", "starts", "ends", "current", "from": its first day in the visitor's words}``.
-    None when the acts are not known (valorant-api.com did not answer)."""
+    """プレイヤーの数値を数えるアクト（span "act"）: 頼まれたもの、無ければ今のもの、
+    それも無ければ最新: ``{"uuid", "name", "starts", "ends", "current", "from": 訪問者の言葉での最初の日}``。
+    アクトがわからなければ None（valorant-api.com が答えなかった）。"""
     acts = current_app.config["VAL_CONTENT"].acts(g.lang)
     now = time.time()
     current = next((item for item in acts if item["starts"].timestamp() <= now < item["ends"].timestamp()), None)
@@ -825,8 +822,7 @@ def _act_window(uuid: str = "") -> dict | None:
 
 
 def _acts_shown(window: dict, life: dict) -> list[dict]:
-    """The acts to choose from on a player's page: from the act of their first kept match to the one being played
-    (and the one shown, whatever it is), the latest first."""
+    """プレイヤーページで選べるアクト: 持っている最初の試合のアクトから今のアクトまで（と、表示中のもの）、新しい順。"""
     first = life.get("first") or 0
     now = time.time()
     shown = []
@@ -842,10 +838,10 @@ def _acts_shown(window: dict, life: dict) -> list[dict]:
 def _lifetime(
     puuid: str, region: str, name: str, tag: str, mode: str, recent_rr: dict, window: dict | None = None
 ) -> dict:
-    """Every match kept of the player (archive.py), as the player page counts them: ``{"rows", "heat_maps", "rr",
-    "count", "whole", "thin", "since", "first", "reading"}``; with ``window`` (_act_window), only the matches of
-    that act. Asks the background to read the rest of their history. What the rows and drawings come to is kept
-    until something of the player is added (or LIFE_KEEP)."""
+    """プレイヤーページが数える形の、持っているプレイヤーの全試合（archive.py）
+    : ``{"rows", "heat_maps", "rr", "count", "whole", "thin", "since", "first", "reading"}``。``window``（_act_window）
+    があればそのアクトの試合だけ。残りの履歴を裏に読むよう頼む。行と絵の計算結果は、
+    その人のものが何か増えるまで（か LIFE_KEEP まで）持つ。"""
     archive = current_app.config["VAL_ARCHIVE"]
     state = current_app.config["VAL_FILLER"].want(region, puuid, name, tag)
     archive.keep_rr(puuid, recent_rr)
@@ -865,7 +861,7 @@ def _lifetime(
             found = stats.find_player(match, puuid)
             if found:
                 row = match_row(match, found, rr_all)
-                # Riot's records name no one but the player (pdmatch.py): their party is left out
+                # Riot の記録はプレイヤー以外の名前を出さない（pdmatch.py）: パーティーは省く
                 row["mates"] = [mate for mate in row["mates"] if mate["name"] and mate["tag"]]
                 rows.append(row)
                 _add_spots(spots, match, found)
@@ -893,7 +889,7 @@ def _lifetime(
 
 
 def _thin_row(line: dict, region: str, rr_changes: dict) -> dict:
-    """A stored line (henrik._slim_stored: the player's numbers, no rounds) as one match of the player's list."""
+    """保存した成績（henrik._slim_stored: プレイヤーの数値、ラウンド無し）を一覧の試合 1 つとして。"""
     match_id = str(line.get("id") or "")
     try:
         moment = datetime.fromisoformat(str(line.get("started") or "")).astimezone(stats.JST)
@@ -948,14 +944,14 @@ def _thin_row(line: dict, region: str, rr_changes: dict) -> dict:
 
 
 def _span() -> str:
-    """ "all" when the visitor asked for a player's lifetime (``?span=all``), "act" for one act (``?span=act``,
-    ``&act=`` its uuid), else "" (the latest matches)."""
+    """訪問者がプレイヤーの通算を頼んだら（``?span=all``）"all"、1 つのアクトなら（``?span=act``、
+    ``&act=`` にその uuid）"act"、それ以外は ""（最新の試合）。"""
     asked = request.args.get("span")
     return asked if asked in ("all", "act") else ""
 
 
 def _act() -> str:
-    """The act asked for (``?act=``, a uuid), or ""."""
+    """頼まれたアクト（``?act=``、uuid）、または ""。"""
     asked = str(request.args.get("act") or "").lower()
     return asked if re.fullmatch(r"[0-9a-f-]{36}", asked) else ""
 
@@ -968,7 +964,7 @@ def _page() -> int:
 
 
 def _read(at: float) -> dict | None:
-    """When the page's numbers were read from HenrikDev, and whether "データを更新" can ask again yet."""
+    """ページの数値を HenrikDev から読んだ時刻と、「データを更新」でもう頼み直せるか。"""
     if not at:
         return None
     age = max(0, time.time() - at)
@@ -976,7 +972,7 @@ def _read(at: float) -> dict | None:
 
 
 def _add_spots(spots: dict, match: dict, player: dict) -> None:
-    """The player's kills and deaths in a match (heatmap.points), added to its map's."""
+    """試合でのプレイヤーのキルとデス（heatmap.points）をマップのものに足す。"""
     everyone = [item for item in match.get("players") or [] if isinstance(item, dict)]
     mine = next((number for number, item in enumerate(everyone) if item is player), -1)
     found = heatmap.points(match, mine)
@@ -987,8 +983,8 @@ def _add_spots(spots: dict, match: dict, player: dict) -> None:
 
 
 def _heat_maps(spots: dict, most: int | None = None) -> list[dict]:
-    """Each map's drawing of the player's kills and deaths (heatmap.drawing), the busiest map first; ``most``: the
-    dots drawn on each, at most (the newest)."""
+    """マップごとのプレイヤーのキルとデスの絵（heatmap.drawing）、多いマップから。
+    ``most``: 各マップに描く点の最大数（新しいものから）。"""
     drawn = []
     for known, found in spots.values():
         plan = heatmap.plan(known)
@@ -999,7 +995,7 @@ def _heat_maps(spots: dict, most: int | None = None) -> list[dict]:
     return drawn[: heatmap.MAPS_SHOWN]
 
 
-#: How a round ended -> the words of its picture's title.
+#: ラウンドの終わり方 -> 絵のタイトルの文。
 ENDINGS = {
     "elim": "全員倒した",
     "defuse": "スパイク解除",
@@ -1009,7 +1005,7 @@ ENDINGS = {
 }
 
 
-#: A team's buy (_buy) -> its name.
+#: チームの購入（_buy）-> 名前。
 BUYS = {"eco": "エコ", "semi-eco": "セミエコ", "semi-buy": "セミバイ", "full": "フルバイ"}
 
 
@@ -1019,15 +1015,15 @@ def _clock(ms: int) -> str:
 
 
 def _buy(loadout: int, players: int) -> str:
-    """A team's buy from its loadout: eco, semi-eco, semi-buy or full (by the average per player)."""
+    """ロードアウトからのチームの購入: エコ、セミエコ、セミバイ、フルバイ（1 人あたりの平均で）。"""
     each = loadout / players if players else 0
     return "eco" if each < 1000 else "semi-eco" if each < 2000 else "semi-buy" if each < 3900 else "full"
 
 
 def _own_match(region: str, match_id: str) -> dict | None:
-    """A match from the game's own server (PD) for the owner, when HenrikDev does not have it (yet: it takes
-    minutes after the match, and some matches never reach it) or does not answer. PD names every player, so only
-    the owner's own name is kept (pdmatch). None for visitors, without a linked account, or when Riot has none."""
+    """HenrikDev が（まだ）持っていない（試合後数分かかり、届かない試合もある）か答えないときの、
+    持ち主用のゲーム自身のサーバー（PD）からの試合。 PD は全プレイヤーの名前を出すので、
+    持ち主自身の名前だけ残す（pdmatch）。訪問者、連携アカウントが無いとき、Riot が持っていないときは None。"""
     if not security.is_owner():
         return None
     riot = current_app.config["VAL_RIOT"]
@@ -1046,8 +1042,8 @@ def _own_match(region: str, match_id: str) -> dict | None:
 
 
 def _match_page(found: dict, me: str) -> dict:
-    """What a match's page shows: the scoreboards (with the rounds' numbers), the rounds one by one and their
-    kills, the parties, and for the player the visitor came from their duels with each opponent."""
+    """試合ページに出すもの: スコアボード（ラウンドの数値つき）、ラウンドごととそのキル、パーティー、
+    訪問者が来たプレイヤーなら相手ごとの撃ち合い。"""
     metadata = found.get("metadata") or {}
     rounds = stats.rounds_played(found)
     digest = found.get("digest") or {}
@@ -1056,7 +1052,7 @@ def _match_page(found: dict, me: str) -> dict:
     mine = next(
         (n for n, player in enumerate(everyone) if f"{player.get('name')}#{player.get('tag')}".lower() == me), -1
     )
-    # parties of two or more, numbered in the order they appear
+    # 2 人以上のパーティー。出てきた順に番号を付ける
     sizes: dict[str, int] = {}
     for player in everyone:
         if player.get("party_id"):
@@ -1089,7 +1085,7 @@ def _match_page(found: dict, me: str) -> dict:
 
     def lines(team_id: str | None) -> list[dict]:
         listed = [person for person in people if team_id is None or person["team"] == team_id]
-        # by combat score; without rounds (Deathmatch and the like) there is none, so by kills
+        # コンバットスコア順。ラウンドが無い（デスマッチなど）とスコアも無いのでキル順
         listed.sort(key=lambda person: -(person["line"]["acs"] if rounds else person["line"]["kills"]))
         return listed
 
@@ -1097,10 +1093,10 @@ def _match_page(found: dict, me: str) -> dict:
     for team in found.get("teams") or []:
         team_id = str(team.get("team_id") or "")
         teams.append({"id": team_id, "result": stats.team_result(found, team_id), "players": lines(team_id)})
-    if not any(team["players"] for team in teams):  # Deathmatch: everyone for themselves, in one table
+    if not any(team["players"] for team in teams):  # デスマッチ: 全員が個人戦、1 つの表に
         teams = [{"id": "", "result": None, "players": lines(None)}]
     my_team = people[mine]["team"] if mine >= 0 else ""
-    teams.sort(key=lambda team: team["id"] != my_team)  # the team of the player the visitor came from, first
+    teams.sort(key=lambda team: team["id"] != my_team)  # 訪問者が来たプレイヤーのチームを先に
     team_sizes = {team["id"]: len(team["players"]) for team in teams}
     queue = str((metadata.get("queue") or {}).get("id") or "").lower()
     half = rounds_module.HALF.get(queue, 0)
@@ -1138,7 +1134,7 @@ def _match_page(found: dict, me: str) -> dict:
                 "site": item["s"],
                 "attack": item["a"],
                 "buys": {team: _buy(value, team_sizes.get(team, 0)) for team, value in (item.get("l") or {}).items()},
-                # a gap before the second half and before overtime
+                # 後半とオーバータイムの前に間を空ける
                 "turn": bool(half) and number in (half, 2 * half),
                 "kills": kills,
             }
@@ -1157,7 +1153,7 @@ def _match_page(found: dict, me: str) -> dict:
         duels.sort(key=lambda duel: (-(duel["took"] - duel["lost"]), -duel["took"]))
     tiers = [person["rank"]["tier"] for person in people if person["rank"]["tier"] > 2]
     average = rank_info({"id": round(sum(tiers) / len(tiers))}) if tiers else None
-    # the player's numbers as they stood after each round (the game shows none of this while it is played)
+    # 各ラウンド後のプレイヤーの数値（ゲームはプレイ中にこれを出さない）
     course = []
     if mine >= 0 and digest.get("kills") and digest.get("rounds"):
         kills = deaths = head = hits = 0
@@ -1211,15 +1207,15 @@ def _match_page(found: dict, me: str) -> dict:
 
 
 def _me() -> dict | None:
-    """The owner's linked Riot account for the top page's 自分 box (riot.Riot.status: read from this server's own
-    file, no call to Riot), or None for a visitor."""
+    """トップページの自分の枠用の、持ち主の連携 Riot アカウント（riot.Riot.status: このサーバー自身のファイルから読み、
+    Riot は呼ばない）。訪問者には None。"""
     if not security.is_owner():
         return None
     return current_app.config["VAL_RIOT"].status()
 
 
 def _no_key() -> bool:
-    """The owner has no HenrikDev key yet (the PC app's first start): the top page says where it goes."""
+    """持ち主がまだ HenrikDev のキーを持っていない（PC アプリの初回起動）: トップページで入れる場所を案内する。"""
     return security.is_owner() and not current_app.config["VAL_SETTINGS"].henrik_key()
 
 
@@ -1233,8 +1229,8 @@ def register(app: Flask) -> None:
         query = from_link(request.args.get("q", "").strip())[:40]
         found = split_riot_id(query)
         if not found:
-            # a name without its tag: say what is missing, with that name for the example; "Name JP1" (a space
-            # where the # goes, likely; a name may hold spaces, so the Riot ID is only offered)
+            # タグの無い名前: 足りないものを、その名前を例にして言う。"Name JP1"（# の場所に空白、たぶん。
+            # 名前に空白が入ることもあるので Riot ID は候補として出すだけ）
             name_only = query if query and "#" not in query.replace("＃", "#") and NAME.match(query) else ""
             head, _, last = name_only.rpartition(" ")
             guess = split_riot_id(f"{head}#{last}") if head.strip() else None
@@ -1250,14 +1246,14 @@ def register(app: Flask) -> None:
 
     @app.get("/p/<name>/<tag>")
     def player(name: str, tag: str):
-        """At once: what HenrikDev already told us, or the page without the rank and matches, which the page's
-        script then asks for (player_part). HenrikDev takes seconds, and the browser showed nothing meanwhile.
-        ``?full=1`` waits for them (the link for a browser without JavaScript)."""
+        """すぐ出す: HenrikDev がもう答えたもの、またはランクと試合の無いページを出し、
+        ページのスクリプトがあとで頼む（player_part）。HenrikDev は数秒かかり、その間ブラウザーは何も出していなかった。
+        ``?full=1`` なら待つ（JavaScript の無いブラウザー用のリンク）。"""
         if not split_riot_id(f"{name}#{tag}"):
             abort(404)
         henrik, mode, fresh = current_app.config["VAL_HENRIK"], _mode(), bool(request.args.get("fresh"))
         kept = henrik.has_player(name, tag, mode) and not fresh
-        if request.args.get("full") or not henrik.key() or kept:  # an answer at once
+        if request.args.get("full") or not henrik.key() or kept:  # すぐ答える
             values, status = player_page(name, tag, mode, fresh, _span(), _page(), _act())
             return render_template("player.html", **values), status
         return render_template(
@@ -1277,14 +1273,14 @@ def register(app: Flask) -> None:
 
     @app.get("/p/<name>/<tag>/part")
     def player_part(name: str, tag: str):
-        """The player's rank and matches, as the part of the page that the script puts in place."""
+        """プレイヤーのランクと試合。スクリプトが差し込むページの部分として。"""
         if not split_riot_id(f"{name}#{tag}"):
             abort(404)
         start = time.monotonic()
         values, status = player_page(name, tag, _mode(), bool(request.args.get("fresh")), _span(), _page(), _act())
         response = make_response(render_template("_player.html", **values), status)
         response.headers["Cache-Control"] = "no-store"
-        # how long HenrikDev took, for the browser's developer tools (Network -> Timing)
+        # HenrikDev にかかった時間（ブラウザーの開発者ツールの Network -> Timing 用）
         response.headers["Server-Timing"] = f"henrik;dur={(time.monotonic() - start) * 1000:.0f}"
         return response
 
@@ -1305,12 +1301,12 @@ def register(app: Flask) -> None:
         else:
             current_app.config["VAL_ACTIVITY"].seen([found])
             current_app.config["VAL_ARCHIVE"].keep([found], "henrik")
-        me = request.args.get("me", "")  # the player whose list the visitor came from: their line stands out
+        me = request.args.get("me", "")  # 訪問者がその一覧から来たプレイヤー: その行を目立たせる
         return render_template("match.html", problem="", **_match_page(found, me))
 
     @app.get("/agents")
     def agents():
-        """Every agent, or the ones of a role (``?role=`` its uuid): the roles as links above the list."""
+        """全エージェント、またはロールのもの（``?role=`` にその uuid）: 一覧の上にロールのリンク。"""
         listed = current_app.config["VAL_CONTENT"].agents(g.lang)
         roles: dict[str, dict] = {}
         for item in listed:
@@ -1335,8 +1331,8 @@ def register(app: Flask) -> None:
 
     @app.get("/app/latest")
     def app_latest():
-        """The newest build of the PC app, for the app's own "there is a newer one" (release.py). The site only:
-        the app itself has no clone to read."""
+        """PC アプリの最新ビルド。アプリ自身の「新しいものがあります」用（release.py）。
+        サイトだけ: アプリ自身には読むクローンが無い。"""
         found = None if current_app.config.get("VAL_LOCAL") is not None else release.latest()
         if not found:
             abort(404)
@@ -1355,7 +1351,7 @@ def register(app: Flask) -> None:
 
     @app.get("/pic/<path:path>")
     def picture(path: str):
-        """A news or esports picture (media.OUTSIDE), kept here like the game's."""
+        """ニュース・eスポーツの絵（media.OUTSIDE）。ゲームの絵と同じくここに残す。"""
         found = current_app.config["VAL_MEDIA"].outside(path)
         if found is None:
             abort(404)
@@ -1367,7 +1363,7 @@ def register(app: Flask) -> None:
 
     @app.get("/collection")
     def collection():
-        """The owner's own skins, buddies, cards and the rest, from their Riot account (riot.py)."""
+        """持ち主自身のスキン、ガンバディ、カードなど。Riot アカウントから（riot.py）。"""
         security.owner_only()
         show = request.args.get("show", "skins")
         show = show if show in owned_items.TABS else "skins"
@@ -1402,7 +1398,7 @@ def register(app: Flask) -> None:
             elif do == "riot":
                 from valtracker.owner import claim
 
-                claim(riot.me())  # what was kept so far is the account's that was in use until now
+                claim(riot.me())  # ここまで残したものは、今まで使っていたアカウントのもの
                 try:
                     linked = riot.sign_in(request.form.get("riot", ""))
                     saved = tr(
@@ -1423,7 +1419,7 @@ def register(app: Flask) -> None:
                 riot.sign_out(request.form.get("account", "")[:36])
                 saved = tr("Riot アカウントとの連携を解除しました。")
             elif do == "look" and current_app.config["VAL_UPDATER"] is not None:
-                # the PC app: ask the site now whether a newer build is out (update.py)
+                # PC アプリ: 新しいビルドが出たか今サイトに聞く（update.py）
                 try:
                     found = current_app.config["VAL_UPDATER"].look()
                 except UpdateError:
@@ -1436,7 +1432,7 @@ def register(app: Flask) -> None:
                     else:
                         saved = tr("最新バージョンです。")
             elif do in ("app", "alert_test") and current_app.config["VAL_LOCAL"] is not None:
-                # the PC app's own choices (pc.py): the match-found alert, the start with Windows
+                # PC アプリ自身の選択（pc.py）: マッチ成立の通知、Windows 起動時の開始
                 store.save(**{key: request.form.get(key) == "on" for key in pc.DEFAULTS})
                 saved = tr("設定を保存しました。")
                 if autostart is not None and autostart.possible:

@@ -1,10 +1,10 @@
-"""Which build of the PC app is the newest.
+"""PC アプリの最新ビルドはどれか。
 
-The site says it (/app/latest), from the clone it runs from: the last commit that changed what the app is built
-from. (When this was written the repository was private and GitHub answered 404 for its release to anyone not
-signed in; it is public since 2026-11-13, and the site is still the one asked: one small answer, no API limit.) desktop.yml stamps each build with the same answer (``python -m valtracker.release <file>``
-writes valtracker/BUILD), and the app compares the two (desktop.look_for_updates).
-"""
+サイトが答える（/app/latest）。動いているクローンの、アプリのビルド元を最後に変えたコミット。
+（これを書いたときリポジトリは非公開で、サインインしていない人には GitHub のリリースが 404 だった。
+2026-11-13 から公開だが、今もサイトに聞く: 答えが小さく、API の制限も無い。）
+desktop.yml は各ビルドに同じ答えを刻み（``python -m valtracker.release <file>`` が valtracker/BUILD を書く）、
+アプリが 2 つを比べる（desktop.look_for_updates）。"""
 
 from __future__ import annotations
 
@@ -17,14 +17,13 @@ from pathlib import Path
 
 from valtracker.paths import ROOT
 
-#: What the app is built from: desktop.yml's ``paths``. A commit that changes none of these builds no new app.
+#: アプリのビルド元: desktop.yml の ``paths``。どれも変えないコミットでは新しいアプリはビルドされない。
 PATHS = ("valtracker", "desktop", "requirements*.txt", ".github/workflows/desktop.yml")
-#: Where the newest build is downloaded (the owner is signed in to GitHub in their browser).
+#: 最新ビルドのダウンロード先（持ち主はブラウザーで GitHub にサインインしている）。
 PAGE = "https://github.com/AlstRafe/valorant-project/releases/tag/desktop"
-#: A commit is told as a newer build only this long after it was made: desktop.yml has built and released it by
-#: then (it takes some ten minutes).
+#: コミットからこの時間が過ぎて初めて新しいビルドとして知らせる（desktop.yml のビルドと公開に 10 分ほどかかる）。
 BUILT_AFTER = 20 * 60
-#: The site reads its clone again at most this often.
+#: サイトがクローンを読み直す最短の間隔。
 KEPT = 300.0
 _HASH = re.compile(r"[0-9a-f]{40}")
 _kept: dict = {"at": 0.0, "found": None}
@@ -32,10 +31,10 @@ _lock = threading.Lock()
 
 
 def source(folder: Path = ROOT) -> dict | None:
-    """The last commit that changed the app in the clone at ``folder``: {"commit", "time": when it was made
-    (seconds since 1970)}. None without a clone or without git (the built app, a copy of the files)."""
+    """``folder`` のクローンでアプリを最後に変えたコミット: {"commit", "time": 作った時刻（1970 年からの秒）}。
+    クローンか git が無ければ None（ビルドしたアプリ、ファイルのコピー）。"""
     try:
-        done = subprocess.run(  # fixed arguments
+        done = subprocess.run(  # 決まった引数
             ["git", "-C", str(folder), "log", "-1", "--format=%H %ct", "--", *PATHS],
             capture_output=True,
             text=True,
@@ -48,7 +47,7 @@ def source(folder: Path = ROOT) -> dict | None:
 
 
 def parse(text: str) -> dict | None:
-    """ "<commit> <time>" (git's answer, and valtracker/BUILD) as {"commit", "time"}, None when it is not that."""
+    """ "<commit> <time>"（git の答え、valtracker/BUILD）を {"commit", "time"} に。その形でなければ None。"""
     parts = text.split()
     if len(parts) != 2 or not _HASH.fullmatch(parts[0]) or not parts[1].isdigit():
         return None
@@ -56,7 +55,7 @@ def parse(text: str) -> dict | None:
 
 
 def latest(folder: Path = ROOT, now: float | None = None) -> dict | None:
-    """source(), read again at most every KEPT seconds: what the site answers at /app/latest."""
+    """source() を KEPT 秒に 1 回まで読み直したもの: サイトが /app/latest で答える内容。"""
     now = time.monotonic() if now is None else now
     with _lock:
         if _kept["found"] is None or now - _kept["at"] >= KEPT:
@@ -65,12 +64,12 @@ def latest(folder: Path = ROOT, now: float | None = None) -> dict | None:
 
 
 def day(when: int) -> str:
-    """A build's time as this PC's clock says it: 2026-11-13 09:41."""
+    """この PC の時計でのビルドの時刻: 2026-11-13 09:41。"""
     return time.strftime("%Y-%m-%d %H:%M", time.localtime(when))
 
 
 def read_build(file: Path) -> dict | None:
-    """The built app's stamp (valtracker/BUILD): {"commit", "time", "date"}. None when run from the source."""
+    """ビルドしたアプリのスタンプ（valtracker/BUILD）: {"commit", "time", "date"}。ソースから動かしているなら None。"""
     try:
         found = parse(file.read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -79,9 +78,9 @@ def read_build(file: Path) -> dict | None:
 
 
 def newer(build: dict | None, told: object, now: float) -> dict | None:
-    """What the site ``told`` (/app/latest) when it is a newer build than this one: {"commit", "date", "url":
-    PAGE, "ready": desktop.yml has had the time to release it}. None when this is the newest, when this app was not
-    built, or when the answer is not one. The link is always PAGE: nothing the answer says is opened."""
+    """サイトが ``told``（/app/latest）で示したものがこれより新しいビルドなら: {"commit", "date", "url": PAGE,
+    "ready": desktop.yml が公開を済ませているはずか}。これが最新、ビルドしたアプリでない、答えがその形でないなら None。
+    リンクはいつも PAGE（答えの中身は開かない）。"""
     if not build or not isinstance(told, dict):
         return None
     commit, when = told.get("commit"), told.get("time")
@@ -98,7 +97,7 @@ def newer(build: dict | None, told: object, now: float) -> dict | None:
 
 
 if __name__ == "__main__":
-    # desktop.yml: the stamp of the build being made
+    # desktop.yml: 作っているビルドのスタンプ
     found = source()
     if not found or len(sys.argv) != 2:
         sys.exit("No commit found for the app's files (a clone with its history is needed).")

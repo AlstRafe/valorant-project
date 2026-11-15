@@ -1,10 +1,8 @@
-"""A player's seasons (/p/<name>/<tag>/seasons): each act's record and numbers, with the change from the act
-before, from every match of a mode that HenrikDev keeps of them (henrik.stored), like tracker.gg's season stats.
+"""プレイヤーのシーズン（/p/<name>/<tag>/seasons）: アクトごとの戦績と数値、前のアクトからの変化。
+HenrikDev が持っているそのモードの全試合から（henrik.stored）。tracker.gg のシーズン成績のようなもの。
 
-Riot has no public source of a player's past acts. HenrikDev keeps only the matches it has read (its documentation:
-a growing part of the history, not all of it), so the page says how many matches it counted. The page is asked for
-only from its link, so the player page costs no more calls.
-"""
+Riot には過去のアクトを公開で取れる口が無い。HenrikDev は自分が読んだ試合しか持たない（ドキュメントによれば履歴の一部で
+、増えていく）ので、数えた試合数をページに書く。ページはリンクからだけ開くので、プレイヤーページの呼び出しは増えない。"""
 
 from __future__ import annotations
 
@@ -16,19 +14,19 @@ from flask import Flask, abort, current_app, render_template, request
 from valtracker.henrik import MODES, STORED_MODES, HenrikError, split_riot_id
 from valtracker.views import QUEUES, agent_info, failure_info, peak_info, rank_info, tr
 
-#: The agents shown for each act, the most played first.
+#: アクトごとに出すエージェント数（多く使った順）。
 AGENTS_SHOWN = 3
-#: The numbers compared with the act before, and how many decimals their change has.
+#: 前のアクトと比べる数値と、その変化の小数の桁数。
 CHANGES = {"win_rate": 0, "kd": 2, "hs": 1, "adr": 0, "acs": 0}
 
 
 def act_name(short: str) -> str:
-    """HenrikDev's short name of an act ("e9a3") -> "E9 A3"."""
+    """HenrikDev のアクトの短い名前（"e9a3"）-> "E9 A3"。"""
     return re.sub(r"(\d)a(\d)", r"\1 A\2", short).upper()
 
 
 def numbers(matches: list[dict]) -> dict:
-    """The record and averages of some stored matches (henrik._slim_stored)."""
+    """保存済み試合（henrik._slim_stored）の戦績と平均。"""
     games = len(matches)
     wins = sum(match["won"] is True for match in matches)
     losses = sum(match["won"] is False for match in matches)
@@ -66,9 +64,9 @@ def numbers(matches: list[dict]) -> dict:
 
 
 def seasons(matches: list[dict]) -> list[dict]:
-    """Each act with matches, the latest first, with its numbers and their change from the act before it."""
+    """試合のあるアクト（新しい順）と、その数値、前のアクトからの変化。"""
     by_act: dict[str, list] = {}
-    for match in matches:  # newest first: so are the acts
+    for match in matches:  # 新しい順: アクトも同じ順
         if match["season"]:
             by_act.setdefault(match["season"], []).append(match)
     acts = [{"key": key, "name": act_name(key)} | numbers(listed) for key, listed in by_act.items()]
@@ -82,7 +80,7 @@ def seasons(matches: list[dict]) -> list[dict]:
 
 
 def _named(act: dict, mode: str) -> dict:
-    """An act's agents and peak rank with their names and pictures in the visitor's language."""
+    """アクトのエージェントと最高ランクに、訪問者の言語の名前と絵を付ける。"""
     act["agents"] = [agent | {"agent": agent_info({"id": agent["id"]})} for agent in act["agents"]]
     act["peak_rank"] = rank_info({"id": act["peak"]}) if mode == "competitive" and act["peak"] > 2 else None
     return act
@@ -111,12 +109,12 @@ def register(app: Flask) -> None:
             if error.kind != "notfound":
                 status, values["problem"], _ = failure_info(error.kind)
                 return render_template("seasons.html", **values), status
-            stored = []  # the player is there, but HenrikDev keeps none of their matches of this mode
+            stored = []  # プレイヤーはいるが、HenrikDev がこのモードの試合を 1 つも持っていない
         values["acts"] = [_named(act, mode) for act in seasons(stored)]
         counted = [match for match in stored if match["season"]]
         values["total"] = _named(numbers(counted), mode) if counted else None
         if values["total"] and mode == "competitive":
-            # the lifetime card: the best rank ever (as the player page says it), not the best of the kept matches
+            # 通算カード: 今までの最高ランク（プレイヤーページと同じ）。保存済み試合の中の最高ではない
             try:
                 ever = peak_info(henrik.mmr(str(account.get("region") or "ap"), values["name"], values["tag"]))
             except HenrikError:

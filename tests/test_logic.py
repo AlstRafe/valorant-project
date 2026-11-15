@@ -15,7 +15,7 @@ class RiotIdTest(unittest.TestCase):
     def test_forms(self):
         self.assertEqual(split_riot_id("Tester#JP1"), ("Tester", "JP1"))
         self.assertEqual(split_riot_id(" 名前 ＃ 日本 "), ("名前", "日本"))
-        self.assertEqual(split_riot_id("Ｔｅｓｔｅｒ＃ＪＰ１"), ("Ｔｅｓｔｅｒ", "JP1"))  # only the tag is half-width
+        self.assertEqual(split_riot_id("Ｔｅｓｔｅｒ＃ＪＰ１"), ("Ｔｅｓｔｅｒ", "JP1"))  # タグだけ半角
         self.assertIsNone(split_riot_id("a#b#KR1"))
         self.assertIsNone(split_riot_id("Tester"))
         self.assertIsNone(split_riot_id("#JP1"))
@@ -49,7 +49,7 @@ class HenrikTest(unittest.TestCase):
         with self.assertRaises(HenrikError) as caught:
             henrik.account("C", "D")
         self.assertEqual(caught.exception.kind, "busy")
-        henrik.account("a", "b")  # kept: no call
+        henrik.account("a", "b")  # 保持: 呼び出し無し
 
     def test_names_are_quoted(self):
         self.henrik.account("名前 x", "JP1")
@@ -59,24 +59,24 @@ class HenrikTest(unittest.TestCase):
         matches = self.henrik.matches("ap", "Tester", "JP1")
         self.assertEqual(set(matches[0]), {"metadata", "players", "teams", "digest"})
         self.assertNotIn("ability_casts", matches[0]["players"][0])
-        # what the pages use of the rounds and kills is kept, small (rounds.py)
+        # ページが使うラウンドとキルの情報は小さくして残す（rounds.py）
         digest = matches[0]["digest"]
         self.assertEqual(len(digest["rounds"]), 22)
-        # where the victim died and where the killer stood (heatmap.py)
+        # やられた側が倒れた場所と、倒した側の立ち位置（heatmap.py）
         self.assertEqual(digest["kills"][0], [0, 10000, 0, 2, VANDAL_OR_CLASSIC, [1], [2050, -4450], [4339, -3164]])
         self.assertEqual(matches[1]["digest"], {}, "a match without rounds or kills")
         mmr = self.henrik.mmr("ap", "Tester", "JP1")
         self.assertEqual(set(mmr), {"current", "peak", "seasons"})
         latest = mmr["seasons"][0]
         self.assertEqual(latest["short"], "e9a3")
-        # the badge keeps the 9 best wins, not the act's every win
+        # バッジはアクトの全勝利ではなく、良い勝利 9 つを持つ
         self.assertEqual(latest["best"], [22, 21, 21, 21, 20, 20, 20, 19, 19])
         self.assertEqual((latest["games"], latest["wins"], latest["end_tier"], latest["old"]), (20, 12, 21, False))
         self.assertTrue(mmr["seasons"][-1]["old"], "Episode 4: the ranks before Ascendant")
 
     def test_acts_latest_first_whatever_the_order(self):
         seasons = [{"season": {"short": short}, "games": 1} for short in ("e9a3", "e10a1", "e2a1")]
-        seasons.append({"season": {"short": "e3a1"}, "games": 0})  # not played: not listed
+        seasons.append({"season": {"short": "e3a1"}, "games": 0})  # プレイしていない: 載せない
         self.assertEqual(
             [act["short"] for act in _slim_mmr({"seasonal": seasons})["seasons"]], ["e10a1", "e9a3", "e2a1"]
         )
@@ -90,7 +90,7 @@ class HenrikTest(unittest.TestCase):
         )
         self.assertEqual(changes["aaaaaaaa-0000-4000-8000-000000000002"]["change"], -15)
         self.assertIn("/v1/mmr-history/ap/Tester/JP1", self.fetch.henrik_calls()[-1])
-        # the newer answer's shape too, and nothing from what cannot be read
+        # 新しい形の答えも読み、読めないところからは何も取らない
         newer = {
             "history": [
                 {
@@ -108,7 +108,7 @@ class HenrikTest(unittest.TestCase):
         self.assertEqual(_slim_rr(newer), {"m": {"change": -3, "tier": 9, "rr": 7, "elo": 607, "at": 1793793600}})
 
     def test_the_latest_15_matches_in_two_parts(self):
-        # HenrikDev gives at most 10 matches an answer: the newest 10, then 5 more from the 10th
+        # HenrikDev は 1 回の答えで最大 10 試合: 最新 10、そのあと 10 番目から 5 つ
         base = json.loads(fixture("henrik_matches.json"))["data"][0]
         asked = []
 
@@ -132,14 +132,14 @@ class HenrikTest(unittest.TestCase):
         self.assertEqual(len(Henrik(lambda: "key", fetch).matches("ap", "Tester", "JP1")), 2)
 
     def test_a_part_given_twice_is_shown_once(self):
-        # an answer that left out the start would give the newest matches again
+        # 開始を省いた答えだと、また最新の試合が来てしまう
         self.assertEqual(len(self.henrik.matches("ap", "Tester", "JP1")), 2)
 
     def test_one_mode(self):
         matches = self.henrik.matches("ap", "Tester", "JP1", "competitive")
         self.assertEqual(len(matches), 2)
         self.assertTrue(all("mode=competitive" in url for url in self.fetch.henrik_calls()))
-        # a match of another mode in the answer is left out
+        # 答えの中の別モードの試合は省く
         self.assertEqual(self.henrik.matches("ap", "Tester", "JP1", "unrated"), [])
         self.henrik.matches("ap", "Tester", "JP1", "bogus")
         self.assertNotIn("mode=", self.fetch.henrik_calls()[-1])
@@ -187,7 +187,7 @@ class StatsTest(unittest.TestCase):
         self.assertEqual(stats.started(self.match), datetime.fromisoformat("2026-11-04T21:05:00+09:00"))
 
     def test_a_mode_without_rounds(self):
-        # Team Deathmatch and Escalation: who won, without a score of rounds
+        # チームデスマッチとエスカレーション: 勝敗だけで、ラウンドのスコアは無い
         match = json.loads(json.dumps(self.match))
         for team in match["teams"]:
             team["rounds"] = {"won": 0, "lost": 0}
@@ -198,7 +198,7 @@ class StatsTest(unittest.TestCase):
         self.assertEqual(stats.placing(self.match, players["Tester"]), {"place": 1, "of": 4, "mvp": "match"})
         self.assertEqual(stats.placing(self.match, players["<b>Foe</b>"]), {"place": 2, "of": 4, "mvp": "team"})
         self.assertEqual(stats.placing(self.match, players["Mate"])["mvp"], "")
-        # Deathmatch: no teams, placed by kills, no MVP
+        # デスマッチ: チームが無く、キル数で順位、MVP は無し
         deathmatch = {"teams": [], "players": self.match["players"]}
         self.assertEqual(stats.placing(deathmatch, players["<b>Foe</b>"]), {"place": 2, "of": 4, "mvp": ""})
 
@@ -233,11 +233,11 @@ class StatsTest(unittest.TestCase):
 
 
 CLASSIC = "29a0cfab-485b-f5d5-779a-b59f85e204a8"
-VANDAL_OR_CLASSIC = CLASSIC  # the first round is a pistol round
+VANDAL_OR_CLASSIC = CLASSIC  # 最初のラウンドはピストルラウンド
 
 
 class RoundsTest(unittest.TestCase):
-    """The fixture's first match is told round by round (2 v 2, 13-9): Tester and Mate are Red, Foe and Other Blue."""
+    """フィクスチャの最初の試合をラウンドごとに（2 対 2、13-9）: Tester と Mate が Red、Foe と Other が Blue。"""
 
     def setUp(self):
         self.match = json.loads(fixture("henrik_matches.json"))["data"][0]
@@ -249,12 +249,14 @@ class RoundsTest(unittest.TestCase):
         self.assertEqual((self.foe["fk"], self.foe["fd"]), (9, 12))
 
     def test_kast(self):
-        # Mate's round 1: an assist, then killed and traded by Tester 3 s later; round 2: killed, no trade
+        # Mate のラウンド 1: アシストのあとやられ、3 秒後に Tester がトレード。ラウンド 2: やられ、トレード無し
         self.assertEqual((self.me["kast"], self.mate["kast"], self.me["rounds"]), (13, 13, 22))
 
     def test_clutches_multi_kills_plants(self):
-        self.assertEqual((self.me["clutches"], self.me["clutch_best"]), (1, 1))  # round 1: last alive, 1 v 1, won
-        self.assertEqual(self.mate["clutches"], 1)  # round 15
+        self.assertEqual(
+            (self.me["clutches"], self.me["clutch_best"]), (1, 1)
+        )  # ラウンド 1: 最後の 1 人、1 対 1 で勝ち
+        self.assertEqual(self.mate["clutches"], 1)  # ラウンド 15
         self.assertEqual(self.other["clutches"], 0, "a clutch lost is not one")
         self.assertEqual(self.me["mk"], [1, 0, 0, 0])
         self.assertEqual((self.me["plants"], self.foe["plants"], self.mate["defuses"]), (1, 1, 1))
@@ -270,7 +272,7 @@ class RoundsTest(unittest.TestCase):
         self.assertEqual(self.digest["weapons"][CLASSIC], "Classic")
 
     def test_sides_follow_the_plants(self):
-        # a match whose blue team attacked first: every plant says so, and the guess turns round
+        # Blue チームが先に攻めた試合: どのプラントもそう示すので、推測を反転する
         for item in self.match["rounds"]:
             if item.get("plant"):
                 item["plant"]["player"]["puuid"] = "puuid-3" if item["id"] < 12 else "puuid-me"
@@ -279,7 +281,7 @@ class RoundsTest(unittest.TestCase):
         self.assertEqual(found["rounds"][14]["a"], "Red")
 
     def test_the_older_names(self):
-        # HenrikDev's v2 matches: other names for the same things
+        # HenrikDev の v2 の試合: 同じものに別の名前
         older = {
             "metadata": {"queue": {"id": "competitive"}},
             "players": [{"puuid": "a", "team_id": "Red"}, {"puuid": "b", "team_id": "Blue"}],
@@ -332,12 +334,12 @@ class MoreStatsTest(unittest.TestCase):
         line = stats.line(self.me, 22, stats.advanced(self.match, self.me))
         self.assertEqual((line["kast"], line["fk"], line["fd"], line["mk"], line["clutches"]), (59, 13, 1, 0, 1))
         self.assertEqual(line["dd"], 91)  # (3000 - 1000) / 22
-        self.assertEqual(line["econ"], 50)  # 3000 damage for 60000 credits
+        self.assertEqual(line["econ"], 50)  # 60000 クレジットで 3000 ダメージ
         self.assertIsNone(stats.line(self.me, 22)["kast"], "without the rounds: not known")
 
     def test_lobby_and_mates(self):
         lobby = stats.lobby(self.match, self.me, 22)
-        self.assertEqual(round(lobby["acs"]), 182)  # (182 + 227 + 136) / 3, team-mates and opponents alike
+        self.assertEqual(round(lobby["acs"]), 182)  # (182 + 227 + 136) / 3、味方も敵も同じに
         self.assertAlmostEqual(lobby["fk"], 9 / 3 / 22)
         self.assertEqual([mate["name"] for mate in stats.mates(self.match, self.me)], ["Mate"])
         self.assertIsNone(stats.lobby(self.match, self.me, 0))
@@ -379,25 +381,25 @@ class MoreStatsTest(unittest.TestCase):
 
 
 class TrackerNumbersTest(unittest.TestCase):
-    """What tracker.gg shows beyond the digest's sums: flawless rounds, clutches tried, how far the kills were, and
-    the summary's totals, rates, roles and best match."""
+    """ダイジェストの合計以外に tracker.gg が出すもの: 無傷のラウンド、挑んだクラッチ、キルの距離、サマリーの合計・率・
+    ロール・ベストマッチ。"""
 
-    #: Red: the player (0) and a team-mate (1); Blue: three.
+    #: Red: プレイヤー（0）と味方（1）、Blue: 3 人。
     MATCH = {
         "players": [{"team_id": team} for team in ("Red", "Red", "Blue", "Blue", "Blue")],
         "digest": {
             "rounds": [{"w": "Red"}, {"w": "Red"}, {"w": "Blue"}],
             "kills": [
-                # round 1: won without losing anyone; the player's kills 10 m and 30 m away
+                # ラウンド 1: 誰も失わずに勝利。プレイヤーのキルは 10 m と 30 m
                 [0, 1000, 0, 2, "vandal", [], [1000, 0], [0, 0]],
                 [0, 2000, 0, 3, "vandal", [], [0, 3000], [0, 0]],
                 [0, 3000, 1, 4, "phantom", [], None, None],
-                # round 2: the team-mate falls first, the player wins alone against three
+                # ラウンド 2: 味方が先にやられ、プレイヤーが 1 対 3 で勝つ
                 [1, 1000, 2, 1, "x", [], None, None],
                 [1, 2000, 0, 2, "vandal", [], [5000, 0], [0, 0]],
                 [1, 3000, 0, 3, "classic", [], [300, 400], [0, 0]],
                 [1, 4000, 0, 4, "classic", [], None, [0, 0]],
-                # round 3: alone against three again, and lost
+                # ラウンド 3: また 1 対 3 で、負け
                 [2, 1000, 3, 1, "x", [], None, None],
                 [2, 2000, 4, 0, "x", [], None, None],
             ],
@@ -449,7 +451,7 @@ class TrackerNumbersTest(unittest.TestCase):
         self.assertEqual((summary["kills_total"], summary["deaths_total"], summary["assists_total"]), (45, 30, 10))
         self.assertEqual(summary["kad"], round(55 / 30, 2))
         self.assertEqual(summary["kpr"], round(45 / 44, 2))
-        self.assertEqual((summary["fk_rate"], summary["fd_rate"]), (59, 5))  # 26 and 2 of 44 rounds
+        self.assertEqual((summary["fk_rate"], summary["fd_rate"]), (59, 5))  # 44 ラウンド中 26 と 2
         self.assertEqual(summary["clutch_table"], [{"against": 3, "won": 2, "tried": 4, "rate": 50}])
         self.assertEqual((summary["clutch_tried"], summary["clutch_rate"]), (4, 50))
         self.assertEqual(summary["flawless"], 2)
@@ -464,7 +466,7 @@ class TrackerNumbersTest(unittest.TestCase):
 
 
 class CurrentRankTest(unittest.TestCase):
-    """The rank now, when HenrikDev's own "current" is a match behind (seen right after a match)."""
+    """HenrikDev 自身の「current」が 1 試合遅れているときの今のランク（試合直後に起きる）。"""
 
     def test_the_latest_match_of_the_history(self):
         from valtracker.views import _current
@@ -477,7 +479,7 @@ class CurrentRankTest(unittest.TestCase):
         self.assertEqual(_current(behind, history, False), behind | {"rr": 60, "last_change": 18})
         same = {"tier": {"id": 15}, "rr": 60, "last_change": 18}
         self.assertIs(_current(same, history, False), same)
-        other = {"tier": {"id": 15}, "rr": 55}  # neither: something the history does not know, left alone
+        other = {"tier": {"id": 15}, "rr": 55}  # どちらでもない: 履歴が知らないもの。触らない
         self.assertIs(_current(other, history, False), other)
         self.assertEqual(_current(other, history, True)["rr"], 60, "the game's own record is the truth")
         self.assertIs(_current(behind, {}, True), behind)
@@ -510,7 +512,7 @@ class BestAgentTest(unittest.TestCase):
 
     def test_the_best_of_those_played_more_than_once(self):
         rows = [self.row("jett", True), self.row("jett", False), self.row("sova", True), self.row("sova", True)]
-        rows.append(self.row("neon", True))  # once: not enough to say
+        rows.append(self.row("neon", True))  # 1 回だけ: まだ判断できない
         best = stats._best_agent(rows)
         self.assertEqual((best["name"], best["games"], best["win_rate"]), ("Sova", 2, 100))
 

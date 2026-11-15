@@ -1,4 +1,4 @@
-"""A small in-memory store of recent answers, each kept for its own number of seconds."""
+"""最近の答えを置いておく小さなメモリ上の入れ物。項目ごとに秒数を決めて持つ。"""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 
 class TTLCache:
-    """At most ``size`` entries; the oldest used goes first when it is full."""
+    """最大 ``size`` 件。いっぱいになったら一番長く使われていないものから捨てる。"""
 
     def __init__(self, size: int = 512, clock=time.monotonic):
         self.size, self.clock = size, clock
@@ -39,8 +39,8 @@ class TTLCache:
 
 
 class Budget:
-    """At most ``count`` calls in any ``seconds``: the HenrikDev key's allowance is shared by every visitor,
-    so a burst of searches is told to wait instead of using it up for everyone."""
+    """``seconds`` 秒の間に最大 ``count`` 回: HenrikDev キーの呼び出し回数は訪問者全員で分け合うので、
+    検索が集中したら全員の分を使い切る前に待ってもらう。"""
 
     def __init__(self, count: int, seconds: float, clock=time.monotonic):
         self.count, self.seconds, self.clock = count, seconds, clock
@@ -57,7 +57,7 @@ class Budget:
             return True
 
     def room(self) -> int:
-        """How many calls can still be made now."""
+        """今あと何回呼べるか。"""
         with self._lock:
             now = self.clock()
             self._calls = [at for at in self._calls if at > now - self.seconds]

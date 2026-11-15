@@ -1,7 +1,7 @@
-"""The pages around the tracker: a region's leaderboard, Riot's notices (maintenance, incidents), crosshair codes
-drawn before they are pasted into the game, the store (featured bundles; the owner's own daily offers), how busy
-each server usually is and the wait for a match (activity.py), the maps in rotation and who may queue together
-(queues.py), a sensitivity converter, and the tools page that leads to them."""
+"""トラッカーまわりのページ: リージョンのランキング、Riot のお知らせ（メンテナンス、障害）、
+ゲームに貼る前に描くクロスヘアコード、ストア（おすすめバンドル。持ち主には本人のデイリーオファー）、
+各サーバーのいつもの混み具合とマッチの待ち時間（activity.py）、ローテーション中のマップと一緒に並べる人（queues.py）、
+感度の換算、それらへの入口のツールページ。"""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ from valtracker.views import (
     tr,
 )
 
-#: The leaderboard's and the notices' regions, in the order of the tabs -> their names (translated).
+#: ランキングとお知らせのリージョン（タブの順）-> 名前（訳す）。
 REGION_NAMES = {
     "ap": "アジア太平洋",
     "kr": "韓国",
@@ -40,22 +40,22 @@ REGION_NAMES = {
     "latam": "ラテンアメリカ",
     "br": "ブラジル",
 }
-#: The region shown when none is chosen: the one most of a language's players are in.
+#: 選んでいないときに出すリージョン: その言語のプレイヤーが一番多いところ。
 HOME_REGION = {"ja": "ap", "ko": "kr", "en-GB": "eu", "zh-TW": "ap"}
-#: Riot writes its notices in each of these (HenrikDev's names, see henrik.slim_status); English otherwise.
+#: Riot はお知らせをこれらの言語で書く（HenrikDev の名前、henrik.slim_status を参照）。ほかは英語。
 NOTICE_LOCALES = {"ja": "ja_jp", "ko": "ko_kr", "en-GB": "en_gb", "zh-TW": "zh_tw"}
-#: Pages of the leaderboard that can be asked for (HenrikDev lists about the top 10,000 of a region).
+#: 頼めるランキングのページ数（HenrikDev はリージョンの上位 1 万人ほどを出す）。
 BOARD_PAGES = 200
-#: The servers page counts hours in the visitor's own clock: hours from UTC, and its name (translated).
+#: サーバーのページは訪問者自身の時計で時間を数える: UTC からの時間と、その名前（訳す）。
 CLOCKS = {"ja": (9, "日本時間"), "ko": (9, "韓国時間"), "zh-TW": (8, "台湾時間"), "en-GB": (0, "協定世界時（UTC）")}
-#: The sensitivity converter's games: (name, degrees a count of the mouse turns at sensitivity 1).
+#: 感度換算のゲーム: （名前, 感度 1 でマウス 1 カウントあたりに回る角度）。
 GAMES = {
     "valorant": ("VALORANT", 0.07),
     "cs2": ("Counter-Strike 2", 0.022),
     "apex": ("Apex Legends", 0.022),
     "overwatch": ("Overwatch 2", 0.0066),
 }
-#: Why a party may or may not queue together (queues.check) -> the words (translated).
+#: パーティーで並べる・並べない理由（queues.check）-> 文（訳す）。
 PARTY_WORDS = {
     "size": "{size} 人パーティーではコンペティティブに参加できません。",
     "high": "{rank} 以上を含むパーティーは {size} 人まで（5 人は可）。",
@@ -66,7 +66,7 @@ PARTY_WORDS = {
     "gap": "組めません。{low} と組めるのは {top} まで（{high} はランク差が大きすぎます）。",
     "unknown": "このランクの制限データがありません。",
 }
-#: A notice for these platforms only is not about the PC game, which this site tracks.
+#: これらのプラットフォームだけのお知らせは、このサイトが追う PC 版のものではない。
 CONSOLES = {"playstation", "xbox", "ps5", "xbsx", "console"}
 
 
@@ -83,7 +83,7 @@ def _regions(endpoint: str, current: str, **values) -> list[dict]:
 
 
 def _moment(value) -> datetime | None:
-    """An ISO time (HenrikDev's) in Japan's time, or None."""
+    """ISO の時刻（HenrikDev のもの）を日本時間に。無ければ None。"""
     try:
         found = datetime.fromisoformat(str(value or ""))
     except ValueError:
@@ -104,8 +104,8 @@ def _page_number() -> int:
 
 
 def _wanted() -> tuple[str, str, str]:
-    """The player looked for on the leaderboard (``?q=Name#Tag``): (what was typed, name, tag); a problem's
-    words instead of the name when it cannot be a Riot ID."""
+    """ランキングで探すプレイヤー（``?q=Name#Tag``）: （入力されたもの, 名前, タグ）。
+    Riot ID になりえないときは名前の代わりに問題の文。"""
     typed = " ".join(str(request.args.get("q", "")).split())[:40]
     if not typed:
         return "", "", ""
@@ -117,7 +117,7 @@ def _wanted() -> tuple[str, str, str]:
 
 
 def _riot_board_act() -> str:
-    """The act the game's own leaderboard is asked for, when the owner's Riot account can ask (else "")."""
+    """ゲーム自身のランキングを頼むアクト（持ち主の Riot アカウントで聞けるとき。でなければ ""）。"""
     found = current_app.config["VAL_RIOT"].status()
     if not found["linked"] or found["signed_out"]:
         return ""
@@ -125,8 +125,8 @@ def _riot_board_act() -> str:
 
 
 def _board(region: str, page: int) -> tuple[dict, int]:
-    """What leaderboard.html shows of one page (or of the player looked for), and the status. Riot's own
-    leaderboard first (the game's server, through the owner's Riot account); HenrikDev's when that is not there."""
+    """leaderboard.html に出す 1 ページ分（または探したプレイヤー）と、ステータス。
+    まず Riot 自身のランキング（持ち主の Riot アカウントでゲームのサーバーから）、無ければ HenrikDev のもの。"""
     typed, name, tag = _wanted()
     values = {"region": region, "page": page, "problem": "", "settings_link": False, "loading": False}
     values |= {"q": typed, "searched": bool(typed)}
@@ -157,7 +157,7 @@ def _board(region: str, page: int) -> tuple[dict, int]:
     players = []
     for item in found["players"]:
         if typed and (item["hidden"] or item["name"].casefold() != name.casefold()):
-            continue  # Riot looks for names that start so; hidden players are never found by their name
+            continue  # Riot はそう始まる名前を探す。隠しているプレイヤーは名前では見つからない
         if typed and tag and item["tag"].casefold() != tag.casefold():
             continue
         players.append(
@@ -188,7 +188,8 @@ def _board(region: str, page: int) -> tuple[dict, int]:
 
 
 def _status(region: str) -> dict:
-    """A region's server notices: from Riot's own file, else HenrikDev's copy (HenrikError when neither came)."""
+    """リージョンのサーバーのお知らせ: Riot 自身のファイル、無ければ HenrikDev の写し（どちらも来なければ HenrikError）
+    。"""
     try:
         return current_app.config["VAL_RIOT_WEB"].status(region)
     except RiotWebError:
@@ -196,7 +197,7 @@ def _status(region: str) -> dict:
 
 
 def _notices(found: dict) -> list[dict]:
-    """Riot's notices in the visitor's language (English, else any, when Riot did not write one in it)."""
+    """訪問者の言語での Riot のお知らせ（その言語で書かれていなければ英語、それも無ければどれか）。"""
     wanted = NOTICE_LOCALES.get(g.lang, "en_us")
 
     def pick(words: dict) -> str:
@@ -260,7 +261,7 @@ def _crosshair_page(code: str) -> dict:
 
 
 def _left(until: float) -> dict | None:
-    """The time left until ``until`` (a Unix time), for the page and its script (which counts it down)."""
+    """``until``（Unix 時刻）までの残り時間。ページとそのスクリプト（カウントダウンする）用。"""
     seconds = until - time.time()
     if not until or seconds <= 0:
         return None
@@ -279,8 +280,8 @@ def _clock_text(seconds: int) -> str:
 
 
 def _zone() -> tuple[float, str]:
-    """The clock the servers page counts hours in: the visitor's own (the ``tz`` cookie, minutes from UTC, which the
-    page's script sets), or their language's (Japan's for ja) when there is none or it is the same."""
+    """サーバーのページが時間を数える時計: 訪問者自身のもの（ページのスクリプトが入れる ``tz`` cookie、UTC からの分）。
+    無いか同じなら言語のもの（ja なら日本）。"""
     offset, name = CLOCKS.get(g.lang, CLOCKS["ja"])
     try:
         minutes = int(request.cookies.get("tz", ""))
@@ -301,8 +302,8 @@ def _numbers_region() -> str:
 
 
 def _ranks_page(region: str) -> dict:
-    """How the competitive lines seen in a region spread over the ranks, best first: each rank's share and the
-    share at it or above ("top X%")."""
+    """リージョンで見たコンペティティブの成績がランクにどう分布するか（上から）: 各ランクの割合と、
+    そのランク以上の割合（「上位 X%」）。"""
     found = current_app.config["VAL_ACTIVITY"].ranks(region)
     total = found["lines"]
     values = {"lines": total, "enough": total >= RANKS_ENOUGH, "rows": [], "days": WINDOW_DAYS}
@@ -394,7 +395,7 @@ def _sensitivity(args) -> dict:
     if not (0 < sens <= 1000 and 50 <= dpi <= 64000) or (new_dpi and not 50 <= new_dpi <= 64000):
         values["problem"] = tr("感度は 0 より大きい値、DPI は 50〜64000 で入力してください。")
         return values
-    turn = sens * GAMES[game][1]  # degrees a count turns
+    turn = sens * GAMES[game][1]  # 1 カウントで回る角度
     rows = []
     for key, (name, yaw) in GAMES.items():
         rows.append({"key": key, "name": name, "sens": round(turn / yaw, 4), "edpi": round(dpi * turn / yaw, 1)})
@@ -461,9 +462,9 @@ def _queues_page() -> tuple[dict, int]:
 
 
 def _diary(own: dict) -> None:
-    """Notes the owner's store of today (diary.py) and marks the skins they want, and the days in a row."""
+    """持ち主の今日のストアを日記に残し（diary.py）、ほしいスキンと連続日数に印を付ける。"""
     diary = current_app.config["VAL_DIARY"]
-    account = current_app.config["VAL_RIOT"].me()  # each account has its own store, so its own days
+    account = current_app.config["VAL_RIOT"].me()  # ストアはアカウントごとなので、日付もアカウントごと
     now = time.time()
     day = store_day(own["daily_until"], now)
     diary.note(
@@ -482,7 +483,7 @@ def _diary(own: dict) -> None:
         item["wanted"] = bool(item.get("skin")) and item["skin"] in wants and not item.get("owned")
     own["wanted"] = list(dict.fromkeys(item["name"] for item in shown if item["wanted"]))
     own["streak"] = diary.streak(day, account)
-    # the night market's cards the game has not shown yet lie face down until turned (app.js, remembered there)
+    # ゲームがまだ見せていないナイトマーケットのカードは、めくるまで伏せる（app.js が覚える）
     own["night_key"] = day
     for number, item in enumerate(own["night"] or []):
         item["flip"] = "" if item.get("seen") else str(number + 1)
@@ -497,7 +498,7 @@ def _day_text(day: str) -> str:
 
 
 def _ics(text: str) -> str:
-    """A calendar's text value: backslashes, commas, semicolons and line breaks escaped."""
+    """カレンダーのテキストの値: バックスラッシュ、カンマ、セミコロン、改行をエスケープする。"""
     return text.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
 
 
@@ -538,7 +539,7 @@ def _reminder():
 
 
 def _next_reset(now: float) -> float:
-    """The daily store's next change: midnight UTC (9:00 in Japan)."""
+    """デイリーストアの次の切り替わり: UTC の 0 時（日本時間 9:00）。"""
     return (int(now) // 86400 + 1) * 86400
 
 
@@ -549,14 +550,14 @@ def register(app: Flask) -> None:
 
     @app.get("/help")
     def help_page():
-        """How to use the site, for someone who opens it for the first time: what to type, why a player is not
-        found, how new the numbers are, the hidden players, what the numbers mean and where they come from."""
+        """初めて開いた人向けのサイトの使い方: 何を入力するか、プレイヤーが見つからない理由、数値の新しさ、
+        隠しているプレイヤー、数値の意味と出どころ。"""
         return render_template("help.html")
 
     @app.get("/leaderboard")
     def leaderboard():
-        """At once when the page is kept; else the page without the players, which the script asks for
-        (leaderboard_part), as a player's page does. ``?full=1`` waits for them."""
+        """保持しているページならすぐ出す。でなければプレイヤー無しのページを出し、スクリプトが頼む（leaderboard_part）
+        。プレイヤーページと同じ。``?full=1`` なら待つ。"""
         region, page = _region(), _page_number()
         typed, name, tag = _wanted()
         henrik, act = current_app.config["VAL_HENRIK"], _riot_board_act()
@@ -598,8 +599,8 @@ def register(app: Flask) -> None:
 
     @app.get("/status/notice")
     def status_notice():
-        """The top page's line about maintenance or an incident in the visitor's region (empty when there is
-        none, or it could not be asked): its script puts it in place."""
+        """訪問者のリージョンのメンテナンス・障害についてのトップページの 1 行（無い、または聞けなければ空）
+        : スクリプトが差し込む。"""
         region = _region()
         try:
             notices = _notices(_status(region))
@@ -619,8 +620,8 @@ def register(app: Flask) -> None:
 
     @app.get("/numbers/<kind>")
     def numbers(kind: str):
-        """The numbers this site worked out from the matches it has seen, for the PC app (activity.Activity._ask):
-        the app's own file holds only its owner's matches. No player is in them."""
+        """このサイトが見た試合から計算した数値（PC アプリ用、 activity.Activity._ask）
+        : アプリ自身のファイルには持ち主の試合しか無い。プレイヤーは入っていない。"""
         activity = current_app.config["VAL_ACTIVITY"]
         asked = request.args
         if kind == "agents":
@@ -644,7 +645,7 @@ def register(app: Flask) -> None:
             except ValueError:
                 tier = 0
             stick, lines, band = activity.yardstick(tier)
-            # every 400th part of each sorted list is as good a yardstick as the whole (a megabyte of numbers)
+            # 並べた各一覧の 400 分の 1 ずつで、全体（数 MB の数値）と同じくらいの物差しになる
             thin = {
                 stat: values if len(values) <= 400 else [values[i * (len(values) - 1) // 399] for i in range(400)]
                 for stat, values in stick.items()
@@ -686,8 +687,7 @@ def register(app: Flask) -> None:
 
     @app.get("/shop")
     def shop():
-        """Everyone: the featured bundles (HenrikDev). The owner: their own store too (riot.py), with what they
-        already have marked."""
+        """全員: おすすめバンドル（HenrikDev）。持ち主: 本人のストアも（riot.py）。所持済みに印。"""
         content = current_app.config["VAL_CONTENT"]
         values: dict = {"featured": [], "featured_problem": "", "own": None, "own_problem": "", "own_detail": ""}
         try:
@@ -723,7 +723,7 @@ def register(app: Flask) -> None:
 
     @app.get("/shop/history")
     def shop_history():
-        """The owner's stores of the days before (diary.py), with the skins they want marked."""
+        """持ち主の過去のストア（diary.py）。ほしいスキンに印。"""
         security.owner_only()
         content, diary = current_app.config["VAL_CONTENT"], current_app.config["VAL_DIARY"]
         account = current_app.config["VAL_RIOT"].me()
@@ -753,5 +753,6 @@ def register(app: Flask) -> None:
 
     @app.get("/shop/reminder.ics")
     def shop_reminder():
-        """A calendar with one event a day when the daily store changes (midnight UTC), for any calendar app."""
+        """デイリーストアが切り替わるとき（UTC の 0 時）に 1 日 1 件の予定を入れるカレンダー（どのカレンダーアプリでも）
+        。"""
         return _reminder()

@@ -4,7 +4,7 @@ from valtracker.smurf import guess
 
 
 class SmurfTest(unittest.TestCase):
-    """The guess at a second account: a sign alone is not enough, several are."""
+    """サブ垢の推測: サインひとつでは足りず、いくつか重なって初めてそう出る。"""
 
     def test_signs(self):
         new = guess(18, 35, acts=1, games=12, win_rate=78)

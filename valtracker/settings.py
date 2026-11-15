@@ -1,8 +1,7 @@
-"""The owner's settings, in instance/settings.json: the HenrikDev API key (and riot.py's sign-in, in riot.json).
+"""持ち主の設定（instance/settings.json）: HenrikDev の API キー（riot.py のサインインは riot.json）。
 
-The environment variable ``VAL_HENRIK_KEY`` wins over the file (for a test run without saving the key).
-The file is written readable by its owner only; it never goes into Git (instance/ is ignored).
-"""
+環境変数 ``VAL_HENRIK_KEY`` があればファイルより優先する（キーを保存せずに試す用）。
+ファイルは持ち主だけが読めるように書き、Git には入れない（instance/ は無視される）。"""
 
 from __future__ import annotations
 

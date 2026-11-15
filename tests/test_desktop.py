@@ -1,4 +1,4 @@
-"""The PC app: the Riot Client on the PC (localclient.py) and the app around the pages (desktop.py)."""
+"""PC アプリ: PC の Riot Client（localclient.py）と、ページを包むアプリ（desktop.py）。"""
 
 import base64
 import contextlib
@@ -26,7 +26,7 @@ FRIEND = "0d0d0d0d-1111-4222-8333-444444444444"
 
 
 def private(loop: str, party_state: str = "DEFAULT", nested: bool = True) -> str:
-    """A presence's private part, as the game writes it (base64 of JSON): nested since 2024, flat before."""
+    """ゲームが書く形のプレゼンスの private（JSON の base64）: 2024 年から入れ子、それ以前は平ら。"""
     if nested:
         data = {
             "isValid": True,
@@ -47,8 +47,9 @@ def event(name: str, data: dict, uri: str = "") -> str:
 
 
 class FakeClient:
-    """Answers like the Riot Client's local API would (``ask`` of localclient). ``signed_in``: an account is
-    signed in to the client; ``sessions``: its open games; ``presences``: everyone's presence."""
+    """Riot Client のローカル API のような答え（localclient の ``ask``）。
+    ``signed_in``: クライアントにアカウントがサインインしている、``sessions``: 開いているゲーム、
+    ``presences``: 全員のプレゼンス。"""
 
     def __init__(self):
         self.asked: list[str] = []
@@ -64,7 +65,7 @@ class FakeClient:
             },
         }
         self.presences = [presence("MENUS"), presence("INGAME", puuid=FRIEND)]
-        #: The owner's friends list, as the client's chat gives it.
+        #: クライアントのチャットが出す持ち主のフレンドリスト。
         self.friends = [{"puuid": FRIEND, "game_name": "Tomo", "game_tag": "JP2", "last_online_ts": 0}]
 
     def __call__(self, door, path):
@@ -99,7 +100,7 @@ class LocalTest(unittest.TestCase):
         self.client = LocalClient(self.lockfile, self.log, ask=self.api, clock=lambda: self.now)
 
     def listening(self):
-        """As the websocket does once connected: the first look at the launch and the presence."""
+        """websocket が接続直後にすること: 起動状態とプレゼンスを最初に見る。"""
         with self.client._lock:
             self.client._listening = True
         self.client._look_again(read_lockfile(self.lockfile))
@@ -150,7 +151,7 @@ class LocalTest(unittest.TestCase):
         self.assertIn("/entitlements/v1/token", self.api.asked[asked:], "the hour is over")
 
     def test_the_log_names_the_region(self):
-        """Latin America and Brazil play on the na shard with a party server of their own (glz-latam-1.na)."""
+        """ラテンアメリカとブラジルは na シャードで、パーティーサーバーは専用（glz-latam-1.na）。"""
         self.log.write_bytes(b"https://glz-latam-1.na.a.pvp.net/")
         self.api.sessions["5f3a"]["launchConfiguration"]["arguments"] = ["-ares-deployment=na"]
         account = self.client.signed_in()[1]
@@ -182,7 +183,7 @@ class LocalTest(unittest.TestCase):
         self.client.handle(door, "[0, 1]")
         self.client.handle(door, "not json")
         self.assertEqual(self.client.version, version + 2)
-        del self.api.sessions["5f3a"]  # VALORANT closed
+        del self.api.sessions["5f3a"]  # VALORANT は閉じている
         self.client.handle(door, event(EVENTS[1], {}))
         self.assertEqual(self.client.presence(), {"running": False})
         self.assertEqual(self.client.version, version + 3)
@@ -196,7 +197,7 @@ class LocalTest(unittest.TestCase):
         self.assertEqual(self.client.wait(0, 5), 1)
 
     def test_pages_left_make_way(self):
-        """A page left while it waited still holds a server thread: the oldest waiting is let go."""
+        """待っている間に離れたページもサーバーのスレッドを持ったまま: 一番古い待ちを手放す。"""
         answers = []
         waiting = [threading.Thread(target=lambda: answers.append(self.client.wait(0, 5))) for _ in range(4)]
         started = time.monotonic()
@@ -212,7 +213,7 @@ class LocalTest(unittest.TestCase):
         self.assertEqual(sorted(answers), [0, 1, 1, 1])
 
     def test_listening(self):
-        """Connects with the lockfile's password, asks for the events, reads them until the client closes."""
+        """lockfile のパスワードで接続し、イベントを頼み、クライアントが閉じるまで読む。"""
         sent, closed = [], threading.Event()
         messages = [event(EVENTS[0], {"presences": [presence("PREGAME")]}), ""]
 
@@ -249,7 +250,7 @@ class LocalTest(unittest.TestCase):
 
 
 class DesktopAppTest(unittest.TestCase):
-    """The pages with the Riot Client on the PC (the desktop app)."""
+    """PC の Riot Client を使うページ（デスクトップアプリ）。"""
 
     def setUp(self):
         self.env = mock.patch.dict(os.environ, {"VAL_HENRIK_KEY": ""})
@@ -273,7 +274,7 @@ class DesktopAppTest(unittest.TestCase):
         self.local._look_again(read_lockfile(self.lockfile))
 
     def look(self) -> list[str]:
-        """The Riot servers' addresses one look at the game asked, anew."""
+        """ゲームを 1 回見るときに聞いた Riot サーバーのアドレスを新しく。"""
         riot = self.app.config["VAL_RIOT"]
         riot.cache.put("live", None, 0)
         before = len(self.riot.asked)
@@ -281,7 +282,7 @@ class DesktopAppTest(unittest.TestCase):
         return [url for _, url, _, _ in self.riot.asked[before:]]
 
     def test_signed_in_without_pasting(self):
-        """No ssid: the Riot Client's account, its tokens and the client's version go to Riot."""
+        """ssid 無し: Riot Client のアカウントのトークンとクライアントのバージョンを Riot に送る。"""
         self.riot.phase = "menus"
         text = self.client.get("/live").get_data(as_text=True)
         self.assertIn('class="seats"', text)
@@ -306,8 +307,7 @@ class DesktopAppTest(unittest.TestCase):
         self.assertNotIn("data-live-push", client.get("/").get_data(as_text=True))
 
     def test_the_events_save_riots_calls(self):
-        """The client says where the game is: GLZ's session is never asked, and nothing at all while it is
-        closed."""
+        """ゲームの状態はクライアントが言う: GLZ のセッションは聞かず、閉じている間は何も聞かない。"""
         self.listening()
         self.riot.phase = "menus"
         asked = self.look()
@@ -342,7 +342,7 @@ class DesktopAppTest(unittest.TestCase):
         self.assertEqual(self.client.get("/live/next", environ_base={"homepage.visitor": True}).status_code, 404)
 
     def test_client_closed(self):
-        """Nobody signed in to the client: the pages say to open it, not to paste an ssid."""
+        """クライアントに誰もサインインしていない: ページは ssid を貼れとは言わず、クライアントを開くように言う。"""
         self.lockfile.unlink()
         text = self.client.get("/live").get_data(as_text=True)
         self.assertIn("Riot クライアントが起動していないか、サインインしていません。", text)
@@ -351,10 +351,10 @@ class DesktopAppTest(unittest.TestCase):
 
 
 class AppPagesTest(unittest.TestCase):
-    """What the pages do differently in the PC app's window (no browser bar around them)."""
+    """PC アプリのウィンドウで変わるページの動き（まわりにブラウザーのバーが無い）。"""
 
     def setUp(self):
-        self.env = mock.patch.dict(os.environ, {"VAL_HENRIK_KEY": "", "VAL_PUBLIC_SITE": ""})  # the default site
+        self.env = mock.patch.dict(os.environ, {"VAL_HENRIK_KEY": "", "VAL_PUBLIC_SITE": ""})  # 既定のサイト
         self.env.start()
         self.addCleanup(self.env.stop)
         folder = tempfile.TemporaryDirectory()
@@ -379,7 +379,7 @@ class AppPagesTest(unittest.TestCase):
         self.assertNotIn("data-go=", site)
 
     def test_links_given_away_lead_to_the_public_site(self):
-        """The app's own address (127.0.0.1, a port of the moment) leads nowhere on another device."""
+        """アプリ自身のアドレス（127.0.0.1、その時のポート）はほかの端末からはどこにも行かない。"""
         code = "0;P;c;5"
         text = self.client.get("/crosshair", query_string={"code": code}).get_data(as_text=True)
         self.assertIn('data-copy="https://haruxera.duckdns.org/val/crosshair?code=0', text)
@@ -419,7 +419,7 @@ class AppPagesTest(unittest.TestCase):
             self.assertIn(f'<a href="{url}">ダウンロード</a>', text, path)
 
     def test_live_while_the_game_is_closed(self):
-        """Nothing to do until the game opens (the app opens on /live): the owner's other pages a click away."""
+        """ゲームが開くまですることは無い（アプリは /live で開く）: 持ち主のほかのページはクリック 1 つ。"""
         self.app.riot.phase = ""
         text = self.client.get("/live").get_data(as_text=True)
         self.assertIn('class="me-box"', text)
@@ -427,7 +427,7 @@ class AppPagesTest(unittest.TestCase):
         self.assertIn('href="/shop"', text)
 
     def test_agent_select_in_one_screen(self):
-        """Agent select: the team beside the agents to pick, the page's lead not above them."""
+        """エージェント選択: チームはピックするエージェントの横で、ページの見出しは上に出さない。"""
         self.app.riot.phase = "pregame"
         text = self.client.get("/live").get_data(as_text=True)
         self.assertIn('<div class="live-cols pregame-cols">', text)
@@ -440,7 +440,7 @@ class AppPagesTest(unittest.TestCase):
 
 
 class UpdateTest(unittest.TestCase):
-    """The repository is private (GitHub says 404 to the app): the site says which build is the newest."""
+    """リポジトリが非公開（GitHub はアプリに 404）: どれが最新ビルドかはサイトが言う。"""
 
     BUILD = {"commit": "a" * 40, "time": 1_794_463_677, "date": "2026-11-12 15:07"}
     LATER = {"commit": "b" * 40, "time": 1_794_470_000}
@@ -464,7 +464,7 @@ class UpdateTest(unittest.TestCase):
         for told in (None, [], "x", {}, {"commit": "master", "time": 1}, {"commit": "b" * 40, "time": "soon"}):
             self.assertIsNone(release.newer(self.BUILD, told, self.NOW), told)
         self.assertIsNone(release.newer(self.BUILD, {"commit": "b" * 40, "time": True}, self.NOW))
-        # nothing the answer says is opened: the link is the release's page
+        # 答えの中身は開かない: リンクはリリースのページ
         told = self.LATER | {"url": "https://evil.example/", "page": "https://evil.example/"}
         self.assertEqual(release.newer(self.BUILD, told, self.NOW)["url"], release.PAGE)
 
@@ -483,7 +483,7 @@ class UpdateTest(unittest.TestCase):
                 self.assertIsNone(desktop.read_build(), wrong)
 
     def test_the_stamp_is_the_last_commit_that_changed_the_app(self):
-        """The same answer in the build (desktop.yml) and on the site: here, this repository's own history."""
+        """ビルド（desktop.yml）とサイトで同じ答え: ここではこのリポジトリ自身の履歴。"""
         if not (ROOT / ".git").exists():
             self.skipTest("not a clone")
         found = release.source(ROOT)
@@ -502,7 +502,7 @@ class UpdateTest(unittest.TestCase):
             self.assertEqual(app.test_client().get("/app/latest").status_code, 404, "not a clone")
 
     def app(self):
-        """The PC app (the default public site, a Riot Client that is not running)."""
+        """PC アプリ（既定の公開サイト、動いていない Riot Client）。"""
         env = mock.patch.dict(os.environ, {"VAL_PUBLIC_SITE": ""})
         env.start()
         self.addCleanup(env.stop)
@@ -584,7 +584,7 @@ class UpdateTest(unittest.TestCase):
 
 
 class NoWindowTest(unittest.TestCase):
-    """The app as it reaches a PC (unpacked from a downloaded zip), and what it does when it has no window."""
+    """PC に届いた形のアプリ（ダウンロードした zip を展開）と、ウィンドウを出せないときの動き。"""
 
     def test_the_mark_of_a_download_is_taken_off_the_apps_own_files(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -597,7 +597,7 @@ class NoWindowTest(unittest.TestCase):
 
             def remove(name):
                 if not any(name == f"{path}:Zone.Identifier" for path in marked):
-                    raise FileNotFoundError(name)  # the .exe ("run anyway" took its mark off) and the folders
+                    raise FileNotFoundError(name)  # .exe（「実行」で印が外れた）とフォルダー
                 removed.append(name)
 
             self.assertEqual(desktop.unmark(home, remove), 2)
@@ -646,7 +646,7 @@ class NoWindowTest(unittest.TestCase):
             self.assertEqual(opened.call_count, 2)
 
     def test_no_window_says_why(self):
-        """Without pywebview (as here), the reason is printed (the app's log) and told, not a wrong guess."""
+        """pywebview が無い（ここのように）なら、理由を出力（アプリのログ）して知らせる。間違った推測はしない。"""
         out = io.StringIO()
         with (
             mock.patch.dict(sys.modules, {"webview": None}),
@@ -659,7 +659,7 @@ class NoWindowTest(unittest.TestCase):
 
 
 class OpenedTwiceTest(unittest.TestCase):
-    """A second start brings the running app's window back instead of only saying that it is open."""
+    """2 回目の起動では、開いていると言うだけでなく、動いているアプリのウィンドウを前に出す。"""
 
     def test_which_window_is_the_apps(self):
         self.assertTrue(desktop.is_app_window("VAL Tracker", "WindowsForms10.Window.8.app.0.141b42a_r6_ad1"))
@@ -691,7 +691,7 @@ class OpenedTwiceTest(unittest.TestCase):
 
 
 class PlaceTest(unittest.TestCase):
-    """The window opens where it was left (window.json), on a screen that is still there."""
+    """ウィンドウは前に閉じた場所（window.json）に、その画面がまだあれば開く。"""
 
     SCREENS = [(0, 0, 1920, 1080), (1920, 0, 2560, 1440)]
 
@@ -716,9 +716,9 @@ class PlaceTest(unittest.TestCase):
     def test_never_larger_than_its_screen(self):
         small = [(0, 0, 1366, 768)]
         self.assertEqual(desktop.placed(self.folder, small), {"width": 1180, "height": 720, "maximized": False})
-        enlarged = [(0, 0, 1280, 720)]  # 1920 x 1080 at 150 %
+        enlarged = [(0, 0, 1280, 720)]  # 1920 x 1080、150 %
         self.assertEqual(desktop.placed(self.folder, enlarged), {"width": 1180, "height": 672, "maximized": False})
-        # left large on the second screen, which is a smaller one today
+        # 2 つ目の画面に大きく残していたが、今日はその画面が小さい
         self.save(x=1940, y=20, width=2400, height=1300, maximized=False)
         found = desktop.placed(self.folder, [(0, 0, 1920, 1080), (1920, 0, 1600, 900)])
         self.assertEqual(found, {"x": 1940, "y": 20, "width": 1600, "height": 852, "maximized": False})
@@ -757,7 +757,7 @@ class PlaceTest(unittest.TestCase):
         Form.Bounds = Box(0, 0, 30, 30)
         self.assertIsNone(desktop.left(Form()), "too small to be the window")
 
-        class Handlers(list):  # pywebview's events: += adds a handler
+        class Handlers(list):  # pywebview のイベント: += でハンドラーを足す
             def __iadd__(self, handler):
                 self.append(handler)
                 return self
@@ -772,9 +772,9 @@ class PlaceTest(unittest.TestCase):
 
 
 class TitleBarTest(unittest.TestCase):
-    """The window's title bar takes the page's look (desktop.follow_look)."""
+    """ウィンドウのタイトルバーをページの見た目に合わせる（desktop.follow_look）。"""
 
-    class Handlers(list):  # pywebview's events: += adds a handler
+    class Handlers(list):  # pywebview のイベント: += でハンドラーを足す
         def __iadd__(self, handler):
             self.append(handler)
             return self
@@ -835,7 +835,7 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(said, ["200 OK", "403 Forbidden"])
 
     def test_the_builds_check(self):
-        """What the .exe's build runs (--check), on a real server with the tests' answers."""
+        """.exe のビルドが実行するもの（--check）。本物のサーバーとテストの答えで。"""
         with mock.patch.dict(os.environ, {"VAL_HENRIK_KEY": ""}):
             app, _, _ = make_app(local=LocalClient(Path("/nonexistent/lockfile"), Path("/nonexistent/log")))
             self.addCleanup(app._test_folder.cleanup)
@@ -845,7 +845,7 @@ class ServerTest(unittest.TestCase):
                 self.assertEqual(desktop.check(base), 0)
 
     def test_the_window_processes(self):
-        """The processes the app started, at any depth (WebView2's browser, GPU and page processes), not others."""
+        """アプリが起動したプロセス（何段下でも。WebView2 のブラウザー・GPU・ページのプロセス）。ほかのものは含めない。"""
         pairs = [(10, 1), (20, 10), (21, 20), (22, 20), (30, 21), (40, 2), (10, 10)]
         self.assertEqual(desktop.descendants(pairs, 10), {20, 21, 22, 30})
         self.assertEqual(desktop.descendants(pairs, 99), set())

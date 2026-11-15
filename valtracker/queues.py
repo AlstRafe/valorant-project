@@ -1,24 +1,24 @@
-"""The game's queue settings (riot.Riot.queues: GLZ customgameconfigs) read for people: which maps each mode plays
-now, and who may queue for competitive together (the rank gap, the party sizes the top ranks may have).
+"""ゲームのキュー設定（riot.Riot.queues: GLZ の customgameconfigs）を人が読める形に: 各モードが今どのマップで遊べるか、
+コンペティティブに一緒に入れるのは誰か（ランク差、上位ランクのパーティー人数）。
 
-Riot's names: ``Queues[].MapWeights`` (``"<map>:<weight>"``, weight 0 = not played), ``PartySkillDisparity
-CompetitiveTiersCeilings`` ({tier: the highest tier a party with that tier in it may have}), ``HighSkillTier`` and
-``MaxPartySizeHighSkill`` (from that tier up, a party may have at most that many, unless it is a full party and
-``AllowFullPartyBypassSkillRestrictions``), ``InvalidPartySizes``, ``MaxPartySize``. Anything missing is left out.
-"""
+Riot の名前: ``Queues[].MapWeights``（``"<map>:<weight>"``、weight 0 は出ない）、
+``PartySkillDisparityCompetitiveTiersCeilings``（{tier: その tier がいるパーティーで許される最高 tier}）、
+``HighSkillTier`` と ``MaxPartySizeHighSkill``（その tier 以上がいるとパーティーはその人数まで。
+ただしフルパーティーで ``AllowFullPartyBypassSkillRestrictions`` なら別）、``InvalidPartySizes``、``MaxPartySize``。
+無いものは省く。"""
 
 from __future__ import annotations
 
 from valtracker.util import to_int
 
-#: The modes the page lists, in the game's order (QueueID).
+#: ページに並べるモード（ゲームの順、QueueID）。
 ORDER = ("competitive", "unrated", "swiftplay", "spikerush", "deathmatch", "ggteam", "hurm", "premier")
-#: The lowest rank tier (Iron 1); 0-2 are "unranked" in the tables.
+#: 一番下のランク tier（アイアン 1）。表では 0〜2 が「ランクなし」。
 IRON = 3
 
 
 def _maps(queue: dict, index: dict) -> list[dict]:
-    """The maps a queue plays now: ``[{"name", "image"}]`` in valorant-api.com's names."""
+    """キューの今のマップ: ``[{"name", "image"}]``（valorant-api.com の名前）。"""
     found = []
     for entry in queue.get("MapWeights") or []:
         text = ":".join(entry) if isinstance(entry, list) else str(entry)
@@ -34,7 +34,7 @@ def _maps(queue: dict, index: dict) -> list[dict]:
 
 
 def settings(config: dict, map_index: dict) -> dict:
-    """``{"queues": [{"id", "maps", "party": (min, max), "invalid": [...]}], "competitive": rules or None}``."""
+    """``{"queues": [{"id", "maps", "party": (最少, 最多), "invalid": [...]}], "competitive": ルールか None}``。"""
     queues = {
         str(item.get("QueueID") or "").lower(): item
         for item in (config or {}).get("Queues") or []
@@ -74,8 +74,9 @@ def rules(queue: dict) -> dict:
 
 
 def check(tiers: list[int], found: dict) -> dict:
-    """Whether a party of these ranks (tier numbers, 0 = not ranked yet) may queue for competitive:
-    ``{"ok": bool or None (cannot tell), "why": a reason key, "values": for its words}``."""
+    """このランク（tier の番号、0 はまだランクなし）
+    のパーティーでコンペティティブに入れるか: ``{"ok": bool か None（わからない）
+    , "why": 理由のキー, "values": 文に入れる値}``。"""
     size = len(tiers)
     ranked = [tier for tier in tiers if tier >= IRON]
     if size < 2:

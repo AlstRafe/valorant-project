@@ -1,10 +1,9 @@
-"""The game's own match records (Riot's PD: ``match-history`` and ``match-details``) in HenrikDev v4's shape, so that
-the rest of the site (henrik.slim_match, rounds.py, stats.py, heatmap.py) reads them as it reads HenrikDev's.
+"""ゲーム自身の試合記録（Riot の PD: ``match-history`` と ``match-details``）を HenrikDev v4 の形にする。
+サイトのほかの部分（henrik.slim_match、rounds.py、stats.py、heatmap.py）が HenrikDev のものと同じように読めるように。
 
-PD names every player of a match, even one who hides their name in the game. This site never shows a hidden name,
-and PD does not say who hides theirs, so every name is left out here except the one of the player whose record is
-being read (the visitor searched for them by that name).
-"""
+PD は試合の全プレイヤーの名前を出す（ゲームで名前を隠している人も）。このサイトは隠した名前を出さないが、
+PD は誰が隠しているかを言わないので、ここでは名前を全部消す。
+例外は記録を読んでいるプレイヤー本人（訪問者がその名前で検索した）。"""
 
 from __future__ import annotations
 
@@ -12,7 +11,7 @@ from datetime import UTC, datetime
 
 from valtracker.util import lower_id, to_int
 
-#: PD's queue ids -> the kind of match (HenrikDev's ``mode_type``): any other is a game of rounds ("Standard").
+#: PD のキュー ID -> 試合の種類（HenrikDev の ``mode_type``）。ほかはラウンド制（"Standard"）。
 MODE_TYPES = {
     "deathmatch": "Deathmatch",
     "hurm": "TeamDeathmatch",
@@ -21,8 +20,8 @@ MODE_TYPES = {
     "skirmish_1v1": "Skirmish",
     "skirmish_2v2": "Skirmish",
 }
-#: The city in a game server's name (PD's ``gamePodId``: "aresriot.aws-...-1.ap-gp-tokyo-1") -> the name
-#: HenrikDev gives it (views.CLUSTERS translates them); any other is written as it is.
+#: ゲームサーバー名の都市（PD の ``gamePodId``: "aresriot.aws-...-1.ap-gp-tokyo-1"）
+#: -> HenrikDev の名前（訳は views.CLUSTERS）。ほかはそのまま書く。
 CITIES = {
     "tokyo": "Tokyo",
     "hongkong": "Hong Kong",
@@ -59,7 +58,7 @@ CITIES = {
 
 
 def city(pod) -> str:
-    """The city of a game server's name ("" when it has none)."""
+    """ゲームサーバー名の都市（無ければ ""）。"""
     last = str(pod or "").rsplit(".", 1)[-1].lower()
     parts = [part for part in last.split("-") if part and not part.isdigit()]
     if len(parts) >= 3 and parts[1] == "gp":
@@ -69,7 +68,7 @@ def city(pod) -> str:
 
 
 def history(answer) -> dict:
-    """PD's match-history -> ``{"total", "matches": [{"id", "at" (unix seconds), "queue"}]}``, newest first."""
+    """PD の match-history -> ``{"total", "matches": [{"id", "at"（unix 秒）, "queue"}]}``、新しい順。"""
     answer = answer if isinstance(answer, dict) else {}
     found = [
         {
@@ -84,8 +83,8 @@ def history(answer) -> dict:
 
 
 def rr_updates(answer) -> dict:
-    """PD's competitiveupdates -> henrik._slim_rr's shape: ``{match id: {"change", "tier", "rr", "elo", "at"}}``
-    (a placement match, which moves no RR, has no tier before it and is left out)."""
+    """PD の competitiveupdates -> henrik._slim_rr の形: ``{試合 ID: {"change", "tier", "rr", "elo", "at"}}``（RR
+    が動かない配置試合は前の tier が無いので省く）。"""
     answer = answer if isinstance(answer, dict) else {}
     found = {}
     for item in answer.get("Matches") or []:
@@ -106,9 +105,9 @@ def rr_updates(answer) -> dict:
 
 
 def to_v4(details, region: str, maps: dict, puuid: str = "", name: str = "", tag: str = "") -> dict:
-    """PD's match-details -> a HenrikDev v4 match (what henrik.slim_match reads). ``maps``: valorant-api.com's
-    maps by their address name ("ascent"; content.Content.map_index). Only ``puuid`` keeps a name: ``name``,
-    ``tag``. {} for what is not a finished match."""
+    """PD の match-details -> HenrikDev v4 の試合（henrik.slim_match が読むもの）。
+    ``maps``: valorant-api.com のマップをアドレス名で（"ascent"、content.Content.map_index）。名前（``name``、``tag``）
+    を残すのは ``puuid`` だけ。終わった試合でなければ {}。"""
     if not isinstance(details, dict) or not isinstance(details.get("matchInfo"), dict):
         return {}
     info = details["matchInfo"]
@@ -165,7 +164,7 @@ def to_v4(details, region: str, maps: dict, puuid: str = "", name: str = "", tag
             }
         )
     if MODE_TYPES.get(queue) in ("Deathmatch", "Escalation", "Snowball"):
-        teams = []  # a team of one each, or rounds that are not rounds: HenrikDev gives none either
+        teams = []  # 1 人ずつのチーム、またはラウンドでないラウンド: HenrikDev も出さない
     return {
         "metadata": {
             "match_id": match_id,
@@ -186,7 +185,7 @@ def to_v4(details, region: str, maps: dict, puuid: str = "", name: str = "", tag
 
 
 def _from_rounds(rounds_raw: list) -> tuple[dict, dict, dict, dict]:
-    """Each player's shots that hit (head, body, leg), damage dealt and taken, and credits spent, over the rounds."""
+    """各プレイヤーのラウンド通算の命中（頭・体・脚）、与ダメージ・被ダメージ、使ったクレジット。"""
     shots: dict[str, tuple[int, int, int]] = {}
     dealt: dict[str, int] = {}
     taken: dict[str, int] = {}
@@ -238,13 +237,13 @@ def _round(item: dict) -> dict:
 
 
 def _shots(line: dict) -> dict:
-    """A player's hits of one round by where they landed (PD counts them per opponent hit)."""
+    """1 ラウンドの命中を部位ごとに（PD は当てた相手ごとに数える）。"""
     hit = [item for item in line.get("damage") or [] if isinstance(item, dict)]
     return {name: sum(to_int(item.get(name)) for item in hit) for name in ("headshots", "bodyshots", "legshots")}
 
 
 def _kills(details: dict, rounds_raw: list) -> list:
-    """Every kill (the match's own list, or each round's when it has none) in v4's shape."""
+    """全キル（試合の一覧、無ければラウンドごとのもの）を v4 の形で。"""
     raw = [item for item in details.get("kills") or [] if isinstance(item, dict)]
     if not raw:
         for number, item in enumerate(rounds_raw):
@@ -263,7 +262,7 @@ def _kills(details: dict, rounds_raw: list) -> list:
                 "killer": {"puuid": lower_id(kill.get("killer"))},
                 "victim": {"puuid": lower_id(kill.get("victim"))},
                 "assistants": [{"puuid": lower_id(helper)} for helper in kill.get("assistants") or []],
-                # a weapon's uuid; an ability's slot ("Ultimate"), which valorant-api.com's arsenal does not know
+                # 武器の uuid。アビリティはスロット（"Ultimate"）で、valorant-api.com の武器一覧には無い
                 "weapon": {"id": item.lower(), "name": "" if damage.get("damageType") == "Weapon" else item},
                 "location": kill.get("victimLocation"),
                 "player_locations": [

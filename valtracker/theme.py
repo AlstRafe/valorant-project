@@ -1,11 +1,10 @@
-"""Light or dark, the same as every site of this host (Home Page's homepage/__init__.py).
+"""ライト・ダーク。このホストの全サイトと同じ（Home Page の homepage/__init__.py）。
 
-The device's setting until the visitor picks one with the header's button (automatic -> light -> dark);
-the choice is localStorage "theme", which every site of the host reads (they share one origin). The script
-is inline in <head> so the page is painted in the right colours from the start; the CSP allows exactly this
-script, by its hash (security.py). It also closes the language menu on a click elsewhere or Escape. Keep it the
-same as Home Page's, character for character: a changed copy would need its own hash and would drift.
-"""
+訪問者がヘッダーのボタンで選ぶまで端末の設定に従う（自動 -> ライト -> ダーク）。
+選んだものは localStorage の "theme" に入り、ホストの全サイトが読む（オリジンが同じ）。
+最初から正しい色で描くようにスクリプトは <head> に直接書き、CSP はこのスクリプトだけをハッシュで許す（security.py）。
+ほかの場所のクリックや Escape で言語メニューも閉じる。
+Home Page のものと 1 文字も変えないこと（変えるとハッシュが別になり、ずれていく）。"""
 
 from __future__ import annotations
 
@@ -42,8 +41,8 @@ _STATES = {"auto": "自動", "light": "オフ", "dark": "オン"}
 
 
 def button(lang: str) -> str:
-    """The header's light/dark button: every state's icon and words are in the page and the stylesheet shows
-    the current one (<html data-theme>), so it is right from the first paint."""
+    """ヘッダーのライト/ダークボタン: 全状態のアイコンと文をページに入れておき、
+    今のものだけをスタイルシートで出す（<html data-theme>）。最初の描画から正しい。"""
     spans = "".join(
         f'<span class="t-{key}"><svg viewBox="0 0 24 24" aria-hidden="true">{_ICONS[key]}</svg>'
         f'<span class="words">{escape(i18n.text(lang, "ダークモード {state}", state=i18n.text(lang, state)))}</span></span>'

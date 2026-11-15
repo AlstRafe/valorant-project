@@ -1,5 +1,4 @@
-"""The PC app updating itself (update.py): the download, the checks before anything of it is used, the new build
-put in place of the old one, and the pages' button."""
+"""PC アプリの自動更新（update.py）: ダウンロード、使う前の確認、古いビルドとの入れ替え、ページのボタン。"""
 
 import io
 import re
@@ -18,14 +17,14 @@ from valtracker import update
 from valtracker.localclient import LocalClient
 from valtracker.update import UpdateError, Updater
 
-#: The running build (a month old), and the newest one as the site names it (two hours old: built and released).
+#: 動いているビルド（1 か月前）と、サイトが示す最新ビルド（2 時間前にビルド・公開）。
 OLD = {"commit": "a" * 40, "time": int(time.time()) - 30 * 86400, "date": "2026-10-14 10:13"}
 NEW = "b" * 40
 NEWER = {"commit": NEW, "time": int(time.time()) - 7200}
 
 
 def build_zip(commit: str = NEW, extra: dict | None = None, top: str = "VALTracker") -> bytes:
-    """A release's zip: the app, its stamp, one more file of the build."""
+    """リリースの zip: アプリ、そのスタンプ、ビルドのファイルもう 1 つ。"""
     data = io.BytesIO()
     with zipfile.ZipFile(data, "w") as file:
         file.writestr(f"{top}/VALTracker.exe", b"new exe")
@@ -37,7 +36,7 @@ def build_zip(commit: str = NEW, extra: dict | None = None, top: str = "VALTrack
 
 
 class Answer:
-    """urlopen's answer, made up."""
+    """urlopen の答え（作りもの）。"""
 
     def __init__(self, body: bytes, url: str = "https://release-assets.githubusercontent.com/x.zip", length=None):
         self.body, self.url = io.BytesIO(body), url
@@ -124,7 +123,7 @@ class UnpackTest(unittest.TestCase):
     def test_another_build_is_not_used(self):
         with self.assertRaises(UpdateError) as failed:
             self.unpack(build_zip("c" * 40))
-        self.assertEqual(failed.exception.kind, "notready")  # the release still holds the build before
+        self.assertEqual(failed.exception.kind, "notready")  # リリースにまだ前のビルドが入っている
         self.assertFalse((self.folder / "new").exists())
 
     def test_what_is_not_the_app_is_not_unpacked(self):
@@ -160,7 +159,7 @@ class ReplaceTest(unittest.TestCase):
         self.assertEqual(update.replace(self.new, self.app), ["VALTracker.exe", "_internal"])
         self.assertEqual((self.app / "VALTracker.exe").read_bytes(), b"new exe")
         self.assertEqual((self.app / "_internal" / "python312.dll").read_bytes(), b"new dll")
-        self.assertFalse((self.app / "_internal" / "only-in-old.pyd").exists())  # nothing stale of the old build
+        self.assertFalse((self.app / "_internal" / "only-in-old.pyd").exists())  # 古いビルドの残りは無い
         self.assertEqual((self.app / "notes.txt").read_text(encoding="utf-8"), "the owner's own")
         self.assertEqual(sorted(path.name for path in self.app.iterdir()), ["VALTracker.exe", "_internal", "notes.txt"])
 
@@ -231,7 +230,7 @@ class ReplaceTest(unittest.TestCase):
 
 
 class UpdaterTest(unittest.TestCase):
-    """The steps as the app runs them, and the pages' button."""
+    """アプリが実際に行う手順と、ページのボタン。"""
 
     def setUp(self):
         self.env = mock.patch.dict("os.environ", {"VAL_COLLECT_SECONDS": "0"})
@@ -275,7 +274,7 @@ class UpdaterTest(unittest.TestCase):
         told(len(self.zip), len(self.zip))
 
     def during(self):
-        """While the file comes."""
+        """ファイルが届く途中。"""
 
     def press(self) -> dict:
         self.updater.press()
@@ -350,10 +349,10 @@ class UpdaterTest(unittest.TestCase):
         self.during = lambda: setattr(self, "where", "pregame")
         self.assertEqual(self.press()["state"], "ready")
         self.assertEqual((self.started, self.closed), ([], []))
-        self.assertEqual(self.press()["state"], "ready")  # still playing: nothing yet
+        self.assertEqual(self.press()["state"], "ready")  # まだプレイ中: まだ何もしない
         self.where = "menus"
         self.assertEqual(self.press()["state"], "installing")
-        self.assertEqual(len(self.fetched), 1)  # not downloaded again
+        self.assertEqual(len(self.fetched), 1)  # もう一度はダウンロードしない
         self.assertEqual(len(self.started), 1)
         self.assertEqual(self.closed, [True])
 

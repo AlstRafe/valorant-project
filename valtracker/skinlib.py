@@ -1,6 +1,6 @@
-"""The skin library: every weapon skin in the game (/skins), by weapon, tier or name, and each skin's page
-(/skins/<uuid>) with its variants (chromas), its levels and their videos, the skins of its series and the
-visitors' ratings (ratings.py). Everyone's, in the visitor's language, from valorant-api.com (content.py)."""
+"""スキン図鑑: ゲームの全武器スキン（/skins）を武器・ティア・名前で探せ、スキンごとのページ（/skins/<uuid>）
+にはバリアント（クロマ）、レベルとその動画、同じシリーズのスキン、訪問者の評価（ratings.py）を出す。全員共通、
+訪問者の言語で、valorant-api.com から（content.py）。"""
 
 from __future__ import annotations
 
@@ -15,11 +15,11 @@ from valtracker.content import Content, variant_name
 from valtracker.util import lower_id
 from valtracker.views import tr
 
-#: Shown when the visitor has chosen nothing: the weapon most skins are bought for.
+#: 訪問者が何も選んでいないときに出す武器（スキンが一番買われる武器）。
 VANDAL = "9c82e19d-4575-0200-1a81-3eacf00cf872"
-#: The series that are no skin to look at: the weapons' standard look and "Random Favorite Skin".
+#: 見るスキンが無いシリーズ: 武器の標準の見た目と「Random Favorite Skin」。
 NOT_SKINS = {"5a629df4-4765-0214-bd40-fbb96542941f", "0d7a5bfb-4850-098e-1821-d989bbfd58a8"}
-#: What a level adds (valorant-api.com's levelItem after "::") -> its name (translated).
+#: レベルで増えるもの（valorant-api.com の levelItem の "::" の後）-> 名前（訳す）。
 LEVEL_ITEMS = {
     "VFX": "エフェクト",
     "Animation": "アニメーション",
@@ -34,7 +34,7 @@ LEVEL_ITEMS = {
     "Transformation": "変形",
     "FishAnimation": "アニメーション",
 }
-#: Most skins listed on one page (a search over every weapon can find more: the page says to narrow it).
+#: 1 ページに並べるスキンの最大数（全武器の検索ではもっと見つかることがあり、そのときは絞るようページに出す）。
 SHOWN = 160
 VOTER_COOKIE = "val_voter"
 _VOTER = re.compile(r"^[A-Za-z0-9_-]{20,64}$")
@@ -42,7 +42,7 @@ _UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 
 
 def _words(value) -> str:
-    """valorant-api.com's names can hold line breaks (a chroma's "Variant 1\\nRed")."""
+    r"""valorant-api.com の名前には改行が入ることがある（クロマの "Variant 1\nRed"）。"""
     return " ".join(str(value or "").split())
 
 
@@ -65,8 +65,8 @@ def _is_skin(weapon: dict, skin: dict) -> bool:
 
 
 def library(content: Content, lang: str) -> list[dict]:
-    """Every skin in the game's order of weapons, the best tier first: ``[{"uuid", "name", "image", "tier",
-    "weapon": {"uuid", "name"}, "theme", "videos"}]``."""
+    """全スキン（ゲームの武器の順、良いティアから）
+    : ``[{"uuid", "name", "image", "tier", "weapon": {"uuid", "name"}, "theme", "videos"}]``。"""
     tiers = content.index("contenttiers", lang)
     found = []
     for weapon in sorted(content.weapons(lang), key=weapon_order):
@@ -155,7 +155,7 @@ def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
         return None
     weapon, skin = found
     if lower_id(skin.get("uuid")) != uuid:
-        return None  # a level's or chroma's uuid: the skin's own page is the one to link
+        return None  # レベルやクロマの uuid: リンク先はスキン自身のページ
     if not _is_skin(weapon, skin):
         return None
     name = _words(skin.get("displayName"))
@@ -179,7 +179,7 @@ def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
     levels = []
     for number, part in enumerate(skin.get("levels") or [], 1):
         item = str(part.get("levelItem") or "").rsplit("::", 1)[-1]
-        # "Divergence Vandal Level 3\nWeapon visually transforms every round ...": what it does, after the name
+        # "Divergence Vandal Level 3\nWeapon visually transforms every round ...": 名前の後ろが効果の説明
         lines = [line.strip() for line in str(part.get("displayName") or "").splitlines() if line.strip()]
         levels.append(
             {
@@ -238,7 +238,7 @@ def register(app: Flask) -> None:
 
     @app.post("/skins/<uuid>/want")
     def want_skin(uuid: str):
-        """The owner's wish list (diary.py): the store marks these skins when they come up."""
+        """持ち主のほしい物リスト（diary.py）: ストアに出たら印を付ける。"""
         security.owner_only()
         uuid = uuid.lower()
         if not _UUID.match(uuid) or _skin_page(current_app.config["VAL_CONTENT"], g.lang, uuid) is None:

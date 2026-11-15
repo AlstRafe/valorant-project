@@ -1,5 +1,5 @@
-"""What only the PC app does: the friends (friends.py), the checkup (checkup.py), the match-found alert and the
-start with Windows (pc.py), and the Riot Client's part of them (localclient.py)."""
+"""PC アプリだけの機能: フレンド（friends.py）、チェックアップ（checkup.py）、
+マッチ成立の通知と Windows 起動時の開始（pc.py）、それらの Riot Client 側（localclient.py）。"""
 
 import base64
 import itertools
@@ -33,7 +33,7 @@ def packed(data: dict) -> str:
 
 
 def playing(puuid: str, nested: bool = True, **fields) -> dict:
-    """A friend's VALORANT presence, in either shape the game has used."""
+    """フレンドの VALORANT のプレゼンス（ゲームが使ってきた 2 つの形のどちらでも）。"""
     match = {
         key: fields[key] for key in ("sessionLoopState", "queueId", "matchMap", "provisioningFlow") if key in fields
     }
@@ -147,11 +147,11 @@ class FriendsTest(unittest.TestCase):
         self.assertEqual([row["name"] for row in found["offline"]], ["Gone", "Never"])
         self.assertEqual(found["offline"][0]["last"]["iso"], datetime.fromtimestamp(1_799_990_000, UTC).isoformat())
         self.assertIsNone(found["offline"][1]["last"])
-        self.assertEqual(found["total"], 3)  # the owner and the entry without an id are not friends
+        self.assertEqual(found["total"], 3)  # 持ち主と、id の無い項目はフレンドではない
 
 
 class ClientTest(unittest.TestCase):
-    """The Riot Client's part: the friends, the checkup's look, and the listeners of a match found."""
+    """Riot Client 側: フレンド、チェックアップの確認、マッチ成立の通知先。"""
 
     def setUp(self):
         folder = tempfile.TemporaryDirectory()
@@ -187,7 +187,7 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(self.api.asked, ["/chat/v4/friends", "/chat/v4/presences"])
         self.assertEqual((found["friends"][0]["game_name"], found["me"], len(found["presences"])), ("Tomo", PUUID, 2))
         self.client.friends()
-        self.assertEqual(len(self.api.asked), 2)  # kept
+        self.assertEqual(len(self.api.asked), 2)  # 保持
         self.now += 6
         self.client.friends()
         self.assertEqual(len(self.api.asked), 4)
@@ -208,7 +208,7 @@ class ClientTest(unittest.TestCase):
     def test_a_match_found_is_told_once(self):
         told = []
         self.client.listen(told.append)
-        self.listening()  # the menus: the app only now learns where the game is
+        self.listening()  # メニュー: アプリはここで初めてゲームの居場所を知る
         self.assertEqual(told, [])
         for loop, party in (
             ("MENUS", "MATCHMAKING"),
@@ -266,7 +266,7 @@ class ClientTest(unittest.TestCase):
 
 
 class FakeWindows:
-    """pc.Windows, made up: the window in front, and what was asked."""
+    """pc.Windows の作りもの: 前面のウィンドウと、頼まれたこと。"""
 
     def __init__(self, front=(7, "Browser", "Chrome_WidgetWin_1")):
         self.now, self.did = front, []
@@ -298,7 +298,7 @@ class AlertTest(unittest.TestCase):
     def test_another_program_in_front_lights_the_button(self):
         self.assertEqual(self.alert("found"), {"flash": True, "sound": False})
         self.settle()
-        self.assertEqual(self.windows.did, [("flash", 42, True), ("flash", 42, False)])  # lit, then put out
+        self.assertEqual(self.windows.did, [("flash", 42, True), ("flash", 42, False)])  # 光らせて、消す
 
     def test_nothing_while_the_game_is_in_front(self):
         for title, kind in (("VALORANT  ", "VALORANTUnrealWindow"), ("VALORANT", "Whatever")):
@@ -320,7 +320,7 @@ class AlertTest(unittest.TestCase):
         self.assertLess((self.folder / pc.SOUND).stat().st_size, 80_000)
 
     def test_the_sound_rings_out_instead_of_stopping_short(self):
-        """It begins and ends in silence, and what is heard fades: nothing is cut while it still rings."""
+        """無音で始まり無音で終わり、聞こえる音はフェードする: 鳴っている途中で切れない。"""
         (self.folder / pc.OLD_SOUNDS[0]).write_bytes(b"the sound as it was")
         path = pc.chime(self.folder / pc.SOUND)
         with wave.open(str(path), "rb") as file:
@@ -362,14 +362,14 @@ class AlertTest(unittest.TestCase):
 
 
 class FakeRegistry:
-    """winreg, made up: one key's values."""
+    """winreg の作りもの: キー 1 つの値。"""
 
     HKEY_CURRENT_USER, KEY_SET_VALUE, REG_SZ = "HKCU", 2, 1
 
     def __init__(self):
         self.values, self.broken = {}, False
 
-    def OpenKey(self, root, path, reserved=0, access=0):  # winreg's names
+    def OpenKey(self, root, path, reserved=0, access=0):  # winreg の名前
         if self.broken:
             raise OSError("denied")
         return mock.MagicMock()
@@ -398,7 +398,7 @@ class AutostartTest(unittest.TestCase):
         self.assertEqual(registry.values, {pc.RUN_NAME: r'"C:\Apps\VALTracker.exe" --minimized'})
         self.assertTrue(start.on())
         self.assertTrue(start.set(False))
-        self.assertTrue(start.set(False))  # already off
+        self.assertTrue(start.set(False))  # もうオフ
         self.assertEqual(registry.values, {})
 
     def test_another_copy_of_the_app_is_not_this_one(self):
@@ -541,7 +541,7 @@ class PagesTest(unittest.TestCase):
         text = self.client.get("/settings").get_data(as_text=True)
         self.assertIn('name="alert_flash" checked', text)
         self.assertIn('name="alert_sound">', text)
-        self.assertIn('name="autostart" disabled', text)  # from the source: nothing to start
+        self.assertIn('name="autostart" disabled', text)  # ソースから実行: 登録するものが無い
         token = self.token("/settings")
         text = self.client.post("/settings", data={"csrf": token, "do": "app", "alert_sound": "on"}).get_data(
             as_text=True
