@@ -5,28 +5,18 @@ missions, from PD's contracts (riot.Riot.contracts) with valorant-api.com's name
 from __future__ import annotations
 
 from valtracker.content import Content
-
-
-def _id(value) -> str:
-    return str(value or "").lower()
-
-
-def _number(value) -> int:
-    try:
-        return int(float(value or 0))
-    except (TypeError, ValueError):
-        return 0
+from valtracker.util import lower_id, to_int
 
 
 def contract(item: dict, definition: dict, agents: dict) -> dict:
     """One contract: how far it is (levels, XP to the next level, the share of all its XP)."""
-    levels = [_number(xp) for xp in definition.get("levels") or []]
-    reached = min(max(_number(item.get("ProgressionLevelReached")), 0), len(levels))
-    toward = max(_number(item.get("ProgressionTowardsNextLevel")), 0)
-    main = len(levels) - _number(definition.get("epilogue"))
+    levels = [to_int(xp) for xp in definition.get("levels") or []]
+    reached = min(max(to_int(item.get("ProgressionLevelReached")), 0), len(levels))
+    toward = max(to_int(item.get("ProgressionTowardsNextLevel")), 0)
+    main = len(levels) - to_int(definition.get("epilogue"))
     total = sum(levels)
     done = sum(levels[:reached]) + (min(toward, levels[reached]) if reached < len(levels) else 0)
-    agent = agents.get(_id(definition.get("of"))) if definition.get("type") == "Agent" else None
+    agent = agents.get(lower_id(definition.get("of"))) if definition.get("type") == "Agent" else None
     return {
         "name": (agent or {}).get("displayName") or definition.get("displayName") or "",
         "icon": (agent or {}).get("displayIcon") or definition.get("displayIcon") or "",
@@ -52,7 +42,7 @@ def page(found: dict, content: Content, lang: str, now: float, when) -> dict:
     for item in answer.get("Contracts") or []:
         if not isinstance(item, dict):
             continue
-        definition = known.get(_id(item.get("ContractDefinitionID")))
+        definition = known.get(lower_id(item.get("ContractDefinitionID")))
         if definition:
             shown.append((definition, contract(item, definition, agents)))
     battle_pass = next(

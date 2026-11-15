@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import re
 
+from valtracker.util import to_int
+
 #: The game's colour choices (``c``); 8 is the custom colour given by ``u`` (RRGGBBAA).
 COLOURS = ("#ffffff", "#00ff00", "#7fff00", "#dfff00", "#ffff00", "#00ffff", "#ff00ff", "#ff0000")
 #: Their names, translated in locale.py.
@@ -115,18 +117,11 @@ def parse(code: str) -> dict | None:
 
 def colour(settings: dict) -> str:
     """The crosshair's colour as #rrggbb."""
-    index = _int(settings.get("c"))
+    index = to_int(settings.get("c"))
     custom = str(settings.get("u") or "")
     if index == 8 and re.fullmatch(r"[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?", custom):
         return "#" + custom[:6].lower()
     return COLOURS[index] if 0 <= index < len(COLOURS) else COLOURS[0]
-
-
-def _int(value, default: int = 0) -> int:
-    try:
-        return int(float(value))
-    except (TypeError, ValueError):
-        return default
 
 
 def _float(value, default: float = 0.0) -> float:
@@ -147,18 +142,18 @@ def shapes(settings: dict) -> list[dict]:
     """The crosshair as rectangles around the centre (0, 0): ``[{"x", "y", "w", "h", "fill", "opacity"}]``,
     outlines first (they are drawn under the lines)."""
     fill = colour(settings)
-    outline = _size(settings.get("t"), 0, 6) if _int(settings.get("h")) else 0
+    outline = _size(settings.get("t"), 0, 6) if to_int(settings.get("h")) else 0
     outline_opacity = _float(settings.get("o"), 0.5)
     lines: list[tuple[dict, float]] = []
-    if _int(settings.get("d")):
+    if to_int(settings.get("d")):
         dot = _size(settings.get("z"), 1, 6)
         lines.append(({"x": -dot / 2, "y": -dot / 2, "w": dot, "h": dot}, _float(settings.get("a"), 1.0)))
     for ring in ("0", "1"):
-        if not _int(settings.get(ring + "b")):
+        if not to_int(settings.get(ring + "b")):
             continue
         thick = _size(settings.get(ring + "t"), 0, 10)
         length = _size(settings.get(ring + "l"), 0, 20)
-        tall = _size(settings.get(ring + "v"), 0, 20) if _int(settings.get(ring + "g")) else length
+        tall = _size(settings.get(ring + "v"), 0, 20) if to_int(settings.get(ring + "g")) else length
         gap = _size(settings.get(ring + "o"), 0, 20)
         opacity = _float(settings.get(ring + "a"), 1.0)
         if not thick or not (length or tall):
@@ -189,7 +184,7 @@ def shapes(settings: dict) -> list[dict]:
 
 def sniper_shapes(settings: dict) -> list[dict]:
     """The scope's centre dot, when it is on."""
-    if not _int(settings.get("d")):
+    if not to_int(settings.get("d")):
         return []
     size = 2 * _size(settings.get("s"), 0, 4) or 1
     return [
@@ -206,29 +201,29 @@ def sniper_shapes(settings: dict) -> list[dict]:
 
 def describe(settings: dict) -> dict:
     """What the settings page of the game would show, for the page's table."""
-    index = _int(settings.get("c"))
+    index = to_int(settings.get("c"))
     return {
         "colour": colour(settings),
         "colour_name": COLOUR_NAMES[index] if 0 <= index < len(COLOUR_NAMES) else COLOUR_NAMES[0],
-        "outlines": (_int(settings.get("h")), _size(settings.get("t"), 0, 6), _float(settings.get("o"), 0.5)),
-        "dot": (_int(settings.get("d")), _size(settings.get("z"), 1, 6), _float(settings.get("a"), 1.0)),
+        "outlines": (to_int(settings.get("h")), _size(settings.get("t"), 0, 6), _float(settings.get("o"), 0.5)),
+        "dot": (to_int(settings.get("d")), _size(settings.get("z"), 1, 6), _float(settings.get("a"), 1.0)),
         "inner": _ring(settings, "0"),
         "outer": _ring(settings, "1"),
-        "fade": bool(_int(settings.get("f"))),
+        "fade": bool(to_int(settings.get("f"))),
     }
 
 
 def _ring(settings: dict, ring: str) -> dict:
     return {
-        "on": bool(_int(settings.get(ring + "b"))),
+        "on": bool(to_int(settings.get(ring + "b"))),
         "opacity": _float(settings.get(ring + "a"), 1.0),
         "length": _size(settings.get(ring + "l"), 0, 20),
-        "vertical": _size(settings.get(ring + "v"), 0, 20) if _int(settings.get(ring + "g")) else None,
+        "vertical": _size(settings.get(ring + "v"), 0, 20) if to_int(settings.get(ring + "g")) else None,
         "thickness": _size(settings.get(ring + "t"), 0, 10),
         "offset": _size(settings.get(ring + "o"), 0, 20),
         # whether the lines move apart in the game: while walking, and while firing
-        "moving": bool(_int(settings.get(ring + "m"))),
-        "firing": bool(_int(settings.get(ring + "f"))),
+        "moving": bool(to_int(settings.get(ring + "m"))),
+        "firing": bool(to_int(settings.get(ring + "f"))),
     }
 
 

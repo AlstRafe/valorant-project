@@ -12,6 +12,7 @@ from flask import Flask, abort, current_app, g, redirect, render_template, reque
 from valtracker import security
 from valtracker.collection import TIERS, _tier, _weapon_order
 from valtracker.content import Content, variant_name
+from valtracker.util import lower_id
 from valtracker.views import _t
 
 #: Shown when the visitor has chosen nothing: the weapon most skins are bought for.
@@ -40,10 +41,6 @@ _VOTER = re.compile(r"^[A-Za-z0-9_-]{20,64}$")
 _UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
 
-def _id(value) -> str:
-    return str(value or "").lower()
-
-
 def _words(value) -> str:
     """valorant-api.com's names can hold line breaks (a chroma's "Variant 1\\nRed")."""
     return " ".join(str(value or "").split())
@@ -61,8 +58,8 @@ def _picture(skin: dict) -> str:
 
 def _is_skin(weapon: dict, skin: dict) -> bool:
     return (
-        _id(skin.get("uuid")) != _id(weapon.get("defaultSkinUuid"))
-        and _id(skin.get("themeUuid")) not in NOT_SKINS
+        lower_id(skin.get("uuid")) != lower_id(weapon.get("defaultSkinUuid"))
+        and lower_id(skin.get("themeUuid")) not in NOT_SKINS
         and bool(_picture(skin))
     )
 
@@ -73,16 +70,16 @@ def library(content: Content, lang: str) -> list[dict]:
     tiers = content.index("contenttiers", lang)
     found = []
     for weapon in sorted(content.weapons(lang), key=_weapon_order):
-        about = {"uuid": _id(weapon.get("uuid")), "name": weapon.get("displayName") or ""}
+        about = {"uuid": lower_id(weapon.get("uuid")), "name": weapon.get("displayName") or ""}
         skins = [skin for skin in weapon.get("skins") or [] if _is_skin(weapon, skin)]
         entries = [
             {
-                "uuid": _id(skin.get("uuid")),
+                "uuid": lower_id(skin.get("uuid")),
                 "name": _words(skin.get("displayName")),
                 "image": _picture(skin),
                 "tier": _tier(skin, tiers),
                 "weapon": about,
-                "theme": _id(skin.get("themeUuid")),
+                "theme": lower_id(skin.get("themeUuid")),
                 "videos": sum(
                     1 for part in (skin.get("levels") or []) + (skin.get("chromas") or []) if part.get("streamedVideo")
                 ),
@@ -102,7 +99,7 @@ def _list_page(content: Content, lang: str) -> dict:
     words = _words(request.args.get("q", ""))[:40]
     tier = request.args.get("tier", "")
     tier = tier if tier in {name.lower() for name in TIERS} else ""
-    weapon = _id(request.args.get("weapon", ""))
+    weapon = lower_id(request.args.get("weapon", ""))
     if weapon != "all" and weapon not in weapons:
         weapon = "all" if words or tier else (VANDAL if VANDAL in weapons else next(iter(weapons), "all"))
     picked = [
@@ -157,23 +154,23 @@ def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
     if not found:
         return None
     weapon, skin = found
-    if _id(skin.get("uuid")) != uuid:
+    if lower_id(skin.get("uuid")) != uuid:
         return None  # a level's or chroma's uuid: the skin's own page is the one to link
     if not _is_skin(weapon, skin):
         return None
     name = _words(skin.get("displayName"))
     tiers = content.index("contenttiers", lang)
-    chosen = _id(request.args.get("chroma", ""))
+    chosen = lower_id(request.args.get("chroma", ""))
     chromas = []
     for number, part in enumerate(skin.get("chromas") or []):
         chromas.append(
             {
-                "uuid": _id(part.get("uuid")),
+                "uuid": lower_id(part.get("uuid")),
                 "name": _t("標準") if number == 0 else variant_name(part.get("displayName"), name),
                 "swatch": part.get("swatch") or "",
                 "image": part.get("fullRender") or part.get("displayIcon") or "",
                 "video": part.get("streamedVideo") or "",
-                "url": url_for("skin", uuid=uuid, chroma=None if number == 0 else _id(part.get("uuid"))),
+                "url": url_for("skin", uuid=uuid, chroma=None if number == 0 else lower_id(part.get("uuid"))),
             }
         )
     current = next((part for part in chromas if part["uuid"] == chosen), chromas[0] if chromas else None)
@@ -194,7 +191,7 @@ def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
             }
         )
     themes = content.index("themes", lang)
-    theme = _id(skin.get("themeUuid"))
+    theme = lower_id(skin.get("themeUuid"))
     series = [
         entry | {"url": url_for("skin", uuid=entry["uuid"])}
         for entry in library(content, lang)
@@ -206,7 +203,7 @@ def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
         "name": name,
         "weapon": {
             "name": weapon.get("displayName") or "",
-            "url": url_for("skins", weapon=_id(weapon.get("uuid"))),
+            "url": url_for("skins", weapon=lower_id(weapon.get("uuid"))),
         },
         "tier": _tier(skin, tiers),
         "theme": _words((themes.get(theme) or {}).get("displayName")),

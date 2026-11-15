@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+from valtracker.util import lower_id, to_int
+
 #: PD's queue ids -> the kind of match (HenrikDev's ``mode_type``): any other is a game of rounds ("Standard").
 MODE_TYPES = {
     "deathmatch": "Deathmatch",
@@ -56,17 +58,6 @@ CITIES = {
 }
 
 
-def _int(value, default: int = 0) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
-
-
-def _id(value) -> str:
-    return str(value or "").lower()
-
-
 def city(pod) -> str:
     """The city of a game server's name ("" when it has none)."""
     last = str(pod or "").rsplit(".", 1)[-1].lower()
@@ -81,11 +72,15 @@ def history(answer) -> dict:
     """PD's match-history -> ``{"total", "matches": [{"id", "at" (unix seconds), "queue"}]}``, newest first."""
     answer = answer if isinstance(answer, dict) else {}
     found = [
-        {"id": _id(item["MatchID"]), "at": _int(item.get("GameStartTime")) // 1000, "queue": _id(item.get("QueueID"))}
+        {
+            "id": lower_id(item["MatchID"]),
+            "at": to_int(item.get("GameStartTime")) // 1000,
+            "queue": lower_id(item.get("QueueID")),
+        }
         for item in answer.get("History") or []
         if isinstance(item, dict) and item.get("MatchID")
     ]
-    return {"total": _int(answer.get("Total"), len(found)), "matches": found}
+    return {"total": to_int(answer.get("Total"), len(found)), "matches": found}
 
 
 def rr_updates(answer) -> dict:
@@ -96,16 +91,16 @@ def rr_updates(answer) -> dict:
     for item in answer.get("Matches") or []:
         if not isinstance(item, dict) or not item.get("MatchID"):
             continue
-        tier = _int(item.get("TierAfterUpdate"))
-        if tier < 3 or not _int(item.get("TierBeforeUpdate")):
+        tier = to_int(item.get("TierAfterUpdate"))
+        if tier < 3 or not to_int(item.get("TierBeforeUpdate")):
             continue
-        rr = _int(item.get("RankedRatingAfterUpdate"))
-        found[_id(item["MatchID"])] = {
-            "change": _int(item.get("RankedRatingEarned")),
+        rr = to_int(item.get("RankedRatingAfterUpdate"))
+        found[lower_id(item["MatchID"])] = {
+            "change": to_int(item.get("RankedRatingEarned")),
             "tier": tier,
             "rr": rr,
             "elo": (tier - 3) * 100 + rr,
-            "at": _int(item.get("MatchStartTime")) // 1000,
+            "at": to_int(item.get("MatchStartTime")) // 1000,
         }
     return found
 
@@ -117,43 +112,43 @@ def to_v4(details, region: str, maps: dict, puuid: str = "", name: str = "", tag
     if not isinstance(details, dict) or not isinstance(details.get("matchInfo"), dict):
         return {}
     info = details["matchInfo"]
-    match_id = _id(info.get("matchId"))
+    match_id = lower_id(info.get("matchId"))
     if not match_id:
         return {}
-    queue = _id(info.get("queueID")) or "custom"
+    queue = lower_id(info.get("queueID")) or "custom"
     address = str(info.get("mapId") or "").rsplit("/", 1)[-1].lower()
     known = maps.get(address) or {}
-    start = _int(info.get("gameStartMillis"))
+    start = to_int(info.get("gameStartMillis"))
     players_raw = [item for item in details.get("players") or [] if isinstance(item, dict) and item.get("subject")]
     players_raw = [item for item in players_raw if not item.get("isObserver")]
     rounds_raw = [item for item in details.get("roundResults") or [] if isinstance(item, dict)]
     shots, dealt, taken, spent = _from_rounds(rounds_raw)
     players = []
     for item in players_raw:
-        subject = _id(item["subject"])
+        subject = lower_id(item["subject"])
         line = item.get("stats") if isinstance(item.get("stats"), dict) else {}
         head, body, leg = shots.get(subject, (0, 0, 0))
-        mine = subject == _id(puuid)
+        mine = subject == lower_id(puuid)
         players.append(
             {
                 "puuid": subject,
                 "name": name if mine else "",
                 "tag": tag if mine else "",
                 "team_id": str(item.get("teamId") or ""),
-                "party_id": _id(item.get("partyId")),
-                "agent": {"id": _id(item.get("characterId")), "name": ""},
+                "party_id": lower_id(item.get("partyId")),
+                "agent": {"id": lower_id(item.get("characterId")), "name": ""},
                 "stats": {
-                    "score": _int(line.get("score")),
-                    "kills": _int(line.get("kills")),
-                    "deaths": _int(line.get("deaths")),
-                    "assists": _int(line.get("assists")),
+                    "score": to_int(line.get("score")),
+                    "kills": to_int(line.get("kills")),
+                    "deaths": to_int(line.get("deaths")),
+                    "assists": to_int(line.get("assists")),
                     "headshots": head,
                     "bodyshots": body,
                     "legshots": leg,
                     "damage": {"dealt": dealt.get(subject, 0), "received": taken.get(subject, 0)},
                 },
-                "tier": {"id": _int(item.get("competitiveTier")), "name": ""},
-                "account_level": _int(item.get("accountLevel")),
+                "tier": {"id": to_int(item.get("competitiveTier")), "name": ""},
+                "account_level": to_int(item.get("accountLevel")),
                 "economy": {"spent": {"overall": spent.get(subject, 0)}},
             }
         )
@@ -161,7 +156,7 @@ def to_v4(details, region: str, maps: dict, puuid: str = "", name: str = "", tag
     for item in details.get("teams") or []:
         if not isinstance(item, dict) or not item.get("teamId"):
             continue
-        won, played = _int(item.get("roundsWon")), _int(item.get("roundsPlayed"))
+        won, played = to_int(item.get("roundsWon")), to_int(item.get("roundsPlayed"))
         teams.append(
             {
                 "team_id": str(item["teamId"]),
@@ -174,12 +169,12 @@ def to_v4(details, region: str, maps: dict, puuid: str = "", name: str = "", tag
     return {
         "metadata": {
             "match_id": match_id,
-            "map": {"id": _id(known.get("uuid")), "name": str(known.get("displayName") or address.title())},
-            "game_length_in_ms": _int(info.get("gameLengthMillis")),
+            "map": {"id": lower_id(known.get("uuid")), "name": str(known.get("displayName") or address.title())},
+            "game_length_in_ms": to_int(info.get("gameLengthMillis")),
             "started_at": datetime.fromtimestamp(start / 1000, UTC).isoformat().replace("+00:00", "Z") if start else "",
             "is_completed": bool(info.get("isCompleted", True)),
             "queue": {"id": queue, "name": "", "mode_type": MODE_TYPES.get(queue, "Standard")},
-            "season": {"id": _id(info.get("seasonId")), "short": ""},
+            "season": {"id": lower_id(info.get("seasonId")), "short": ""},
             "region": region,
             "cluster": city(info.get("gamePodId")),
         },
@@ -200,26 +195,26 @@ def _from_rounds(rounds_raw: list) -> tuple[dict, dict, dict, dict]:
         for line in item.get("playerStats") or []:
             if not isinstance(line, dict):
                 continue
-            subject = _id(line.get("subject"))
+            subject = lower_id(line.get("subject"))
             economy = line.get("economy") if isinstance(line.get("economy"), dict) else {}
-            spent[subject] = spent.get(subject, 0) + _int(economy.get("spent"))
+            spent[subject] = spent.get(subject, 0) + to_int(economy.get("spent"))
             for hit in line.get("damage") or []:
                 if not isinstance(hit, dict):
                     continue
                 head, body, leg = shots.get(subject, (0, 0, 0))
                 shots[subject] = (
-                    head + _int(hit.get("headshots")),
-                    body + _int(hit.get("bodyshots")),
-                    leg + _int(hit.get("legshots")),
+                    head + to_int(hit.get("headshots")),
+                    body + to_int(hit.get("bodyshots")),
+                    leg + to_int(hit.get("legshots")),
                 )
-                dealt[subject] = dealt.get(subject, 0) + _int(hit.get("damage"))
-                receiver = _id(hit.get("receiver"))
-                taken[receiver] = taken.get(receiver, 0) + _int(hit.get("damage"))
+                dealt[subject] = dealt.get(subject, 0) + to_int(hit.get("damage"))
+                receiver = lower_id(hit.get("receiver"))
+                taken[receiver] = taken.get(receiver, 0) + to_int(hit.get("damage"))
     return shots, dealt, taken, spent
 
 
 def _round(item: dict) -> dict:
-    planter, defuser = _id(item.get("bombPlanter")), _id(item.get("bombDefuser"))
+    planter, defuser = lower_id(item.get("bombPlanter")), lower_id(item.get("bombDefuser"))
     return {
         "winning_team": str(item.get("winningTeam") or ""),
         "result": str(item.get("roundResult") or ""),
@@ -228,10 +223,10 @@ def _round(item: dict) -> dict:
         "defuse": {"player": {"puuid": defuser}} if defuser else None,
         "stats": [
             {
-                "player": {"puuid": _id(line.get("subject"))},
+                "player": {"puuid": lower_id(line.get("subject"))},
                 "stats": _shots(line),
                 "economy": {
-                    "loadout_value": _int((line.get("economy") or {}).get("loadoutValue"))
+                    "loadout_value": to_int((line.get("economy") or {}).get("loadoutValue"))
                     if isinstance(line.get("economy"), dict)
                     else 0
                 },
@@ -245,7 +240,7 @@ def _round(item: dict) -> dict:
 def _shots(line: dict) -> dict:
     """A player's hits of one round by where they landed (PD counts them per opponent hit)."""
     hit = [item for item in line.get("damage") or [] if isinstance(item, dict)]
-    return {name: sum(_int(item.get(name)) for item in hit) for name in ("headshots", "bodyshots", "legshots")}
+    return {name: sum(to_int(item.get(name)) for item in hit) for name in ("headshots", "bodyshots", "legshots")}
 
 
 def _kills(details: dict, rounds_raw: list) -> list:
@@ -263,16 +258,16 @@ def _kills(details: dict, rounds_raw: list) -> list:
         item = str(damage.get("damageItem") or "")
         found.append(
             {
-                "round": _int(kill.get("round")),
-                "time_in_round_in_ms": _int(kill.get("roundTime")),
-                "killer": {"puuid": _id(kill.get("killer"))},
-                "victim": {"puuid": _id(kill.get("victim"))},
-                "assistants": [{"puuid": _id(helper)} for helper in kill.get("assistants") or []],
+                "round": to_int(kill.get("round")),
+                "time_in_round_in_ms": to_int(kill.get("roundTime")),
+                "killer": {"puuid": lower_id(kill.get("killer"))},
+                "victim": {"puuid": lower_id(kill.get("victim"))},
+                "assistants": [{"puuid": lower_id(helper)} for helper in kill.get("assistants") or []],
                 # a weapon's uuid; an ability's slot ("Ultimate"), which valorant-api.com's arsenal does not know
                 "weapon": {"id": item.lower(), "name": "" if damage.get("damageType") == "Weapon" else item},
                 "location": kill.get("victimLocation"),
                 "player_locations": [
-                    {"player": {"puuid": _id(spot.get("subject"))}, "location": spot.get("location")}
+                    {"player": {"puuid": lower_id(spot.get("subject"))}, "location": spot.get("location")}
                     for spot in kill.get("playerLocations") or []
                     if isinstance(spot, dict)
                 ],

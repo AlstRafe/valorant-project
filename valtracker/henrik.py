@@ -18,6 +18,7 @@ from urllib.parse import quote, urlencode
 
 from valtracker import net, rounds
 from valtracker.cache import Budget, TTLCache
+from valtracker.util import to_int
 
 BASE = "https://api.henrikdev.xyz"
 PLATFORM = "pc"
@@ -516,13 +517,6 @@ def _moment(value) -> int:
         return 0
 
 
-def _number(value, default: int = 0) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
-
-
 def _slim_stored(matches) -> list:
     """v1's stored matches: per match its act ("e9a3"), start, map, agent, rank, whether the player's team won (None:
     a draw), its rounds, and the player's kills, deaths, assists, score, shots and damage."""
@@ -536,7 +530,7 @@ def _slim_stored(matches) -> list:
             match.get(key) if isinstance(match.get(key), dict) else {} for key in ("meta", "stats", "teams")
         )
         side = str(line.get("team") or "").lower()
-        red, blue = _number(teams.get("red")), _number(teams.get("blue"))
+        red, blue = to_int(teams.get("red")), to_int(teams.get("blue"))
         mine, theirs = (red, blue) if side == "red" else (blue, red)
         season = meta.get("season") if isinstance(meta.get("season"), dict) else {}
         shots = line.get("shots") if isinstance(line.get("shots"), dict) else {}
@@ -557,18 +551,18 @@ def _slim_stored(matches) -> list:
                 "us": mine,
                 "them": theirs,
                 "agent": str(agent.get("id") or "").lower(),
-                "tier": _number(line.get("tier")),
+                "tier": to_int(line.get("tier")),
                 "won": (mine > theirs) if side in ("red", "blue") and mine != theirs else None,
                 "rounds": red + blue,
-                "kills": _number(line.get("kills")),
-                "deaths": _number(line.get("deaths")),
-                "assists": _number(line.get("assists")),
-                "score": _number(line.get("score")),
-                "head": _number(shots.get("head")),
-                "body": _number(shots.get("body")),
-                "leg": _number(shots.get("leg")),
-                "made": _number(damage.get("made")),
-                "received": _number(damage.get("received")),
+                "kills": to_int(line.get("kills")),
+                "deaths": to_int(line.get("deaths")),
+                "assists": to_int(line.get("assists")),
+                "score": to_int(line.get("score")),
+                "head": to_int(shots.get("head")),
+                "body": to_int(shots.get("body")),
+                "leg": to_int(shots.get("leg")),
+                "made": to_int(damage.get("made")),
+                "received": to_int(damage.get("received")),
             }
         )
     return found
@@ -585,14 +579,14 @@ def _slim_board(data) -> dict:
         tier = item.get("tier", item.get("competitiveTier"))
         players.append(
             {
-                "rank": _number(item.get("leaderboard_rank", item.get("leaderboardRank"))),
+                "rank": to_int(item.get("leaderboard_rank", item.get("leaderboardRank"))),
                 "name": str(item.get("name", item.get("gameName")) or ""),
                 "tag": str(item.get("tag", item.get("tagLine")) or ""),
                 "puuid": str(item.get("puuid") or ""),
                 "card": str(item.get("card", item.get("PlayerCardID")) or "").lower(),
-                "tier": _number(tier.get("id") if isinstance(tier, dict) else tier),
-                "rr": _number(item.get("rr", item.get("rankedRating"))),
-                "wins": _number(item.get("wins", item.get("numberOfWins"))),
+                "tier": to_int(tier.get("id") if isinstance(tier, dict) else tier),
+                "rr": to_int(item.get("rr", item.get("rankedRating"))),
+                "wins": to_int(item.get("wins", item.get("numberOfWins"))),
                 "hidden": bool(item.get("is_anonymized", item.get("IsAnonymized"))),
             }
         )
@@ -602,19 +596,19 @@ def _slim_board(data) -> dict:
             tier = item.get("tier")
             thresholds.append(
                 {
-                    "tier": _number(tier.get("id") if isinstance(tier, dict) else tier),
-                    "rr": _number(item.get("threshold")),
-                    "from": _number(item.get("start_index")) + 1,
+                    "tier": to_int(tier.get("id") if isinstance(tier, dict) else tier),
+                    "rr": to_int(item.get("threshold")),
+                    "from": to_int(item.get("start_index")) + 1,
                 }
             )
     for tier, key in ((27, "radiant_threshold"), (26, "immortal_3_threshold"), (25, "immortal_2_threshold")):
         if not thresholds and data.get(key) is not None:  # v2
-            thresholds.append({"tier": tier, "rr": _number(data[key]), "from": 0})
+            thresholds.append({"tier": tier, "rr": to_int(data[key]), "from": 0})
     results = data.get("results") if isinstance(data.get("results"), dict) else {}
     return {
         "players": players,
         "thresholds": sorted(thresholds, key=lambda item: -item["tier"]),
-        "total": _number(results.get("total", data.get("total_players"))),
+        "total": to_int(results.get("total", data.get("total_players"))),
         "updated": str(data.get("updated_at") or data.get("last_update") or ""),
     }
 
@@ -732,9 +726,9 @@ def _slim_featured(data) -> list:
                 "type": str(item.get("type") or ""),
                 "name": str(item.get("name") or ""),
                 "image": str(item.get("image") or ""),
-                "amount": _number(item.get("amount"), 1),
-                "price": _number(item.get("discounted_price", item.get("base_price"))),
-                "base": _number(item.get("base_price")),
+                "amount": to_int(item.get("amount"), 1),
+                "price": to_int(item.get("discounted_price", item.get("base_price"))),
+                "base": to_int(item.get("base_price")),
             }
             for item in bundle.get("items") or []
             if isinstance(item, dict)
@@ -742,8 +736,8 @@ def _slim_featured(data) -> list:
         found.append(
             {
                 "uuid": str(bundle["bundle_uuid"]).lower(),
-                "price": _number(bundle.get("bundle_price")),
-                "until": time.time() + _number(bundle.get("seconds_remaining")),  # kept a while: when it ends
+                "price": to_int(bundle.get("bundle_price")),
+                "until": time.time() + to_int(bundle.get("seconds_remaining")),  # kept a while: when it ends
                 "whole": bool(bundle.get("whole_sale_only")),
                 "items": items,
             }

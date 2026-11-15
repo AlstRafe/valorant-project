@@ -37,6 +37,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 from valtracker import net, pdmatch
 from valtracker.cache import TTLCache
 from valtracker.settings import Settings
+from valtracker.util import to_float
 
 AUTHORIZE = (
     "https://auth.riotgames.com/authorize?redirect_uri=https%3A%2F%2Fplayvalorant.com%2Fopt_in"
@@ -192,8 +193,9 @@ class Riot:
             "tag": str(saved.get("tag") or ""),
             "shard": str(saved.get("shard") or ""),
             "lasting": lasting,
-            "until": 0.0 if lasting else _number(token.get("until")) + EARLY,
-            "signed_out": bool(saved.get("signed_out")) or (not lasting and _number(token.get("until")) < self.clock()),
+            "until": 0.0 if lasting else to_float(token.get("until")) + EARLY,
+            "signed_out": bool(saved.get("signed_out"))
+            or (not lasting and to_float(token.get("until")) < self.clock()),
             "problem": str(saved.get("problem") or ""),
             "client": False,
         }
@@ -244,7 +246,7 @@ class Riot:
                 found[0]["linked"] = True  # the client's account is linked as well: one line
                 continue
             token = item.get("token") if isinstance(item.get("token"), dict) else {}
-            over = not item.get("cookies") and _number(token.get("until")) < self.clock()
+            over = not item.get("cookies") and to_float(token.get("until")) < self.clock()
             found.append({**row, "client": False, "linked": True, "signed_out": bool(item.get("signed_out")) or over})
         current = self.me()
         for row in found:
@@ -851,7 +853,7 @@ class Riot:
                 not renew
                 and token.get("access")
                 and token.get("entitlements")
-                and _number(token.get("until")) > self.clock()
+                and to_float(token.get("until")) > self.clock()
             ):
                 return token, saved
             cookies = saved.get("cookies") if isinstance(saved.get("cookies"), dict) else {}
@@ -1107,35 +1109,35 @@ def _board(answer: dict, now: float) -> dict:
         hidden = bool(item.get("IsAnonymized")) or not item.get("gameName")
         players.append(
             {
-                "rank": int(_number(item.get("leaderboardRank"))),
+                "rank": int(to_float(item.get("leaderboardRank"))),
                 "name": "" if hidden else str(item.get("gameName") or ""),
                 "tag": "" if hidden else str(item.get("tagLine") or ""),
                 "puuid": "" if hidden else str(item.get("puuid") or "").lower(),
                 "card": "" if hidden else str(item.get("PlayerCardID") or "").lower(),
-                "tier": int(_number(item.get("competitiveTier"))),
-                "rr": int(_number(item.get("rankedRating"))),
-                "wins": int(_number(item.get("numberOfWins"))),
+                "tier": int(to_float(item.get("competitiveTier"))),
+                "rr": int(to_float(item.get("rankedRating"))),
+                "wins": int(to_float(item.get("numberOfWins"))),
                 "hidden": hidden,
             }
         )
     details = answer.get("tierDetails") if isinstance(answer.get("tierDetails"), dict) else {}
     details = {
-        int(_number(tier)): info for tier, info in details.items() if isinstance(info, dict) and _number(tier) > 2
+        int(to_float(tier)): info for tier, info in details.items() if isinstance(info, dict) and to_float(tier) > 2
     }
     # the top rank starts at the first place; a lower one that Riot gives no place to (0) is not on the list
     thresholds = [
         {
             "tier": tier,
-            "rr": int(_number(info.get("rankedRatingThreshold"))),
-            "from": int(_number(info.get("startingIndex"))) + 1,
+            "rr": int(to_float(info.get("rankedRatingThreshold"))),
+            "from": int(to_float(info.get("startingIndex"))) + 1,
         }
         for tier, info in details.items()
-        if tier == max(details) or _number(info.get("startingIndex")) > 0
+        if tier == max(details) or to_float(info.get("startingIndex")) > 0
     ]
     return {
         "players": players,
         "thresholds": sorted(thresholds, key=lambda item: -item["tier"]),
-        "total": int(_number(answer.get("totalPlayers"))),
+        "total": int(to_float(answer.get("totalPlayers"))),
         "updated": datetime.fromtimestamp(now, UTC).isoformat(),  # Riot does not say: when it was read
     }
 
@@ -1145,13 +1147,6 @@ def _check(status: int, what: str) -> None:
         raise RiotError("busy", f"{what} 429")
     if status == 0 or status >= 500:
         raise RiotError("down", f"{what} {status or 'no answer'}")
-
-
-def _number(value) -> float:
-    try:
-        return float(value or 0)
-    except (TypeError, ValueError):
-        return 0.0
 
 
 def wearing(loadout: dict) -> tuple:

@@ -14,6 +14,7 @@ from datetime import datetime
 from valtracker import i18n, smurf
 from valtracker.activity import FEW
 from valtracker.content import Content, todays_tier
+from valtracker.util import lower_id, to_int
 
 #: valorant-api.com's roles, in the order a team usually fills them: smokes first, then information, a sentinel
 #: and an entry.
@@ -33,21 +34,10 @@ BEST_SHOWN = 3
 EVERY = {"": (20, 30), "menus": (5, 8), "queue": (2, 2), "found": (1, 1), "pregame": (2, 4), "ingame": (10, 15)}
 
 
-def _id(value) -> str:
-    return str(value or "").lower()
-
-
 def icon(agent: dict) -> str:
     """An agent's picture for the small squares (pick, seats, roles): valorant-api.com's small one (128 px, a
     quarter of the bytes of the 256 px one) when it has it."""
     return str(agent.get("displayIconSmall") or agent.get("displayIcon") or "")
-
-
-def _number(value) -> int:
-    try:
-        return int(float(value or 0))
-    except (TypeError, ValueError):
-        return 0
 
 
 def _rank(mmr, act: str) -> tuple[int, int]:
@@ -56,11 +46,11 @@ def _rank(mmr, act: str) -> tuple[int, int]:
         return 0, 0
     skills = ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
     for season, info in skills.items() if isinstance(skills, dict) else []:
-        if act and _id(season) == act and isinstance(info, dict) and _number(info.get("CompetitiveTier")) > 2:
-            return _number(info.get("CompetitiveTier")), _number(info.get("RankedRating"))
+        if act and lower_id(season) == act and isinstance(info, dict) and to_int(info.get("CompetitiveTier")) > 2:
+            return to_int(info.get("CompetitiveTier")), to_int(info.get("RankedRating"))
     latest = mmr.get("LatestCompetitiveUpdate") if isinstance(mmr.get("LatestCompetitiveUpdate"), dict) else {}
-    if act and _id(latest.get("SeasonID")) == act:
-        return _number(latest.get("TierAfterUpdate")), _number(latest.get("RankedRatingAfterUpdate"))
+    if act and lower_id(latest.get("SeasonID")) == act:
+        return to_int(latest.get("TierAfterUpdate")), to_int(latest.get("RankedRatingAfterUpdate"))
     return 0, 0
 
 
@@ -75,9 +65,9 @@ def best_ever(mmr, old_acts=frozenset()) -> int:
         if not isinstance(info, dict):
             continue
         won_at = info.get("WinsByTier") if isinstance(info.get("WinsByTier"), dict) else {}
-        tiers = [_number(tier) for tier, count in won_at.items() if _number(count) > 0]
-        tiers.append(_number(info.get("CompetitiveTier")))
-        best = max(best, todays_tier(max(tiers), _id(season) in old_acts))
+        tiers = [to_int(tier) for tier, count in won_at.items() if to_int(count) > 0]
+        tiers.append(to_int(info.get("CompetitiveTier")))
+        best = max(best, todays_tier(max(tiers), lower_id(season) in old_acts))
     return best
 
 
@@ -87,28 +77,28 @@ def act_best(mmr, act: str) -> int:
         return 0
     skills = ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
     info = (
-        next((info for season, info in skills.items() if _id(season) == act), None)
+        next((info for season, info in skills.items() if lower_id(season) == act), None)
         if isinstance(skills, dict)
         else None
     )
     if not isinstance(info, dict):
         return 0
     won_at = info.get("WinsByTier") if isinstance(info.get("WinsByTier"), dict) else {}
-    tiers = [_number(tier) for tier, count in won_at.items() if _number(count) > 0]
-    return max([*tiers, _number(info.get("CompetitiveTier"))])
+    tiers = [to_int(tier) for tier, count in won_at.items() if to_int(count) > 0]
+    return max([*tiers, to_int(info.get("CompetitiveTier"))])
 
 
 def _smurf(tier: int, identity: dict, mmr, act: str) -> dict | None:
     """The guess at a second account (smurf.guess) from the level, the acts of ranked play and, for a player who
     shows their name (``act``), this act's record: one who hides it gets the guess without their record."""
-    level = None if identity.get("HideAccountLevel") else _number(identity.get("AccountLevel")) or None
+    level = None if identity.get("HideAccountLevel") else to_int(identity.get("AccountLevel")) or None
     skills = (
         ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
         if isinstance(mmr, dict)
         else {}
     )
     acts = (
-        sum(1 for info in skills.values() if isinstance(info, dict) and _number(info.get("NumberOfGames")) > 0)
+        sum(1 for info in skills.values() if isinstance(info, dict) and to_int(info.get("NumberOfGames")) > 0)
         if isinstance(skills, dict) and skills
         else None
     )
@@ -129,16 +119,16 @@ def _record(mmr, act: str) -> dict | None:
         return None
     skills = ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
     info = (
-        next((info for season, info in skills.items() if _id(season) == act), None)
+        next((info for season, info in skills.items() if lower_id(season) == act), None)
         if isinstance(skills, dict)
         else None
     )
     if not isinstance(info, dict):
         return None
-    games = _number(info.get("NumberOfGames"))
+    games = to_int(info.get("NumberOfGames"))
     if games <= 0:
         return None
-    wins = _number(info.get("NumberOfWinsWithPlacements") or info.get("NumberOfWins"))
+    wins = to_int(info.get("NumberOfWinsWithPlacements") or info.get("NumberOfWins"))
     return {"wins": min(wins, games), "games": games, "win_rate": round(100 * min(wins, games) / games)}
 
 
@@ -156,25 +146,25 @@ def average(rows: list[dict], look: dict) -> dict | None:
 
 def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
     identity = item.get("PlayerIdentity") if isinstance(item.get("PlayerIdentity"), dict) else {}
-    agent = look["agents"].get(_id(item.get("CharacterID"))) or {}
-    subject = _id(item.get("Subject"))
+    agent = look["agents"].get(lower_id(item.get("CharacterID"))) or {}
+    subject = lower_id(item.get("Subject"))
     hidden = bool(identity.get("Incognito"))
     name = look["names"].get(subject) if not hidden else None
     badge = item.get("SeasonalBadgeInfo") if isinstance(item.get("SeasonalBadgeInfo"), dict) else {}
     tier, rr = _rank(look["ranks"].get(subject), look["act"])
     if tier <= 2:
-        tier, rr = _number(item.get(rank_key) if rank_key in item else badge.get("Rank")), None
+        tier, rr = to_int(item.get(rank_key) if rank_key in item else badge.get("Rank")), None
     known = look["tiers"].get(tier) or {}
     rank_name = str(known.get("tierName") or "")
-    card = _id(identity.get("PlayerCardID"))
-    title = look["titles"].get(_id(identity.get("PlayerTitleID"))) or {}
+    card = lower_id(identity.get("PlayerCardID"))
+    title = look["titles"].get(lower_id(identity.get("PlayerTitleID"))) or {}
     shown = bool(name) or subject == me
     return {
         "me": subject == me,
         "agent": agent.get("displayName") or "",
         "agent_icon": icon(agent),
-        "agent_id": _id(item.get("CharacterID")),
-        "role": _id((agent.get("role") or {}).get("uuid")),
+        "agent_id": lower_id(item.get("CharacterID")),
+        "role": lower_id((agent.get("role") or {}).get("uuid")),
         "state": str(item.get("CharacterSelectionState") or ""),
         "name": name[0] if name else "",
         "tag": name[1] if name else "",
@@ -184,7 +174,7 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
         if card and not hidden and len(card) == 36
         else "",
         "title": "" if hidden else str(title.get("titleText") or ""),
-        "level": None if identity.get("HideAccountLevel") else _number(identity.get("AccountLevel")) or None,
+        "level": None if identity.get("HideAccountLevel") else to_int(identity.get("AccountLevel")) or None,
         "rank": {
             "name": rank_name.title() if rank_name.isupper() else rank_name,
             "icon": known.get("smallIcon"),
@@ -221,8 +211,8 @@ def _party(party: dict, look: dict, me: str, queue_name, now: float) -> dict:
     ]
     making = party.get("MatchmakingData") if isinstance(party.get("MatchmakingData"), dict) else {}
     state = str(party.get("State") or "")
-    current = _id(making.get("QueueID"))
-    eligible = [_id(queue) for queue in party.get("EligibleQueues") or [] if isinstance(queue, str) and queue]
+    current = lower_id(making.get("QueueID"))
+    eligible = [lower_id(queue) for queue in party.get("EligibleQueues") or [] if isinstance(queue, str) and queue]
     if current and current not in eligible:
         eligible.insert(0, current)
     return {
@@ -233,7 +223,7 @@ def _party(party: dict, look: dict, me: str, queue_name, now: float) -> dict:
         "queues": [{"id": queue, "name": queue_name(queue)} for queue in eligible],
         "waited": _seconds_since(party.get("QueueEntryTime"), now) if state == "MATCHMAKING" else None,
         "leader": any(row["me"] and row["owner"] for row in members) or len(members) <= 1,
-        "restricted": _number(party.get("RestrictedSeconds")),
+        "restricted": to_int(party.get("RestrictedSeconds")),
     }
 
 
@@ -286,19 +276,19 @@ def page(
         values["players"] = rows
         values["average"] = average(rows, look)
         values["queue"] = queue_name(str(match.get("QueueID") or ""))
-        values["left"] = _number(match.get("PhaseTimeRemainingNS")) // 1_000_000_000 or None
-        values["enemy_locked"] = _number(match.get("EnemyTeamLockCount"))
-        values["enemy_size"] = _number(match.get("EnemyTeamSize")) or 5
+        values["left"] = to_int(match.get("PhaseTimeRemainingNS")) // 1_000_000_000 or None
+        values["enemy_locked"] = to_int(match.get("EnemyTeamLockCount"))
+        values["enemy_size"] = to_int(match.get("EnemyTeamSize")) or 5
         picked = {row["role"] for row in rows if row["state"] in ("selected", "locked") and not row["me"]}
-        taken = {_id(item.get("CharacterID")) for item in team.get("Players") or [] if isinstance(item, dict)}
-        roles = {_id((agent.get("role") or {}).get("uuid")): agent.get("role") for agent in agents.values()}
+        taken = {lower_id(item.get("CharacterID")) for item in team.get("Players") or [] if isinstance(item, dict)}
+        roles = {lower_id((agent.get("role") or {}).get("uuid")): agent.get("role") for agent in agents.values()}
         for role in ROLES:
             if role in picked or role not in roles:
                 continue
             choices = [
                 {"name": agent.get("displayName") or "", "icon": icon(agent)}
                 for uuid, agent in sorted(agents.items(), key=lambda pair: str(pair[1].get("displayName") or ""))
-                if _id((agent.get("role") or {}).get("uuid")) == role
+                if lower_id((agent.get("role") or {}).get("uuid")) == role
                 and uuid not in taken
                 and (owned_agents is None or uuid in owned_agents)
             ]
@@ -312,7 +302,7 @@ def page(
             locked = {row["agent_id"] for row in rows if row["state"] == "locked" and not row["me"]}
             seen = {"matches": 0, "agents": []}
             if agent_stats and known_map.get("uuid"):
-                seen = agent_stats(_id(known_map["uuid"]), _id(match.get("QueueID")))
+                seen = agent_stats(lower_id(known_map["uuid"]), lower_id(match.get("QueueID")))
             here = {item["agent"]: item for item in seen["agents"] if item["picks"] >= FEW}
             values["picker"] = {
                 "current": mine["agent_id"] if mine["state"] in ("selected", "locked") else "",
@@ -406,7 +396,7 @@ def state(found: dict, content: Content, lang: str) -> dict:
         "phase": phase,
         "words": i18n.text(lang, "{state}（{map}）", state=words, map=place) if place else words,
         "map": place,
-        "match": _id(match.get("ID") or match.get("MatchID")) if phase in ("pregame", "ingame") else "",
+        "match": lower_id(match.get("ID") or match.get("MatchID")) if phase in ("pregame", "ingame") else "",
         "running": running,
         "every": EVERY[phase][1],
         "icons": icons(content, lang) if phase in ("queue", "found") else [],

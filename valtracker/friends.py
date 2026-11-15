@@ -16,6 +16,7 @@ import re
 from datetime import UTC, datetime
 
 from valtracker.localclient import _private
+from valtracker.util import to_int
 
 #: The parts of a presence's private part a field can be in (after the top).
 PARTS = ("matchPresenceData", "partyPresenceData", "playerPresenceData", "premierPresenceData")
@@ -54,13 +55,6 @@ def _field(data: dict, key: str):
     return None
 
 
-def _number(value) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return 0
-
-
 def _id(value) -> str:
     text = str(value or "").lower()
     return text if _UUID.match(text) else ""
@@ -93,16 +87,16 @@ def _playing(item: dict, look: dict, my_party: str) -> dict:
     queue = str(_field(data, "queueId") or "").lower()
     address = str(_field(data, "matchMap") or _field(data, "partyOwnerMatchMap") or "").rsplit("/", 1)[-1].lower()
     known_map = look["maps"].get(address) or {}
-    tier = _number(_field(data, "competitiveTier"))
+    tier = to_int(_field(data, "competitiveTier"))
     known = look["tiers"].get(tier) or {}
     rank_name = str(known.get("tierName") or "")
     card = _id(_field(data, "playerCardId"))
     party = _id(_field(data, "partyId"))
-    size, room = _number(_field(data, "partySize")), _number(_field(data, "maxPartySize"))
+    size, room = to_int(_field(data, "partySize")), to_int(_field(data, "maxPartySize"))
     playing = where in ("ingame", "pregame")
     ours, theirs = (
-        _number(_field(data, "partyOwnerMatchScoreAllyTeam")),
-        _number(_field(data, "partyOwnerMatchScoreEnemyTeam")),
+        to_int(_field(data, "partyOwnerMatchScoreAllyTeam")),
+        to_int(_field(data, "partyOwnerMatchScoreEnemyTeam")),
     )
     return {
         "where": where,
@@ -114,7 +108,7 @@ def _playing(item: dict, look: dict, my_party: str) -> dict:
         "rank": {"name": rank_name.title() if rank_name.isupper() else rank_name, "icon": known.get("smallIcon")}
         if tier > 2 and rank_name
         else None,
-        "level": _number(_field(data, "accountLevel")) or None,
+        "level": to_int(_field(data, "accountLevel")) or None,
         "card": f"https://media.valorant-api.com/playercards/{card}/smallart.png" if card else "",
         "party": size if size > 1 else 0,
         "room": room,
@@ -127,7 +121,7 @@ def _playing(item: dict, look: dict, my_party: str) -> dict:
 
 def _since(value, now: float, when) -> dict | None:
     """``last_online_ts`` (milliseconds) as the page says a moment (``when``), None when not known."""
-    moment = _number(value) / 1000
+    moment = to_int(value) / 1000
     if moment <= 0 or moment > now + 86400:
         return None
     return when(datetime.fromtimestamp(moment, UTC))
@@ -162,7 +156,7 @@ def rows(found: dict, look: dict, now: float, when) -> dict:
             online.append(row)
         else:
             row["last"] = _since(friend.get("last_online_ts"), now, when)
-            row["at"] = _number(friend.get("last_online_ts"))
+            row["at"] = to_int(friend.get("last_online_ts"))
             offline.append(row)
     # the owner's own party first, then by where they are, then parties together, then by name
     playing.sort(

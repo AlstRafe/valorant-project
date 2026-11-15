@@ -11,6 +11,8 @@ HenrikDev's older answers (v2) named these differently; both are read, and whate
 
 from __future__ import annotations
 
+from valtracker.util import to_int
+
 #: A death is traded when a team-mate kills the killer within this long.
 TRADE_MS = 5000
 #: How a round ended -> the short name the pages use.
@@ -28,13 +30,6 @@ HALF = {"competitive": 12, "unrated": 12, "premier": 12, "custom": 12, "swiftpla
 EMPTY = {"fk": 0, "fd": 0, "kast": 0, "rounds": 0, "clutches": 0, "clutch_best": 0, "plants": 0, "defuses": 0}
 #: A list of kills longer than this is not kept (Deathmatch: hundreds of kills, no rounds to show them in).
 MAX_KILLS = 400
-
-
-def _int(value, default: int = 0) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
 
 
 def _puuid(who) -> str:
@@ -67,8 +62,8 @@ def _kill(raw: dict, place: dict) -> list | None:
             killer_at = _spot(item.get("location"))
             break
     return [
-        _int(raw.get("round", raw.get("round_number"))),
-        _int(moment),
+        to_int(raw.get("round", raw.get("round_number"))),
+        to_int(moment),
         killer,
         victim,
         key or name,
@@ -112,13 +107,13 @@ def _round(raw: dict, place: dict, team: list) -> dict:
             continue
         who = place.get(_puuid(line.get("player") or line.get("player_puuid")))
         counted = line.get("stats") if isinstance(line.get("stats"), dict) else line
-        head = _int(counted.get("headshots"))
-        hits = head + _int(counted.get("bodyshots")) + _int(counted.get("legshots"))
+        head = to_int(counted.get("headshots"))
+        hits = head + to_int(counted.get("bodyshots")) + to_int(counted.get("legshots"))
         if who is not None and hits:
             shots.append([who, head, hits])
         economy = line.get("economy") if isinstance(line.get("economy"), dict) else {}
         if who is not None and team[who]:
-            loadout[team[who]] = loadout.get(team[who], 0) + _int(economy.get("loadout_value"))
+            loadout[team[who]] = loadout.get(team[who], 0) + to_int(economy.get("loadout_value"))
     ceremony = str(raw.get("ceremony") or raw.get("round_ceremony") or "").removeprefix("Ceremony").lower()
     return {
         "w": str(raw.get("winning_team") or ""),
@@ -271,8 +266,8 @@ def extras(match: dict, me: int) -> dict:
         return {}
     by_round: dict[int, list] = {}
     for kill in kills:
-        if isinstance(kill, list) and len(kill) >= 4 and 0 <= _int(kill[3], -1) < len(team):
-            by_round.setdefault(_int(kill[0]), []).append(kill)
+        if isinstance(kill, list) and len(kill) >= 4 and 0 <= to_int(kill[3], -1) < len(team):
+            by_round.setdefault(to_int(kill[0]), []).append(kill)
     flawless, clutch, far = 0, {}, {}
     for number, item in enumerate(played):
         happened = by_round.get(number, [])
@@ -295,7 +290,7 @@ def extras(match: dict, me: int) -> dict:
     for kill in kills:
         if not isinstance(kill, list) or len(kill) < 8 or kill[2] != me or not kill[4]:
             continue
-        if not 0 <= _int(kill[3], -1) < len(team) or team[kill[3]] == mine:
+        if not 0 <= to_int(kill[3], -1) < len(team) or team[kill[3]] == mine:
             continue
         victim_at, killer_at = kill[6], kill[7]
         if not (isinstance(victim_at, list) and isinstance(killer_at, list) and len(victim_at) == len(killer_at) == 2):

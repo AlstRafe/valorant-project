@@ -37,6 +37,7 @@ from valtracker.henrik import REGIONS, _slim_match
 from valtracker.riot import ITEM_TYPES, RiotError
 from valtracker.stats import JST
 from valtracker.tools import _when
+from valtracker.util import lower_id
 from valtracker.views import QUEUES, _row, _score, _t, riot_failure
 
 #: What can be worn from the collection page -> where the loadout keeps it.
@@ -98,10 +99,6 @@ EQUIP_FAILURES = {
     "full": "セットは {count} 個までです。不要なものを削除してください。",
     "noset": "そのセットは存在しません。",
 }
-
-
-def _id(value) -> str:
-    return str(value or "").lower()
 
 
 def _queue_name(key: str) -> str:
@@ -234,22 +231,22 @@ def _wear_skin(found: dict, skin_uuid: str, chroma_uuid: str):
     it cannot be worn."""
     content = current_app.config["VAL_CONTENT"]
     known = content.skins(g.lang).get(skin_uuid)
-    if not known or _id(known[1].get("uuid")) != skin_uuid:
+    if not known or lower_id(known[1].get("uuid")) != skin_uuid:
         return None, "unknown"
     weapon, skin = known
     owned = found.get("owned") or {}
-    levels = [_id(level.get("uuid")) for level in skin.get("levels") or []]
+    levels = [lower_id(level.get("uuid")) for level in skin.get("levels") or []]
     have = [level for level in levels if level in (owned.get("skins") or {})]
     if not have:
         return None, "unknown"
-    chromas = [_id(part.get("uuid")) for part in skin.get("chromas") or []]
+    chromas = [lower_id(part.get("uuid")) for part in skin.get("chromas") or []]
     wearable = chromas[:1] + [part for part in chromas[1:] if part in (owned.get("chromas") or {})]
     chroma = chroma_uuid if chroma_uuid in wearable else (wearable[0] if wearable else "")
-    weapon_uuid = _id(weapon.get("uuid"))
+    weapon_uuid = lower_id(weapon.get("uuid"))
 
     def change(loadout: dict) -> None:
         for gun in loadout.get("Guns") or []:
-            if isinstance(gun, dict) and _id(gun.get("ID")) == weapon_uuid:
+            if isinstance(gun, dict) and lower_id(gun.get("ID")) == weapon_uuid:
                 gun["SkinID"], gun["SkinLevelID"] = skin_uuid, have[-1]
                 if chroma:
                     gun["ChromaID"] = chroma
@@ -278,7 +275,7 @@ def _wear_expression(found: dict, kind: str, uuid: str, slot: str):
     already elsewhere on the wheel swaps places with what is there, as the game does."""
     content = current_app.config["VAL_CONTENT"]
     index = content.index(owned_items.LISTS[kind], g.lang)
-    owned = {_id((index.get(item) or {}).get("uuid")) for item in (found.get("owned") or {}).get(kind) or {}}
+    owned = {lower_id((index.get(item) or {}).get("uuid")) for item in (found.get("owned") or {}).get(kind) or {}}
     if uuid not in owned:  # PD names a spray's level (its uuid or its level's)
         return None, "unknown"
     loadout = found.get("loadout") if isinstance(found.get("loadout"), dict) else {}
@@ -293,7 +290,7 @@ def _wear_expression(found: dict, kind: str, uuid: str, slot: str):
             if 0 <= at < len(places) and isinstance(places[at], dict):
                 was = {"TypeID": places[at].get("TypeID"), "AssetID": places[at].get("AssetID")}
                 for other in places:
-                    if other is not places[at] and isinstance(other, dict) and _id(other.get("AssetID")) == uuid:
+                    if other is not places[at] and isinstance(other, dict) and lower_id(other.get("AssetID")) == uuid:
                         other.update(was)
                 places[at]["TypeID"], places[at]["AssetID"] = wanted, uuid
                 return
@@ -302,7 +299,7 @@ def _wear_expression(found: dict, kind: str, uuid: str, slot: str):
             target = next((item for item in places if str(item.get("EquipSlotID")) == slot), None)
             if target is not None:
                 for other in places:
-                    if other is not target and _id(other.get("SprayID")) == uuid:
+                    if other is not target and lower_id(other.get("SprayID")) == uuid:
                         other["SprayID"], other["SprayLevelID"] = target.get("SprayID"), target.get("SprayLevelID")
                 target["SprayID"], target["SprayLevelID"] = uuid, None
                 return
@@ -315,7 +312,7 @@ def _wear_buddy(found: dict, uuid: str, weapon_uuid: str):
     """The change that puts an owned buddy on a weapon (``uuid`` "": takes the weapon's off). Each copy of a buddy
     goes on one weapon: a free copy is used, or the one on another weapon moves, as the game does."""
     content = current_app.config["VAL_CONTENT"]
-    weapon = next((item for item in content.weapons(g.lang) if _id(item.get("uuid")) == weapon_uuid), None)
+    weapon = next((item for item in content.weapons(g.lang) if lower_id(item.get("uuid")) == weapon_uuid), None)
     if weapon is None:
         return None, "noweapon"
     if owned_items.melee(weapon):
@@ -323,29 +320,29 @@ def _wear_buddy(found: dict, uuid: str, weapon_uuid: str):
     copies: list[tuple[str, str]] = []
     if uuid:
         buddy = content.index("buddies", g.lang).get(uuid)
-        if not buddy or _id(buddy.get("uuid")) != uuid:
+        if not buddy or lower_id(buddy.get("uuid")) != uuid:
             return None, "unknown"
         instances = found.get("instances") or {}
         copies = [
-            (_id(level.get("uuid")), copy)
+            (lower_id(level.get("uuid")), copy)
             for level in buddy.get("levels") or []
-            for copy in instances.get(_id(level.get("uuid"))) or []
+            for copy in instances.get(lower_id(level.get("uuid"))) or []
         ]
         if not copies:
             return None, "unknown"
 
     def change(loadout: dict) -> None:
         guns = [gun for gun in loadout.get("Guns") or [] if isinstance(gun, dict)]
-        gun = next((gun for gun in guns if _id(gun.get("ID")) == weapon_uuid), None)
+        gun = next((gun for gun in guns if lower_id(gun.get("ID")) == weapon_uuid), None)
         if gun is None:
             raise RiotError("noweapon")
         if not uuid:
             for key in CHARM:
                 gun.pop(key, None)
             return
-        if _id(gun.get("CharmID")) == uuid:
+        if lower_id(gun.get("CharmID")) == uuid:
             return
-        used = {_id(other.get("CharmInstanceID")): other for other in guns if other.get("CharmInstanceID")}
+        used = {lower_id(other.get("CharmInstanceID")): other for other in guns if other.get("CharmInstanceID")}
         level, copy = next(((level, copy) for level, copy in copies if copy not in used), copies[0])
         if copy in used:  # every copy is on a weapon: this one comes off it
             for key in CHARM:
@@ -601,13 +598,13 @@ def register(app: Flask) -> None:
         security.owner_only()
         show = request.form.get("show", "skins")
         show = show if show in ("skins", "buddies", "cards", "titles", "sprays", "flex") else "skins"
-        uuid = _id(request.form.get("item"))
+        uuid = lower_id(request.form.get("item"))
         riot = current_app.config["VAL_RIOT"]
         # the open weapon's buddy (its own buttons: put the picked one on, or take it off)
-        buddy_on = _id(request.form.get("buddy") or request.form.get("unbuddy"))[:36] if show == "skins" else ""
+        buddy_on = lower_id(request.form.get("buddy") or request.form.get("unbuddy"))[:36] if show == "skins" else ""
         # back to where the button was: the skins of that weapon (the game's collection opens one at a time)
         known = current_app.config["VAL_CONTENT"].skins(g.lang).get(uuid) if show == "skins" else None
-        weapon = buddy_on or (_id(known[0].get("uuid")) if known else None)
+        weapon = buddy_on or (lower_id(known[0].get("uuid")) if known else None)
 
         def back(why: str, detail: str = ""):
             return redirect(
@@ -626,12 +623,12 @@ def register(app: Flask) -> None:
         except RiotError as error:
             return back(error.kind, error.detail)
         if buddy_on:
-            put = _id(request.form.get(f"buddy.{buddy_on}")) if request.form.get("buddy") else ""
+            put = lower_id(request.form.get(f"buddy.{buddy_on}")) if request.form.get("buddy") else ""
             change, why = _wear_buddy(found, put, buddy_on)
         elif show == "skins":
-            change, why = _wear_skin(found, uuid, _id(request.form.get(f"chroma.{uuid}")))
+            change, why = _wear_skin(found, uuid, lower_id(request.form.get(f"chroma.{uuid}")))
         elif show == "buddies":
-            change, why = _wear_buddy(found, uuid, _id(request.form.get(f"weapon.{uuid}")))
+            change, why = _wear_buddy(found, uuid, lower_id(request.form.get(f"weapon.{uuid}")))
         elif show in ("sprays", "flex"):
             change, why = _wear_expression(found, show, uuid, request.form.get(f"slot.{uuid}", ""))
         else:

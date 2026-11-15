@@ -16,6 +16,7 @@ from urllib.parse import urlencode
 from valtracker import net
 from valtracker.cache import TTLCache
 from valtracker.henrik import _https, _region, _slim_status
+from valtracker.util import to_int
 
 SITE = "https://playvalorant.com"
 NEWS = (
@@ -151,10 +152,6 @@ def _picture(value) -> str:
     return _https(value)
 
 
-def _number(value) -> int:
-    return int(value) if isinstance(value, int) or str(value or "").isdigit() else 0
-
-
 def _slim_schedule(page: str) -> list:
     """The matches in the schedule page: each ``{"__typename":"EventMatch",...}`` object in it (JSON, except that
     JavaScript's ``undefined`` can stand for a value), once each."""
@@ -186,7 +183,7 @@ def _slim_schedule(page: str) -> list:
                     "code": str(team.get("code") or "")[:8],
                     "icon": _picture(team.get("image")),
                     "won": result.get("outcome") == "win",
-                    "wins": _number(result.get("gameWins")),
+                    "wins": to_int(result.get("gameWins")),
                 }
             )
         games.append(
@@ -200,7 +197,7 @@ def _slim_schedule(page: str) -> list:
                     "icon": _picture(league.get("image")),
                 },
                 "tournament": stage,
-                "best_of": _number(strategy.get("count")) if strategy.get("type") == "bestOf" else 0,
+                "best_of": to_int(strategy.get("count")) if strategy.get("type") == "bestOf" else 0,
                 "vod": "",
                 "teams": each,
             }

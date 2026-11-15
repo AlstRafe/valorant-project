@@ -10,6 +10,7 @@ import math
 from valtracker.collection import _tier, _wallet
 from valtracker.content import Content
 from valtracker.riot import ITEM_TYPES
+from valtracker.util import lower_id, to_int
 
 VP = "85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741"
 KINGDOM = "85ca954a-41f2-ce94-9b45-8ca3dd39a00d"
@@ -35,27 +36,16 @@ LISTS = {
 }
 
 
-def _id(value) -> str:
-    return str(value or "").lower()
-
-
-def _number(value) -> int:
-    try:
-        return int(value or 0)
-    except (TypeError, ValueError):
-        return 0
-
-
 def item(kind: str, uuid: str, content: Content, lang: str, said: dict | None = None) -> dict:
     """One thing on sale: ``{"kind", "name", "image", "tier"}``, a skin's uuid too (``"skin"``: its page in
     the skin library) (HenrikDev's own words, ``said``, when valorant-api.com does not know it)."""
-    uuid, said = _id(uuid), said or {}
+    uuid, said = lower_id(uuid), said or {}
     if kind in ("skins", "chromas"):
         found = content.skins(lang).get(uuid)
         if found:
             _, skin = found
-            level = next((part for part in skin.get("levels") or [] if _id(part.get("uuid")) == uuid), {})
-            chroma = next((part for part in skin.get("chromas") or [] if _id(part.get("uuid")) == uuid), {})
+            level = next((part for part in skin.get("levels") or [] if lower_id(part.get("uuid")) == uuid), {})
+            chroma = next((part for part in skin.get("chromas") or [] if lower_id(part.get("uuid")) == uuid), {})
             picture = (
                 chroma.get("fullRender")
                 or skin.get("displayIcon")
@@ -68,7 +58,7 @@ def item(kind: str, uuid: str, content: Content, lang: str, said: dict | None = 
                 "name": skin.get("displayName") or "",
                 "image": picture,
                 "tier": tier,
-                "skin": _id(skin.get("uuid")),
+                "skin": lower_id(skin.get("uuid")),
             }
     if kind in LISTS:
         listed, picture = LISTS[kind]
@@ -86,7 +76,11 @@ def _reward(offer: dict) -> tuple[str, str, int]:
     if not rewards:
         return "", "", 0
     first = rewards[0]
-    return KINDS.get(_id(first.get("ItemTypeID")), ""), _id(first.get("ItemID")), _number(first.get("Quantity")) or 1
+    return (
+        KINDS.get(lower_id(first.get("ItemTypeID")), ""),
+        lower_id(first.get("ItemID")),
+        to_int(first.get("Quantity")) or 1,
+    )
 
 
 def _owned(kind: str, uuid: str, owned: dict) -> bool:
@@ -94,7 +88,7 @@ def _owned(kind: str, uuid: str, owned: dict) -> bool:
 
 
 def _until(at: float, seconds) -> float:
-    return at + _number(seconds) if _number(seconds) > 0 else 0
+    return at + to_int(seconds) if to_int(seconds) > 0 else 0
 
 
 def left(seconds: float) -> dict:
@@ -114,7 +108,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
     offers = [offer for offer in panel.get("SingleItemStoreOffers") or [] if isinstance(offer, dict)]
     for offer in offers:
         kind, uuid, _ = _reward(offer)
-        daily.append(item(kind or "skins", uuid, content, lang) | {"price": _number((offer.get("Cost") or {}).get(VP))})
+        daily.append(item(kind or "skins", uuid, content, lang) | {"price": to_int((offer.get("Cost") or {}).get(VP))})
     if not offers:  # an older answer: the skins' uuids without their prices
         daily = [item("skins", uuid, content, lang) | {"price": 0} for uuid in panel.get("SingleItemOffers") or []]
     night = None
@@ -128,9 +122,9 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
             night.append(
                 item(kind or "skins", uuid, content, lang)
                 | {
-                    "base": _number(((offer.get("Offer") or {}).get("Cost") or {}).get(VP)),
-                    "price": _number((offer.get("DiscountCosts") or {}).get(VP)),
-                    "discount": _number(offer.get("DiscountPercent")),
+                    "base": to_int(((offer.get("Offer") or {}).get("Cost") or {}).get(VP)),
+                    "price": to_int((offer.get("DiscountCosts") or {}).get(VP)),
+                    "discount": to_int(offer.get("DiscountPercent")),
                     "seen": bool(offer.get("IsSeen")),
                     "owned": _owned(kind or "skins", uuid, owned),
                 }
@@ -142,28 +136,28 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
     for bundle in bundles:
         if not isinstance(bundle, dict):
             continue
-        info = known.get(_id(bundle.get("DataAssetID"))) or {}
+        info = known.get(lower_id(bundle.get("DataAssetID"))) or {}
         things = []
         for entry in bundle.get("Items") or []:
             if not isinstance(entry, dict):
                 continue
             thing = entry.get("Item") if isinstance(entry.get("Item"), dict) else {}
-            kind = KINDS.get(_id(thing.get("ItemTypeID")), "")
+            kind = KINDS.get(lower_id(thing.get("ItemTypeID")), "")
             things.append(
-                item(kind, _id(thing.get("ItemID")), content, lang)
+                item(kind, lower_id(thing.get("ItemID")), content, lang)
                 | {
-                    "price": _number(entry.get("DiscountedPrice")),
-                    "base": _number(entry.get("BasePrice")),
-                    "amount": _number(thing.get("Amount")) or 1,
-                    "owned": _owned(kind, _id(thing.get("ItemID")), owned),
+                    "price": to_int(entry.get("DiscountedPrice")),
+                    "base": to_int(entry.get("BasePrice")),
+                    "amount": to_int(thing.get("Amount")) or 1,
+                    "owned": _owned(kind, lower_id(thing.get("ItemID")), owned),
                 }
             )
         listed.append(
             {
                 "name": info.get("displayName") or "",
                 "image": info.get("displayIcon2") or info.get("displayIcon"),
-                "price": _number((bundle.get("TotalDiscountedCost") or {}).get(VP)) or sum(t["price"] for t in things),
-                "base": _number((bundle.get("TotalBaseCost") or {}).get(VP)),
+                "price": to_int((bundle.get("TotalDiscountedCost") or {}).get(VP)) or sum(t["price"] for t in things),
+                "base": to_int((bundle.get("TotalBaseCost") or {}).get(VP)),
                 "until": _until(at, bundle.get("DurationRemainingInSeconds")),
                 "items": things,
             }
@@ -178,7 +172,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
             accessories.append(
                 item(kind, uuid, content, lang)
                 | {
-                    "price": _number(((offer.get("Offer") or {}).get("Cost") or {}).get(KINGDOM)),
+                    "price": to_int(((offer.get("Offer") or {}).get("Cost") or {}).get(KINGDOM)),
                     "owned": _owned(kind, uuid, owned),
                 }
             )
@@ -208,7 +202,7 @@ def featured(bundles: list, content: Content, lang: str) -> list[dict]:
     known = content.index("bundles", lang)
     listed = []
     for bundle in bundles or []:
-        info = known.get(_id(bundle.get("uuid"))) or {}
+        info = known.get(lower_id(bundle.get("uuid"))) or {}
         things = [
             item(FEATURED_KINDS.get(entry.get("type"), ""), entry.get("uuid"), content, lang, entry)
             | {"price": entry.get("price") or 0, "base": entry.get("base") or 0, "amount": entry.get("amount") or 1}

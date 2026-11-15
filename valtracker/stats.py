@@ -4,21 +4,16 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta, timezone
 
+from valtracker.util import to_int
+
 JST = timezone(timedelta(hours=9))
-
-
-def _int(value) -> int:
-    try:
-        return int(value or 0)
-    except (TypeError, ValueError):
-        return 0
 
 
 def rounds_played(match: dict) -> int:
     teams = [team for team in match.get("teams") or [] if isinstance(team, dict)]
     if teams:
         rounds = teams[0].get("rounds") or {}
-        return _int(rounds.get("won")) + _int(rounds.get("lost"))
+        return to_int(rounds.get("won")) + to_int(rounds.get("lost"))
     return len(match.get("rounds") or [])
 
 
@@ -50,36 +45,36 @@ def line(player: dict, rounds: int, adv: dict | None = None) -> dict:
     less taken, per round), the economy rating (damage per 1000 credits spent); with ``adv`` (advanced) also KAST,
     first kills and deaths, rounds of 3 kills or more, and clutches."""
     stats = player.get("stats") or {}
-    kills, deaths, assists = _int(stats.get("kills")), _int(stats.get("deaths")), _int(stats.get("assists"))
-    shots = _int(stats.get("headshots")) + _int(stats.get("bodyshots")) + _int(stats.get("legshots"))
-    damage = _int((stats.get("damage") or {}).get("dealt"))
-    taken = _int((stats.get("damage") or {}).get("received"))
-    spent = _int(((player.get("economy") or {}).get("spent") or {}).get("overall"))
+    kills, deaths, assists = to_int(stats.get("kills")), to_int(stats.get("deaths")), to_int(stats.get("assists"))
+    shots = to_int(stats.get("headshots")) + to_int(stats.get("bodyshots")) + to_int(stats.get("legshots"))
+    damage = to_int((stats.get("damage") or {}).get("dealt"))
+    taken = to_int((stats.get("damage") or {}).get("received"))
+    spent = to_int(((player.get("economy") or {}).get("spent") or {}).get("overall"))
     adv = adv or {}
-    played = _int(adv.get("rounds"))
+    played = to_int(adv.get("rounds"))
     return {
         "kills": kills,
         "deaths": deaths,
         "assists": assists,
         "diff": kills - deaths,
         "kd": round(kills / deaths, 2) if deaths else float(kills),
-        "acs": round(_int(stats.get("score")) / rounds) if rounds else 0,
+        "acs": round(to_int(stats.get("score")) / rounds) if rounds else 0,
         "adr": round(damage / rounds) if rounds else 0,
-        "hs": round(100 * _int(stats.get("headshots")) / shots) if shots else 0,
+        "hs": round(100 * to_int(stats.get("headshots")) / shots) if shots else 0,
         "shots": shots,
-        "headshots": _int(stats.get("headshots")),
-        "bodyshots": _int(stats.get("bodyshots")),
-        "legshots": _int(stats.get("legshots")),
+        "headshots": to_int(stats.get("headshots")),
+        "bodyshots": to_int(stats.get("bodyshots")),
+        "legshots": to_int(stats.get("legshots")),
         "damage": damage,
         "taken": taken,
         "dd": round((damage - taken) / rounds) if rounds else 0,
         "econ": round(damage * 1000 / spent) if spent and rounds else None,
-        "score": _int(stats.get("score")),
-        "kast": round(100 * _int(adv.get("kast")) / played) if played else None,
-        "fk": _int(adv.get("fk")) if adv else None,
-        "fd": _int(adv.get("fd")) if adv else None,
+        "score": to_int(stats.get("score")),
+        "kast": round(100 * to_int(adv.get("kast")) / played) if played else None,
+        "fk": to_int(adv.get("fk")) if adv else None,
+        "fd": to_int(adv.get("fd")) if adv else None,
         "mk": sum((adv.get("mk") or [0, 0, 0, 0])[1:]) if adv else None,
-        "clutches": _int(adv.get("clutches")) if adv else None,
+        "clutches": to_int(adv.get("clutches")) if adv else None,
     }
 
 
@@ -124,7 +119,7 @@ def team_result(match: dict, team_id: str) -> dict:
     for team in match.get("teams") or []:
         if isinstance(team, dict) and str(team.get("team_id")) == str(team_id):
             rounds = team.get("rounds") or {}
-            us, them = _int(rounds.get("won")), _int(rounds.get("lost"))
+            us, them = to_int(rounds.get("won")), to_int(rounds.get("lost"))
             won = team.get("won")
             if not us and not them:
                 return {"won": won if isinstance(won, bool) else None, "us": 0, "them": 0, "rounds": False}
@@ -141,7 +136,7 @@ def placing(match: dict, player: dict) -> dict:
     measure = "score" if teams else "kills"
 
     def value(other: dict) -> int:
-        return _int((other.get("stats") or {}).get(measure))
+        return to_int((other.get("stats") or {}).get(measure))
 
     mine = value(player)
     place = 1 + sum(1 for other in players if value(other) > mine)

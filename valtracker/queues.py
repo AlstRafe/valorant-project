@@ -9,17 +9,12 @@ CompetitiveTiersCeilings`` ({tier: the highest tier a party with that tier in it
 
 from __future__ import annotations
 
+from valtracker.util import to_int
+
 #: The modes the page lists, in the game's order (QueueID).
 ORDER = ("competitive", "unrated", "swiftplay", "spikerush", "deathmatch", "ggteam", "hurm", "premier")
 #: The lowest rank tier (Iron 1); 0-2 are "unranked" in the tables.
 IRON = 3
-
-
-def _int(value, default: int = 0) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
 
 
 def _maps(queue: dict, index: dict) -> list[dict]:
@@ -29,7 +24,7 @@ def _maps(queue: dict, index: dict) -> list[dict]:
         text = ":".join(entry) if isinstance(entry, list) else str(entry)
         where, _, weight = text.rpartition(":")
         where = where or text
-        if weight and _int(weight, 1) <= 0:
+        if weight and to_int(weight, 1) <= 0:
             continue
         known = index.get(where.rsplit("/", 1)[-1].lower()) or index.get(where.lower()) or {}
         name = known.get("displayName") or where.rsplit("/", 1)[-1]
@@ -55,8 +50,8 @@ def settings(config: dict, map_index: dict) -> dict:
             {
                 "id": key,
                 "maps": maps,
-                "party": (_int(queue.get("MinPartySize"), 1), _int(queue.get("MaxPartySize"), 5)),
-                "invalid": sorted(_int(size) for size in queue.get("InvalidPartySizes") or []),
+                "party": (to_int(queue.get("MinPartySize"), 1), to_int(queue.get("MaxPartySize"), 5)),
+                "invalid": sorted(to_int(size) for size in queue.get("InvalidPartySizes") or []),
             }
         )
     competitive = queues.get("competitive")
@@ -65,15 +60,16 @@ def settings(config: dict, map_index: dict) -> dict:
 
 def rules(queue: dict) -> dict:
     ceilings = {
-        _int(tier): _int(top) for tier, top in (queue.get("PartySkillDisparityCompetitiveTiersCeilings") or {}).items()
+        to_int(tier): to_int(top)
+        for tier, top in (queue.get("PartySkillDisparityCompetitiveTiersCeilings") or {}).items()
     }
     return {
         "ceilings": {tier: top for tier, top in sorted(ceilings.items()) if tier >= IRON},
-        "high_tier": _int(queue.get("HighSkillTier")),
-        "high_size": _int(queue.get("MaxPartySizeHighSkill")),
+        "high_tier": to_int(queue.get("HighSkillTier")),
+        "high_size": to_int(queue.get("MaxPartySizeHighSkill")),
         "bypass": bool(queue.get("AllowFullPartyBypassSkillRestrictions")),
-        "max": _int(queue.get("MaxPartySize"), 5),
-        "invalid": sorted(_int(size) for size in queue.get("InvalidPartySizes") or []),
+        "max": to_int(queue.get("MaxPartySize"), 5),
+        "invalid": sorted(to_int(size) for size in queue.get("InvalidPartySizes") or []),
     }
 
 
