@@ -173,7 +173,6 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
     currencies = content.index("currencies", lang)
     return {
         "name": found.get("name") or "",
-        "tag": found.get("tag") or "",
         "wallet": wallet_info(found.get("wallet"), content, lang),
         "daily": daily,
         "daily_until": _until(at, panel.get("SingleItemOffersRemainingDurationInSeconds")),

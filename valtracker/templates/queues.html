@@ -28,7 +28,7 @@
 <div class="table-wrap"><table class="board plain ceilings">
 <thead><tr><th scope="col">{{ t('最も低いランク') }}</th><th scope="col">{{ t('組める上限') }}</th></tr></thead>
 <tbody>
-{% for row in competitive.table %}<tr><td>{% if row.rank.image %}<img src="{{ media(row.rank.image) }}" alt="" width="20" height="20">{% endif %}{{ row.rank.name }}</td><td>{% if row.top.image %}<img src="{{ media(row.top.image) }}" alt="" width="20" height="20">{% endif %}{{ row.top.name }}</td></tr>
+{% for row in competitive.table %}<tr><td>{% if row.rank.icon %}<img src="{{ media(row.rank.icon) }}" alt="" width="20" height="20">{% endif %}{{ row.rank.name }}</td><td>{% if row.top.icon %}<img src="{{ media(row.top.icon) }}" alt="" width="20" height="20">{% endif %}{{ row.top.name }}</td></tr>
 {% endfor %}</tbody>
 </table></div>
 {% if competitive.high_rank and competitive.high_size %}<p class="note">{{ t('{rank} 以上を含むパーティーは {size} 人まで（5 人は可）。', rank=competitive.high_rank.name, size=competitive.high_size) if competitive.bypass else t('{rank} 以上を含むパーティーは {size} 人までです。', rank=competitive.high_rank.name, size=competitive.high_size) }}</p>{% endif %}

@@ -129,8 +129,8 @@ def _list_page(content: Content, lang: str) -> dict:
     ratings = current_app.config["VAL_RATINGS"]
     by_uuid = {entry["uuid"]: entry for entry in every}
     top = [
-        by_uuid[skin] | {"url": url_for("skin", uuid=skin), "average": average, "count": count}
-        for skin, average, count in ratings.top(8)
+        by_uuid[skin] | {"url": url_for("skin", uuid=skin), "average": average}
+        for skin, average, _ in ratings.top(8)
         if skin in by_uuid
     ]
     return {

@@ -96,7 +96,7 @@ def register(app: Flask) -> None:
         mode = request.args.get("mode", "competitive")
         mode = mode if mode in STORED_MODES else "competitive"
         modes = [{"key": key, "name": tr(QUEUES[MODES[key]]), "current": key == mode} for key in STORED_MODES]
-        values = {"name": name, "tag": tag, "mode": mode, "modes": modes, "acts": [], "total": None, "problem": ""}
+        values = {"name": name, "tag": tag, "modes": modes, "acts": [], "total": None, "problem": ""}
         values["places"] = CHANGES
         henrik = current_app.config["VAL_HENRIK"]
         try:

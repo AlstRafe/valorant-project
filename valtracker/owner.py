@@ -35,7 +35,7 @@ from valtracker.riot import ITEM_TYPES, RiotError
 from valtracker.stats import JST
 from valtracker.tools import moment_info
 from valtracker.util import lower_id
-from valtracker.views import QUEUES, match_row, match_score, riot_failure, tr
+from valtracker.views import match_row, match_score, queue_name, riot_failure, tr
 
 #: /live/next が Riot Client の次のイベントを待つ秒数。過ぎたら「変化無し」と答える。
 PUSH_WAIT = 25
@@ -95,11 +95,6 @@ EQUIP_FAILURES = {
     "full": "セットは {count} 個までです。不要なものを削除してください。",
     "noset": "そのセットは存在しません。",
 }
-
-
-def _queue_name(key: str) -> str:
-    key = key.lower()
-    return tr(QUEUES[key]) if key in QUEUES else key
 
 
 def _agents_on_the_map(map_id: str, queue: str) -> dict:
@@ -421,7 +416,7 @@ def register(app: Flask) -> None:
                 owned = None
         me = riot.me(game=True)
         values = live_page.page(
-            found, current_app.config["VAL_CONTENT"], g.lang, me, owned, _queue_name, _agents_on_the_map
+            found, current_app.config["VAL_CONTENT"], g.lang, me, owned, queue_name, _agents_on_the_map
         )
         # PC アプリ: ほかのページがどのアカウントを表示していても、ゲームは Riot Client のアカウントのもの
         playing, shown = riot.status(game=True), riot.status()
@@ -505,7 +500,7 @@ def register(app: Flask) -> None:
         if found is None:
             return render_template("friends.html", closed=True)
         content = current_app.config["VAL_CONTENT"]
-        look = {"tiers": content.tiers(g.lang), "maps": content.map_index(g.lang), "queue_name": _queue_name}
+        look = {"tiers": content.tiers(g.lang), "maps": content.map_index(g.lang), "queue_name": queue_name}
 
         def when(moment: datetime) -> dict:
             moment = moment.astimezone(JST)

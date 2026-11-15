@@ -43,7 +43,8 @@ def _kill(raw: dict, place: dict) -> list | None:
     victim = place.get(_puuid(raw.get("victim") or raw.get("victim_puuid")))
     if victim is None:
         return None
-    killer = place.get(_puuid(raw.get("killer") or raw.get("killer_puuid")), -1)
+    killer_id = _puuid(raw.get("killer") or raw.get("killer_puuid"))
+    killer = place.get(killer_id, -1)
     weapon = raw.get("weapon") if isinstance(raw.get("weapon"), dict) else {}
     key = str(weapon.get("id") or raw.get("damage_weapon_id") or "").lower()
     name = str(weapon.get("name") or raw.get("damage_weapon_name") or "")
@@ -55,7 +56,6 @@ def _kill(raw: dict, place: dict) -> list | None:
     moment = raw.get("time_in_round_in_ms", raw.get("kill_time_in_round"))
     victim_at = _spot(raw.get("location") if "location" in raw else raw.get("victim_death_location"))
     killer_at = None
-    killer_id = _puuid(raw.get("killer") or raw.get("killer_puuid"))
     for item in raw.get("player_locations") or raw.get("player_locations_on_kill") or []:
         if isinstance(item, dict) and killer_id and _puuid(item.get("player") or item.get("player_puuid")) == killer_id:
             killer_at = _spot(item.get("location"))

@@ -237,9 +237,9 @@
   function load(box, address, page) {
     function failed() {
       if (page) return location.assign(page); // そのモードの普通のページ
-      if (!box.querySelector(".wait")) return location.reload(); // すでに出しているページでの「データを更新」
       var wait = box.querySelector(".wait");
-      if (wait) wait.textContent = box.getAttribute("data-failed");
+      if (!wait) return location.reload(); // すでに出しているページでの「データを更新」
+      wait.textContent = box.getAttribute("data-failed");
       var retry = box.querySelector(".retry");
       if (retry) retry.hidden = false;
     }
@@ -405,42 +405,46 @@
   }
 
   // 訪問者のタイムゾーンでの日ごとのプレイヤーの試合。日ごとに勝ち・負け・RR。
+  // 日の見出し用: moment -> {key: 日ごとのキー, label: 訪問者自身の時計と言語での日付}。
+  // 別の年の日（通算は何年も前までさかのぼる）は年つき。Intl が使えなければ null。
+  function dayNamer() {
+    var lang = document.documentElement.lang;
+    var short = { month: "short", day: "numeric", weekday: "short" };
+    var format;
+    var dated;
+    try {
+      format = new Intl.DateTimeFormat(lang, short);
+      dated = new Intl.DateTimeFormat(lang, Object.assign({ year: "numeric" }, short));
+    } catch (e) {
+      return null;
+    }
+    var year = new Date().getFullYear();
+    return function (moment) {
+      return {
+        key: moment.getFullYear() + "-" + moment.getMonth() + "-" + moment.getDate(),
+        label: (moment.getFullYear() === year ? format : dated).format(moment),
+      };
+    };
+  }
+
   function days() {
     var list = document.querySelector(".match-list[data-day]");
-    if (!list || !window.Intl) return;
+    var name = list && dayNamer();
+    if (!name) return;
     // マップの絞り込みのあと頼み直した: 出している試合の見出しを作り直す
     list.querySelectorAll(".day").forEach(function (head) {
       head.remove();
     });
-    var format;
-    var dated; // 別の年の日（通算は何年も前までさかのぼる）: 年つきで
-    try {
-      format = new Intl.DateTimeFormat(document.documentElement.lang, {
-        month: "short",
-        day: "numeric",
-        weekday: "short",
-      });
-      dated = new Intl.DateTimeFormat(document.documentElement.lang, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        weekday: "short",
-      });
-    } catch (e) {
-      return;
-    }
-    var year = new Date().getFullYear();
     var groups = [];
     list.querySelectorAll("li.match").forEach(function (item) {
       if (item.hidden) return;
       var time = item.querySelector("time[datetime]");
       var moment = time ? new Date(time.getAttribute("datetime")) : null;
       if (!moment || isNaN(moment)) return;
-      var key = moment.getFullYear() + "-" + moment.getMonth() + "-" + moment.getDate();
+      var day = name(moment);
       var last = groups[groups.length - 1];
-      if (!last || last.key !== key) {
-        var label = (moment.getFullYear() === year ? format : dated).format(moment);
-        last = { key: key, label: label, items: [] };
+      if (!last || last.key !== day.key) {
+        last = { key: day.key, label: day.label, items: [] };
         groups.push(last);
       }
       last.items.push(item);
@@ -596,37 +600,20 @@
 
   // 各日の最初の項目の前の見出し: 訪問者自身の時計と言語での日付。
   function dayHeads(list, items) {
-    if (!window.Intl || list.querySelector(".day")) return;
-    var format;
-    var dated; // 別の年の日（通算は何年も前までさかのぼる）: 年つきで
-    try {
-      format = new Intl.DateTimeFormat(document.documentElement.lang, {
-        month: "short",
-        day: "numeric",
-        weekday: "short",
-      });
-      dated = new Intl.DateTimeFormat(document.documentElement.lang, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        weekday: "short",
-      });
-    } catch (e) {
-      return;
-    }
-    var year = new Date().getFullYear();
+    var name = !list.querySelector(".day") && dayNamer();
+    if (!name) return;
     var last = "";
     list.querySelectorAll(items).forEach(function (item) {
       var time = item.querySelector("time[datetime]");
       var moment = time ? new Date(time.getAttribute("datetime")) : null;
       if (!moment || isNaN(moment)) return;
-      var key = moment.getFullYear() + "-" + moment.getMonth() + "-" + moment.getDate();
-      if (key === last) return;
-      last = key;
+      var day = name(moment);
+      if (day.key === last) return;
+      last = day.key;
       var head = document.createElement("li");
       head.className = "day";
       var title = document.createElement("strong");
-      title.textContent = (moment.getFullYear() === year ? format : dated).format(moment);
+      title.textContent = day.label;
       head.appendChild(title);
       list.insertBefore(head, item);
     });
@@ -833,7 +820,7 @@
     function button(words, kind) {
       var made = document.createElement("button");
       made.type = "button";
-      made.className = "quiet " + kind;
+      made.className = kind ? "quiet " + kind : "quiet";
       made.textContent = words;
       return made;
     }
@@ -859,7 +846,7 @@
           actions.appendChild(document.createTextNode(" "));
           actions.appendChild(copy);
         }
-        var remove = button(box.getAttribute("data-remove"), "remove");
+        var remove = button(box.getAttribute("data-remove"));
         remove.addEventListener("click", function () {
           write(
             CROSSHAIRS,
@@ -917,12 +904,11 @@
     var key = shelf.getAttribute("data-night");
     var all = shelf.querySelector(".flip-all");
     var cards = shelf.querySelectorAll(".item[data-flip]");
-    function turn(card, keep) {
+    function turn(card) {
       card.classList.remove("face-down");
       card.classList.add("turned");
       var button = card.querySelector(".flip");
       if (button) button.remove();
-      if (!keep) return;
       var list = turned(key);
       list.push(card.getAttribute("data-flip"));
       try {
@@ -941,7 +927,7 @@
       button.className = "flip";
       button.textContent = (all && all.getAttribute("data-flip")) || "めくる";
       button.addEventListener("click", function () {
-        turn(card, true);
+        turn(card);
       });
       card.appendChild(button);
     });
@@ -949,7 +935,7 @@
       all.hidden = false;
       all.querySelector("button").addEventListener("click", function () {
         shelf.querySelectorAll(".face-down").forEach(function (card) {
-          turn(card, true);
+          turn(card);
         });
       });
     }

@@ -5,7 +5,7 @@
 <section class="hero">
 <h1>{{ t('ランキング') }}</h1>
 <p class="lead">{{ t('今アクトのコンペティティブ上位（イモータル以上）。') }}</p>
-{% if act %}<p class="note">{{ act.text }}</p>{% endif %}
+{% if act %}<p class="note">{{ act }}</p>{% endif %}
 <p class="note"><a href="{{ url_for('ranks', region=region) }}">{{ t('すべてのランクの分布') }}</a></p>
 <form class="search" action="{{ url_for('leaderboard') }}" method="get" role="search">
 <input type="hidden" name="region" value="{{ region }}">

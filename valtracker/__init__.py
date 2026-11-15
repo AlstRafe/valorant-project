@@ -53,7 +53,7 @@ def create_app(
     保存した一覧と絵）。 ``fetch``、``send``: 外部 API と持ち主の Riot アカウントへの聞き方（テストは自前のもの）。
     ``local``: この PC の Riot Client（localclient.LocalClient）。デスクトップアプリだけ。"""
     instance = Path(instance) if instance is not None else paths.INSTANCE
-    app = Flask(__name__, instance_path=str(instance), instance_relative_config=False)
+    app = Flask(__name__, instance_path=str(instance))
     app.config["VAL_SETTINGS"] = settings = Settings(instance)
     app.config["VAL_HENRIK"] = Henrik(settings.henrik_key, fetch)
     app.config["VAL_RIOT_WEB"] = RiotWeb(fetch)

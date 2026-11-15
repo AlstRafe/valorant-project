@@ -25,28 +25,15 @@ from valtracker import desktop
 
 PORT = 5123
 BASE = f"http://127.0.0.1:{PORT}"
-#: アプリが初めて開くときのウィンドウと、2 つ目の画面でゲームの横に置く細いもの。
-WIDE, NARROW = desktop.SIZE, (430, 860)
+#: アプリが初めて開くときのウィンドウ。
+WIDE = desktop.SIZE
 #: ページが読み込まれ絵もそろったあと: ページ自身のスクリプト（グラフ、時刻、ゲームの状態）が動いた後。
 SETTLE = 1.5
-#: HenrikDev の答えが記録を持つ作りもののプレイヤー（serve.py --real）と、その人の最後の試合。
-PLAYER, MATCH = "/p/Tester/JP1", "/m/ap/aaaaaaaa-0000-4000-8000-000000000001?me=Tester%23JP1"
+#: HenrikDev の答えが記録を持つ作りもののプレイヤー（serve.py --real）。
+PLAYER = "/p/Tester/JP1"
 #: 撮る前にページですること。エージェント選択で 3 番目のエージェントを押す（ウィンドウのボタン: 持ち主と同じく
 #: /live/act）と、ピックを確定するボタンが出る。
 PICK = "[...document.querySelectorAll('.pick-grid .pick:not([disabled])')].slice(0, 3).pop().click()"
-#: 最初のラウンドのキルを開き、エージェント一覧から最初のエージェントのページへ。クロスヘアのページが描く、
-#: ゲームがコピーする形のクロスヘアコード（小さいシアンの十字）。
-CROSSHAIR = "0%3BP%3Bc%3B5%3Bh%3B0%3B0l%3B4%3B0o%3B2%3B0a%3B1%3B0f%3B0%3B1b%3B0"
-ROUND = "document.querySelector('details.round-feed').open = true"
-AGENT = "document.querySelector('.agent-grid a').click()"
-
-
-def at(section: str) -> str:
-    """見出し ``section``（その id）がウィンドウのヘッダーの下に来るようにスクロールする。"""
-    return (
-        f"(function(){{var e=document.getElementById({json.dumps(section)});"
-        "scrollTo(0,e.getBoundingClientRect().top+scrollY-76)})()"
-    )
 
 
 #: 名前、アドレス、ウィンドウの大きさ、ページの見た目、撮る前にページですること（JavaScript。

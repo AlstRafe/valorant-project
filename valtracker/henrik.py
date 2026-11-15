@@ -452,25 +452,19 @@ BADGE_WINS = 9
 def _slim_act(season: dict) -> dict:
     """v3 mmr の ``seasonal`` のアクト 1 つ: 戦績、最終ランク、良い勝利のランク（``act_wins``）。"""
 
-    def number(value) -> int:
-        try:
-            return int(value or 0)
-        except (TypeError, ValueError):
-            return 0
-
     def tier(value) -> int:
-        return number(value.get("id")) if isinstance(value, dict) else number(value)
+        return to_int(value.get("id") if isinstance(value, dict) else value)
 
     short = str((season.get("season") or {}).get("short") or "") if isinstance(season.get("season"), dict) else ""
     board = season.get("leaderboard_placement")
     wins = sorted((tier(win) for win in season.get("act_wins") or []), reverse=True)
     return {
         "short": short.lower(),
-        "games": number(season.get("games")),
-        "wins": number(season.get("wins")),
+        "games": to_int(season.get("games")),
+        "wins": to_int(season.get("wins")),
         "end_tier": tier(season.get("end_tier")),
         "old": _old_ranks(season),
-        "board": number(board.get("rank")) if isinstance(board, dict) else 0,
+        "board": to_int(board.get("rank")) if isinstance(board, dict) else 0,
         "best": [win for win in wins if win > 2][:BADGE_WINS],
     }
 
@@ -696,7 +690,7 @@ def slim_status(data) -> dict:
     found = {}
     for kind in ("maintenances", "incidents"):
         notices = []
-        for item in (data or {}).get(kind) or [] if isinstance(data, dict) else []:
+        for item in data.get(kind) or [] if isinstance(data, dict) else []:
             if not isinstance(item, dict):
                 continue
             updates = [
@@ -706,7 +700,7 @@ def slim_status(data) -> dict:
             ]
             notices.append(
                 {
-                    "kind": kind[:-1] if kind == "incidents" else "maintenance",
+                    "kind": "incident" if kind == "incidents" else "maintenance",
                     "severity": str(item.get("incident_severity") or ""),
                     "status": str(item.get("maintenance_status") or ""),
                     "titles": words(item.get("titles")),

@@ -20,11 +20,11 @@ from valtracker.riot import RiotError
 from valtracker.riotweb import RiotWebError
 from valtracker.stats import JST
 from valtracker.views import (
-    QUEUES,
     act_left,
+    band_name,
     cluster,
     failure_info,
-    rank_family,
+    queue_name,
     rank_info,
     riot_failure,
     share_text,
@@ -179,7 +179,7 @@ def _board(region: str, page: int) -> tuple[dict, int]:
         "players": players,
         "thresholds": thresholds,
         "source": source,
-        "updated": moment_info(found["updated"]),
+        "board_updated": moment_info(found["updated"]),
         "earlier": url_for("leaderboard", region=region, page=page - 1 if page > 2 else None)
         if page > 1 and not typed
         else "",
@@ -247,7 +247,6 @@ def _crosshair_page(code: str) -> dict:
         "primary": crosshairs.shapes(shown["primary"]),
         "ads": _shapes(shown["ads"]),
         "sniper": crosshairs.sniper_shapes(shown["sniper"]),
-        "reach": crosshairs.REACH,
         "described": described,
         "presets": [
             {
@@ -346,19 +345,16 @@ def _servers_page(region: str) -> dict:
             }
         )
     order = {name: index for index, (name, _, _) in enumerate(BANDS, 1)}
-    labels = {name: (low, high) for name, low, high in BANDS}
     waits = []
     for item in found["waits"]:
-        band = ""
-        if item["band"]:
-            low, high = (rank_family(rank_info({"id": tier})["name"]) for tier in labels[item["band"]])
-            band = low if low == high else f"{low} – {high}"
-        queue = tr(QUEUES[item["queue"]]) if item["queue"] in QUEUES else item["queue"]
-        waits.append(item | {"queue_name": queue, "band_name": band, "text": _clock_text(item["seconds"])})
+        band = band_name(item["band"]) if item["band"] else ""
+        waits.append(
+            item | {"queue_name": queue_name(item["queue"]), "band_name": band, "text": _clock_text(item["seconds"])}
+        )
     lengths = [
         item
         | {
-            "queue_name": tr(QUEUES[item["queue"]]) if item["queue"] in QUEUES else item["queue"],
+            "queue_name": queue_name(item["queue"]),
             "text": _clock_text(item["seconds"]),
         }
         for item in found.get("lengths", [])
@@ -386,7 +382,7 @@ def _sensitivity(args) -> dict:
         sens = float(args.get("sens", "") or 0)
         dpi = int(float(args.get("dpi", "") or 0))
         new_dpi = int(float(args.get("new_dpi", "") or 0))
-    except ValueError:
+    except (ValueError, OverflowError):
         sens, dpi, new_dpi = 0, 0, 0
         values["problem"] = tr("数値を入力してください。")
     values |= {"sens": args.get("sens", ""), "dpi": args.get("dpi", ""), "new_dpi": args.get("new_dpi", "")}
@@ -398,13 +394,12 @@ def _sensitivity(args) -> dict:
     turn = sens * GAMES[game][1]  # 1 カウントで回る角度
     rows = []
     for key, (name, yaw) in GAMES.items():
-        rows.append({"key": key, "name": name, "sens": round(turn / yaw, 4), "edpi": round(dpi * turn / yaw, 1)})
+        rows.append({"key": key, "name": name, "sens": round(turn / yaw, 4)})
     valorant = turn / GAMES["valorant"][1]
     values["results"] = {
         "rows": rows,
         "cm": round(360 * 2.54 / (dpi * turn), 1),
         "inch": round(360 / (dpi * turn), 1),
-        "valorant": round(valorant, 4),
         "edpi": round(valorant * dpi, 1),
         "new": round(valorant * dpi / new_dpi, 4) if new_dpi else None,
     }
@@ -424,7 +419,7 @@ def _queues_page() -> tuple[dict, int]:
         return values, 200 if error.kind == "nologin" else 503
     data = queues.settings(found.get("config") or {}, current_app.config["VAL_CONTENT"].map_index(g.lang))
     for queue in data["queues"]:
-        queue["name"] = tr(QUEUES[queue["id"]]) if queue["id"] in QUEUES else queue["id"]
+        queue["name"] = queue_name(queue["id"])
     values["queues"] = data["queues"]
     values["read_at"] = moment_info(datetime.fromtimestamp(float(found.get("at") or time.time()), JST).isoformat())
     competitive = data["competitive"]
@@ -448,7 +443,7 @@ def _queues_page() -> tuple[dict, int]:
                 continue
         picked = [tier for tier in picked if tier == 0 or tier in tiers or tier >= queues.IRON]
         values["picked"] = picked + [None] * (5 - len(picked))
-        if len(list(picked)) >= 2:
+        if len(picked) >= 2:
             verdict = queues.check(picked, competitive)
             why, said = verdict["why"], dict(verdict["values"])
             for key in ("low", "high", "top"):
@@ -748,7 +743,7 @@ def register(app: Flask) -> None:
         today = store_day(_next_reset(time.time()), time.time())
         vp = (content.index("currencies", g.lang).get(store.VP) or {}).get("displayIcon")
         return render_template(
-            "shop_history.html", days=days, streak=diary.streak(today, account), vp_icon=vp, wants=len(wants), seen=seen
+            "shop_history.html", days=days, streak=diary.streak(today, account), vp_icon=vp, seen=seen
         )
 
     @app.get("/shop/reminder.ics")

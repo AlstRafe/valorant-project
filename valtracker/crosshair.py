@@ -60,8 +60,6 @@ PRIMARY = {
 }
 SNIPER = {"c": 7, "u": "", "d": 1, "s": 1.0, "o": 0.75}
 SECTIONS = {"P": "primary", "A": "ads", "S": "sniper"}
-#: 絵の中心からの広さ（ピクセル）: どんなに長い線でも収まる。
-REACH = 50
 
 
 def _value(text: str):

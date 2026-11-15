@@ -83,17 +83,7 @@ CLUSTERS = {
     "São Paulo": "サンパウロ",
 }
 #: プレイヤーの試合の上の絞り込み（ゲームの順。"" は全モード、名前は QUEUES のもの）。
-MODE_FILTER = (
-    "",
-    "competitive",
-    "unrated",
-    "swiftplay",
-    "spikerush",
-    "deathmatch",
-    "teamdeathmatch",
-    "escalation",
-    "premier",
-)
+MODE_FILTER = ("", *MODES)
 #: プレイヤーの通算の一覧: 1 ページの試合数、RR とスコアのグラフの最大点数（長い線は点を減らすか平均にして全体を描く）、
 #: 各キルマップの点数（新しいものから）。
 LIFE_PAGE = 20
@@ -176,8 +166,8 @@ def from_link(text: str) -> str:
     return text
 
 
-def act_left() -> dict | None:
-    """今のアクトと残り時間（content.Content.act）: ``{"name", "text", "ends"}``。"""
+def act_left() -> str | None:
+    """今のアクトの残り時間の文（content.Content.act）。"""
     found = current_app.config["VAL_CONTENT"].act(g.lang)
     if not found:
         return None
@@ -188,7 +178,13 @@ def act_left() -> dict | None:
         text = tr("{act} 終了まであと {days} 日", act=found["name"], days=int(seconds // 86400))
     else:
         text = tr("{act} 終了まであと {hours} 時間", act=found["name"], hours=max(1, math.ceil(seconds / 3600)))
-    return {"name": found["name"], "text": text, "ends": found["ends"]}
+    return text
+
+
+def queue_name(key: str) -> str:
+    """キュー ID の訪問者の言語での名前（知らないものは ID のまま）。"""
+    key = key.lower()
+    return tr(QUEUES[key]) if key in QUEUES else key
 
 
 def _queue(metadata: dict) -> str:
@@ -200,10 +196,7 @@ def _queue(metadata: dict) -> str:
 def rank_info(tier: dict | None, old: bool = False) -> dict:
     """HenrikDev の ``{"id": 21, "name": "Ascendant 1"}`` を訪問者の言語で、絵つきで。"""
     tier = tier or {}
-    try:
-        number = int(tier.get("id") or 0)
-    except (TypeError, ValueError):
-        number = 0
+    number = to_int(tier.get("id"))
     known = current_app.config["VAL_CONTENT"].tiers(g.lang, old=old).get(number) or {}
     name = str(known.get("tierName") or tier.get("name") or "")
     return {"tier": number, "name": name.title() if name.isupper() else name, "icon": known.get("smallIcon")}
@@ -214,10 +207,7 @@ def peak_info(mmr: dict | None) -> dict | None:
     今の番号で: エピソード 5 より前のアクトにはアセンダントが無かった（その頃のイモータル 1 は 21、今の 24）。"""
     peak = (mmr or {}).get("peak") or {}
     tier = peak.get("tier") if isinstance(peak.get("tier"), dict) else {}
-    try:
-        number = int(tier.get("id") or 0)
-    except (TypeError, ValueError):
-        number = 0
+    number = to_int(tier.get("id"))
     best = todays_tier(number, bool(peak.get("old")))
     for act in (mmr or {}).get("seasons") or []:
         best = max(
@@ -358,7 +348,7 @@ def _tier_number(tier) -> int:
     return to_int(tier.get("id") if isinstance(tier, dict) else tier)
 
 
-def _band_name(name: str) -> str:
+def band_name(name: str) -> str:
     """訪問者の言葉でのランク帯（activity.BANDS）: 「プラチナ – ダイヤモンド」。"" なら全帯。"""
     for key, low, high in BANDS:
         if key == name:
@@ -421,16 +411,17 @@ def _scores(rows: list[dict]) -> dict | None:
         return None
     value = round(sum(row["score"]["value"] for row in scored) / len(scored))
     widest = max(scored, key=lambda row: row["score"]["lines"])["score"]
+    trend = [row["score"]["value"] for row in reversed(scored)]  # 古い順
     return {
         "value": value,
         "grade": score.grade(value),
         "games": len(scored),
         "lines": widest["lines"],
-        "band": _band_name(widest["band"]),
+        "band": band_name(widest["band"]),
         "tops": {key: score.top([row["score"]["standings"][key] for row in scored]) for key in LINE_STATS},
-        "chart": _score_chart(_averages([row["score"]["value"] for row in reversed(scored)], SCORE_POINTS))
+        "chart": _score_chart(_averages(trend, SCORE_POINTS))
         | {
-            "narrow": _score_chart(_averages([row["score"]["value"] for row in reversed(scored)], NARROW_DOTS), NARROW),
+            "narrow": _score_chart(_averages(trend, NARROW_DOTS), NARROW),
             "first": i18n.day(g.lang, scored[-1]["started"]) if scored[-1].get("started") else "",
             "last": i18n.day(g.lang, scored[0]["started"]) if scored[0].get("started") else "",
         }
@@ -628,17 +619,10 @@ def _modes(mode: str) -> list[dict]:
 
 def _standing(current: dict) -> dict:
     """ランクカードのその他の情報: 残りの配置試合とランキングの順位。"""
-
-    def number(value) -> int:
-        try:
-            return int(value or 0)
-        except (TypeError, ValueError):
-            return 0
-
     board = current.get("leaderboard_placement")
     return {
-        "placements": number(current.get("games_needed_for_rating")),
-        "leaderboard": number(board.get("rank")) if isinstance(board, dict) else 0,
+        "placements": to_int(current.get("games_needed_for_rating")),
+        "leaderboard": to_int(board.get("rank")) if isinstance(board, dict) else 0,
     }
 
 
@@ -786,7 +770,6 @@ def player_page(
         "smurf": guessed,
         "standing": _standing(current),
         "acts": _acts((mmr or {}).get("seasons") or []),
-        "rows": rows,
         "listed": shown,
         "summary": summary,
         "heat_maps": heat_maps if life else _heat_maps(spots),
@@ -914,7 +897,7 @@ def _thin_row(line: dict, region: str, rr_changes: dict) -> dict:
         "id": match_id,
         "region": region,
         "map": _map({"map": {"id": line.get("map_id") or "", "name": line.get("map") or ""}}),
-        "queue": tr(QUEUES[queue_id]) if queue_id in QUEUES else queue_id,
+        "queue": queue_name(queue_id),
         "server": cluster(line.get("cluster")),
         "started": moment,
         "when": i18n.when(g.lang, moment) if moment else "",
@@ -1102,8 +1085,7 @@ def _match_page(found: dict, me: str) -> dict:
     my_team = people[mine]["team"] if mine >= 0 else ""
     teams.sort(key=lambda team: team["id"] != my_team)  # 訪問者が来たプレイヤーのチームを先に
     team_sizes = {team["id"]: len(team["players"]) for team in teams}
-    queue = str((metadata.get("queue") or {}).get("id") or "").lower()
-    half = rounds_module.HALF.get(queue, 0)
+    half = rounds_module.HALF.get(queue_id, 0)
     said = digest.get("weapons") or {}
     by_round: dict[int, list] = {}
     for kill in digest.get("kills") or []:
@@ -1136,7 +1118,6 @@ def _match_page(found: dict, me: str) -> dict:
                 "end_words": tr(ENDINGS[item["e"]]) if item["e"] in ENDINGS else "",
                 "ceremony": item["c"],
                 "site": item["s"],
-                "attack": item["a"],
                 "buys": {team: _buy(value, team_sizes.get(team, 0)) for team, value in (item.get("l") or {}).items()},
                 # 後半とオーバータイムの前に間を空ける
                 "turn": bool(half) and number in (half, 2 * half),
@@ -1270,9 +1251,6 @@ def register(app: Flask) -> None:
             page=_page(),
             act_asked=_act(),
             loading=True,
-            account=None,
-            problem="",
-            settings_link=False,
         )
 
     @app.get("/p/<name>/<tag>/part")

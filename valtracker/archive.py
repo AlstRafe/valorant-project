@@ -466,9 +466,9 @@ class Filler:
 
 
 def progress(state: dict | None, archive: Archive) -> dict:
-    """プレイヤーの読み込みについてページに出すもの: ``{"busy", "via", "read", "total", "left", "minutes"}``。"""
+    """プレイヤーの読み込みについてページに出すもの: ``{"busy", "via", "left", "minutes"}``。"""
     if not state:
-        return {"busy": False, "via": "", "read": 0, "total": 0, "left": 0, "minutes": 0}
+        return {"busy": False, "via": "", "left": 0, "minutes": 0}
     busy = not state["finished"]
     left = archive.todo_count(state["puuid"]) if state["via"] != "henrik" else 0
     total = max(0, int(state["total"] or 0))
@@ -477,7 +477,6 @@ def progress(state: dict | None, archive: Archive) -> dict:
     return {
         "busy": busy,
         "via": state["via"] or "riot",
-        "total": total,
         "left": left,
         "minutes": round(left * FILL_SECONDS / 60) if busy else 0,
     }
