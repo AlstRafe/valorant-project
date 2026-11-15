@@ -35,6 +35,7 @@ from valtracker.media import kind as media_kind
 from valtracker.pdmatch import MODE_TYPES
 from valtracker.riot import ACCOUNTS_MAX, AUTHORIZE, RiotError
 from valtracker.update import UpdateError
+from valtracker.util import to_int
 
 #: HenrikDev's queue ids -> what the game calls them (translated in locale.py).
 QUEUES = {
@@ -356,11 +357,7 @@ def _then(player: dict, moved: dict | None) -> dict | None:
 
 
 def _tier_number(tier) -> int:
-    number = tier.get("id") if isinstance(tier, dict) else tier
-    try:
-        return int(number or 0)
-    except (TypeError, ValueError):
-        return 0
+    return to_int(tier.get("id") if isinstance(tier, dict) else tier)
 
 
 def _band_name(name: str) -> str:

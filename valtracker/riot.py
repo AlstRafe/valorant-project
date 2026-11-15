@@ -37,7 +37,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 from valtracker import net, pdmatch
 from valtracker.cache import TTLCache
 from valtracker.settings import Settings
-from valtracker.util import to_float
+from valtracker.util import to_float, token_claims
 
 AUTHORIZE = (
     "https://auth.riotgames.com/authorize?redirect_uri=https%3A%2F%2Fplayvalorant.com%2Fopt_in"
@@ -902,7 +902,7 @@ class Riot:
         if status in (400, 401, 403):
             raise RiotError("signedout", f"userinfo {status}")
         info = _json(body) if status == 200 else {}
-        puuid = str(info.get("sub") or _claims(tokens["access"]).get("sub") or "").lower()
+        puuid = str(info.get("sub") or token_claims(tokens["access"]).get("sub") or "").lower()
         if not puuid:
             raise RiotError("down", f"userinfo {status}")
         acct = info.get("acct") if isinstance(info.get("acct"), dict) else {}
@@ -1232,12 +1232,3 @@ def _renewed(cookies: dict, headers: list) -> dict:
         elif _COOKIE_VALUE.match(content):
             found[name] = content
     return dict(list(found.items())[:30])
-
-
-def _claims(token: str) -> dict:
-    """What our own access token says (its puuid), unchecked: Riot checks it, we only read it."""
-    try:
-        middle = token.split(".")[1]
-        return _json(base64.urlsafe_b64decode(middle + "=" * (-len(middle) % 4)))
-    except (IndexError, ValueError):
-        return {}

@@ -30,6 +30,8 @@ import threading
 import time
 from pathlib import Path
 
+from valtracker.util import token_claims
+
 _HOME = Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local")
 #: Written by the Riot Client while it runs: ``name:pid:port:password:protocol``.
 LOCKFILE = _HOME / "Riot Games" / "Riot Client" / "Config" / "lockfile"
@@ -154,15 +156,6 @@ class _Socket:
             self.socket.close()
         except Exception:  # closing a broken socket
             pass
-
-
-def _claims(token: str) -> dict:
-    try:
-        middle = token.split(".")[1]
-        value = json.loads(base64.urlsafe_b64decode(middle + "=" * (-len(middle) % 4)))
-    except (IndexError, ValueError, UnicodeDecodeError):
-        return {}
-    return value if isinstance(value, dict) else {}
 
 
 def decode_private(value) -> dict:
@@ -458,10 +451,10 @@ class LocalClient:
             return None
         found = found if isinstance(found, dict) else {}
         access, entitlements = str(found.get("accessToken") or ""), str(found.get("token") or "")
-        puuid = str(found.get("subject") or _claims(access).get("sub") or "").lower()
+        puuid = str(found.get("subject") or token_claims(access).get("sub") or "").lower()
         if not access or not entitlements or not _UUID.match(puuid):
             return None  # the client is open but nobody is signed in yet
-        until = float(_claims(access).get("exp") or self.clock() + 3600) - EARLY
+        until = float(token_claims(access).get("exp") or self.clock() + 3600) - EARLY
         self._tokens = {"access": access, "entitlements": entitlements, "until": until, "puuid": puuid, "door": door}
         return self._tokens
 
