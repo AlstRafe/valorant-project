@@ -565,9 +565,10 @@ def _rr_drawing(points: list[dict], width: int, height: int, most: int) -> dict:
     # a lifetime's line: drawn through every match, with a dot on some of them (the first and the latest too)
     gap = max(1, math.ceil(len(every) / most))
     dots = [dot for number, dot in enumerate(every) if number % gap == 0 or number == len(every) - 1]
-    lines = []
-    for elo in range(int(low // 100 + 1) * 100, int(high) + 1, 100):
-        lines.append({"y": y(elo), "rank": _rank({"id": elo // 100 + 3})})
+    lines = [
+        {"y": y(elo), "rank": _rank({"id": elo // 100 + 3})}
+        for elo in range(int(low // 100 + 1) * 100, int(high) + 1, 100)
+    ]
     return {
         "width": width,
         "height": height,
@@ -898,7 +899,7 @@ def _thin_row(line: dict, region: str, rr_changes: dict) -> dict:
     """A stored line (henrik._slim_stored: the player's numbers, no rounds) as one match of the player's list."""
     match_id = str(line.get("id") or "")
     try:
-        moment = datetime.fromisoformat(str(line.get("started") or "").replace("Z", "+00:00")).astimezone(stats.JST)
+        moment = datetime.fromisoformat(str(line.get("started") or "")).astimezone(stats.JST)
     except ValueError:
         moment = None
     queue_id = str(line.get("queue") or "")

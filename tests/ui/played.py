@@ -85,7 +85,7 @@ def _order(pick, won: int, lost: int, winner: str, loser: str) -> list[str]:
     if won > 13:
         first = [winner] * 12 + [loser] * 12
         pick.shuffle(first)
-        return first + [winner, winner]
+        return [*first, winner, winner]
     first = [winner] * (won - 1) + [loser] * lost
     pick.shuffle(first)
     return [*first, winner]
@@ -381,7 +381,7 @@ def to_pd(found: dict, place: dict, season: str, subject: str) -> dict:
         return subject if puuid == ME else puuid
 
     metadata = found["metadata"]
-    start = int(datetime.fromisoformat(metadata["started_at"].replace("Z", "+00:00")).timestamp() * 1000)
+    start = int(datetime.fromisoformat(metadata["started_at"]).timestamp() * 1000)
     played = len(found["rounds"])
     players = [
         {

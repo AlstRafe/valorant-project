@@ -63,7 +63,7 @@ def _unpack(blob) -> dict:
 def _started(match: dict) -> int:
     raw = str((match.get("metadata") or {}).get("started_at") or "")
     try:
-        return int(datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp())
+        return int(datetime.fromisoformat(raw).timestamp())
     except ValueError:
         return 0
 
@@ -359,7 +359,7 @@ class Filler:
         while True:
             try:
                 did = self.step()
-            except Exception:  # noqa: BLE001 - a failed call is tried again next time
+            except Exception:  # a failed call is tried again next time
                 did = "failed"
             if did:
                 time.sleep(self.seconds)

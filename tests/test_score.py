@@ -144,7 +144,7 @@ class RanksTest(unittest.TestCase):
         games.append(match(20, tier=12, queue="unrated"))
         eu = match(30, tier=5)
         eu["metadata"]["region"] = "eu"
-        self.activity.seen(games + [eu])
+        self.activity.seen([*games, eu])
         self.assertEqual(self.activity.ranks("ap"), {"lines": 40, "tiers": {12: 30, 24: 10}})
         self.assertEqual(self.activity.ranks("eu"), {"lines": 10, "tiers": {5: 10}})
         self.assertEqual(self.activity.ranks("na"), {"lines": 0, "tiers": {}})

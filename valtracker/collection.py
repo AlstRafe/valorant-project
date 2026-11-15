@@ -215,10 +215,11 @@ def _buddy_choices(found: dict, loadout: dict, content: Content, lang: str, weap
 def snapshot(loadout: dict) -> dict:
     """What a set keeps of a loadout (PD's playerloadout): each weapon's skin and buddy, the wheel and the card and
     title, in the loadout's own shape (so riot.wearing reads it as it reads a loadout)."""
-    guns = []
-    for gun in loadout.get("Guns") or []:
-        if isinstance(gun, dict) and gun.get("ID"):
-            guns.append({"ID": _id(gun["ID"]), **{key: gun[key] for key in SKIN + CHARM if key in gun}})
+    guns = [
+        {"ID": _id(gun["ID"]), **{key: gun[key] for key in SKIN + CHARM if key in gun}}
+        for gun in loadout.get("Guns") or []
+        if isinstance(gun, dict) and gun.get("ID")
+    ]
     kept: dict = {"Guns": guns}
     if isinstance(loadout.get("ActiveExpressions"), list):
         kept["ActiveExpressions"] = [

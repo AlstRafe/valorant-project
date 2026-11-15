@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import re
 import secrets
 import time
@@ -201,10 +202,8 @@ def _last_result(match_id: str) -> dict | None:
     if queue == "competitive" and waiting:
         kept["rr_tries"] += 1
         kept["rr_tried"] = now
-        try:
+        with contextlib.suppress(RiotError):
             kept["rr"] = riot.rr_updates(region, puuid)["changes"].get(match_id)
-        except RiotError:
-            pass
         if kept["rr"]:
             archive.keep_rr(puuid, {match_id: kept["rr"]})
     row = _row(match, player, {match_id: kept["rr"]} if kept["rr"] else {})

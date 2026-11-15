@@ -1209,7 +1209,7 @@ def _tokens_in(address: str, now: float) -> dict | None:
 
 def _pasted_cookies(text: str) -> dict:
     """``ssid`` alone (its value), ``ssid=...``, or a whole Cookie header (``Cookie: a=1; ssid=...``)."""
-    text = re.sub(r"^\s*cookie\s*:\s*", "", text.strip(), flags=re.I).strip().strip("\"'")
+    text = re.sub(r"^\s*cookie\s*:\s*", "", text.strip(), flags=re.IGNORECASE).strip().strip("\"'")
     if "=" not in text:
         return {"ssid": text} if _COOKIE_VALUE.match(text) else {}
     found = {}

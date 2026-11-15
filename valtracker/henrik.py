@@ -8,6 +8,7 @@ allowance is shared by every visitor.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import re
 import time
@@ -154,10 +155,8 @@ class Henrik:
         with ThreadPoolExecutor(2, thread_name_prefix="henrik-matches") as pool:
             parts = [pool.submit(self._matches, region, name, tag, mode, start) for start in (0, PAGE)]
         found = parts[0].result()
-        try:
+        with contextlib.suppress(HenrikError):
             found = found + parts[1].result()
-        except HenrikError:
-            pass
         wanted = MODES.get(mode)
         seen, kept = set(), []
         for match in found:
@@ -512,7 +511,7 @@ def _moment(value) -> int:
     if isinstance(value, int | float):
         return int(value)
     try:
-        return int(datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp())
+        return int(datetime.fromisoformat(str(value)).timestamp())
     except ValueError:
         return 0
 

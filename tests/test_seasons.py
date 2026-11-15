@@ -88,7 +88,7 @@ class PageTest(unittest.TestCase):
 
     def test_another_mode(self):
         text = self.page("/p/Tester/JP1/seasons?mode=unrated")
-        self.assertIn("mode=unrated", [url for url in self.fetch.henrik_calls() if "/stored-matches/" in url][0])
+        self.assertIn("mode=unrated", next(url for url in self.fetch.henrik_calls() if "/stored-matches/" in url))
         self.assertNotIn("Tier 22", text, "no rank outside competitive")
         self.page("/p/Tester/JP1/seasons?mode=nonsense")
         self.assertIn("mode=competitive", [url for url in self.fetch.henrik_calls() if "/stored-matches/" in url][-1])

@@ -76,7 +76,7 @@ def _regions(endpoint: str, current: str, **values) -> list[dict]:
 def _moment(value) -> datetime | None:
     """An ISO time (HenrikDev's) in Japan's time, or None."""
     try:
-        found = datetime.fromisoformat(str(value or "").replace("Z", "+00:00"))
+        found = datetime.fromisoformat(str(value or ""))
     except ValueError:
         return None
     return found.astimezone(JST) if found.tzinfo else found.replace(tzinfo=JST)
@@ -441,7 +441,7 @@ def _queues_page() -> tuple[dict, int]:
                 continue
         picked = [tier for tier in picked if tier == 0 or tier in tiers or tier >= queues.IRON]
         values["picked"] = picked + [None] * (5 - len(picked))
-        if len([tier for tier in picked]) >= 2:
+        if len(list(picked)) >= 2:
             verdict = queues.check(picked, competitive)
             why, said = verdict["why"], dict(verdict["values"])
             for key in ("low", "high", "top"):

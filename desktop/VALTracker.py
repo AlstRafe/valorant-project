@@ -33,6 +33,6 @@ try:
     from valtracker.desktop import main
 
     code = main()
-except Exception:  # noqa: BLE001 - anything that stops the start is told
+except Exception:  # anything that stops the start is told
     code = _failed()
 sys.exit(code)

@@ -22,11 +22,13 @@ alone. It uses the same HenrikDev key and budget as the pages, and stops when th
 
 from __future__ import annotations
 
+import itertools
 import random
 import sqlite3
 import statistics
 import threading
 import time
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
@@ -72,7 +74,7 @@ CANDIDATES = 600
 
 def _unix(value) -> int:
     try:
-        return int(datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp())
+        return int(datetime.fromisoformat(str(value)).timestamp())
     except (TypeError, ValueError):
         return 0
 
@@ -190,8 +192,20 @@ def _lines(match: dict) -> list[tuple]:
         found = stats.line(player, rounds, stats.advanced(match, player))
         won = 0.5 if draw else float(teams.get(str(player.get("team_id") or ""), False))
         rows.append(
-            (facts["id"], slot, facts["queue"], number, found["acs"], found["adr"], found["kd"], found["hs"])
-            + (found["kast"], found["dd"], won, facts["started"])
+            (
+                facts["id"],
+                slot,
+                facts["queue"],
+                number,
+                found["acs"],
+                found["adr"],
+                found["kd"],
+                found["hs"],
+                found["kast"],
+                found["dd"],
+                won,
+                facts["started"],
+            )
         )
     return rows
 
@@ -215,7 +229,7 @@ def _shaped(kind: str, answer):
 class Activity:
     def __init__(self, folder: Path, clock=time.time):
         #: the PC app: how the site's numbers are asked for (kind, params) -> its JSON (_ask); None on the site
-        self.shared = None
+        self.shared: Callable[[str, dict], dict | None] | None = None
         self._shared: dict = {}
         self.path = Path(folder) / "activity.sqlite"
         self.clock = clock
@@ -269,7 +283,7 @@ class Activity:
             return kept[1]
         try:
             found = _shaped(kind, self.shared(kind, params))
-        except Exception:  # noqa: BLE001 - whatever went wrong on the way: the app's own numbers
+        except Exception:  # whatever went wrong on the way: the app's own numbers
             found = None
         if len(self._shared) > 200:
             self._shared.clear()
@@ -285,7 +299,7 @@ class Activity:
         gaps = []
         if puuid:
             ordered = sorted(facts, key=lambda item: item["started"])
-            for before, after in zip(ordered, ordered[1:], strict=False):
+            for before, after in itertools.pairwise(ordered):
                 wait = after["started"] - (before["started"] + before["length"])
                 if before["length"] and GAP_MIN <= wait <= GAP_MAX and before["queue"] == after["queue"]:
                     gaps.append(
@@ -598,7 +612,7 @@ class Collector:
             time.sleep(self.seconds)
             try:
                 self.once()
-            except Exception:  # noqa: BLE001 - a failed look is tried again next time
+            except Exception:  # a failed look is tried again next time
                 pass
 
     def _riot(self) -> int | None:

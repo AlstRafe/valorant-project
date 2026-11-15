@@ -230,8 +230,8 @@ class Content:
             if "Act" not in str(item.get("type") or ""):
                 continue
             try:
-                start = datetime.fromisoformat(str(item.get("startTime")).replace("Z", "+00:00"))
-                end = datetime.fromisoformat(str(item.get("endTime")).replace("Z", "+00:00"))
+                start = datetime.fromisoformat(str(item.get("startTime")))
+                end = datetime.fromisoformat(str(item.get("endTime")))
             except ValueError:
                 continue
             parent = by_id.get(str(item.get("parentUuid") or "").lower()) or {}

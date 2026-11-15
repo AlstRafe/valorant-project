@@ -207,7 +207,7 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
 
 def _seconds_since(value, now: float) -> int | None:
     try:
-        when = datetime.fromisoformat(str(value or "").replace("Z", "+00:00"))
+        when = datetime.fromisoformat(str(value or ""))
     except ValueError:
         return None
     if when.year < 2000:  # GLZ's "0001-01-01": not queued

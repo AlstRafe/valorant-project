@@ -40,7 +40,7 @@ def chosen(environ) -> str:
     cookie = SimpleCookie()
     try:
         cookie.load(environ.get("HTTP_COOKIE", ""))
-    except Exception:  # noqa: BLE001 - a malformed cookie header is no choice
+    except Exception:  # a malformed cookie header is no choice
         cookie = SimpleCookie()
     value = cookie[COOKIE].value if COOKIE in cookie else ""
     return value if value in LANGS else from_browser(environ.get("HTTP_ACCEPT_LANGUAGE", ""))

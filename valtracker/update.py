@@ -25,6 +25,7 @@ the owner presses again.
 
 from __future__ import annotations
 
+import contextlib
 import ctypes
 import os
 import shutil
@@ -78,7 +79,7 @@ def fetch(url: str, target: Path, told, opener=urllib.request.urlopen) -> None:
         raise UpdateError("network", "not https")
     request = urllib.request.Request(url, headers={"User-Agent": "VALTracker-desktop"})
     try:
-        with opener(request, timeout=30) as answer:  # noqa: S310 - https, checked above
+        with opener(request, timeout=30) as answer:  # https, checked above
             came_from = urlsplit(answer.geturl())
             host = (came_from.hostname or "").lower()
             if came_from.scheme != "https" or not any(host == name or host.endswith("." + name) for name in HOSTS):
@@ -124,7 +125,7 @@ def unpack(archive: Path, folder: Path, commit: str) -> Path:
                 raise UpdateError("notready" if stamp else "badfile", "another build")
             shutil.rmtree(folder, ignore_errors=True)
             folder.mkdir(parents=True, exist_ok=True)
-            file.extractall(folder)  # noqa: S202 - every path was checked above
+            file.extractall(folder)
     except (zipfile.BadZipFile, OSError, KeyError) as error:
         raise UpdateError("badfile", type(error).__name__) from error
     return folder / TOP
@@ -144,7 +145,7 @@ def writable(folder: Path) -> bool:
 def _start(command: list[str]) -> None:
     """Starts a program of the app's own that outlives this one."""
     flags = 0x00000008 | 0x00000200 if sys.platform == "win32" else 0  # DETACHED_PROCESS, CREATE_NEW_PROCESS_GROUP
-    subprocess.Popen(command, close_fds=True, creationflags=flags, cwd=str(Path(command[0]).parent))  # noqa: S603
+    subprocess.Popen(command, close_fds=True, creationflags=flags, cwd=str(Path(command[0]).parent))
 
 
 class Updater:
@@ -208,7 +209,7 @@ class Updater:
             step()
         except UpdateError as error:
             self._set("failed", problem=error.kind, detail=error.detail)
-        except Exception as error:  # noqa: BLE001 - whatever stops it is told, the app goes on
+        except Exception as error:  # whatever stops it is told, the app goes on
             self._set("failed", problem="network", detail=type(error).__name__)
 
     def _playing(self) -> bool:
@@ -232,10 +233,8 @@ class Updater:
         self.fetch(ASSET, archive, lambda done, total: self._set("downloading", done=done, total=total))
         self._set("checking")
         self._new = unpack(archive, self.folder / "new", found["commit"])
-        try:
+        with contextlib.suppress(OSError):
             archive.unlink()
-        except OSError:
-            pass
         if self._playing():
             self._set("ready")  # a match began meanwhile: put in place when the owner presses again
             return
@@ -324,15 +323,11 @@ def replace(source: Path, target: Path, sleep=time.sleep) -> list[str]:
                 shutil.copy2(source / name, old)
     except OSError:
         for name in placed:
-            try:
+            with contextlib.suppress(OSError):
                 remove(target / name)
-            except OSError:
-                pass
         for name in aside:
-            try:
+            with contextlib.suppress(OSError):
                 (target / (name + ".old")).rename(target / name)
-            except OSError:
-                pass
         raise
     for name in aside:
         try:

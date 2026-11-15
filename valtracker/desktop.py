@@ -35,6 +35,7 @@ app reads on this PC (checkup.py), and updating itself when the owner presses th
 from __future__ import annotations
 
 import argparse
+import contextlib
 import ctypes
 import json
 import os
@@ -373,7 +374,7 @@ def _latest(site: str) -> object:
     if not site.startswith("https://"):
         raise ValueError("not a site to ask")
     request = urllib.request.Request(site + LATEST, headers={"User-Agent": "VALTracker-desktop"})
-    with urllib.request.urlopen(request, timeout=15) as answer:  # noqa: S310 - https, checked above
+    with urllib.request.urlopen(request, timeout=15) as answer:  # https, checked above
         return json.loads(answer.read(4096))
 
 
@@ -458,7 +459,7 @@ def left(form) -> dict | None:
             "height": round(bounds.Height / scale),
             "maximized": shape == "Maximized",
         }
-    except Exception:  # noqa: BLE001 - not WinForms (another platform), or the form is gone
+    except Exception:  # not WinForms (another platform), or the form is gone
         return None
     return found if found["width"] >= SMALLEST[0] and found["height"] >= SMALLEST[1] else None
 
@@ -469,10 +470,8 @@ def remember(window, folder: Path) -> None:
     def closing():
         found = left(getattr(window, "native", None))
         if found is not None:
-            try:
+            with contextlib.suppress(OSError):
                 (folder / PLACE).write_text(json.dumps(found), encoding="utf-8")
-            except OSError:
-                pass
 
     window.events.closing += closing
 
@@ -515,7 +514,7 @@ def follow_look(window, put=title_bar) -> None:
         try:
             dark = window.evaluate_js(IS_DARK)
             handle = int(window.native.Handle.ToInt64())
-        except Exception:  # noqa: BLE001 - the window is closing, or it is not a WinForms one
+        except Exception:  # the window is closing, or it is not a WinForms one
             return
         if isinstance(dark, bool):
             put(handle, dark)
@@ -527,14 +526,14 @@ def window_handle(shown) -> int:
     """The window's handle (Windows'), 0 while there is none (no window yet, or not a WinForms one)."""
     try:
         return int(shown.native.Handle.ToInt64())
-    except Exception:  # noqa: BLE001 - no window, another platform, or it is closing
+    except Exception:  # no window, another platform, or it is closing
         return 0
 
 
 def _screens(webview) -> list[tuple[int, int, int, int]]:
     try:
         return [(screen.x, screen.y, screen.width, screen.height) for screen in webview.screens]
-    except Exception:  # noqa: BLE001 - not known: the window opens in the middle
+    except Exception:  # not known: the window opens in the middle
         return []
 
 
@@ -553,7 +552,7 @@ def window(url: str, folder: Path, close_after: float = 0, minimized: bool = Fal
             if winforms.renderer != "edgechromium":  # Internet Explorer's engine: the pages need a modern one
                 print(f"{NAME}: no window: WebView2 Runtime was not found (engine: {winforms.renderer})", flush=True)
                 return NO_RUNTIME
-    except Exception as error:  # noqa: BLE001 - no pywebview, or its .NET part could not start
+    except Exception as error:  # no pywebview, or its .NET part could not start
         print(f"{NAME}: no window: {type(error).__name__}: {str(error)[:600]}", flush=True)
         return NO_PART
     # a picture or a calendar file the page saves: Windows' "save as" box (else the window drops it)
@@ -623,7 +622,7 @@ def check(base: str) -> int:
 def _output(folder: Path) -> None:
     """Without a console (the .exe), what would be printed goes to desktop.log in the app's folder."""
     if sys.stdout is None or sys.stderr is None or getattr(sys, "frozen", False):
-        log = open(folder / "desktop.log", "w", encoding="utf-8", buffering=1)  # noqa: SIM115 - open for the app's life
+        log = open(folder / "desktop.log", "w", encoding="utf-8", buffering=1)
         sys.stdout = sys.stderr = log
 
 
@@ -633,7 +632,7 @@ def _install_over(target: str, pid: int) -> int:
     folder = data_folder()
     folder.mkdir(parents=True, exist_ok=True)
     try:
-        log = open(folder / "update.log", "a", encoding="utf-8", buffering=1)  # noqa: SIM115 - for this run
+        log = open(folder / "update.log", "a", encoding="utf-8", buffering=1)
     except OSError:
         log = None
 

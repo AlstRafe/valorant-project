@@ -32,11 +32,11 @@ TESTS = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(TESTS), str(TESTS.parent)]
 os.environ["VAL_HENRIK_KEY"] = ""
 
-import helpers  # noqa: E402
-import played  # noqa: E402
-from helpers import make_app  # noqa: E402
+import helpers
+import played
+from helpers import make_app
 
-from valtracker import release  # noqa: E402
+from valtracker import release
 
 #: The made-up servers and how many matches each had in 14 days (Mumbai: too few to tell its busy hours).
 SERVERS = {"Tokyo": 900, "Hong Kong": 420, "Singapore": 380, "Sydney": 260, "Mumbai": 30}
@@ -165,7 +165,7 @@ def real_ids(fetch) -> None:
 
 def _mine(pick) -> str:
     """--real: the agent the made-up player plays in a match."""
-    known = [item for item in REAL_MINE if item[0] in FOUND["agents"]] or [(sorted(FOUND["agents"])[0], 1)]
+    known = [item for item in REAL_MINE if item[0] in FOUND["agents"]] or [(min(FOUND["agents"]), 1)]
     return pick.choices([name for name, _ in known], [often for _, often in known])[0]
 
 

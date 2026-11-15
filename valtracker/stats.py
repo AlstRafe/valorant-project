@@ -26,7 +26,7 @@ def started(match: dict) -> datetime | None:
     """When the match started, in Japan's time."""
     raw = str((match.get("metadata") or {}).get("started_at") or "")
     try:
-        moment = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        moment = datetime.fromisoformat(raw)
     except ValueError:
         return None
     if moment.tzinfo is None:

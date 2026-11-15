@@ -118,14 +118,14 @@ def init_app(app: Flask, instance: Path, mount: str) -> None:
     @app.before_request
     def _check_csrf():
         if request.method in _SAFE_METHODS:
-            return None
+            return
         if request.headers.get("Sec-Fetch-Site", "") == "cross-site":
             abort(403)
         expected = session.get("csrf")
         supplied = request.form.get("csrf", "") or request.headers.get("X-CSRF-Token", "")
         if not expected or not hmac.compare_digest(str(supplied), str(expected)):
             abort(400)
-        return None
+        return
 
     @app.after_request
     def _headers(response):

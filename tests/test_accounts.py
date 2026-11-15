@@ -63,7 +63,9 @@ class AccountsTest(unittest.TestCase):
         self.assertTrue(saved["others"][PUUID]["cookies"]["ssid"].startswith("ssid-"), "its own cookie is kept")
         self.assertNotIn("linked_first", saved, "the site has no Riot Client to choose against")
         # the settings: one line each, the one in use marked, the other with a button to it
-        row = re.compile(r'<li( class="now")?>\s*<span class="account-name"><strong>(\w+#\w+)</strong>(.*?)</li>', re.S)
+        row = re.compile(
+            r'<li( class="now")?>\s*<span class="account-name"><strong>(\w+#\w+)</strong>(.*?)</li>', re.DOTALL
+        )
         rows = {name: (bool(now), rest) for now, name, rest in row.findall(text)}
         self.assertEqual(list(rows), ["Owner#JP1", "Smurf#JP2"], "by name, the same order whichever is in use")
         self.assertTrue(rows["Smurf#JP2"][0])

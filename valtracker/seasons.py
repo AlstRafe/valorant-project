@@ -8,6 +8,7 @@ only from its link, so the player page costs no more calls.
 
 from __future__ import annotations
 
+import itertools
 import re
 
 from flask import Flask, abort, current_app, render_template, request
@@ -71,7 +72,7 @@ def seasons(matches: list[dict]) -> list[dict]:
         if match["season"]:
             by_act.setdefault(match["season"], []).append(match)
     acts = [{"key": key, "name": act_name(key)} | numbers(listed) for key, listed in by_act.items()]
-    for act, before in zip(acts, acts[1:], strict=False):
+    for act, before in itertools.pairwise(acts):
         act["change"] = {
             key: round(act[key] - before[key], places)
             for key, places in CHANGES.items()

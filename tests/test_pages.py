@@ -59,7 +59,7 @@ class PagesTest(unittest.TestCase):
         self.assertIn("default-src 'self'", csp)
         self.assertEqual(answer.headers["X-Frame-Options"], "DENY")
         self.assertEqual(answer.headers["X-Content-Type-Options"], "nosniff")
-        scripts = re.findall(r"<script>(.*?)</script>", answer.get_data(as_text=True), re.S)
+        scripts = re.findall(r"<script>(.*?)</script>", answer.get_data(as_text=True), re.DOTALL)
         self.assertEqual(len(scripts), 1, "the only inline script is the theme's")
         digest = base64.b64encode(hashlib.sha256(scripts[0].encode()).digest()).decode()
         self.assertIn(f"'sha256-{digest}'", csp)

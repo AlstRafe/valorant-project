@@ -55,7 +55,7 @@ class ActivityTest(unittest.TestCase):
             games.append(game)
         draw = match(99, NOON)
         draw["teams"] = [{"team_id": "Red", "won": False}, {"team_id": "Blue", "won": False}]
-        self.activity.seen(games + [draw])
+        self.activity.seen([*games, draw])
         found = self.activity.agents()
         self.assertEqual(found["matches"], 8, "a draw is left out")
         by = {item["agent"]: item for item in found["agents"]}
@@ -371,7 +371,7 @@ class PagesTest(unittest.TestCase):
             self.assertTrue(answer.headers["Location"].endswith("/p/Tester/JP1"), pasted)
 
     def test_today_on_a_players_page(self):
-        import valtracker.views as views
+        from valtracker import views
 
         class Then(datetime):
             @classmethod

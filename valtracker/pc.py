@@ -19,6 +19,7 @@ Made, like the rest of the app, never to get in VALORANT's way:
 
 from __future__ import annotations
 
+import contextlib
 import ctypes
 import math
 import struct
@@ -93,10 +94,8 @@ def chime(path: Path) -> Path:
         file.setframerate(rate)
         file.writeframes(b"".join(frames))
     for name in OLD_SOUNDS:
-        try:
+        with contextlib.suppress(OSError):
             (path.parent / name).unlink()
-        except OSError:
-            pass
     return path
 
 
@@ -174,7 +173,7 @@ class Alert:
             if choice["alert_sound"]:
                 self.windows.play(chime(self.folder / SOUND))
                 done["sound"] = True
-        except Exception as error:  # noqa: BLE001 - an alert that cannot be given must never end the listening
+        except Exception as error:  # an alert that cannot be given must never end the listening
             print(f"alert: {type(error).__name__}", flush=True)
         return done
 
@@ -186,14 +185,14 @@ class Alert:
                 break
             try:
                 front, title, kind = self.windows.front()
-            except Exception:  # noqa: BLE001 - see __call__
+            except Exception:  # see __call__
                 break
             if front == mine or is_game(title, kind):
                 break
         if turn == self._lit:
             try:
                 self.windows.flash(mine, False)
-            except Exception:  # noqa: BLE001 - see __call__
+            except Exception:  # see __call__
                 pass
 
 
@@ -237,10 +236,8 @@ class Autostart:
                 if on:
                     registry.SetValueEx(key, RUN_NAME, 0, registry.REG_SZ, self.command)
                 else:
-                    try:
+                    with contextlib.suppress(FileNotFoundError):
                         registry.DeleteValue(key, RUN_NAME)
-                    except FileNotFoundError:
-                        pass
         except OSError:
             return False
         return self.on() == on

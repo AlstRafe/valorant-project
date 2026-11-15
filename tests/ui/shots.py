@@ -21,7 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
 
-from valtracker import desktop  # noqa: E402
+from valtracker import desktop
 
 PORT = 5123
 BASE = f"http://127.0.0.1:{PORT}"
@@ -115,7 +115,7 @@ def ask(window, script: str):
     """What ``script`` gives on the page as it is now; None while the window is between two pages."""
     try:
         return window.run_js(script)
-    except Exception:  # noqa: BLE001 - no page to ask
+    except Exception:  # no page to ask
         return None
 
 
@@ -187,7 +187,7 @@ def take(window, folder: Path) -> None:
             picture.save(folder / f"{name}.png", optimize=True)
             shown = ask(window, "location.pathname+location.search")
             print(f"{name}.png {picture.size[0]}x{picture.size[1]} {shown}", flush=True)
-    except Exception as error:  # noqa: BLE001 - said below; the window must close whatever happened
+    except Exception as error:  # said below; the window must close whatever happened
         failed.append(f"{type(error).__name__}: {error}")
     finally:
         for line in failed:
@@ -202,7 +202,7 @@ def main() -> int:
     for old in folder.glob("*.png"):
         old.unlink()
     serve = [sys.executable, str(ROOT / "tests" / "ui" / "serve.py"), str(PORT), "--desktop", "--real"]
-    server = subprocess.Popen(serve, cwd=ROOT)  # noqa: S603 - this repository's own script
+    server = subprocess.Popen(serve, cwd=ROOT)  # this repository's own script
     try:
         wait_for_server(server)
         import webview

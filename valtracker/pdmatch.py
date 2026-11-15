@@ -80,16 +80,11 @@ def city(pod) -> str:
 def history(answer) -> dict:
     """PD's match-history -> ``{"total", "matches": [{"id", "at" (unix seconds), "queue"}]}``, newest first."""
     answer = answer if isinstance(answer, dict) else {}
-    found = []
-    for item in answer.get("History") or []:
-        if isinstance(item, dict) and item.get("MatchID"):
-            found.append(
-                {
-                    "id": _id(item["MatchID"]),
-                    "at": _int(item.get("GameStartTime")) // 1000,
-                    "queue": _id(item.get("QueueID")),
-                }
-            )
+    found = [
+        {"id": _id(item["MatchID"]), "at": _int(item.get("GameStartTime")) // 1000, "queue": _id(item.get("QueueID"))}
+        for item in answer.get("History") or []
+        if isinstance(item, dict) and item.get("MatchID")
+    ]
     return {"total": _int(answer.get("Total"), len(found)), "matches": found}
 
 

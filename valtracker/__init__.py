@@ -117,7 +117,7 @@ def create_app(
     #: players' lifetimes as their page counts them (views._lifetime)
     app.config["VAL_LIVES"] = TTLCache(6)
     security.init_app(app, instance, mount)
-    app.config["VAL_RATINGS"] = Ratings(instance, app.secret_key)
+    app.config["VAL_RATINGS"] = Ratings(instance, app.config["SECRET_KEY"])  # security.secret_key(): bytes
 
     @app.before_request
     def _collect():

@@ -152,7 +152,7 @@ class _Socket:
     def close(self) -> None:
         try:
             self.socket.close()
-        except Exception:  # noqa: BLE001 - closing a broken socket
+        except Exception:  # closing a broken socket
             pass
 
 
@@ -538,7 +538,7 @@ class LocalClient:
         for told in self._listeners:
             try:
                 told(now)
-            except Exception:  # noqa: BLE001, S112 - a listener's own trouble must not end the listening
+            except Exception:  # a listener's own trouble must not end the listening
                 continue
 
     def _look_again(self, door: tuple[int, str]) -> None:
@@ -607,7 +607,7 @@ class LocalClient:
                 continue
             try:
                 socket = self.connect(door)
-            except Exception:  # noqa: BLE001 - the client starting, or no websocket library
+            except Exception:  # the client starting, or no websocket library
                 self._stop.wait(RETRY_WAIT)
                 continue
             try:
@@ -626,7 +626,7 @@ class LocalClient:
                             looked = self.clock()
                     elif text:
                         self.handle(door, text)
-            except Exception:  # noqa: BLE001 - the client closed or restarted: connect again
+            except Exception:  # the client closed or restarted: connect again
                 pass
             finally:
                 socket.close()

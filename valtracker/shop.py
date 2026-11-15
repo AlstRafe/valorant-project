@@ -53,7 +53,7 @@ def item(kind: str, uuid: str, content: Content, lang: str, said: dict | None = 
     if kind in ("skins", "chromas"):
         found = content.skins(lang).get(uuid)
         if found:
-            weapon, skin = found
+            _, skin = found
             level = next((part for part in skin.get("levels") or [] if _id(part.get("uuid")) == uuid), {})
             chroma = next((part for part in skin.get("chromas") or [] if _id(part.get("uuid")) == uuid), {})
             picture = (
@@ -173,7 +173,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
     for offer in store.get("AccessoryStoreOffers") or []:
         if not isinstance(offer, dict):
             continue
-        kind, uuid, amount = _reward(offer.get("Offer"))
+        kind, uuid, _ = _reward(offer.get("Offer"))
         if kind:
             accessories.append(
                 item(kind, uuid, content, lang)

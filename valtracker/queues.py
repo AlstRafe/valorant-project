@@ -87,9 +87,9 @@ def check(tiers: list[int], found: dict) -> dict:
     if size > found["max"] or size in found["invalid"]:
         return {"ok": False, "why": "size", "values": {"size": size}}
     full = size == 5 and found["bypass"]
-    if found["high_tier"] and found["high_size"] and any(tier >= found["high_tier"] for tier in ranked):
-        if size > found["high_size"] and not full:
-            return {"ok": False, "why": "high", "values": {"size": found["high_size"], "tier": found["high_tier"]}}
+    high = found["high_tier"] and found["high_size"] and any(tier >= found["high_tier"] for tier in ranked)
+    if high and size > found["high_size"] and not full:
+        return {"ok": False, "why": "high", "values": {"size": found["high_size"], "tier": found["high_tier"]}}
     if full:
         return {"ok": True, "why": "full", "values": {}}
     if len(ranked) < 2:

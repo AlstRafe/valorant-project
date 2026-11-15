@@ -2,6 +2,7 @@
 start with Windows (pc.py), and the Riot Client's part of them (localclient.py)."""
 
 import base64
+import itertools
 import json
 import re
 import struct
@@ -333,7 +334,7 @@ class AlertTest(unittest.TestCase):
         self.assertEqual(max(heard[-int(rate * 0.1) :]), 0, "silence at the end")
         last = heard[-int(rate * 0.2) : -int(rate * 0.1)]
         self.assertLess(max(last), loudest / 50, "the last tenth of a second of the notes is all but silent")
-        steps = max(abs(a - b) for a, b in zip(heard, heard[1:], strict=False))
+        steps = max(abs(a - b) for a, b in itertools.pairwise(heard))
         self.assertLess(steps, loudest * 0.6, "no jump from one moment to the next (a click)")
         self.assertFalse((self.folder / pc.OLD_SOUNDS[0]).exists(), "the sound it had before is removed")
         made = path.stat().st_mtime_ns
@@ -368,20 +369,20 @@ class FakeRegistry:
     def __init__(self):
         self.values, self.broken = {}, False
 
-    def OpenKey(self, root, path, reserved=0, access=0):  # noqa: N802 - winreg's names
+    def OpenKey(self, root, path, reserved=0, access=0):  # winreg's names
         if self.broken:
             raise OSError("denied")
         return mock.MagicMock()
 
-    def QueryValueEx(self, key, name):  # noqa: N802
+    def QueryValueEx(self, key, name):
         if name not in self.values:
             raise FileNotFoundError(name)
         return self.values[name], self.REG_SZ
 
-    def SetValueEx(self, key, name, reserved, kind, value):  # noqa: N802
+    def SetValueEx(self, key, name, reserved, kind, value):
         self.values[name] = value
 
-    def DeleteValue(self, key, name):  # noqa: N802
+    def DeleteValue(self, key, name):
         if name not in self.values:
             raise FileNotFoundError(name)
         del self.values[name]

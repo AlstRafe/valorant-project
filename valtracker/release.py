@@ -35,8 +35,8 @@ def source(folder: Path = ROOT) -> dict | None:
     """The last commit that changed the app in the clone at ``folder``: {"commit", "time": when it was made
     (seconds since 1970)}. None without a clone or without git (the built app, a copy of the files)."""
     try:
-        done = subprocess.run(  # noqa: S603 - fixed arguments
-            ["git", "-C", str(folder), "log", "-1", "--format=%H %ct", "--", *PATHS],  # noqa: S607
+        done = subprocess.run(  # fixed arguments
+            ["git", "-C", str(folder), "log", "-1", "--format=%H %ct", "--", *PATHS],
             capture_output=True,
             text=True,
             timeout=20,
