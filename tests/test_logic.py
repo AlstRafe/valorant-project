@@ -43,6 +43,30 @@ class HenrikTest(unittest.TestCase):
             self.henrik.account("A", "B")
         self.assertEqual(caught.exception.kind, "down")
 
+    def test_down_answers_at_once(self):
+        # HenrikDev 全体が答えない間（10 秒の無応答、Cloudflare の 52x）は聞かずにすぐ down: 1 回 10 秒待つだけ
+        for status in (0, 522):
+            with self.subTest(status=status):
+                fetch = FakeFetch()
+                fetch.fail = status
+                henrik = Henrik(lambda: "key", fetch)
+                for name in ("A", "B"):
+                    with self.assertRaises(HenrikError) as caught:
+                        henrik.account(name, "JP1")
+                    self.assertEqual(caught.exception.kind, "down")
+                self.assertEqual(len(fetch.asked), 1, "no second call while it is down")
+                henrik.down_until = 0  # DOWN_WAIT が過ぎた: また聞く
+                fetch.fail = None
+                self.assertTrue(henrik.account("A", "JP1"))
+
+    def test_one_failing_call_does_not_stop_the_rest(self):
+        # 1 つの呼び出しの 500 は HenrikDev 全体の問題ではない: ほかの呼び出しはそのまま聞く
+        self.fetch.fail = 500
+        with self.assertRaises(HenrikError):
+            self.henrik.account("A", "JP1")
+        self.fetch.fail = None
+        self.assertTrue(self.henrik.account("B", "JP1"))
+
     def test_budget(self):
         henrik = Henrik(lambda: "key", self.fetch, Budget(1, 60))
         henrik.account("A", "B")
