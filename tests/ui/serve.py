@@ -448,8 +448,14 @@ def seed_sets(app) -> None:
 
 def full_lobby(app) -> None:
     """持ち主が出会う形の /live のまるごとの試合: エージェント選択に 5 人、
-    試合は 5 対 5（フィクスチャは 3 人でテストには足りる）。長い名前、名前を隠している人、ランクの無い人。"""
+    試合は 5 対 5（フィクスチャは 3 人でテストには足りる）。長い名前、名前を隠している人（パーティーの仲間と、
+    パーティー外の人）、ランクの無い人。"""
     pd = app.riot.pd
+    # パーティーの仲間（名前を隠している Secret）は持ち主と同じチーム
+    mine = next(item["TeamID"] for item in pd["coregame"]["Players"] if item["Subject"] == helpers.PUUID)
+    for item in pd["coregame"]["Players"]:
+        if item["Subject"] in {member["Subject"] for member in pd["party"]["Members"]}:
+            item["TeamID"] = mine
     # --real: 本物の試合のように 10 エージェント。持ち主は全エージェントから選べる
     agents = [FOUND["agents"][name] for name in REAL_LOBBY if name in FOUND["agents"]] or [real(JETT), real(SOVA)]
     if FOUND["agents"]:
@@ -471,7 +477,7 @@ def full_lobby(app) -> None:
         pd["coregame"]["Players"].append(
             {
                 "Subject": subject,
-                "TeamID": "Red" if number < 4 else "Blue",
+                "TeamID": "Red" if number < 3 else "Blue",
                 "CharacterID": agents[number % len(agents)],
                 "PlayerIdentity": identity,
                 "SeasonalBadgeInfo": {"Rank": tier},

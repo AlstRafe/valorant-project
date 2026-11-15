@@ -2010,10 +2010,10 @@ TEXTS = {
         "en-GB": "The names could not be loaded.",
         "zh-TW": "無法載入名稱。",
     },
-    "非公開のプレイヤーは名前・カード・称号を表示しません。": {
-        "ko": "비공개 플레이어의 이름·카드·칭호는 표시하지 않습니다.",
-        "en-GB": "Hidden players' names, cards and titles aren't shown.",
-        "zh-TW": "未公開玩家的名稱、卡面與稱號不會顯示。",
+    "パーティー外の非公開プレイヤーは名前・カード・称号を表示しません。": {
+        "ko": "파티 밖의 비공개 플레이어는 이름·카드·칭호를 표시하지 않습니다.",
+        "en-GB": "Names, cards and titles of hidden players outside your party aren't shown.",
+        "zh-TW": "隊伍外的未公開玩家不會顯示名稱、卡面與稱號。",
     },
     "数秒ごとに自動で更新されます。": {
         "ko": "몇 초마다 자동으로 갱신됩니다.",

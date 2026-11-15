@@ -104,10 +104,11 @@ def rr_updates(answer) -> dict:
     return found
 
 
-def to_v4(details, region: str, maps: dict, puuid: str = "", name: str = "", tag: str = "") -> dict:
+def to_v4(details, region: str, maps: dict, puuid: str = "", name: str = "", tag: str = "", keep=frozenset()) -> dict:
     """PD の match-details -> HenrikDev v4 の試合（henrik.slim_match が読むもの）。
     ``maps``: valorant-api.com のマップをアドレス名で（"ascent"、content.Content.map_index）。名前（``name``、``tag``）
-    を残すのは ``puuid`` だけ。終わった試合でなければ {}。"""
+    を残すのは ``puuid`` だけ。``keep``: ほかに PD の名前を残すプレイヤー（持ち主のページだけ: party_of）。
+    終わった試合でなければ {}。"""
     if not isinstance(details, dict) or not isinstance(details.get("matchInfo"), dict):
         return {}
     info = details["matchInfo"]
@@ -128,11 +129,12 @@ def to_v4(details, region: str, maps: dict, puuid: str = "", name: str = "", tag
         line = item.get("stats") if isinstance(item.get("stats"), dict) else {}
         head, body, leg = shots.get(subject, (0, 0, 0))
         mine = subject == lower_id(puuid)
+        kept = subject in keep and not mine
         players.append(
             {
                 "puuid": subject,
-                "name": name if mine else "",
-                "tag": tag if mine else "",
+                "name": name if mine else str(item.get("gameName") or "") if kept else "",
+                "tag": tag if mine else str(item.get("tagLine") or "") if kept else "",
                 "team_id": str(item.get("teamId") or ""),
                 "party_id": lower_id(item.get("partyId")),
                 "agent": {"id": lower_id(item.get("characterId")), "name": ""},
@@ -273,3 +275,21 @@ def _kills(details: dict, rounds_raw: list) -> list:
             }
         )
     return found
+
+
+def party_of(details, puuid: str) -> frozenset[str]:
+    """PD の match-details で ``puuid`` と同じパーティー（Riot の ``partyId``）にいたプレイヤー（本人と観戦者を除く）
+    : ゲームはパーティーの仲間には名前を隠さない。"""
+    found = details.get("players") if isinstance(details, dict) else None
+    players = [item for item in found or [] if isinstance(item, dict)]
+    me = lower_id(puuid)
+    party = next((lower_id(item.get("partyId")) for item in players if lower_id(item.get("subject")) == me), "")
+    if not party or not me:
+        return frozenset()
+    return frozenset(
+        lower_id(item.get("subject"))
+        for item in players
+        if lower_id(item.get("partyId")) == party
+        and lower_id(item.get("subject")) not in ("", me)
+        and not item.get("isObserver")
+    )

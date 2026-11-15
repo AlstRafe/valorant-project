@@ -3,7 +3,8 @@
 持ち主のエージェントのピックとロック。試合では、全員のエージェント・カード・称号・レベル・ランク、各チームの平均ランク、
 名前を出しているプレイヤーのアクトの戦績。
 
-名前はゲームで隠していない（``Incognito`` でない）プレイヤーだけ、レベルは隠していない（``HideAccountLevel`` でない）
+名前はゲームで隠していない（``Incognito`` でない）プレイヤーと、持ち主と同じパーティーのプレイヤー（ゲームの設定も
+「パーティー外のプレイヤーに名前を隠す」: 仲間には見える）だけ、レベルは隠していない（``HideAccountLevel`` でない）
 ときだけ出す: このページはゲーム自身の画面以上のことを言わない。"""
 
 from __future__ import annotations
@@ -146,7 +147,9 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
     identity = item.get("PlayerIdentity") if isinstance(item.get("PlayerIdentity"), dict) else {}
     agent = look["agents"].get(lower_id(item.get("CharacterID"))) or {}
     subject = lower_id(item.get("Subject"))
-    hidden = bool(identity.get("Incognito"))
+    # 同じパーティーの仲間（Riot のパーティーのメンバー、riot.Riot.live）にはゲームも名前を見せる
+    mate = subject in look["mates"] and subject != me
+    hidden = bool(identity.get("Incognito")) and not mate
     name = look["names"].get(subject) if not hidden else None
     badge = item.get("SeasonalBadgeInfo") if isinstance(item.get("SeasonalBadgeInfo"), dict) else {}
     tier, rr = _rank(look["ranks"].get(subject), look["act"])
@@ -167,6 +170,7 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
         "name": name[0] if name else "",
         "tag": name[1] if name else "",
         "hidden": hidden,
+        "mate": mate,
         # 隠しているプレイヤーはカードと称号も出さない: 誰かわかってしまうことがある
         "card": f"https://media.valorant-api.com/playercards/{card}/smallart.png"
         if card and not hidden and len(card) == 36
@@ -181,7 +185,7 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
         if tier > 2
         else None,
         "tier": tier if tier > 2 else 0,
-        # アクトの戦績は持ち主と名前を出しているプレイヤーだけ: このサイトのその人のページと同じ公開度。
+        # アクトの戦績は持ち主と名前が出ているプレイヤー（パーティーの仲間も）だけ: このサイトのその人のページと同じ公開度。
         # 3 つのランク（今、アクト最高、通算最高）は全員: 持ち主が名前を隠している人にも出すよう頼んだ（2026-11-15）。
         # ランクでは誰かわからない
         "record": _record(look["ranks"].get(subject), look["act"]) if shown else None,
@@ -241,6 +245,7 @@ def page(
         "titles": content.index("playertitles", lang),
         "names": found.get("names") or {},
         "ranks": found.get("ranks") or {},
+        "mates": {lower_id(subject) for subject in found.get("mates") or []},
         "act": (act or {}).get("uuid") or "",
         "old_acts": content.old_acts(lang),
     }

@@ -3,7 +3,7 @@
 <li class="seat{% if row.me %} me{% endif %}{% if row.state %} {{ row.state }}{% endif %}">
 {% if row.agent_icon %}<img src="{{ media(row.agent_icon) }}" alt="" width="40" height="40">{% elif row.card %}<img src="{{ media(row.card) }}" alt="" width="40" height="40">{% else %}<span class="no-agent" aria-hidden="true">?</span>{% endif %}
 <span class="seat-text">
-<strong>{% if row.name %}<a href="{{ url_for('player', name=row.name, tag=row.tag) }}">{{ row.name }}<span class="tag">#{{ row.tag }}</span></a>{% elif row.me %}{{ t('あなた') }}{% else %}<span class="hidden-name">{{ t('非公開') }}</span>{% endif %}{% if row.owner %} <span class="badge">{{ t('リーダー') }}</span>{% endif %}</strong>
+<strong>{% if row.name %}<a href="{{ url_for('player', name=row.name, tag=row.tag) }}">{{ row.name }}<span class="tag">#{{ row.tag }}</span></a>{% elif row.me %}{{ t('あなた') }}{% else %}<span class="hidden-name">{{ t('非公開') }}</span>{% endif %}{% if row.owner %} <span class="badge">{{ t('リーダー') }}</span>{% endif %}{% if row.mate and phase != 'menus' %} <span class="badge mate">{{ t('パーティー') }}</span>{% endif %}</strong>
 {%- set parts = [] -%}
 {%- if row.agent %}{% set _ = parts.append(t('{agent}（選択中）', agent=row.agent) if row.state == 'selected' else t('{agent}（確定）', agent=row.agent) if row.state == 'locked' else row.agent) %}{% elif phase != 'menus' %}{% set _ = parts.append(t('未選択')) %}{% endif -%}
 {%- if row.title %}{% set _ = parts.append(row.title) %}{% endif -%}
@@ -168,7 +168,7 @@
 {% endif %}
 {% endif %}
 {% if names_missing %}<p class="note">{{ t('名前を読み込めませんでした。') }}</p>{% endif %}
-{% if hidden_names %}<p class="note">{{ t('非公開のプレイヤーは名前・カード・称号を表示しません。') }}</p>{% endif %}
+{% if hidden_names %}<p class="note">{{ t('パーティー外の非公開プレイヤーは名前・カード・称号を表示しません。') }}</p>{% endif %}
 {% if phase == 'menus' %}{{ steps() }}{% endif %}
 {% if not playing %}<p class="note">{% if desktop %}{{ t('ゲームの状態に合わせて自動で更新されます。') }}{% else %}{{ t('数秒ごとに自動で更新されます。') }}{% endif %}</p>{% endif %}
 {% endif %}

@@ -320,6 +320,16 @@ class DesktopAppTest(unittest.TestCase):
         state = self.client.get("/live/state").get_json()
         self.assertEqual((state["phase"], state["running"]), ("", False))
 
+    def test_the_party_from_the_client_names_party_members_in_the_match(self):
+        """試合中もクライアントがパーティーの ID を言う: 仲間（名前を隠していても）の名前に、居場所は聞かない。"""
+        self.listening()
+        self.riot.phase = "ingame"
+        self.local.handle(read_lockfile(self.lockfile), event(EVENTS[0], {"presences": [presence("INGAME")]}))
+        asked = self.look()
+        self.assertFalse([url for url in asked if "/parties/v1/players/" in url], asked)
+        self.assertIn(f"/parties/v1/parties/{PARTY}", " ".join(asked))
+        self.assertIn('Secret<span class="tag">#9999</span>', self.client.get("/live").get_data(as_text=True))
+
     def test_an_event_reads_the_game_at_once(self):
         self.listening()
         self.riot.phase = "menus"

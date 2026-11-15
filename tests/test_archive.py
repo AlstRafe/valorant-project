@@ -63,6 +63,17 @@ class PdMatchTest(unittest.TestCase):
         self.assertEqual({value for key, value in named.items() if key != PLAYER}, {("", "")})
         self.assertNotIn("Secret Mate", json.dumps(henrik.slim_match(raw)))
 
+    def test_the_players_party(self):
+        """持ち主のページだけ: 同じ partyId だった人の名前は残せる（観戦者と相手は残さない）。"""
+        details = PD["matches"][M1]
+        mates = pdmatch.party_of(details, PLAYER)
+        self.assertEqual(mates, {"22222222-3333-4444-8555-666666666666"})
+        raw = pdmatch.to_v4(details, "ap", MAPS, PLAYER, "Pd Player", "PD1", mates)
+        named = {player["name"] for player in raw["players"]}
+        self.assertEqual(named, {"Pd Player", "Secret Mate", ""})
+        self.assertEqual(pdmatch.party_of(details, "someone-else"), frozenset())
+        self.assertEqual(pdmatch.party_of([], PLAYER), frozenset())
+
     def test_kills_from_the_rounds_when_the_match_has_none(self):
         details = json.loads(json.dumps(PD["matches"][M1]))
         for kill in details.pop("kills"):
