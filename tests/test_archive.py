@@ -1,5 +1,5 @@
-"""A player's lifetime: the game's own match records in HenrikDev's shape (pdmatch.py), the archive and its
-background reading (archive.py), and the player page's "通算" (views._lifetime)."""
+"""プレイヤーの通算: ゲーム自身の試合記録を HenrikDev の形にしたもの（pdmatch.py）、
+アーカイブとその裏での読み込み（archive.py）、プレイヤーページの「通算」（views._lifetime）。"""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ class PdMatchTest(unittest.TestCase):
         self.assertEqual(metadata["cluster"], "Tokyo")
         self.assertEqual(metadata["started_at"], "2025-11-06T03:33:20Z")
         self.assertEqual(len(raw["players"]), 4, "the observer is not a player")
-        slim = henrik._slim_match(raw)
+        slim = henrik.slim_match(raw)
         me = stats.find_player(slim, PLAYER)
         line = stats.line(me, stats.rounds_played(slim), stats.advanced(slim, me))
         self.assertEqual((line["kills"], line["deaths"], line["assists"]), (3, 1, 1))
@@ -51,7 +51,7 @@ class PdMatchTest(unittest.TestCase):
         self.assertEqual(slim["digest"]["rounds"][1]["s"], "A")
         self.assertEqual(slim["digest"]["rounds"][2]["c"], "clutch")
         self.assertEqual(me["agent"]["id"], "11111111-1111-4111-8111-111111111111")
-        # a weapon is known by its uuid (lower case); an ability keeps the name PD gives it
+        # 武器は uuid（小文字）でわかる。アビリティは PD が付けた名前のまま
         self.assertEqual(
             slim["digest"]["players"][0]["weapons"], {"9c82e19d-4575-0200-1a81-3eacf00cf872": 2, "ultimate": 1}
         )
@@ -61,7 +61,18 @@ class PdMatchTest(unittest.TestCase):
         named = {player["puuid"]: (player["name"], player["tag"]) for player in raw["players"]}
         self.assertEqual(named[PLAYER], ("Pd Player", "PD1"))
         self.assertEqual({value for key, value in named.items() if key != PLAYER}, {("", "")})
-        self.assertNotIn("Secret Mate", json.dumps(henrik._slim_match(raw)))
+        self.assertNotIn("Secret Mate", json.dumps(henrik.slim_match(raw)))
+
+    def test_the_players_party(self):
+        """持ち主のページだけ: 同じ partyId だった人の名前は残せる（観戦者と相手は残さない）。"""
+        details = PD["matches"][M1]
+        mates = pdmatch.party_of(details, PLAYER)
+        self.assertEqual(mates, {"22222222-3333-4444-8555-666666666666"})
+        raw = pdmatch.to_v4(details, "ap", MAPS, PLAYER, "Pd Player", "PD1", mates)
+        named = {player["name"] for player in raw["players"]}
+        self.assertEqual(named, {"Pd Player", "Secret Mate", ""})
+        self.assertEqual(pdmatch.party_of(details, "someone-else"), frozenset())
+        self.assertEqual(pdmatch.party_of([], PLAYER), frozenset())
 
     def test_kills_from_the_rounds_when_the_match_has_none(self):
         details = json.loads(json.dumps(PD["matches"][M1]))
@@ -109,7 +120,7 @@ class ArchiveTest(unittest.TestCase):
         self.archive = self.app.config["VAL_ARCHIVE"]
 
     def test_kept_once_and_henriks_wins(self):
-        slim = henrik._slim_match(converted())
+        slim = henrik.slim_match(converted())
         self.assertEqual(self.archive.keep([slim], "riot"), 1)
         self.assertEqual(self.archive.keep([slim], "riot"), 0)
         self.assertEqual(self.archive.known([M1, M2]), {M1})
@@ -121,12 +132,12 @@ class ArchiveTest(unittest.TestCase):
         self.assertEqual(kept[0]["players"][1]["name"], "Named")
         self.archive.keep([slim], "riot")
         self.assertEqual(next(self.archive.matches(PLAYER))["players"][1]["name"], "Named", "not replaced by Riot's")
-        # each player of the match has it in their own list
+        # 試合の各プレイヤーの一覧に入る
         self.assertEqual(len(list(self.archive.matches("22222222-3333-4444-8555-666666666666"))), 1)
         self.assertEqual(list(self.archive.matches(PLAYER, "unrated")), [])
 
     def test_unfinished_matches_are_not_kept(self):
-        slim = henrik._slim_match(converted())
+        slim = henrik.slim_match(converted())
         slim["metadata"]["is_completed"] = False
         self.assertEqual(self.archive.keep([slim, {"metadata": {}}, "x"]), 0)
 
@@ -232,7 +243,7 @@ class FillerTest(unittest.TestCase):
 
     def test_henrik_leaves_the_visitors_room(self):
         self.filler.want("ap", "puuid-me", "Tester", "JP1")
-        self.filler.step()  # switch
+        self.filler.step()  # 切り替え
         henrik_key = self.app.config["VAL_HENRIK"]
         while henrik_key.budget.room() >= archive_module.HENRIK_ROOM:
             henrik_key.budget.take()
@@ -280,7 +291,7 @@ class LifetimePageTest(unittest.TestCase):
         self.assertIn("RR の推移 · 通算", text)
         self.assertEqual(text.count('class="match '), whole + thin)
         self.assertIn("残りの試合を取得中", text, "the background has not read them yet")
-        # its reading was asked for
+        # 読み込みを頼んだ
         self.assertEqual(self.archive.player("puuid-me")["name"], "Tester")
 
     def test_many_matches_have_pages(self):
@@ -309,7 +320,7 @@ class LifetimePageTest(unittest.TestCase):
         self.assertIn("通算", part)
 
     def test_one_act(self):
-        # ACT I: 2026-01-07 to 03-01; ACT III (being played): from 03-01 (the fixture's seasons)
+        # ACT I: 2026-01-07〜03-01、ACT III（進行中）: 03-01 から（フィクスチャのシーズン）
         base = henrik._slim_matches(json.loads(fixture("henrik_matches.json"))["data"])[0]
         many = []
         for number, started in enumerate(["2026-01-20", "2026-02-10", "2026-02-11", "2026-05-01", "2026-06-01"]):
@@ -324,7 +335,7 @@ class LifetimePageTest(unittest.TestCase):
         self.assertIn(f'data-part="/p/Tester/JP1/part?span=act&amp;act={first}"', shell)
         text = self.page("/p/Tester/JP1?span=act&full=1")
         self.assertIn('aria-current="true">アクト</a>', text)
-        self.assertIn("エピソード 9 · ACT III · 4 試合", text)  # the 2 recent matches and 2 of May and June
+        self.assertIn("エピソード 9 · ACT III · 4 試合", text)  # 最近の 2 試合と、5 月・6 月の 2 試合
         self.assertIn("エピソード 9 · ACT III（2026年3月1日〜）の 4 試合を集計", text)
         self.assertIn("RR の推移 · エピソード 9 · ACT III", text)
         self.assertIn(
@@ -345,7 +356,7 @@ class LifetimePageTest(unittest.TestCase):
     def test_the_recent_list_leads_on(self):
         text = self.page("/p/Tester/JP1?full=1")
         self.assertIn('<a class="button quiet" href="/p/Tester/JP1?span=all#m-title">過去の試合（通算） →</a>', text)
-        self.assertIn('class="narrow"', text)  # the charts drawn for a phone too
+        self.assertIn('class="narrow"', text)  # スマホ向けのグラフも描く
         self.assertIn('<p class="chart-days">', text)
 
     def test_kept_until_something_is_added(self):

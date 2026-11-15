@@ -3,7 +3,7 @@
 <li class="seat{% if row.me %} me{% endif %}{% if row.state %} {{ row.state }}{% endif %}">
 {% if row.agent_icon %}<img src="{{ media(row.agent_icon) }}" alt="" width="40" height="40">{% elif row.card %}<img src="{{ media(row.card) }}" alt="" width="40" height="40">{% else %}<span class="no-agent" aria-hidden="true">?</span>{% endif %}
 <span class="seat-text">
-<strong>{% if row.name %}<a href="{{ url_for('player', name=row.name, tag=row.tag) }}">{{ row.name }}<span class="tag">#{{ row.tag }}</span></a>{% elif row.me %}{{ t('あなた') }}{% else %}<span class="hidden-name">{{ t('非公開') }}</span>{% endif %}{% if row.owner %} <span class="badge">{{ t('リーダー') }}</span>{% endif %}</strong>
+<strong>{% if row.name %}<a href="{{ url_for('player', name=row.name, tag=row.tag) }}">{{ row.name }}<span class="tag">#{{ row.tag }}</span></a>{% elif row.me %}{{ t('あなた') }}{% else %}<span class="hidden-name">{{ t('非公開') }}</span>{% endif %}{% if row.owner %} <span class="badge">{{ t('リーダー') }}</span>{% endif %}{% if row.mate and phase != 'menus' %} <span class="badge mate">{{ t('パーティー') }}</span>{% endif %}</strong>
 {%- set parts = [] -%}
 {%- if row.agent %}{% set _ = parts.append(t('{agent}（選択中）', agent=row.agent) if row.state == 'selected' else t('{agent}（確定）', agent=row.agent) if row.state == 'locked' else row.agent) %}{% elif phase != 'menus' %}{% set _ = parts.append(t('未選択')) %}{% endif -%}
 {%- if row.title %}{% set _ = parts.append(row.title) %}{% endif -%}
@@ -47,7 +47,7 @@
 {% else %}
 <p class="game-state{% if playing %} sr{% endif %}"><span class="dot {{ 'on' if running else 'off' }}" aria-hidden="true"></span>VALORANT: {% if phase == 'pregame' %}{{ t('エージェント選択') }}{% elif phase == 'ingame' %}{{ t('対戦中') }}{% elif phase == 'menus' %}{{ t('マッチング中') if party and party.state == 'matchmaking' else t('メニュー') }}{% elif running %}{{ t('起動中') }}{% elif running is none %}{{ t('不明') }}{% else %}{{ t('未起動') }}{% endif %}</p>
 {% if last_result and not playing %}
-{#- the match just played, from the game's own server the moment it ends: the result, the owner's line, the RR #}
+{#- 今終わった試合を、終わった瞬間にゲーム自身のサーバーから: 結果、持ち主の行、RR #}
 {% set row = last_result %}
 {% set outcome = 'win' if row.result.won is sameas true or (row.result.won is none and not row.result.rounds and row.placing.place == 1) else ('loss' if row.result.won is sameas false else 'draw') %}
 <section class="last-result" aria-labelledby="last-title">
@@ -79,7 +79,7 @@
 {% if not phase %}
 <p class="note">{% if running is none %}{{ t('ゲームの状態を取得できませんでした。') }}{% else %}{{ t('VALORANT を起動すると、ここからキューを開始できます。') }}{% endif %}</p>
 {% if account and account.linked %}
-{#- nothing to do here until the game opens: the owner's other pages, a click away (the PC app opens on this page) #}
+{#- ゲームが開くまでここですることは無い: 持ち主のほかのページへクリック 1 つ（PC アプリはこのページで開く） #}
 <section class="me-box" aria-labelledby="me-title">
 <h2 id="me-title">{{ t('マイアカウント') }}</h2>
 {% if desktop %}{% include "_accounts.html" %}{% endif %}
@@ -168,7 +168,7 @@
 {% endif %}
 {% endif %}
 {% if names_missing %}<p class="note">{{ t('名前を読み込めませんでした。') }}</p>{% endif %}
-{% if hidden_names %}<p class="note">{{ t('非公開のプレイヤーは名前・カード・称号を表示しません。') }}</p>{% endif %}
+{% if hidden_names %}<p class="note">{{ t('パーティー外の非公開プレイヤーは名前・カード・称号を表示しません。') }}</p>{% endif %}
 {% if phase == 'menus' %}{{ steps() }}{% endif %}
 {% if not playing %}<p class="note">{% if desktop %}{{ t('ゲームの状態に合わせて自動で更新されます。') }}{% else %}{{ t('数秒ごとに自動で更新されます。') }}{% endif %}</p>{% endif %}
 {% endif %}

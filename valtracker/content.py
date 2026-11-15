@@ -1,11 +1,10 @@
-"""The game's names and pictures (agents, maps, ranks, and the owner's collection: weapons and their skins,
-buddies, cards, sprays, titles) in the visitor's language, from valorant-api.com: a free community API with no
-key, which has every one of our languages (English as en-US).
+"""ゲームの名前と絵（エージェント、マップ、ランク、持ち主のコレクション: 武器とスキン、ガンバディ、カード、スプレー、
+称号）を訪問者の言語で。valorant-api.com から: キー不要の無料のコミュニティ API で、
+こちらの言語が全部ある（英語は en-US）。
 
-Each list is saved in instance/content/ and asked for again once a day; when the site cannot be reached the
-saved one is used, however old. Its pictures are on media.valorant-api.com, which the pages do not load
-from (no outside addresses, CSP): media.py fetches them once and serves them from here.
-"""
+各一覧は instance/content/ に保存し、1 日 1 回取り直す。サイトに届かないときは、どんなに古くても保存したものを使う。
+絵は media.valorant-api.com にあり、ページはそこから読まない（外部アドレス無し、 CSP）
+: media.py が 1 回取ってここから配る。"""
 
 from __future__ import annotations
 
@@ -20,26 +19,25 @@ from valtracker import i18n, net
 
 BASE = "https://valorant-api.com/v1"
 MEDIA = "https://media.valorant-api.com/"
-#: Where the skins' videos are (Riot's own CDN; valorant-api.com names them): the only outside addresses a page
-#: may play from (security.CSP's media-src).
+#: スキン動画の場所（Riot 自身の CDN。名前は valorant-api.com が出す）
+#: : ページが再生してよい唯一の外部アドレス（security.CSP の media-src）。
 VIDEOS = ("https://valorant.dyn.riotcdn.net/", MEDIA)
-#: The marks the game colours its own texts with (an ability's "<whitebold>…</>", "<debuffred>…</>"): they mean
-#: nothing on a page.
+#: ゲームが自分の文に色を付ける印（アビリティの "<whitebold>…</>"、"<debuffred>…</>"）: ページでは意味が無い。
 MARKS = re.compile(r"</?[A-Za-z][A-Za-z0-9_]*>|</>")
 
 
-#: Episode 5 (22 June 2022) put Ascendant between Diamond and Immortal: an act that began before it numbers
-#: Immortal 21-23 and Radiant 24, three less than today.
+#: エピソード 5（2022 年 6 月 22 日）でダイヤモンドとイモータルの間にアセンダントが入った:
+#: それより前に始まったアクトはイモータルが 21〜23、レディアントが 24 で、今より 3 少ない。
 ASCENDANT_SINCE = datetime(2022, 6, 21, tzinfo=UTC)
 
 
 def todays_tier(tier: int, old: bool) -> int:
-    """A rank's number as today's table has it; ``old``: it is from an act before Episode 5."""
+    """今の表でのランクの番号。``old``: エピソード 5 より前のアクトのもの。"""
     return tier + 3 if old and tier >= 21 else tier
 
 
 def plain(text) -> str:
-    """A text of the game (an agent's or an ability's description) without the game's own marks."""
+    """ゲームの文（エージェントやアビリティの説明）からゲームの印を除いたもの。"""
     return MARKS.sub("", str(text or ""))
 
 
@@ -47,9 +45,9 @@ KINDS = {
     "agents": "/agents?isPlayableCharacter=true&language={lang}",
     "maps": "/maps?language={lang}",
     "competitivetiers": "/competitivetiers?language={lang}",
-    # the weapons' names and kill-feed pictures for everyone's pages; "weapons" (with every skin) is the owner's
+    # 全員のページ用の武器の名前とキルフィードの絵。"weapons"（全スキン入り）は持ち主用
     "arsenal": "/weapons?language={lang}",
-    # the owner's collection (collection.py)
+    # 持ち主のコレクション（collection.py）
     "weapons": "/weapons?language={lang}",
     "buddies": "/buddies?language={lang}",
     "playercards": "/playercards?language={lang}",
@@ -58,23 +56,22 @@ KINDS = {
     "flex": "/flex?language={lang}",
     "contenttiers": "/contenttiers?language={lang}",
     "currencies": "/currencies?language={lang}",
-    # the skin library (skinlib.py): the names of the skins' series (Prime, Reaver, ...)
+    # スキン図鑑（skinlib.py）: スキンのシリーズの名前（Prime、Reaver など）
     "themes": "/themes?language={lang}",
-    # the owner's progress (progress.py): the battle passes' and agents' contracts, the XP of each level
+    # 持ち主の進み具合（progress.py）: バトルパスとエージェントのコントラクト、各レベルの XP
     "contracts": "/contracts?language={lang}",
-    # the store's bundles (shop.py): their names and pictures
+    # ストアのバンドル（shop.py）: 名前と絵
     "bundles": "/bundles?language={lang}",
-    # the episodes and acts, and when each ends
+    # エピソードとアクト、それぞれの終わり
     "seasons": "/seasons?language={lang}",
-    # the game's version, which Riot's own servers want to be told (riot.py)
+    # Riot 自身のサーバーに伝える必要があるゲームのバージョン（riot.py）
     "version": "/version",
 }
-#: A saved list is asked for again after this long.
+#: 保存した一覧はこの時間が過ぎたら取り直す。
 FRESH_SECONDS = 24 * 3600
-#: After a failed try, the saved list (or none) is used this long before the next try.
+#: 取り直しに失敗したら、次に試すまでこの時間は保存した一覧（か無し）を使う。
 RETRY_SECONDS = 600
-#: A list whose kept keys (SLIM) changed: a saved one of an older shape is asked for again at once (and used
-#: until the new one comes).
+#: 残すキー（SLIM）が変わった一覧: 古い形で保存したものはすぐに取り直す（新しいものが来るまでは古いものを使う）。
 SHAPES = {"weapons": 2}
 
 
@@ -106,7 +103,7 @@ class Content:
             data = json.loads(body.decode("utf-8")).get("data") if status == 200 else None
         except (ValueError, AttributeError, UnicodeDecodeError):
             data = None
-        if isinstance(data, dict):  # /version: one item
+        if isinstance(data, dict):  # /version: 1 項目
             data = [data]
         if not isinstance(data, list):
             return saved[1] if saved else []
@@ -139,23 +136,23 @@ class Content:
             )
             temporary.replace(path)
         except OSError:
-            pass  # kept in memory for this run
+            pass  # この実行の間はメモリに持つ
 
-    # -- what the pages use --------------------------------------------------------------------------
+    # -- ページが使うもの ----------------------------------------------------------------------------
 
     def agents(self, lang: str) -> list:
-        """Every playable agent, by name in ``lang``."""
+        """プレイできる全エージェント（``lang`` での名前で）。"""
         agents = [agent for agent in self._list("agents", lang) if isinstance(agent, dict) and agent.get("uuid")]
         return sorted(agents, key=lambda agent: str(agent.get("displayName", "")))
 
     def agent(self, lang: str, uuid: str) -> dict | None:
-        return {str(agent["uuid"]).lower(): agent for agent in self.agents(lang)}.get(str(uuid).lower())
+        return self.agent_index(lang).get(str(uuid).lower())
 
     def agent_index(self, lang: str) -> dict:
         return {str(agent["uuid"]).lower(): agent for agent in self.agents(lang)}
 
     def map_index(self, lang: str) -> dict:
-        """uuid and the map's address name (/Game/Maps/Ascent/Ascent -> "ascent") -> the map."""
+        """uuid とマップのアドレス名（/Game/Maps/Ascent/Ascent -> "ascent"）-> マップ。"""
         found = {}
         for item in self._list("maps", lang):
             if not isinstance(item, dict) or not item.get("uuid"):
@@ -167,8 +164,8 @@ class Content:
         return found
 
     def tiers(self, lang: str, old: bool = False) -> dict:
-        """The rank table: tier number -> {"tierName", "smallIcon", "rankTriangleUpIcon", ...}. The current one,
-        or with ``old`` the one before Ascendant (Episodes 1-4: up to 24, Radiant), when it is there."""
+        """ランクの表: tier の番号 -> {"tierName", "smallIcon", "rankTriangleUpIcon", ...}。今のもの、
+        ``old`` ならアセンダント以前のもの（エピソード 1〜4: レディアントの 24 まで）があればそれ。"""
         tables = []
         for item in self._list("competitivetiers", lang):
             if isinstance(item, dict):
@@ -184,7 +181,7 @@ class Content:
         return tables[-1]
 
     def index(self, kind: str, lang: str) -> dict:
-        """One of the collection's lists by uuid, the uuids of each item's levels (and a skin's chromas) too."""
+        """コレクションの一覧の 1 つを uuid で。各項目のレベル（とスキンのクロマ）の uuid でも引ける。"""
         found = {}
         for item in self._list(kind, lang):
             if not isinstance(item, dict) or not item.get("uuid"):
@@ -196,7 +193,7 @@ class Content:
         return found
 
     def skins(self, lang: str) -> dict:
-        """Every skin, its levels and chromas by uuid -> (the weapon, the skin)."""
+        """全スキン、そのレベルとクロマの uuid -> （武器, スキン）。"""
         found = {}
         for weapon in self.weapons(lang):
             for skin in weapon.get("skins") or []:
@@ -206,7 +203,7 @@ class Content:
         return found
 
     def arsenal(self, lang: str) -> dict:
-        """Every weapon by uuid: ``{"displayName", "category", "killStreamIcon", "displayIcon"}``."""
+        """全武器を uuid で: ``{"displayName", "killStreamIcon"}``。"""
         return {
             str(item["uuid"]).lower(): item
             for item in self._list("arsenal", lang)
@@ -214,15 +211,14 @@ class Content:
         }
 
     def act(self, lang: str, now: float | None = None) -> dict | None:
-        """The act being played: ``{"name": "EPISODE 9 · ACT III", "starts", "ends": datetime (UTC), "uuid"}``, or
-        None."""
+        """今のアクト: ``{"name": "EPISODE 9 · ACT III", "starts", "ends": datetime（UTC）, "uuid"}``、無ければ None。"""
         now = self.clock() if now is None else now
         return next(
             (item for item in self.acts(lang) if item["starts"].timestamp() <= now < item["ends"].timestamp()), None
         )
 
     def acts(self, lang: str) -> list[dict]:
-        """Every act, the latest first: ``{"name": "EPISODE 9 · ACT III", "starts", "ends": datetime (UTC), "uuid"}``."""
+        """全アクト（新しい順）: ``{"name": "EPISODE 9 · ACT III", "starts", "ends": datetime（UTC）, "uuid"}``。"""
         seasons = [item for item in self._list("seasons", lang) if isinstance(item, dict)]
         by_id = {str(item.get("uuid") or "").lower(): item for item in seasons}
         found = []
@@ -230,8 +226,8 @@ class Content:
             if "Act" not in str(item.get("type") or ""):
                 continue
             try:
-                start = datetime.fromisoformat(str(item.get("startTime")).replace("Z", "+00:00"))
-                end = datetime.fromisoformat(str(item.get("endTime")).replace("Z", "+00:00"))
+                start = datetime.fromisoformat(str(item.get("startTime")))
+                end = datetime.fromisoformat(str(item.get("endTime")))
             except ValueError:
                 continue
             parent = by_id.get(str(item.get("parentUuid") or "").lower()) or {}
@@ -247,14 +243,14 @@ class Content:
         return sorted(found, key=lambda item: item["starts"], reverse=True)
 
     def old_acts(self, lang: str) -> frozenset[str]:
-        """The acts before Episode 5 (uuids): their ranks are numbered without Ascendant (todays_tier)."""
+        """エピソード 5 より前のアクト（uuid）: ランクの番号にアセンダントが無い（todays_tier）。"""
         return frozenset(act["uuid"] for act in self.acts(lang) if act["starts"] < ASCENDANT_SINCE)
 
     def weapons(self, lang: str) -> list:
         return [weapon for weapon in self._list("weapons", lang) if isinstance(weapon, dict)]
 
     def client_version(self) -> dict:
-        """``{"riotClientVersion": "release-09.10-shipping-...", "riotClientBuild": "91.0.2..."}`` or {}."""
+        """``{"riotClientVersion": "release-09.10-shipping-...", "riotClientBuild": "91.0.2..."}``、無ければ {}。"""
         found = self._list("version", i18n.DEFAULT)
         return found[0] if found and isinstance(found[0], dict) else {}
 
@@ -268,7 +264,7 @@ def _parts(item: dict, kind: str, keys) -> list:
 
 
 def _video(parts: list) -> list:
-    """A level's or chroma's video only from the known places (the pages may play only those, CSP)."""
+    """レベルやクロマの動画。わかっている場所のものだけ（ページはそれしか再生できない、CSP）。"""
     for part in parts:
         if not str(part.get("streamedVideo") or "").startswith(VIDEOS):
             part.pop("streamedVideo", None)
@@ -276,8 +272,8 @@ def _video(parts: list) -> list:
 
 
 def _slim_weapon(weapon: dict) -> dict:
-    """A weapon with what the collection and the skin library show: valorant-api.com's /weapons is megabytes
-    (stats, every level's asset path), which would fill the small VM's memory once per language."""
+    """コレクションとスキン図鑑が出す部分だけの武器: valorant-api.com の /weapons は数 MB（性能、
+    全レベルのアセットパス）あり、言語ごとに持つと小さな VM のメモリが埋まる。"""
     kept = _keep(weapon, ("uuid", "displayName", "category", "displayIcon", "defaultSkinUuid"))
     kept["cost"] = int(((weapon.get("shopData") or {}).get("cost")) or 0)
     kept["skins"] = [
@@ -297,7 +293,7 @@ def _slim_weapon(weapon: dict) -> dict:
 
 
 def _slim_contract(item: dict) -> dict:
-    """A contract (a battle pass, an event's pass, an agent's): its kind, what it is for and each level's XP."""
+    """コントラクト（バトルパス、イベントのパス、エージェントのもの）: 種類、何のものか、各レベルの XP。"""
     about = item.get("content") if isinstance(item.get("content"), dict) else {}
     levels, epilogue = [], 0
     for chapter in about.get("chapters") or []:
@@ -316,7 +312,7 @@ def _slim_contract(item: dict) -> dict:
     }
 
 
-#: What each of the collection's lists keeps of an item (the rest is dropped before it is saved).
+#: コレクションの各一覧で項目から残すもの（残りは保存前に捨てる）。
 SLIM = {
     "contracts": _slim_contract,
     "weapons": _slim_weapon,
@@ -324,7 +320,7 @@ SLIM = {
         **_keep(item, ("uuid", "displayName", "displayIcon")),
         "levels": _parts(item, "levels", ("uuid",)),
     },
-    "arsenal": lambda item: _keep(item, ("uuid", "displayName", "category", "killStreamIcon", "displayIcon")),
+    "arsenal": lambda item: _keep(item, ("uuid", "displayName", "killStreamIcon")),
     "playercards": lambda item: _keep(item, ("uuid", "displayName", "smallArt", "wideArt")),
     "sprays": lambda item: {
         **_keep(item, ("uuid", "displayName", "displayIcon", "fullTransparentIcon")),
@@ -332,8 +328,8 @@ SLIM = {
     },
     "playertitles": lambda item: _keep(item, ("uuid", "displayName", "titleText")),
     "flex": lambda item: _keep(item, ("uuid", "displayName", "displayIcon")),
-    "contenttiers": lambda item: _keep(item, ("uuid", "displayName", "devName", "rank", "displayIcon")),
-    "currencies": lambda item: _keep(item, ("uuid", "displayName", "displayNameSingular", "displayIcon")),
+    "contenttiers": lambda item: _keep(item, ("uuid", "displayName", "devName", "displayIcon")),
+    "currencies": lambda item: _keep(item, ("uuid", "displayName", "displayIcon")),
     "bundles": lambda item: _keep(item, ("uuid", "displayName", "displayIcon", "displayIcon2")),
     "themes": lambda item: _keep(item, ("uuid", "displayName")),
     "seasons": lambda item: _keep(item, ("uuid", "displayName", "type", "startTime", "endTime", "parentUuid")),
@@ -341,7 +337,7 @@ SLIM = {
 
 
 def variant_name(name, skin_name: str) -> str:
-    """A chroma's own part of its name: "Reaver Vandal Level 4\r\n(Variant 1 Red)" -> "Variant 1 Red"."""
+    """クロマ自身の名前の部分: "Reaver Vandal Level 4 (Variant 1 Red)" -> "Variant 1 Red"。"""
     name = " ".join(str(name or "").split())
     inside = re.search(r"\(([^()]+)\)\s*$", name)
     if inside:
@@ -351,6 +347,6 @@ def variant_name(name, skin_name: str) -> str:
 
 
 def media_path(url) -> str | None:
-    """A media.valorant-api.com picture's path under our /media/ (None for anything else)."""
+    """media.valorant-api.com の絵の、こちらの /media/ の下でのパス（ほかのものは None）。"""
     url = str(url or "")
     return url[len(MEDIA) :] if url.startswith(MEDIA) else None

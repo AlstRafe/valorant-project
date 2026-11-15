@@ -1,6 +1,6 @@
-"""The skin library: every weapon skin in the game (/skins), by weapon, tier or name, and each skin's page
-(/skins/<uuid>) with its variants (chromas), its levels and their videos, the skins of its series and the
-visitors' ratings (ratings.py). Everyone's, in the visitor's language, from valorant-api.com (content.py)."""
+"""スキン図鑑: ゲームの全武器スキン（/skins）を武器・ティア・名前で探せ、スキンごとのページ（/skins/<uuid>）
+にはバリアント（クロマ）、レベルとその動画、同じシリーズのスキン、訪問者の評価（ratings.py）を出す。全員共通、
+訪問者の言語で、valorant-api.com から（content.py）。"""
 
 from __future__ import annotations
 
@@ -10,15 +10,16 @@ import secrets
 from flask import Flask, abort, current_app, g, redirect, render_template, request, url_for
 
 from valtracker import security
-from valtracker.collection import TIERS, _tier, _weapon_order
+from valtracker.collection import TIERS, tier_info, weapon_order
 from valtracker.content import Content, variant_name
-from valtracker.views import _t
+from valtracker.util import lower_id
+from valtracker.views import tr
 
-#: Shown when the visitor has chosen nothing: the weapon most skins are bought for.
+#: 訪問者が何も選んでいないときに出す武器（スキンが一番買われる武器）。
 VANDAL = "9c82e19d-4575-0200-1a81-3eacf00cf872"
-#: The series that are no skin to look at: the weapons' standard look and "Random Favorite Skin".
+#: 見るスキンが無いシリーズ: 武器の標準の見た目と「Random Favorite Skin」。
 NOT_SKINS = {"5a629df4-4765-0214-bd40-fbb96542941f", "0d7a5bfb-4850-098e-1821-d989bbfd58a8"}
-#: What a level adds (valorant-api.com's levelItem after "::") -> its name (translated).
+#: レベルで増えるもの（valorant-api.com の levelItem の "::" の後）-> 名前（訳す）。
 LEVEL_ITEMS = {
     "VFX": "エフェクト",
     "Animation": "アニメーション",
@@ -33,19 +34,15 @@ LEVEL_ITEMS = {
     "Transformation": "変形",
     "FishAnimation": "アニメーション",
 }
-#: Most skins listed on one page (a search over every weapon can find more: the page says to narrow it).
+#: 1 ページに並べるスキンの最大数（全武器の検索ではもっと見つかることがあり、そのときは絞るようページに出す）。
 SHOWN = 160
 VOTER_COOKIE = "val_voter"
 _VOTER = re.compile(r"^[A-Za-z0-9_-]{20,64}$")
 _UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
 
-def _id(value) -> str:
-    return str(value or "").lower()
-
-
 def _words(value) -> str:
-    """valorant-api.com's names can hold line breaks (a chroma's "Variant 1\\nRed")."""
+    r"""valorant-api.com の名前には改行が入ることがある（クロマの "Variant 1\nRed"）。"""
     return " ".join(str(value or "").split())
 
 
@@ -55,34 +52,33 @@ def _picture(skin: dict) -> str:
         skin.get("displayIcon")
         or next((level.get("displayIcon") for level in skin.get("levels") or [] if level.get("displayIcon")), "")
         or next((part.get("fullRender") for part in chromas if part.get("fullRender")), "")
-        or ""
     )
 
 
 def _is_skin(weapon: dict, skin: dict) -> bool:
     return (
-        _id(skin.get("uuid")) != _id(weapon.get("defaultSkinUuid"))
-        and _id(skin.get("themeUuid")) not in NOT_SKINS
+        lower_id(skin.get("uuid")) != lower_id(weapon.get("defaultSkinUuid"))
+        and lower_id(skin.get("themeUuid")) not in NOT_SKINS
         and bool(_picture(skin))
     )
 
 
 def library(content: Content, lang: str) -> list[dict]:
-    """Every skin in the game's order of weapons, the best tier first: ``[{"uuid", "name", "image", "tier",
-    "weapon": {"uuid", "name"}, "theme", "videos"}]``."""
+    """全スキン（ゲームの武器の順、良いティアから）
+    : ``[{"uuid", "name", "image", "tier", "weapon": {"uuid", "name"}, "theme", "videos"}]``。"""
     tiers = content.index("contenttiers", lang)
     found = []
-    for weapon in sorted(content.weapons(lang), key=_weapon_order):
-        about = {"uuid": _id(weapon.get("uuid")), "name": weapon.get("displayName") or ""}
+    for weapon in sorted(content.weapons(lang), key=weapon_order):
+        about = {"uuid": lower_id(weapon.get("uuid")), "name": weapon.get("displayName") or ""}
         skins = [skin for skin in weapon.get("skins") or [] if _is_skin(weapon, skin)]
         entries = [
             {
-                "uuid": _id(skin.get("uuid")),
+                "uuid": lower_id(skin.get("uuid")),
                 "name": _words(skin.get("displayName")),
                 "image": _picture(skin),
-                "tier": _tier(skin, tiers),
+                "tier": tier_info(skin, tiers),
                 "weapon": about,
-                "theme": _id(skin.get("themeUuid")),
+                "theme": lower_id(skin.get("themeUuid")),
                 "videos": sum(
                     1 for part in (skin.get("levels") or []) + (skin.get("chromas") or []) if part.get("streamedVideo")
                 ),
@@ -102,7 +98,7 @@ def _list_page(content: Content, lang: str) -> dict:
     words = _words(request.args.get("q", ""))[:40]
     tier = request.args.get("tier", "")
     tier = tier if tier in {name.lower() for name in TIERS} else ""
-    weapon = _id(request.args.get("weapon", ""))
+    weapon = lower_id(request.args.get("weapon", ""))
     if weapon != "all" and weapon not in weapons:
         weapon = "all" if words or tier else (VANDAL if VANDAL in weapons else next(iter(weapons), "all"))
     picked = [
@@ -133,8 +129,8 @@ def _list_page(content: Content, lang: str) -> dict:
     ratings = current_app.config["VAL_RATINGS"]
     by_uuid = {entry["uuid"]: entry for entry in every}
     top = [
-        by_uuid[skin] | {"url": url_for("skin", uuid=skin), "average": average, "count": count}
-        for skin, average, count in ratings.top(8)
+        by_uuid[skin] | {"url": url_for("skin", uuid=skin), "average": average}
+        for skin, average, _ in ratings.top(8)
         if skin in by_uuid
     ]
     return {
@@ -152,28 +148,32 @@ def _list_page(content: Content, lang: str) -> dict:
     }
 
 
-def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
+def _known_skin(content: Content, lang: str, uuid: str) -> tuple[dict, dict] | None:
+    """図鑑のスキンなら (武器, スキン)。レベルやクロマの uuid は None（リンク先はスキン自身のページ）。"""
     found = content.skins(lang).get(uuid)
+    if not found or lower_id(found[1].get("uuid")) != uuid or not _is_skin(*found):
+        return None
+    return found
+
+
+def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
+    found = _known_skin(content, lang, uuid)
     if not found:
         return None
     weapon, skin = found
-    if _id(skin.get("uuid")) != uuid:
-        return None  # a level's or chroma's uuid: the skin's own page is the one to link
-    if not _is_skin(weapon, skin):
-        return None
     name = _words(skin.get("displayName"))
     tiers = content.index("contenttiers", lang)
-    chosen = _id(request.args.get("chroma", ""))
+    chosen = lower_id(request.args.get("chroma", ""))
     chromas = []
     for number, part in enumerate(skin.get("chromas") or []):
         chromas.append(
             {
-                "uuid": _id(part.get("uuid")),
-                "name": _t("標準") if number == 0 else variant_name(part.get("displayName"), name),
+                "uuid": lower_id(part.get("uuid")),
+                "name": tr("標準") if number == 0 else variant_name(part.get("displayName"), name),
                 "swatch": part.get("swatch") or "",
                 "image": part.get("fullRender") or part.get("displayIcon") or "",
                 "video": part.get("streamedVideo") or "",
-                "url": url_for("skin", uuid=uuid, chroma=None if number == 0 else _id(part.get("uuid"))),
+                "url": url_for("skin", uuid=uuid, chroma=None if number == 0 else lower_id(part.get("uuid"))),
             }
         )
     current = next((part for part in chromas if part["uuid"] == chosen), chromas[0] if chromas else None)
@@ -182,19 +182,19 @@ def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
     levels = []
     for number, part in enumerate(skin.get("levels") or [], 1):
         item = str(part.get("levelItem") or "").rsplit("::", 1)[-1]
-        # "Divergence Vandal Level 3\nWeapon visually transforms every round ...": what it does, after the name
+        # "Divergence Vandal Level 3\nWeapon visually transforms every round ...": 名前の後ろが効果の説明
         lines = [line.strip() for line in str(part.get("displayName") or "").splitlines() if line.strip()]
         levels.append(
             {
                 "number": number,
-                "item": _t(LEVEL_ITEMS[item]) if item in LEVEL_ITEMS else "",
+                "item": tr(LEVEL_ITEMS[item]) if item in LEVEL_ITEMS else "",
                 "about": " ".join(lines[1:])[:200],
                 "video": part.get("streamedVideo") or "",
                 "poster": part.get("displayIcon") or "",
             }
         )
     themes = content.index("themes", lang)
-    theme = _id(skin.get("themeUuid"))
+    theme = lower_id(skin.get("themeUuid"))
     series = [
         entry | {"url": url_for("skin", uuid=entry["uuid"])}
         for entry in library(content, lang)
@@ -206,9 +206,9 @@ def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
         "name": name,
         "weapon": {
             "name": weapon.get("displayName") or "",
-            "url": url_for("skins", weapon=_id(weapon.get("uuid"))),
+            "url": url_for("skins", weapon=lower_id(weapon.get("uuid"))),
         },
-        "tier": _tier(skin, tiers),
+        "tier": tier_info(skin, tiers),
         "theme": _words((themes.get(theme) or {}).get("displayName")),
         "image": picture,
         "chromas": chromas if len(chromas) > 1 else [],
@@ -241,10 +241,10 @@ def register(app: Flask) -> None:
 
     @app.post("/skins/<uuid>/want")
     def want_skin(uuid: str):
-        """The owner's wish list (diary.py): the store marks these skins when they come up."""
+        """持ち主のほしい物リスト（diary.py）: ストアに出たら印を付ける。"""
         security.owner_only()
         uuid = uuid.lower()
-        if not _UUID.match(uuid) or _skin_page(current_app.config["VAL_CONTENT"], g.lang, uuid) is None:
+        if not _UUID.match(uuid) or _known_skin(current_app.config["VAL_CONTENT"], g.lang, uuid) is None:
             abort(404)
         current_app.config["VAL_DIARY"].want(uuid, request.form.get("on") == "1")
         return redirect(url_for("skin", uuid=uuid) + "#want", 303)
@@ -253,7 +253,7 @@ def register(app: Flask) -> None:
     def rate_skin(uuid: str):
         uuid = uuid.lower()
         content = current_app.config["VAL_CONTENT"]
-        if not _UUID.match(uuid) or _skin_page(content, g.lang, uuid) is None:
+        if not _UUID.match(uuid) or _known_skin(content, g.lang, uuid) is None:
             abort(404)
         try:
             stars = int(request.form.get("stars", ""))

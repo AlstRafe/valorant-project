@@ -1,4 +1,4 @@
-{# The part of a player's page that needs HenrikDev: player.html, or alone for the page's script (player_part). #}
+{# プレイヤーページのうち HenrikDev が要る部分: player.html の中、またはページのスクリプト用に単独で（player_part）。 #}
 {% if not account %}
 <section class="hero">
 <h1>{{ name }}<span class="tag">#{{ tag }}</span></h1>
@@ -8,7 +8,7 @@
 </section>
 {% else %}
 {% set act_key = window.uuid if window and not window.current else None %}
-<section class="profile" id="profile" data-name="{{ name }}" data-tag="{{ tag }}" data-region="{{ region }}"{% if rank and rank.tier > 2 %} data-rank="{{ rank.name }}"{% if rank.icon %} data-icon="{{ media(rank.icon) }}"{% endif %}{% endif %}>
+<section class="profile" id="profile" data-name="{{ name }}" data-tag="{{ tag }}"{% if rank and rank.tier > 2 %} data-rank="{{ rank.name }}"{% if rank.icon %} data-icon="{{ media(rank.icon) }}"{% endif %}{% endif %}>
 {% set wide = media('https://media.valorant-api.com/playercards/' ~ card ~ '/wideart.png') if card else '' %}
 <div class="banner">
 {% if wide %}<img class="wide" src="{{ wide }}" alt="" width="452" height="128">{% endif %}
@@ -29,7 +29,7 @@
 {% if rank.tier < 24 %}<progress class="rr-bar" max="100" value="{{ [rr or 0, 100]|min }}" aria-label="RR {{ rr or 0 }} / 100"></progress>{% endif %}
 {% if next_rank %}<p class="sub next">{{ t('{rank} まであと {rr} RR', rank=next_rank.rank.name, rr=next_rank.need) }}{% if next_rank.wins %} · {{ t('平均 +{gain} で約 {wins} 勝', gain=next_rank.gain, wins=next_rank.wins) }}{% endif %}{% if next_rank.matches %} · {{ t('今のペースで約 {matches} 試合', matches=next_rank.matches) }}{% elif next_rank.flat %} · {{ t('今のペースでは横ばい（平均 −{loss}）', loss=next_rank.loss) }}{% endif %}</p>{% endif %}
 {% if rank_top %}<p class="sub"><a href="{{ url_for('ranks', region=region) }}">{{ t('この地域で上位 {share}%', share=rank_top) }}</a></p>{% endif %}
-{% if act %}<p class="sub act-left">{{ act.text }}</p>{% endif %}
+{% if act %}<p class="sub act-left">{{ act }}</p>{% endif %}
 {% else %}
 <p class="value"><span>{{ t('ランクなし') }}</span></p>
 {% if standing.placements %}<p class="sub">{{ t('ランク決定まであと {count} 試合', count=standing.placements) }}</p>{% endif %}

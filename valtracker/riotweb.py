@@ -1,11 +1,11 @@
-"""Riot's own public pages, asked without a key or a sign-in: the news on playvalorant.com (the list its news page
-reads), each region's server notices (the files the game's status page reads), and the esports matches to come
-(valorantesports.com's schedule page, which carries them in its HTML for the browser to start from).
+"""Riot 自身の公開ページ（キーもサインインも不要）: playvalorant.com のニュース（ニュースページが読む一覧）、
+各リージョンのサーバーのお知らせ（ゲームのステータスページが読むファイル）、
+eスポーツの予定（valorantesports.com の予定ページ。ブラウザー用に HTML に入っている）。
 
-These are asked first; HenrikDev (henrik.py), which only passes them on, is the fallback when Riot does not
-answer. HenrikDev's copy can fall behind: in 2026-11 its Japanese news still ended at patch 12.04 while Riot's
-had 13.09. The answers have the shapes henrik.py's ``news`` and ``status`` give, so the pages read either.
-"""
+これを先に聞き、Riot が答えないときだけ、それを中継しているだけの HenrikDev（henrik.py）に聞く。
+HenrikDev の写しは遅れることがある: 2026-11 には、
+Riot は 13.09 まであるのに HenrikDev の日本語ニュースは 12.04 で止まっていた。
+答えは henrik.py の ``news`` と ``status`` と同じ形なので、ページはどちらでも読める。"""
 
 from __future__ import annotations
 
@@ -15,7 +15,8 @@ from urllib.parse import urlencode
 
 from valtracker import net
 from valtracker.cache import TTLCache
-from valtracker.henrik import _https, _region, _slim_status
+from valtracker.henrik import https_only, known_region, slim_status
+from valtracker.util import to_int
 
 SITE = "https://playvalorant.com"
 NEWS = (
@@ -23,17 +24,17 @@ NEWS = (
     "valorant_news_page_list"
 )
 STATUS = "https://valorant.secure.dyn.riotcdn.net/channels/public/x/status/{region}.json"
-#: The languages of Riot's news site (ours, as world.NEWS_LANGS names them) -> the list's locale.
+#: Riot ニュースサイトの言語（world.NEWS_LANGS でのこちらの言語）-> 一覧のロケール。
 LOCALES = {"ja-jp": "ja_JP", "ko-kr": "ko_KR", "en-gb": "en_GB", "zh-tw": "zh_TW"}
-#: How many of the latest articles are asked for (world.NEWS_SHOWN are shown).
+#: 頼む最新記事の数（出すのは world.NEWS_SHOWN）。
 NEWS_LIMIT = 60
 ESPORTS = "https://valorantesports.com/{locale}/schedule"
-#: Our languages -> the esports site's (its leagues and stages are named in them); en-US when one does not answer.
+#: こちらの言語 -> eスポーツサイトの言語（リーグとステージの名前がその言語になる）。答えなければ en-US。
 ESPORTS_LOCALES = {"ja": "ja-JP", "ko": "ko-KR", "en-GB": "en-GB", "zh-TW": "zh-TW"}
-#: Where a match of the schedule starts in the page: the answer of the page's own query, as JavaScript.
+#: ページ内で予定の試合が始まる場所: ページ自身のクエリの答え（JavaScript として）。
 EVENT = re.compile(r'\{"__typename":"EventMatch"')
-#: How long an answer is kept (seconds), and how long a failure is (not asked again meanwhile: each try can
-#: take net.TIMEOUT, and the page then asks HenrikDev).
+#: 答えを持つ秒数と、失敗を覚えておく秒数（その間は聞き直さない。 1 回で net.TIMEOUT かかることがあり、
+#: そのときページは HenrikDev に聞く）。
 KEEP = {"news": 1800, "status": 300, "esports": 900}
 FAILED_KEEP = 120
 
@@ -50,8 +51,8 @@ class RiotWeb:
         self.cache = TTLCache(64)
 
     def news(self, country: str) -> list:
-        """The latest articles in a language (``ja-jp``...): ``[{"title", "at", "category", "url", "banner"}]``,
-        the latest first. The latest patch notes are always among them, even when older than the rest."""
+        """その言語（``ja-jp`` など）の最新記事: ``[{"title", "at", "category", "url", "banner"}]``、新しい順。
+        最新のパッチノートはほかより古くてもいつも入れる。"""
         locale = LOCALES.get(country)
         if not locale:
             raise RiotWebError(f"no news in {country}")
@@ -65,13 +66,13 @@ class RiotWeb:
         return listed
 
     def status(self, region: str) -> dict:
-        """A region's notices: ``{"maintenances": [...], "incidents": [...]}`` (henrik._slim_status)."""
-        region = _region(region)
-        return self._get(("status", region), STATUS.format(region=region), KEEP["status"], _slim_status)
+        """リージョンのお知らせ: ``{"maintenances": [...], "incidents": [...]}``（henrik.slim_status）。"""
+        region = known_region(region)
+        return self._get(("status", region), STATUS.format(region=region), KEEP["status"], slim_status)
 
     def esports(self, lang: str) -> list:
-        """The esports matches to come (about the next 40, of every league), in the shape of henrik._slim_esports,
-        by time. Riot's site has no results without its key: those (and the matches being played) are HenrikDev's."""
+        """eスポーツの予定（全リーグの次の 40 試合ほど）を henrik._slim_esports の形で、時刻順に。
+        Riot のサイトはキー無しでは結果を出さないので、結果（と進行中の試合）は HenrikDev。"""
         locale = ESPORTS_LOCALES.get(lang, "en-US")
         try:
             return self._get(("esports", locale), ESPORTS.format(locale=locale), KEEP["esports"], _slim_schedule)
@@ -81,7 +82,7 @@ class RiotWeb:
             return self._get(("esports", "en-US"), ESPORTS.format(locale="en-US"), KEEP["esports"], _slim_schedule)
 
     def _get(self, key, url: str, seconds: float, shape):
-        """``shape`` turns the answer (a JSON object, or for a page its text) into what is kept."""
+        """``shape`` で答え（JSON オブジェクト、ページならその本文）を残す形にする。"""
         kept = self.cache.get(key)
         if kept is not None:
             return kept
@@ -136,28 +137,24 @@ def _slim_news(data: dict) -> list:
                 "title": str(item["title"])[:200],
                 "at": str(item.get("publishedAt") or ""),
                 "category": "patch_notes" if "patch_notes" in tags else str(category.get("machineName") or "").lower(),
-                "url": _https(url),
-                "banner": _https(media.get("url")),
+                "url": https_only(url),
+                "banner": https_only(media.get("url")),
             }
         )
     return sorted(articles, key=lambda item: item["at"], reverse=True)
 
 
 def _picture(value) -> str:
-    """The esports site's pictures, some of them given as http:// (the same address answers https)."""
+    """eスポーツサイトの絵。http:// で来るものもある（同じアドレスが https でも答える）。"""
     value = str(value or "")
     if value.startswith("http://static.lolesports.com/"):
         value = "https://" + value.removeprefix("http://")
-    return _https(value)
-
-
-def _number(value) -> int:
-    return int(value) if isinstance(value, int) or str(value or "").isdigit() else 0
+    return https_only(value)
 
 
 def _slim_schedule(page: str) -> list:
-    """The matches in the schedule page: each ``{"__typename":"EventMatch",...}`` object in it (JSON, except that
-    JavaScript's ``undefined`` can stand for a value), once each."""
+    """予定ページの試合: ページ内の ``{"__typename":"EventMatch",...}`` オブジェクトを 1 つずつ（JSON。
+    ただし JavaScript の ``undefined`` が値になっていることがある）。"""
     page = page.replace(":undefined", ":null")
     decoder, found = json.JSONDecoder(), {}
     for spot in EVENT.finditer(page):
@@ -186,7 +183,7 @@ def _slim_schedule(page: str) -> list:
                     "code": str(team.get("code") or "")[:8],
                     "icon": _picture(team.get("image")),
                     "won": result.get("outcome") == "win",
-                    "wins": _number(result.get("gameWins")),
+                    "wins": to_int(result.get("gameWins")),
                 }
             )
         games.append(
@@ -200,7 +197,7 @@ def _slim_schedule(page: str) -> list:
                     "icon": _picture(league.get("image")),
                 },
                 "tournament": stage,
-                "best_of": _number(strategy.get("count")) if strategy.get("type") == "bestOf" else 0,
+                "best_of": to_int(strategy.get("count")) if strategy.get("type") == "bestOf" else 0,
                 "vod": "",
                 "teams": each,
             }

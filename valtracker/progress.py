@@ -1,39 +1,27 @@
-"""The owner's progress (/progress): the act's battle pass, the events' passes, the agents' contracts and the
-missions, from PD's contracts (riot.Riot.contracts) with valorant-api.com's names and each level's XP (content.py).
-"""
+"""持ち主の進み具合（/progress）: アクトのバトルパス、イベントのパス、エージェントのコントラクト、ミッション。
+PD の contracts（riot.Riot.contracts）に、valorant-api.com の名前と各レベルの XP（content.py）を合わせる。"""
 
 from __future__ import annotations
 
 from valtracker.content import Content
-
-
-def _id(value) -> str:
-    return str(value or "").lower()
-
-
-def _number(value) -> int:
-    try:
-        return int(float(value or 0))
-    except (TypeError, ValueError):
-        return 0
+from valtracker.util import lower_id, to_int
 
 
 def contract(item: dict, definition: dict, agents: dict) -> dict:
-    """One contract: how far it is (levels, XP to the next level, the share of all its XP)."""
-    levels = [_number(xp) for xp in definition.get("levels") or []]
-    reached = min(max(_number(item.get("ProgressionLevelReached")), 0), len(levels))
-    toward = max(_number(item.get("ProgressionTowardsNextLevel")), 0)
-    main = len(levels) - _number(definition.get("epilogue"))
+    """コントラクトひとつの進み具合（レベル、次のレベルまでの XP、全 XP に対する割合）。"""
+    levels = [to_int(xp) for xp in definition.get("levels") or []]
+    reached = min(max(to_int(item.get("ProgressionLevelReached")), 0), len(levels))
+    toward = max(to_int(item.get("ProgressionTowardsNextLevel")), 0)
+    main = len(levels) - to_int(definition.get("epilogue"))
     total = sum(levels)
     done = sum(levels[:reached]) + (min(toward, levels[reached]) if reached < len(levels) else 0)
-    agent = agents.get(_id(definition.get("of"))) if definition.get("type") == "Agent" else None
+    agent = agents.get(lower_id(definition.get("of"))) if definition.get("type") == "Agent" else None
     return {
         "name": (agent or {}).get("displayName") or definition.get("displayName") or "",
         "icon": (agent or {}).get("displayIcon") or definition.get("displayIcon") or "",
         "type": definition.get("type") or "",
         "reached": reached,
         "main": main if main > 0 else len(levels),
-        "all": len(levels),
         "toward": toward if reached < len(levels) else 0,
         "next": levels[reached] if reached < len(levels) else 0,
         "share": round(100 * done / total) if total else 0,
@@ -43,7 +31,7 @@ def contract(item: dict, definition: dict, agents: dict) -> dict:
 
 
 def page(found: dict, content: Content, lang: str, now: float, when) -> dict:
-    """What progress.html shows; ``when(iso)``: a moment in the owner's clock (tools._when)."""
+    """progress.html に出すもの。``when(iso)``: 持ち主の時計での時刻（tools.moment_info）。"""
     answer = found.get("contracts") if isinstance(found.get("contracts"), dict) else {}
     known = content.index("contracts", lang)
     agents = content.agent_index(lang)
@@ -52,7 +40,7 @@ def page(found: dict, content: Content, lang: str, now: float, when) -> dict:
     for item in answer.get("Contracts") or []:
         if not isinstance(item, dict):
             continue
-        definition = known.get(_id(item.get("ContractDefinitionID")))
+        definition = known.get(lower_id(item.get("ContractDefinitionID")))
         if definition:
             shown.append((definition, contract(item, definition, agents)))
     battle_pass = next(

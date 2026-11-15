@@ -1,5 +1,5 @@
-"""Asking the outside APIs (HenrikDev, valorant-api.com, the owner's Riot account): small functions the rest of the
-app is given, so the tests can hand in their own answers instead of going to the network."""
+"""外部 API（HenrikDev、valorant-api.com、持ち主の Riot アカウント）への問い合わせ。アプリには小さな関数として渡すので、
+テストはネットに出ずに自分の答えを渡せる。"""
 
 from __future__ import annotations
 
@@ -8,19 +8,18 @@ import urllib.error
 import urllib.request
 from collections.abc import Callable
 
-#: (url, headers) -> (HTTP status, body). Status 0: no answer (no network, a timeout, a refused TLS).
+#: (url, headers) -> (HTTP ステータス, 本文)。ステータス 0: 答えが無い（ネット無し、タイムアウト、TLS 拒否）。
 Fetch = Callable[[str, dict], tuple[int, bytes]]
-#: (method, url, headers, body) -> (HTTP status, the answer's headers, body), redirects not followed (riot.py).
+#: (method, url, headers, body) -> (HTTP ステータス, 答えのヘッダー, 本文)。リダイレクトは追わない（riot.py）。
 Send = Callable[[str, str, dict, bytes | None], tuple[int, list[tuple[str, str]], bytes]]
 
 USER_AGENT = "VAL-Tracker/0.1 (+https://github.com/AlstRafe/valorant-project)"
 TIMEOUT = 10.0
-#: An answer bigger than this is not one of the answers we ask for (HenrikDev's 10 latest matches, with every
-#: round and kill in them, are about 5 MB).
+#: これより大きい答えはこちらが頼んだものではない（HenrikDev の最新 10 試合を全ラウンド・全キル込みで約 5 MB）。
 MAX_BYTES = 24 * 1024 * 1024
 
 _TLS = ssl.create_default_context()
-#: Riot's sign-in refuses Python's usual TLS greeting (2023); the cipher order the game's own tools use gets through.
+#: Riot のサインインは Python の普通の TLS の挨拶を拒む（2023 年）。ゲーム用ツールと同じ暗号の順なら通る。
 _RIOT_TLS = ssl.create_default_context()
 _RIOT_TLS.minimum_version = ssl.TLSVersion.TLSv1_2
 try:
@@ -31,7 +30,7 @@ try:
         "AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA:AES256-SHA"
     )
 except ssl.SSLError:
-    pass  # this OpenSSL has none of them: its own order
+    pass  # この OpenSSL にはどれも無い: 既定の順
 
 
 def fetch(url: str, headers: dict | None = None) -> tuple[int, bytes]:
@@ -50,7 +49,7 @@ def fetch(url: str, headers: dict | None = None) -> tuple[int, bytes]:
 
 
 class _Stay(urllib.request.HTTPRedirectHandler):
-    """A redirect is the answer (Riot's sign-in puts the tokens in the address it sends the browser to)."""
+    """リダイレクトをそのまま答えにする（Riot のサインインはブラウザーを送る先のアドレスにトークンを入れる）。"""
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
@@ -60,8 +59,8 @@ _OPENER = urllib.request.build_opener(_Stay, urllib.request.HTTPSHandler(context
 
 
 def send(method: str, url: str, headers: dict | None = None, body: bytes | None = None):
-    """Like ``fetch`` for the owner's Riot account: any method, a body, the answer's headers (Set-Cookie,
-    Location), and a redirect handed back instead of followed."""
+    """持ち主の Riot アカウント用の ``fetch``: 任意のメソッド、本文、答えのヘッダー（Set-Cookie、Location）。
+    リダイレクトは追わずに返す。"""
     request = urllib.request.Request(
         url, data=body, method=method, headers={"User-Agent": USER_AGENT, **(headers or {})}
     )

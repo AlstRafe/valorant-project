@@ -1,16 +1,15 @@
-"""The PC app's checkup (/checkup): whether each thing the app reads can be read on this PC right now.
+"""PC アプリのチェックアップ（/checkup）: アプリが読むものが、今この PC で読めるかを 1 つずつ確かめる。
 
-The app reads from four places: the Riot Client on this PC (who is signed in, where the game is, its events, the
-friends), Riot's own servers (the match, the collection, the store, the passes, the match history), the names and
-pictures of valorant-api.com, and HenrikDev (other players). When a page stays empty, this page says which of them
-does not answer, in the owner's words, and gives a report to paste where help is asked.
+アプリが読む場所は 4 つ: この PC の Riot Client（誰がサインインしているか、ゲームの状態、イベント、フレンド）、
+Riot 自身のサーバー（試合、コレクション、ストア、パス、試合履歴）、valorant-api.com の名前と絵、
+HenrikDev（ほかのプレイヤー）。ページが空のままのとき、どれが答えていないかを持ち主にわかる言葉で出し、
+助けを求める場所に貼れるレポートも出す。
 
-The report holds statuses and the shapes of the answers only: no name, no id, no token (ids in what a server said
-are taken out, ``scrub``).
+レポートに入るのはステータスと答えの形だけ: 名前も ID もトークンも入れない（サーバーの答えの中の ID は ``scrub``
+で消す）。
 
-The Riot Client's part is local and read as the page opens. The rest asks servers (about ten small requests), so
-it runs only when the owner presses the button (``far``).
-"""
+Riot Client の部分はローカルなので、ページを開いたときに読む。残りはサーバーに聞く（小さなリクエスト 10 回ほど）ので、
+持ち主がボタンを押したときだけ（``far``）。"""
 
 from __future__ import annotations
 
@@ -25,14 +24,14 @@ from valtracker.henrik import REGIONS, HenrikError
 from valtracker.localclient import moment
 from valtracker.riot import RiotError
 
-#: The groups' titles.
+#: グループの見出し。
 GROUPS = {
     "local": "この PC の Riot クライアント",
     "riot": "Riot のサーバー",
     "others": "外部データ",
     "app": "アプリ",
 }
-#: What is checked, by its key in the report.
+#: 確かめるもの（レポートでのキー）。
 NAMES = {
     "lockfile": "Riot クライアント",
     "token": "サインイン",
@@ -56,7 +55,7 @@ NAMES = {
     "calm": "ゲーム優先モード",
     "folder": "データフォルダー",
 }
-#: What is said of each (the words take the values of the same item).
+#: それぞれの結果の文（同じ項目の値を埋める）。
 SAID = {
     "open": "起動中",
     "closed": "起動していません。Riot クライアントか VALORANT を起動して再チェックしてください。",
@@ -89,9 +88,9 @@ SAID = {
     "writable": "書き込み可",
     "readonly": "書き込み不可",
 }
-#: A presence's two shapes, as the page names them.
+#: プレゼンスの 2 つの形（ページでの呼び方）。
 SHAPES = {"nested": "現行形式", "flat": "旧形式"}
-#: Where the game is, as the page says it (friends.WORDS' and live.STATE_WORDS' words).
+#: ページでのゲームの状態の言い方（friends.WORDS と live.STATE_WORDS の文）。
 WHERE = {
     "menus": "メニュー",
     "queue": "マッチング中",
@@ -105,12 +104,12 @@ _LONG = re.compile(r"[A-Za-z0-9_\-+/]{40,}")
 
 
 def scrub(text: str) -> str:
-    """What a server said, without the ids and anything as long as a token."""
+    """サーバーの答えから ID とトークンほど長いものを消したもの。"""
     return _LONG.sub("<…>", _ID.sub("<id>", str(text)))[:160]
 
 
 def _item(key: str, state: str, said: str, code: str = "", **values) -> dict:
-    """One line of the page: ``state`` is ok, part, bad, skip (cannot be checked now) or info."""
+    """ページの 1 行: ``state`` は ok、part、bad、skip（今は確かめられない）、info のどれか。"""
     return {"key": key, "name": NAMES[key], "state": state, "words": SAID[said], "values": values, "code": scrub(code)}
 
 
@@ -119,7 +118,7 @@ def _flags(found: dict, *keys: str) -> str:
 
 
 def local_items(local) -> list[dict]:
-    """The Riot Client on this PC: what LocalClient.examine found."""
+    """この PC の Riot Client: LocalClient.examine が見つけたもの。"""
     seen = local.examine()
     if not seen["lockfile"]:
         return [_item("lockfile", "bad", "closed", "no lockfile")]
@@ -198,7 +197,7 @@ def local_items(local) -> list[dict]:
 
 
 def _riot(key: str, read, said=None) -> dict:
-    """One read of Riot's servers: read, read in part (``missing``), or why not."""
+    """Riot のサーバーを 1 回読んだ結果: 読めた、一部だけ読めた（``missing``）、読めない理由。"""
     try:
         found = read()
     except RiotError as error:
@@ -211,7 +210,7 @@ def _riot(key: str, read, said=None) -> dict:
 
 
 def riot_items(riot) -> list[dict]:
-    """Riot's own servers, with the owner's sign-in: each of the app's reads once."""
+    """持ち主のサインインでの Riot 自身のサーバー: アプリが読むものを 1 回ずつ。"""
     status, puuid = riot.status(), riot.me()
     region = status["shard"] if status["shard"] in REGIONS else "ap"
 
@@ -227,8 +226,8 @@ def riot_items(riot) -> list[dict]:
         _riot("live", riot.live, lived),
         _riot("collection", riot.collection),
         _riot("shop", riot.shop),
-        # the names of the answer's parts (no value): where a new part of the game shows first, as the agents'
-        # mastery levels of patch 13.06, which no public document places yet
+        # 答えの部分の名前（値は入れない）: ゲームの新しい部分が最初に出る場所。
+        # パッチ 13.06 のエージェントのマスタリーレベルのように、公開の資料にまだ載っていないもの
         _riot(
             "contracts",
             riot.contracts,
@@ -245,7 +244,7 @@ def riot_items(riot) -> list[dict]:
 
 
 def other_items(app, lang: str, ask_site) -> list[dict]:
-    """The names and pictures, HenrikDev, and the site that tells of a newer build."""
+    """名前と絵、HenrikDev、新しいビルドを知らせるサイト。"""
     content, henrik = app.config["VAL_CONTENT"], app.config["VAL_HENRIK"]
     agents, maps = len(content.agents(lang)), len({item.get("uuid") for item in content.map_index(lang).values()})
     items = [
@@ -297,18 +296,18 @@ def _site(site: str):
     return _latest(site)
 
 
-def run(app, far: bool, lang: str = "ja", ask_site=None) -> list[dict]:
-    """The page's groups: ``[{"key", "name", "items": [...]}]``. ``far``: Riot's servers and the other sources
-    too (else they are left out)."""
+def run(app, far: bool, lang: str = "ja") -> list[dict]:
+    """ページのグループ: ``[{"key", "name", "items": [...]}]``。
+    ``far``: Riot のサーバーとほかの出どころも確かめる（でなければ省く）。"""
     groups = [("local", local_items(app.config["VAL_LOCAL"]))]
     if far:
-        groups += [("riot", riot_items(app.config["VAL_RIOT"])), ("others", other_items(app, lang, ask_site or _site))]
+        groups += [("riot", riot_items(app.config["VAL_RIOT"])), ("others", other_items(app, lang, _site))]
     groups.append(("app", app_items(app)))
     return [{"key": key, "name": GROUPS[key], "items": items} for key, items in groups]
 
 
 def report(groups: list[dict], build: dict | None) -> str:
-    """The checkup as plain lines to paste: keys, states and what was found, nothing personal."""
+    """貼り付け用の素のテキストのチェックアップ: キー、状態、見つけたもの。個人的なものは入れない。"""
     lines = [
         "VAL Tracker checkup",
         f"build: {build['date']} {build['commit'][:7]}" if build else "build: source",
@@ -320,5 +319,5 @@ def report(groups: list[dict], build: dict | None) -> str:
     return "\n".join(lines)
 
 
-#: Every text of this page, for the translations' test.
+#: 翻訳のテスト用の、このページの全文。
 TEXTS = (*GROUPS.values(), *NAMES.values(), *SAID.values(), *SHAPES.values(), *WHERE.values(), *friends.WORDS.values())

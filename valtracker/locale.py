@@ -1,11 +1,10 @@
-"""The site's words in Korean, British English and Traditional Chinese (Taiwan), looked up by the Japanese.
+"""サイトの文の韓国語・イギリス英語・繁体字中国語（台湾）。日本語の文で引く。
 
-One Japanese text per entry; a text missing here is shown in Japanese (tests/test_i18n.py finds the ones the
-pages use), the owner's own pages too.
-"""
+1 項目に日本語の文 1 つ。ここに無い文は日本語のまま出る（ページが使う文は tests/test_i18n.py が探す）。
+持ち主専用ページも同じ。"""
 
 TEXTS = {
-    # Header, footer and the parts every page has
+    # ヘッダー、フッター、どのページにもある部分
     "言語": {"ko": "언어", "en-GB": "Language", "zh-TW": "語言"},
     "ダークモード {state}": {"ko": "다크 모드 {state}", "en-GB": "Dark mode: {state}", "zh-TW": "深色模式：{state}"},
     "ダークモード: 自動 → オフ → オン": {
@@ -42,11 +41,11 @@ TEXTS = {
         "en-GB": "Riot Store",
         "zh-TW": "Riot 商店",
     },
-    # A player's page while its rank and matches are on the way
+    # ランクと試合を読み込み中のプレイヤーページ
     "戦績を読み込み中…": {"ko": "전적 불러오는 중…", "en-GB": "Loading stats…", "zh-TW": "正在載入戰績…"},
     "読み込めませんでした。": {"ko": "불러오지 못했습니다.", "en-GB": "Couldn't load them.", "zh-TW": "無法載入。"},
     "戦績を見る": {"ko": "전적 보기", "en-GB": "See the stats", "zh-TW": "查看戰績"},
-    # Errors
+    # エラー
     "エラー {status}": {"ko": "오류 {status}", "en-GB": "Error {status}", "zh-TW": "錯誤 {status}"},
     "ページが見つかりません": {"ko": "페이지를 찾을 수 없습니다", "en-GB": "Page not found", "zh-TW": "找不到這個頁面"},
     "URL が変わったか、削除された可能性があります。": {
@@ -80,12 +79,12 @@ TEXTS = {
         "en-GB": "Busy right now. Try again in a moment.",
         "zh-TW": "目前流量較大，請稍後再試。",
     },
-    "戦績サーバーが応答しません。しばらくしてからお試しください。": {
-        "ko": "전적 서버가 응답하지 않습니다. 잠시 후 다시 시도하세요.",
-        "en-GB": "The stats service isn't answering. Try again shortly.",
-        "zh-TW": "戰績伺服器沒有回應，請稍後再試。",
+    "戦績データの取得元（HenrikDev）が応答しません。このサイトは動いています。しばらくしてからお試しください。": {
+        "ko": "전적 데이터 제공처(HenrikDev)가 응답하지 않습니다. 이 사이트는 정상입니다. 잠시 후 다시 시도하세요.",
+        "en-GB": "HenrikDev, where the stats come from, isn't answering. This site is fine. Try again shortly.",
+        "zh-TW": "戰績資料來源（HenrikDev）沒有回應，本網站運作正常。請稍後再試。",
     },
-    # Search and favourites (top)
+    # 検索とお気に入り（トップ）
     "プレイヤー検索": {"ko": "플레이어 검색", "en-GB": "Find a player", "zh-TW": "搜尋玩家"},
     "Riot ID でランクと戦績を検索できます。": {
         "ko": "Riot ID로 랭크와 전적을 검색합니다.",
@@ -112,7 +111,7 @@ TEXTS = {
     },
     "最近見たプレイヤー": {"ko": "최근 본 플레이어", "en-GB": "Recently viewed", "zh-TW": "最近查看的玩家"},
     "まだありません。": {"ko": "아직 없습니다.", "en-GB": "None yet.", "zh-TW": "目前還沒有。"},
-    # A player
+    # プレイヤー
     "検索に戻る": {"ko": "검색으로 돌아가기", "en-GB": "Back to search", "zh-TW": "回到搜尋"},
     "レベル {level}": {"ko": "레벨 {level}", "en-GB": "Level {level}", "zh-TW": "等級 {level}"},
     "お気に入りに追加": {"ko": "즐겨찾기에 추가", "en-GB": "Add to favourites", "zh-TW": "加入我的最愛"},
@@ -175,7 +174,7 @@ TEXTS = {
     "勝利": {"ko": "승리", "en-GB": "Victory", "zh-TW": "勝利"},
     "敗北": {"ko": "패배", "en-GB": "Defeat", "zh-TW": "敗北"},
     "引き分け": {"ko": "무승부", "en-GB": "Draw", "zh-TW": "平手"},
-    # A player: the numbers worked out from the rounds, by agent, map and weapon, the party, the lobby
+    # プレイヤー: ラウンドから出した数値、エージェント・マップ・武器別、パーティー、ロビー
     "共有": {"ko": "공유", "en-GB": "Share", "zh-TW": "分享"},
     "リンクをコピーしました": {"ko": "링크를 복사했습니다", "en-GB": "Link copied", "zh-TW": "已複製連結"},
     "{rank} まであと {rr} RR": {
@@ -248,7 +247,7 @@ TEXTS = {
     "武器別キル": {"ko": "무기별 킬", "en-GB": "Kills by weapon", "zh-TW": "各武器擊殺"},
     "{count}キル": {"ko": "{count}킬", "en-GB": "{count} kills", "zh-TW": "{count} 殺"},
     "よく組むプレイヤー": {"ko": "자주 함께한 플레이어", "en-GB": "Played with", "zh-TW": "常一起組隊的玩家"},
-    # A match: the rounds, the parties, the duels, the kills
+    # 試合: ラウンド、パーティー、撃ち合い、キル
     "{name} の戦績": {"ko": "{name}의 전적", "en-GB": "{name}'s matches", "zh-TW": "{name} 的戰績"},
     "平均ランク": {"ko": "평균 랭크", "en-GB": "Average rank", "zh-TW": "平均牌位"},
     "ラウンドの流れ": {"ko": "라운드 흐름", "en-GB": "Round by round", "zh-TW": "回合走勢"},
@@ -286,13 +285,13 @@ TEXTS = {
         "zh-TW": "點上方的回合可展開該回合的擊殺。",
     },
     "ラウンドごとのキル": {"ko": "라운드별 킬", "en-GB": "Kills round by round", "zh-TW": "各回合擊殺"},
-    # A match
+    # 試合
     "試合": {"ko": "경기", "en-GB": "Match", "zh-TW": "對戰"},
     "{minutes}分": {"ko": "{minutes}분", "en-GB": "{minutes} min", "zh-TW": "{minutes} 分鐘"},
     "レッド": {"ko": "레드", "en-GB": "Red", "zh-TW": "紅隊"},
     "ブルー": {"ko": "블루", "en-GB": "Blue", "zh-TW": "藍隊"},
     "プレイヤー": {"ko": "플레이어", "en-GB": "Player", "zh-TW": "玩家"},
-    # Queues
+    # キュー
     "コンペティティブ": {"ko": "경쟁전", "en-GB": "Competitive", "zh-TW": "競技模式"},
     "アンレート": {"ko": "일반전", "en-GB": "Unrated", "zh-TW": "一般模式"},
     "スイフトプレイ": {"ko": "신속플레이", "en-GB": "Swiftplay", "zh-TW": "極速模式"},
@@ -306,7 +305,7 @@ TEXTS = {
     "新マップ": {"ko": "새로운 맵", "en-GB": "New Map", "zh-TW": "新地圖"},
     "スカーミッシュ": {"ko": "스커미시", "en-GB": "Skirmish", "zh-TW": "小規模戰鬥"},
     "スノーボールファイト": {"ko": "눈싸움", "en-GB": "Snowball Fight", "zh-TW": "雪球大戰"},
-    # Agents
+    # エージェント
     "VALORANT の全エージェントのロールとアビリティ。": {
         "ko": "VALORANT 모든 요원의 역할군과 스킬.",
         "en-GB": "Every VALORANT agent's role and abilities.",
@@ -319,7 +318,7 @@ TEXTS = {
     },
     "アビリティ": {"ko": "스킬", "en-GB": "Abilities", "zh-TW": "技能"},
     "アルティメット": {"ko": "궁극기", "en-GB": "Ultimate", "zh-TW": "絕招"},
-    # the tools (tools.py): the leaderboard, the server status, crosshairs, the store
+    # ツール（tools.py）: ランキング、サーバーステータス、クロスヘア、ストア
     "1080p の 4 倍で表示。": {
         "ko": "1080p 기준 4배로 표시.",
         "en-GB": "Shown at four times its 1080p size.",
@@ -372,7 +371,7 @@ TEXTS = {
     },
     "ほか {count} 件": {"ko": "외 {count}건", "en-GB": "and {count} more", "zh-TW": "另有 {count} 則"},
     "まだ誰もいません。": {"ko": "아직 아무도 없습니다.", "en-GB": "Nobody yet.", "zh-TW": "目前還沒有人。"},
-    # The leaderboard: looking a player up, and Riot's own list
+    # ランキング: プレイヤー検索と Riot 公式の一覧
     "ランキング内を検索": {
         "ko": "리더보드에서 플레이어 찾기",
         "en-GB": "Find a player on the leaderboard",
@@ -1379,7 +1378,7 @@ TEXTS = {
         "en-GB": "Grade {grade}",
         "zh-TW": "等級 {grade}",
     },
-    # A player's seasons (seasons.py)
+    # プレイヤーのシーズン（seasons.py）
     "シーズン別の成績": {"ko": "시즌별 성적", "en-GB": "Season stats", "zh-TW": "各賽季戰績"},
     "アクトごとの成績と、前アクトからの変化（取得できた試合のみ）。": {
         "ko": "액트별 성적과 이전 액트 대비 변화(불러온 경기만).",
@@ -1404,7 +1403,7 @@ TEXTS = {
     },
     "使用エージェント": {"ko": "많이 쓴 요원", "en-GB": "Most played agents", "zh-TW": "常用特務"},
     "全期間": {"ko": "전체 기간", "en-GB": "All time", "zh-TW": "全部期間"},
-    # Where a player's kills and deaths happened (heatmap.py, _heat.html)
+    # プレイヤーのキルとデスの場所（heatmap.py、_heat.html）
     "キルとデスの場所": {"ko": "킬과 데스 위치", "en-GB": "Kills and deaths on the map", "zh-TW": "擊殺與陣亡位置"},
     "{name} のキルとデスの場所": {
         "ko": "{name}의 킬과 데스 위치",
@@ -1717,7 +1716,7 @@ TEXTS = {
         "en-GB": "Lifetime averages ({a} and {b} matches).",
         "zh-TW": "生涯平均（{a} 場與 {b} 場）。",
     },
-    # The owner's own pages and boxes: the header's ライブ tab, the top page's 自分, the tools' 自分のアカウント
+    # 持ち主専用のページと枠: ヘッダーのライブタブ、トップの自分、ツールの自分のアカウント
     "ライブ": {
         "ko": "라이브",
         "en-GB": "Live",
@@ -1789,7 +1788,7 @@ TEXTS = {
         "en-GB": ", ",
         "zh-TW": "、",
     },
-    # Where the game is (live.py STATE_WORDS)
+    # ゲームの状態（live.py の STATE_WORDS）
     "マッチング中": {
         "ko": "매칭 중",
         "en-GB": "Matchmaking",
@@ -1812,7 +1811,7 @@ TEXTS = {
     },
     "状態を取得できません": {"ko": "상태를 불러올 수 없음", "en-GB": "State unknown", "zh-TW": "無法取得狀態"},
     "VALORANT 未起動": {"ko": "VALORANT 실행 안 됨", "en-GB": "VALORANT not running", "zh-TW": "VALORANT 未啟動"},
-    # Live
+    # ライブ
     "ゲームと連動して、キュー開始とエージェント選択ができます。PC で VALORANT を起動していればスマホからも使えます。": {
         "ko": "게임과 연동해 대기열 시작과 요원 선택을 할 수 있습니다. PC에서 VALORANT를 실행 중이면 스마트폰에서도 쓸 수 있습니다.",
         "en-GB": "Follows your game: start the queue and pick your agent from here. Works from a phone too while VALORANT runs on your PC.",
@@ -2011,10 +2010,10 @@ TEXTS = {
         "en-GB": "The names could not be loaded.",
         "zh-TW": "無法載入名稱。",
     },
-    "非公開のプレイヤーは名前・カード・称号を表示しません。": {
-        "ko": "비공개 플레이어의 이름·카드·칭호는 표시하지 않습니다.",
-        "en-GB": "Hidden players' names, cards and titles aren't shown.",
-        "zh-TW": "未公開玩家的名稱、卡面與稱號不會顯示。",
+    "パーティー外の非公開プレイヤーは名前・カード・称号を表示しません。": {
+        "ko": "파티 밖의 비공개 플레이어는 이름·카드·칭호를 표시하지 않습니다.",
+        "en-GB": "Names, cards and titles of hidden players outside your party aren't shown.",
+        "zh-TW": "隊伍外的未公開玩家不會顯示名稱、卡面與稱號。",
     },
     "数秒ごとに自動で更新されます。": {
         "ko": "몇 초마다 자동으로 갱신됩니다.",
@@ -2052,7 +2051,7 @@ TEXTS = {
         "en-GB": "This act: {wins} wins in {games} matches ({rate}%)",
         "zh-TW": "本階段 {wins} 勝 / {games} 場（{rate}%）",
     },
-    # What /live says after one of its buttons (owner.py LIVE_SAID)
+    # /live のボタンを押した後の文（owner.py の LIVE_SAID）
     "キューを開始しました。": {
         "ko": "대기열을 시작했습니다.",
         "en-GB": "The queue has started.",
@@ -2083,7 +2082,7 @@ TEXTS = {
         "en-GB": "That action isn't available.",
         "zh-TW": "無法執行此操作。",
     },
-    # Progress
+    # 進み具合
     "読み込めませんでした。しばらくしてからお試しください。": {
         "ko": "불러오지 못했습니다. 잠시 후 다시 시도하세요.",
         "en-GB": "Couldn't load. Try again shortly.",
@@ -2148,7 +2147,7 @@ TEXTS = {
         "en-GB": "{xp} XP to the next level",
         "zh-TW": "距離下一級 {xp} XP",
     },
-    # The store's own part and the days before
+    # ストアの持ち主向け部分と過去の日
     "ストア履歴": {"ko": "상점 기록", "en-GB": "Store history", "zh-TW": "商店紀錄"},
     "ショップを開いた日のストアを記録しています。": {
         "ko": "상점을 연 날의 스토어를 기록합니다.",
@@ -2246,7 +2245,7 @@ TEXTS = {
         "en-GB": "It gets a mark when it's in your store.",
         "zh-TW": "上架時會標示出來。",
     },
-    # The collection
+    # コレクション
     "スキン": {
         "ko": "스킨",
         "en-GB": "Skins",
@@ -2468,7 +2467,7 @@ TEXTS = {
         "en-GB": "New items from the game show up within about two minutes.",
         "zh-TW": "在遊戲中取得的物品約 2 分鐘後顯示。",
     },
-    # What the collection page says after a press (owner.py)
+    # コレクションのページでボタンを押した後の文（owner.py）
     "装備しました。": {"ko": "장착했습니다.", "en-GB": "Equipped.", "zh-TW": "已裝備。"},
     "装備しました。ゲームには次の試合から反映されます。": {
         "ko": "장착했습니다. 게임에는 다음 경기부터 반영됩니다.",
@@ -2516,7 +2515,7 @@ TEXTS = {
         "en-GB": "Set {number}",
         "zh-TW": "套裝 {number}",
     },
-    # Why the owner's Riot account could not be read (views.py RIOT_FAILURES)
+    # 持ち主の Riot アカウントを読めなかった理由（views.py の RIOT_FAILURES）
     "Riot アカウントが未連携です。設定から連携してください。": {
         "ko": "Riot 계정이 연동되지 않았습니다. 설정에서 연동하세요.",
         "en-GB": "No Riot account linked. Link one in Settings.",
@@ -2542,7 +2541,7 @@ TEXTS = {
         "en-GB": "Riot's servers aren't answering. Try again shortly.",
         "zh-TW": "Riot 伺服器沒有回應，請稍後再試。",
     },
-    # Settings
+    # 設定
     "サイトの持ち主専用のページです。": {
         "ko": "사이트 소유자 전용 페이지입니다.",
         "en-GB": "Only the site's owner sees this page.",
@@ -2682,7 +2681,7 @@ TEXTS = {
         "en-GB": "The Riot account is unlinked.",
         "zh-TW": "已解除 Riot 帳號的連結。",
     },
-    # The owner's search failures (views.py FAILURES)
+    # 持ち主の検索の失敗（views.py の FAILURES）
     "HenrikDev の API キーが未設定です。設定から登録してください。": {
         "ko": "HenrikDev API 키가 없습니다. 설정에서 등록하세요.",
         "en-GB": "No HenrikDev API key yet. Add one in Settings.",
@@ -2693,7 +2692,7 @@ TEXTS = {
         "en-GB": "The HenrikDev API key was rejected. Check it in Settings.",
         "zh-TW": "HenrikDev API 金鑰無效，請檢查設定。",
     },
-    # A player's numbers as tracker.gg shows them (the act, the tiles, clutches, roles)
+    # tracker.gg 風のプレイヤーの数値（アクト、タイル、クラッチ、ロール）
     "ダメージ / ラウンド": {"ko": "피해량 / 라운드", "en-GB": "Damage / round", "zh-TW": "傷害 / 回合"},
     "DDΔ / ラウンド": {"ko": "DDΔ / 라운드", "en-GB": "DDΔ / round", "zh-TW": "DDΔ / 回合"},
     "キル / ラウンド": {"ko": "킬 / 라운드", "en-GB": "Kills / round", "zh-TW": "擊殺 / 回合"},
@@ -2785,7 +2784,7 @@ TEXTS = {
         "en-GB": "Averages for this act ({a} and {b} matches).",
         "zh-TW": "本賽季階段的平均（{a} 場與 {b} 場）。",
     },
-    # The PC app (desktop.py): its own buttons, 設定's panel, the first start, a newer build
+    # PC アプリ（desktop.py）: 専用のボタン、設定のパネル、初回起動、新しいビルド
     "今日のスキン": {"ko": "오늘의 스킨", "en-GB": "Today's skins", "zh-TW": "今日的造型"},
     "戻る": {"ko": "뒤로", "en-GB": "Back", "zh-TW": "上一頁"},
     "進む": {"ko": "앞으로", "en-GB": "Forward", "zh-TW": "下一頁"},

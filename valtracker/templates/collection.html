@@ -33,7 +33,7 @@
 <div id="owned" class="owned">
 {% if equip_said %}<p class="verdict {{ 'ok' if equip_ok else 'no' }} equip-said" role="{{ 'status' if equip_ok else 'alert' }}">{{ equip_said }}{% if equip_detail %} <code>{{ equip_detail }}</code>{% endif %}</p>{% endif %}
 {% if show == 'sets' %}
-{# Sets: the whole loadout under a name, worn again in one press (the game has no such list). #}
+{# セット: ロードアウト全体を名前を付けて保存し、1 回押せばまた装備する（ゲームにはこういう一覧が無い）。 #}
 <form class="equip-form set-save" method="post" action="{{ url_for('loadout_sets') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}">
 <label for="set-name">{{ t('セットの名前') }}</label>
 <span class="wear"><input id="set-name" name="name" maxlength="30" placeholder="{{ t('例：ランク用') }}" autocomplete="off" spellcheck="false" enterkeyhint="done"{% if full %} disabled{% endif %}><button type="submit" name="do" value="save"{% if full %} disabled{% endif %}>{{ t('現在の装備を保存') }}</button></span>
@@ -63,7 +63,7 @@
 {% set wear = show in ('skins', 'cards', 'titles') or (show in ('sprays', 'flex') and wheel) or (show == 'buddies' and guns) %}
 {% if wear %}<form class="equip-form" method="post" action="{{ url_for('equip') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="show" value="{{ show }}">{% endif %}
 {% if show == 'skins' %}
-{# The game's collection: the weapons first (each with what it wears), then one weapon's skins at a time. #}
+{# ゲームのコレクション: まず武器（それぞれ着けているもの）、そのあと 1 つの武器のスキンを 1 つずつ。 #}
 <div class="armory{% if picked %} picked{% endif %}">
 <ul class="guns" aria-label="{{ t('武器') }}">
 {% for group in items %}<li data-name="{{ group.search }}"><a href="{{ url_for('collection', weapon=group.uuid) }}#gun" title="{{ group.name }}{% if worn_read %}: {{ group.worn or t('標準') }}{% endif %}"{% if picked and picked.uuid == group.uuid %} aria-current="true"{% endif %}>
@@ -124,7 +124,7 @@
 {% else %}
 <ul class="items {{ show }}">
 {% for item in items %}<li class="item{% if item.equipped %} on{% endif %}" data-name="{{ item.name|lower }}">
-{# a card is worn by pressing it, as in the game #}
+{# カードは押すと装備する（ゲームと同じ） #}
 {% set press = show == 'cards' and not item.equipped %}
 {% if press %}<button type="submit" class="tile" name="item" value="{{ item.uuid }}" aria-label="{{ t('{name} を装備する', name=item.name) }}">{% endif %}
 {% if item.image %}<img src="{{ media(item.image) }}" alt="" width="96" height="96" loading="lazy">{% endif %}

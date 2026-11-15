@@ -1,29 +1,28 @@
-"""Where a player's kills and deaths happened, drawn on the map's own minimap.
+"""プレイヤーのキルとデスの場所を、マップのミニマップに描く。
 
-HenrikDev's kills carry where the victim died and where every living player stood at that moment; rounds.py keeps
-the victim's and the killer's, in the game's units. valorant-api.com gives each map's minimap (``displayIcon``),
-how the game's units go onto it, and its callouts (the places' names, in the visitor's language):
+HenrikDev のキルには、やられた側が倒れた場所と、その瞬間に生きていた全員の立ち位置が入っている。
+rounds.py はやられた側と倒した側のものをゲームの単位で残す。 valorant-api.com は各マップのミニマップ（``displayIcon``）
+、ゲームの単位からの変換、コールアウト（場所の名前、訪問者の言語）を出す:
 
-    across = game y * xMultiplier + xScalarToAdd,  down = game x * yMultiplier + yScalarToAdd   (0 to 1)
+横 = ゲーム y * xMultiplier + xScalarToAdd、縦 = ゲーム x * yMultiplier + yScalarToAdd（0〜1）
 
-A kill is drawn where the player stood, a death where they died. Each is named after the nearest callout, so the
-page can say where the player dies most, which the dots alone do not say.
-"""
+キルはプレイヤーが立っていた場所、デスは倒れた場所に描く。それぞれ一番近いコールアウトの名前を付けるので、
+点だけではわからない「どこで一番やられるか」をページに書ける。"""
 
 from __future__ import annotations
 
-#: A map is drawn only with this many kills and deaths on it.
+#: キルとデスがこの数以上あるマップだけ描く。
 ENOUGH = 5
-#: The named places listed under a map, the busiest first.
+#: マップの下に並べる場所の数（多い順）。
 PLACES_SHOWN = 6
-#: The player page's maps, the one with most kills and deaths first.
+#: プレイヤーページに出すマップの数（キルとデスが多い順）。
 MAPS_SHOWN = 6
 NUMBERS = ("xMultiplier", "yMultiplier", "xScalarToAdd", "yScalarToAdd")
 
 
 def plan(item) -> dict | None:
-    """A map's minimap, its numbers and callouts (valorant-api.com's map), or None for a map without them (the
-    Range, Skirmish, the Team Deathmatch maps)."""
+    """マップのミニマップ、数値、コールアウト（valorant-api.com のマップ）。それらが無いマップ（射撃場、スカーミッシュ、
+    チームデスマッチのマップ）は None。"""
     if not isinstance(item, dict) or not item.get("displayIcon"):
         return None
     try:
@@ -47,7 +46,7 @@ def plan(item) -> dict | None:
 
 
 def onto(drawn: dict, spot) -> tuple[float, float] | None:
-    """A spot ([game x, game y]) on the minimap, in percent across and down; None for one off the picture."""
+    """ミニマップ上の位置（[ゲーム x, ゲーム y]）を横・縦のパーセントで。絵の外なら None。"""
     if not spot:
         return None
     x_times, y_times, x_plus, y_plus = drawn["numbers"]
@@ -59,15 +58,15 @@ def onto(drawn: dict, spot) -> tuple[float, float] | None:
 
 
 def callout(drawn: dict, spot) -> str:
-    """The name of the callout nearest a spot ("" for a map without callouts)."""
+    """その位置に一番近いコールアウトの名前（コールアウトの無いマップは ""）。"""
     nearest = min(drawn["callouts"], key=lambda item: (item[1] - spot[0]) ** 2 + (item[2] - spot[1]) ** 2, default=None)
     return nearest[0] if nearest else ""
 
 
 def points(match: dict, mine: int) -> list[dict]:
-    """The kills and deaths of the player at place ``mine`` in a match's ``players``, from its digest (rounds.py):
-    each ``{"kind": "k" or "d", "at": spot, "other": the other player's spot, "side": "atk"/"def"/"", "round",
-    "first": the round's first kill}``. A kill of a team-mate is left out; a death to one is not."""
+    """試合の ``players`` の ``mine`` 番目のプレイヤーのキルとデス（ダイジェスト、 rounds.py から）
+    : それぞれ ``{"kind": "k" か "d", "at": 位置, "other": 相手の位置, "side": "atk"/"def"/"", "round", "first":
+    ラウンド最初のキル}``。味方を倒したキルは省き、味方にやられたデスは残す。"""
     digest = match.get("digest") or {}
     kills = digest.get("kills") or []
     rounds = digest.get("rounds") or []
@@ -79,7 +78,7 @@ def points(match: dict, mine: int) -> list[dict]:
         first = kill[0] not in opened
         opened.add(kill[0])
         if len(kill) < 8 or not 0 <= kill[3] < len(team):
-            continue  # kept before the places were (rounds.py), or nobody's
+            continue  # 場所を持つ前に保存したもの（rounds.py）、または誰のものでもない
         attack = rounds[kill[0]].get("a") if 0 <= kill[0] < len(rounds) else ""
         side = ("atk" if attack == team[mine] else "def") if attack and team[mine] else ""
         victim_at, killer_at = kill[6], kill[7]
@@ -95,9 +94,9 @@ def points(match: dict, mine: int) -> list[dict]:
 
 
 def drawing(drawn: dict, spots: list[dict], lines: bool = False, most: int | None = None) -> dict | None:
-    """What the page draws: the minimap, a dot for each kill and death (with a line to the other player's spot
-    when ``lines``), and the busiest named places with their kills, deaths and first deaths. None with too few.
-    ``most``: the dots drawn at most (the first of ``spots``: the newest), while every one is counted."""
+    """ページが描くもの: ミニマップ、キル・デスごとの点（``lines`` なら相手の位置への線も）、多い場所とそこでのキル・
+    デス・ファーストデス。少なすぎれば None。 ``most``: 描く点の最大数（``spots`` の先頭＝新しいものから）。
+    数えるのは全部。"""
     dots, places = [], {}
     for spot in spots:
         at = onto(drawn, spot["at"])
@@ -132,9 +131,8 @@ def drawing(drawn: dict, spots: list[dict], lines: bool = False, most: int | Non
         "dots": dots[:most] if most else dots,
         "kills": sum(dot["kind"] == "k" for dot in dots),
         "deaths": sum(dot["kind"] == "d" for dot in dots),
-        "drawn": min(len(dots), most or len(dots)),
         "sides": bool({dot["side"] for dot in dots} - {""}),
         "places": busiest[:PLACES_SHOWN],
-        # where the player loses the most duels: worth a different angle or a utility first
+        # プレイヤーが撃ち合いに一番負ける場所: 角度を変えるか、先にユーティリティを使う価値がある
         "worst": worst if worst and worst["deaths"] - worst["kills"] >= 2 else None,
     }

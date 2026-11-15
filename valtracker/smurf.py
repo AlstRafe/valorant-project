@@ -1,19 +1,18 @@
-"""A guess at whether an account is someone's second account (a "smurf": サブ垢) or their main one, from what a
-tracker can see. It is a guess, and the page says so with its reasons: no single sign proves anything.
+"""トラッカーから見える情報で、サブ垢（スマーフ）か本垢かを推測する。あくまで推測なので、
+ページにも理由と一緒にそう書く（どのサインも単独では何も証明しない）。
 
-Signs of a second account, each with its weight:
-- a low account level for the rank (a new account already high: levels come with time played, ranks with skill)
-- few acts of ranked play behind the rank
-- winning much more than half of the matches (a rank still climbing to where the player belongs)
-- numbers far above the players of the same rank (the VAL score, measured against the same rank band)
+サブ垢のサイン（それぞれ点数つき）:
+- ランクの割にアカウントレベルが低い（レベルはプレイ時間、ランクは腕前で上がる）
+- そのランクまでのランク戦のアクトが少ない
+- 勝率が 5 割を大きく超える（本来のランクへ上がっている途中）
+- 同じランク帯の中で成績が飛び抜けている（VAL スコア）
 
-A main account is the other way round: many levels and acts, a win rate near half. A hidden level leaves the
-other signs. With too little to go on (no rank, or no level, acts or recent matches) there is no guess.
-"""
+本垢はその逆（レベルもアクトも多く、勝率は 5 割前後）。レベルを隠していれば残りのサインで推す。ランクが無いか、
+レベルもアクト数も最近の試合も無いときは推測しない。"""
 
 from __future__ import annotations
 
-#: The reasons, as the page words them (translated in locale.py).
+#: ページに出す理由（訳は locale.py）。
 NEW_ACCOUNT = "レベル {level} でこのランク"
 LOW_LEVEL = "ランクの割にレベルが低い（{level}）"
 FEW_ACTS = "ランク戦は {count} アクトだけ"
@@ -21,9 +20,9 @@ WINNING = "最近の勝率 {rate}%"
 ABOVE_RANK = "同じランク帯の中で VAL スコア {score}"
 FITS = "レベル {level}・ランクに見合った成績"
 FITS_ACTS = "ランク戦 {count} アクト・ランクに見合った成績"
-#: Every reason (tests/test_i18n.py).
+#: 理由の全部（tests/test_i18n.py が使う）。
 WORDS = (NEW_ACCOUNT, LOW_LEVEL, FEW_ACTS, WINNING, ABOVE_RANK, FITS, FITS_ACTS)
-#: Points from which the guess says "likely a second account", and "maybe".
+#: 「サブ垢の可能性: 高」「あり」になる点数。
 LIKELY, MAYBE = 3, 2
 
 
@@ -35,18 +34,15 @@ def guess(
     win_rate: float | None = None,
     score: int | None = None,
 ) -> dict | None:
-    """``{"kind": "likely" | "maybe" | "main", "why": [(Japanese words, values)]}`` or None (nothing to go on).
-    ``tier``: the rank now; ``level``: the account level (None when hidden); ``acts``: acts with ranked matches;
-    ``games``/``win_rate``: recent matches; ``score``: the average VAL score (the same rank band's yardstick)."""
+    """``{"kind": "likely" | "maybe" | "main", "why": [(日本語の文, 値)]}``、材料が無ければ None。
+    ``tier``: 今のランク、``level``: アカウントレベル（隠していれば None）、``acts``: ランク戦をしたアクトの数、
+    ``games``/``win_rate``: 最近の試合、``score``: VAL スコアの平均（同じランク帯が基準）。"""
     if tier <= 2 or (not level and acts is None and games < 10):
         return None
     points, why = 0, []
     if not level:
         pass
-    elif tier >= 15 and level < 50:
-        points += 2
-        why.append((NEW_ACCOUNT, {"level": level}))
-    elif tier >= 9 and level < 30:
+    elif (tier >= 15 and level < 50) or (tier >= 9 and level < 30):
         points += 2
         why.append((NEW_ACCOUNT, {"level": level}))
     elif tier >= 15 and level < 100:

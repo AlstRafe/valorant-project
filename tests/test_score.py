@@ -1,5 +1,5 @@
-"""The score of a match out of 1000 and "top X%" (score.py), the anonymous lines they are measured against
-(activity.py's yardstick), and where the player and match pages show them."""
+"""1000 点満点の試合スコアと「上位 X%」（score.py）、比べる相手になる匿名の成績（activity.py の物差し）、
+それを出すプレイヤー・試合ページ。"""
 
 import os
 import re
@@ -19,7 +19,7 @@ NOON = int(datetime(2026, 11, 4, 12, tzinfo=UTC).timestamp())
 
 
 def match(number: int, tier: int = 16, queue: str = "competitive", rounds: int = 22, score_of=None):
-    """A match of ten players; player ``i`` scores ``score_of(i)`` per round (by default 150 + 20 i)."""
+    """10 人の試合。プレイヤー ``i`` はラウンドあたり ``score_of(i)``（既定は 150 + 20 i）。"""
     score_of = score_of or (lambda i: 150 + 20 * i)
     return {
         "metadata": {
@@ -72,7 +72,7 @@ class ScoreTest(unittest.TestCase):
 
     def test_what_is_not_known_does_not_count(self):
         stick = {"acs": [100, 200, 300], "kast": [], "dd": [-20, 0, 20]}
-        # KAST is not known (no rounds): ACS and DDΔ (0.55) and the win (0.2) are weighed alone
+        # KAST が不明（ラウンドが無い）: ACS と DDΔ（0.55）と勝敗（0.2）だけで重み付け
         self.assertEqual(score.match_score({"acs": 999, "kast": None, "dd": 99}, 0, stick), round(1000 * 0.55 / 0.75))
         self.assertIsNone(score.match_score({"acs": 999}, None, {"acs": [1]}), "less than half the weights")
         self.assertIsNone(score.match_score({"acs": 200}, 1, {}), "no yardstick")
@@ -106,7 +106,7 @@ class YardstickTest(unittest.TestCase):
         self.assertTrue(band)
         self.assertEqual(stick["acs"], sorted(stick["acs"]))
         self.assertEqual(min(stick["acs"]), 150)
-        # a band with too few lines of its own: every band together
+        # 自分の成績が少なすぎるランク帯: 全帯をまとめて使う
         stick, lines, band = self.activity.yardstick(24)
         self.assertEqual((lines, band), (LINES_ENOUGH + 30, ""))
 
@@ -144,7 +144,7 @@ class RanksTest(unittest.TestCase):
         games.append(match(20, tier=12, queue="unrated"))
         eu = match(30, tier=5)
         eu["metadata"]["region"] = "eu"
-        self.activity.seen(games + [eu])
+        self.activity.seen([*games, eu])
         self.assertEqual(self.activity.ranks("ap"), {"lines": 40, "tiers": {12: 30, 24: 10}})
         self.assertEqual(self.activity.ranks("eu"), {"lines": 10, "tiers": {5: 10}})
         self.assertEqual(self.activity.ranks("na"), {"lines": 0, "tiers": {}})
@@ -166,7 +166,7 @@ class PagesTest(unittest.TestCase):
         return answer.get_data(as_text=True)
 
     def stick(self, low: int, high: int) -> mock._patch:
-        """Every number's yardstick: 400 lines evenly from ``low`` to ``high`` (KAST 0-100, DDΔ -100..100)."""
+        """各数値の物差し: ``low`` から ``high`` まで均等に 400 件（KAST 0〜100、DDΔ -100〜100）。"""
         spread = [low + (high - low) * n / 399 for n in range(400)]
         stick = {"acs": spread, "adr": spread, "kd": [n / 200 for n in range(400)], "hs": [n / 4 for n in range(400)]}
         stick |= {"kast": [n / 4 for n in range(400)], "dd": [-100 + n / 2 for n in range(400)]}

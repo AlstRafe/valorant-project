@@ -1,6 +1,6 @@
-# Jinja templates: Prettier does not know {{ }} and {% %}.
+# Jinja のテンプレート: Prettier は {{ }} と {% %} を知らない。
 *.html
-# The tests' made-up answers of the outside APIs stay as written.
+# テストの作りものの外部 API の答えは書いたまま。
 tests/fixtures/
 instance/
 package-lock.json

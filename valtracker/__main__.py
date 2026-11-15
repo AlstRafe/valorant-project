@@ -1,5 +1,5 @@
-"""``python -m valtracker``: serve VAL Tracker on its own on this PC (http://127.0.0.1:5050/), to try it
-without Home Page's server. Only this PC can open it, so whoever opens it is the owner (settings included)."""
+"""``python -m valtracker``: この PC だけで VAL Tracker を動かす（http://127.0.0.1:5050/）。
+Home Page のサーバー無しで試す用。開けるのはこの PC だけなので、開いた人を持ち主として扱う（設定も含む）。"""
 
 from __future__ import annotations
 

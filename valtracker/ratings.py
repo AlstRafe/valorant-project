@@ -1,10 +1,9 @@
-"""The skin library's ratings: 1 to 5 stars per skin from whoever opens its page, no account needed.
+"""スキン図鑑の評価: スキンのページを開いた人なら誰でも 1〜5 の星を付けられる（アカウント不要）。
 
-A browser is known by a random value in its own cookie (``val_voter``), which is kept here only as a keyed hash;
-it has one rating per skin, and giving another replaces it. No names, addresses or ids of players are kept.
-To keep one script from filling the table, a browser may rate at most VOTER_DAY skins a day, and the whole site
-takes at most SITE_TEN_MINUTES ratings in ten minutes (the page then says to try later).
-"""
+ブラウザーは自分の cookie（``val_voter``）のランダムな値で見分け、ここには鍵付きハッシュだけを置く。
+評価はスキンごとに 1 つで、付け直すと置き換わる。プレイヤーの名前・アドレス・ID は持たない。
+スクリプトで埋められないよう、1 ブラウザー 1 日 VOTER_DAY スキンまで、
+サイト全体で 10 分に SITE_TEN_MINUTES 件まで（超えたらページで「あとで」と出す）。"""
 
 from __future__ import annotations
 
@@ -17,7 +16,7 @@ from pathlib import Path
 
 VOTER_DAY = 200
 SITE_TEN_MINUTES = 300
-#: A skin's average is shown from this many ratings on (fewer only say how many there are).
+#: この件数から平均を出す（それより少ないときは件数だけ）。
 SHOWN_FROM = 3
 
 
@@ -43,7 +42,7 @@ class Ratings:
         return hmac.new(self.secret, cookie.encode("utf-8"), hashlib.sha256).hexdigest()[:32]
 
     def score(self, skin: str, cookie: str = "") -> dict:
-        """``{"count", "average" (None below SHOWN_FROM), "mine" (this browser's stars or 0)}``."""
+        """``{"count", "average"（SHOWN_FROM 未満は None）, "mine"（このブラウザーの星、無ければ 0）}``。"""
         found = {"count": 0, "average": None, "mine": 0}
         try:
             with self._lock:
@@ -67,7 +66,7 @@ class Ratings:
         return found
 
     def top(self, limit: int = 12) -> list[tuple[str, float, int]]:
-        """The best-rated skins (with at least SHOWN_FROM ratings): ``[(skin, average, count)]``."""
+        """評価の高いスキン（SHOWN_FROM 件以上）: ``[(skin, average, count)]``。"""
         try:
             with self._lock:
                 rows = (
@@ -84,7 +83,7 @@ class Ratings:
         return [(skin, round(mean, 1), int(count)) for skin, mean, count in rows]
 
     def rate(self, skin: str, cookie: str, stars: int) -> bool:
-        """Keeps this browser's rating of ``skin`` (False: too many just now, nothing kept)."""
+        """このブラウザーの ``skin`` の評価を残す（False: 今は多すぎて残さなかった）。"""
         if not cookie or not 1 <= stars <= 5:
             return False
         now = int(self.clock())

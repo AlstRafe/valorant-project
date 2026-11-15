@@ -1,13 +1,13 @@
-"""Players and matches, from the HenrikDev API (https://docs.henrikdev.xyz): an unofficial API that answers
-for any Riot ID, with a free key the owner makes on its dashboard (settings.py keeps it).
+"""プレイヤーと試合を HenrikDev API（https://docs.henrikdev.xyz）から: どの Riot ID にも答える非公式 API。
+キーは持ち主がダッシュボードで作る無料のもの（settings.py が持つ）。
 
-Riot's own API needs a production review before it answers VALORANT match questions, so this is the way in.
-Every answer is kept a while (TTLCache) and the calls share one budget (Budget), because the key's
-allowance is shared by every visitor.
-"""
+Riot 自身の API は VALORANT の試合に答える前に本番審査が必要なので、こちらを使う。
+キーの呼び出し回数は訪問者全員で分け合うので、答えはしばらく持ち（TTLCache）、呼び出しは 1 つの予算を分け合う（Budget）
+。"""
 
 from __future__ import annotations
 
+import contextlib
 import json
 import re
 import time
@@ -17,10 +17,11 @@ from urllib.parse import quote, urlencode
 
 from valtracker import net, rounds
 from valtracker.cache import Budget, TTLCache
+from valtracker.util import to_int
 
 BASE = "https://api.henrikdev.xyz"
 PLATFORM = "pc"
-#: How long each kind of answer is kept (seconds). A finished match never changes.
+#: 答えの種類ごとに持つ秒数。終わった試合は変わらない。
 KEEP = {
     "account": 6 * 3600,
     "mmr": 300,
@@ -32,12 +33,12 @@ KEEP = {
     "featured": 1800,
     "news": 1800,
     "esports": 300,
-    # every match HenrikDev keeps of a player in a mode (seasons.py): asked for only on that page
+    # HenrikDev が持つ、プレイヤーのそのモードの全試合（seasons.py）: そのページでだけ頼む
     "stored": 1800,
 }
-#: The modes a player's seasons are counted in (stored matches; Deathmatch has no rounds or teams to count).
+#: プレイヤーのシーズンを数えるモード（保存済み試合。デスマッチには数えるラウンドもチームも無い）。
 STORED_MODES = ("competitive", "unrated", "swiftplay", "premier")
-#: The modes of stored matches (their ``meta.mode``, lower case) -> the queue id of the v4 matches.
+#: 保存済み試合のモード（``meta.mode``、小文字）-> v4 の試合のキュー ID。
 STORED_QUEUES = {
     "spike rush": "spikerush",
     "team deathmatch": "hurm",
@@ -45,18 +46,22 @@ STORED_QUEUES = {
     "replication": "onefa",
     "snowball fight": "snowball",
 }
-#: A player's page can be read again ("データを更新") once this long has passed since it was read (seconds).
+#: プレイヤーページは読んでからこの秒数が過ぎたら読み直せる（「データを更新」）。
 FRESH_AFTER = 60
-#: How long what "データを更新" dropped stays at hand, in case the new call fails (seconds).
+#: 新しい呼び出しが失敗したとき用に、「データを更新」で捨てたものを手元に置く秒数。
 SPARE_KEEP = 120
-#: How long the last answer of each call stays at hand for when HenrikDev does not answer (seconds).
+#: HenrikDev が答えないとき用に、各呼び出しの最後の答えを手元に置く秒数。
 LAST_KEEP = 24 * 3600
-#: Players on one page of a leaderboard.
+#: HenrikDev 全体が答えない（10 秒の無応答、Cloudflare の 520〜526: あちらのサーバーに届かない）とわかってから、
+#: 聞かずにすぐ「down」と答える秒数。落ちている間に 1 ページで何回も 10 秒待たせず、こちらのサーバーの
+#: スレッドも待ちで埋めない（2026-11-15、HenrikDev の API が 1 時間以上無応答）。
+DOWN_WAIT = 60
+#: ランキング 1 ページの人数。
 BOARD_PAGE = 50
-#: A Riot ID: the name (3-16 characters, spaces allowed) and the tag (3-5 letters or digits).
+#: Riot ID: 名前（3〜16 文字、空白可）とタグ（英数字 3〜5 文字）。
 NAME = re.compile(r"^[^#/\\?<>\x00-\x1f]{1,16}$")
 TAG = re.compile(r"^[^\W_]{2,5}$")
-#: Full-width ０-９, Ａ-Ｚ and ａ-ｚ -> half-width.
+#: 全角の ０-９、Ａ-Ｚ、ａ-ｚ -> 半角。
 HALF_WIDTH = {
     code: code - 0xFEE0
     for start, end in ((0xFF10, 0xFF19), (0xFF21, 0xFF3A), (0xFF41, 0xFF5A))
@@ -64,11 +69,11 @@ HALF_WIDTH = {
 }
 MATCH_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 REGIONS = ("ap", "br", "eu", "kr", "latam", "na")
-#: How many matches a player's page lists: as many as the game's own career page shows.
+#: プレイヤーページに並べる試合数: ゲーム自身のキャリアページと同じ。
 RECENT = 15
-#: The most matches one answer gives, so the list is asked for in two parts, side by side.
+#: 1 回の答えの最大試合数。一覧は 2 回に分けて同時に頼む。
 PAGE = 10
-#: The modes a player's matches can be narrowed to: HenrikDev's name for it -> the queue id in its matches.
+#: プレイヤーの試合を絞れるモード: HenrikDev の名前 -> その試合のキュー ID。
 MODES = {
     "competitive": "competitive",
     "unrated": "unrated",
@@ -79,8 +84,8 @@ MODES = {
     "escalation": "ggteam",
     "premier": "premier",
 }
-#: What the pages use of a match. Every round and kill (about 0.5 MB a match) is boiled down to ``digest``
-#: (rounds.py) and dropped before it is kept, so the memory of the small VM holds hundreds of matches.
+#: ページが使う試合の部分。全ラウンド・全キル（1 試合 0.5 MB ほど）は ``digest``（rounds.py）
+#: にまとめてから捨てて保存するので、小さな VM のメモリに何百試合も入る。
 METADATA = (
     "match_id",
     "map",
@@ -97,19 +102,19 @@ TEAM = ("team_id", "rounds", "won")
 
 
 class HenrikError(Exception):
-    """Why there is no answer: ``kind`` is one of nokey (no API key set), badkey (the key was refused),
-    notfound, busy (too many calls just now, ours or theirs), down (no answer, or one we cannot read)."""
+    """答えが無い理由: ``kind`` は nokey（API キー未設定）、badkey（キーを断られた）、notfound、
+    busy（今は呼び出しが多すぎる。こちらかあちらか）、down（答えが無い、または読めない）のどれか。"""
 
     def __init__(self, kind: str, detail: str = ""):
         super().__init__(kind)
         self.kind = kind
-        #: What came back, for the owner's eyes (``HTTP 500``, ``no answer``...).
+        #: 返ってきたもの（持ち主に見せる用。``HTTP 500``、``no answer`` など）。
         self.detail = detail
 
 
 def split_riot_id(text: str) -> tuple[str, str] | None:
-    """``Name#TAG`` (a full-width ＃ too, spaces around it allowed) -> (name, tag), or None. A tag typed with the
-    Japanese keyboard's full-width letters (ＪＰ１) is the same tag: Riot's tags are half-width."""
+    """``Name#TAG``（全角の ＃ も、前後の空白も可）-> (name, tag)、または None。日本語キーボードの全角文字（ＪＰ１）
+    で入れたタグも同じタグ: Riot のタグは半角。"""
     name, mark, tag = text.strip().replace("＃", "#").rpartition("#")
     name, tag = name.strip(), tag.strip().translate(HALF_WIDTH)
     if not mark or not NAME.match(name) or not TAG.match(tag):
@@ -119,56 +124,57 @@ def split_riot_id(text: str) -> tuple[str, str] | None:
 
 class Henrik:
     def __init__(self, key, fetch: net.Fetch = net.fetch, budget: Budget | None = None):
-        #: () -> the API key ("" when none is set): read on every call, so a key saved in the settings works at once.
+        #: () -> API キー（未設定なら ""）: 呼び出しのたびに読むので、設定で保存したキーがすぐ効く。
         self.key = key
         self.fetch = fetch
         self.budget = budget or Budget(25, 60.0)
+        #: この時刻（unix 秒）までは HenrikDev に聞かない（DOWN_WAIT）と、そのときの理由。
+        self.down_until, self.down_detail = 0.0, ""
         self.cache = TTLCache(1024)
-        #: cache key -> when its answer was read (unix seconds), kept as long as the answer is.
+        #: キャッシュのキー -> 答えを読んだ時刻（unix 秒）。答えと同じ間持つ。
         self.read_times = TTLCache(1024)
-        #: cache key -> (answer, read at) dropped by "データを更新": shown again if HenrikDev cannot answer.
+        #: キャッシュのキー -> 「データを更新」で捨てた (答え, 読んだ時刻): HenrikDev が答えられなければまた出す。
         self.spares = TTLCache(64)
-        #: the last answer of each call, shown when HenrikDev does not answer (LAST_KEEP)
+        #: 各呼び出しの最後の答え。HenrikDev が答えないときに出す（LAST_KEEP）
         self.lasts = TTLCache(128)
 
     def account(self, name: str, tag: str) -> dict:
-        """``{"puuid", "region", "account_level", "name", "tag", "card", "title"}``."""
+        """``{"puuid", "region", "account_level", "name", "tag", "card", "title"}``。"""
         path = f"/valorant/v2/account/{_part(name)}/{_part(tag)}"
         return self._get(("account", name.lower(), tag.lower()), path, KEEP["account"])
 
     def mmr(self, region: str, name: str, tag: str) -> dict:
-        """``{"current": {"tier": {"id", "name"}, "rr", "last_change", "games_needed_for_rating",
-        "leaderboard_placement", ...}, "peak": ..., "seasons": every act played, the latest first (_slim_act)}``."""
-        path = f"/valorant/v3/mmr/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}"
+        """``{"current": {"tier": {"id", "name"}, "rr", "last_change", "games_needed_for_rating", "leaderboard_placement", ...}, "peak": ..., "seasons": プレイした全アクト、新しい順（_slim_act）
+        }``。"""
+        path = f"/valorant/v3/mmr/{known_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}"
         return self._get(("mmr", region, name.lower(), tag.lower()), path, KEEP["mmr"], _slim_mmr)
 
     def rr_changes(self, region: str, name: str, tag: str) -> dict:
-        """The recent competitive matches' RR: ``{match id: {"change": +18, "tier": 21, "rr": 42, "elo": 1842,
-        "at": unix seconds}}`` (elo: the rank and RR as one number, 100 a rank)."""
-        path = f"/valorant/v1/mmr-history/{_region(region)}/{_part(name)}/{_part(tag)}"
+        """最近のコンペティティブの試合の
+        RR: ``{試合 ID: {"change": +18, "tier": 21, "rr": 42, "elo": 1842, "at": unix 秒}}``（elo: ランクと RR を 1
+        つの数にしたもの。1 ランク 100）。"""
+        path = f"/valorant/v1/mmr-history/{known_region(region)}/{_part(name)}/{_part(tag)}"
         return self._get(("rr", region, name.lower(), tag.lower()), path, KEEP["rr"], _slim_rr)
 
     def matches(self, region: str, name: str, tag: str, mode: str = "") -> list:
-        """The latest RECENT matches (of one of MODES, or of any), newest first, each as ``match`` gives it.
-        Without the newest part there is no list (HenrikError); without the older one it is shorter."""
+        """最新 RECENT 試合（MODES のどれか、または全部）、新しい順。どれも ``match`` が返す形。
+        新しい方の部分が無ければ一覧は無し（HenrikError）、古い方が無ければ短くなる。"""
         with ThreadPoolExecutor(2, thread_name_prefix="henrik-matches") as pool:
             parts = [pool.submit(self._matches, region, name, tag, mode, start) for start in (0, PAGE)]
         found = parts[0].result()
-        try:
+        with contextlib.suppress(HenrikError):
             found = found + parts[1].result()
-        except HenrikError:
-            pass
         wanted = MODES.get(mode)
         seen, kept = set(), []
         for match in found:
             metadata = match["metadata"]
             match_id = str(metadata.get("match_id") or "")
-            if match_id in seen:  # an older part that came back the same as the newest
+            if match_id in seen:  # 古い方の部分が新しい方と同じものを返してきた
                 continue
             seen.add(match_id)
             if wanted and str((metadata.get("queue") or {}).get("id") or "").lower() != wanted:
                 continue
-            if match_id and metadata.get("is_completed", True):  # each one is a whole match: opening it costs no call
+            if match_id and metadata.get("is_completed", True):  # どれもまるごとの試合: 開いても呼び出しは要らない
                 self.cache.put(("match", match_id), match, KEEP["match"])
             kept.append(match)
         return kept[:RECENT]
@@ -176,37 +182,37 @@ class Henrik:
     def _matches(self, region: str, name: str, tag: str, mode: str, start: int) -> list:
         size = min(PAGE, RECENT - start)
         query = {"size": size} | ({"start": start} if start else {}) | ({"mode": mode} if mode in MODES else {})
-        path = f"/valorant/v4/matches/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}?" + urlencode(query)
+        path = f"/valorant/v4/matches/{known_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}?" + urlencode(query)
         key = _matches_key(region, name, tag, mode, start)
         return self._get(key, path, KEEP["matches"], _slim_matches)
 
     def stored(self, region: str, name: str, tag: str, mode: str = "competitive") -> list:
-        """Every match of a mode that HenrikDev keeps of the player, newest first (v1 stored-matches: only the
-        matches it has read, a growing part of the history, not all of it), each as ``_slim_stored`` keeps it."""
+        """HenrikDev が持つプレイヤーのそのモードの全試合、新しい順（v1 stored-matches: 読んだ試合だけで、
+        履歴の一部が増えていく。全部ではない）。どれも ``_slim_stored`` の形。"""
         mode = mode if mode in STORED_MODES else "competitive"
         query = urlencode({"mode": mode})
-        path = f"/valorant/v1/stored-matches/{_region(region)}/{_part(name)}/{_part(tag)}?{query}"
-        key = ("stored", _region(region), name.lower(), tag.lower(), mode)
+        path = f"/valorant/v1/stored-matches/{known_region(region)}/{_part(name)}/{_part(tag)}?{query}"
+        key = ("stored", known_region(region), name.lower(), tag.lower(), mode)
         return self._get(key, path, KEEP["stored"], _slim_stored)
 
     def older(self, region: str, name: str, tag: str, start: int) -> list:
-        """PAGE of the player's matches from ``start`` on (newest first, any mode), each as ``match`` gives it: the
-        archive's (archive.py) when Riot cannot be asked."""
+        """プレイヤーの ``start`` からの PAGE 試合（新しい順、全モード）。
+        どれも ``match`` が返す形: Riot に聞けないときのアーカイブ用（archive.py）。"""
         query = urlencode({"size": PAGE, "start": max(0, int(start))})
-        path = f"/valorant/v4/matches/{_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}?{query}"
-        key = ("older", _region(region), name.lower(), tag.lower(), max(0, int(start)))
+        path = f"/valorant/v4/matches/{known_region(region)}/{PLATFORM}/{_part(name)}/{_part(tag)}?{query}"
+        key = ("older", known_region(region), name.lower(), tag.lower(), max(0, int(start)))
         found = self._get(key, path, KEEP["matches"], _slim_matches)
         return [match for match in found if match["metadata"].get("is_completed", True)]
 
     def stored_all(self, region: str, name: str, tag: str) -> list:
-        """Every match of any mode that HenrikDev keeps of the player (``stored`` without a mode): the archive's
-        thin lines, for the matches Riot no longer gives."""
-        path = f"/valorant/v1/stored-matches/{_region(region)}/{_part(name)}/{_part(tag)}"
-        key = ("stored", _region(region), name.lower(), tag.lower(), "")
+        """HenrikDev が持つプレイヤーの全モードの全試合（モード無しの ``stored``）: Riot がもう出さない試合のための、
+        アーカイブの薄い成績。"""
+        path = f"/valorant/v1/stored-matches/{known_region(region)}/{_part(name)}/{_part(tag)}"
+        key = ("stored", known_region(region), name.lower(), tag.lower(), "")
         return self._get(key, path, KEEP["stored"], _slim_stored)
 
     def has_player(self, name: str, tag: str, mode: str = "") -> bool:
-        """Whether the player's account, rank and matches are all kept: their page needs no call."""
+        """プレイヤーのアカウント・ランク・試合が全部手元にあるか: あればページに呼び出しは要らない。"""
         account = self.cache.get(("account", name.lower(), tag.lower()))
         if not isinstance(account, dict):
             return False
@@ -219,17 +225,17 @@ class Henrik:
         return all(self.cache.get(key) is not None for key in keys)
 
     def player_keys(self, region: str, name: str, tag: str, mode: str = "") -> list:
-        """What a player's page keeps that changes with each match: the rank, the RR, the matches."""
+        """試合ごとに変わる、プレイヤーページが持つもの: ランク、RR、試合。"""
         keys = [("mmr", region, name.lower(), tag.lower()), ("rr", region, name.lower(), tag.lower())]
         return keys + [_matches_key(region, name, tag, mode, start) for start in (0, PAGE)]
 
     def read_at(self, region: str, name: str, tag: str, mode: str = "") -> float:
-        """When the player's latest matches were read (0: not kept)."""
+        """プレイヤーの最新の試合を読んだ時刻（0: 持っていない）。"""
         return float(self.read_times.get(_matches_key(region, name, tag, mode, 0)) or 0)
 
     def forget_player(self, region: str, name: str, tag: str, mode: str = "") -> bool:
-        """Ask HenrikDev again for the player's rank, RR and matches (the page's "データを更新"), unless they were
-        read less than FRESH_AFTER ago: a press costs up to four calls of the key every visitor shares."""
+        """プレイヤーのランク・RR・試合を HenrikDev に聞き直す（ページの「データを更新」）。
+        読んでから FRESH_AFTER 経っていなければしない: 1 回押すと、訪問者全員で分け合うキーを最大 4 回使う。"""
         if time.time() - self.read_at(region, name, tag, mode) < FRESH_AFTER:
             return False
         for key in self.player_keys(region, name, tag, mode):
@@ -241,54 +247,57 @@ class Henrik:
         return True
 
     def match(self, region: str, match_id: str) -> dict:
-        """``{"metadata", "players", "teams", "rounds", "kills", ...}``."""
+        """``{"metadata", "players", "teams", "rounds", "kills", ...}``。"""
         if not MATCH_ID.match(match_id):
             raise HenrikError("notfound")
         kept = self.cache.get(("match", match_id))
         if kept is not None:
             return kept
-        path = f"/valorant/v4/match/{_region(region)}/{match_id}"
-        return self._get(("match", match_id), path, KEEP["match"], _slim_match)
+        path = f"/valorant/v4/match/{known_region(region)}/{match_id}"
+        return self._get(("match", match_id), path, KEEP["match"], slim_match)
 
     def leaderboard(self, region: str, start: int = 0, name: str = "", tag: str = "") -> dict:
-        """One page of a region's ranked leaderboard: ``{"players": [{"rank", "name", "tag", "puuid", "card",
-        "tier", "rr", "wins", "hidden"}], "thresholds": [{"tier", "rr", "from"}], "total", "updated"}``.
-        ``name`` (and ``tag``): only that player, wherever they are."""
+        """リージョンのランク戦ランキングの 1 ページ:
+        ``{"players": [{"rank", "name", "tag", "puuid", "card", "tier", "rr", "wins", "hidden"}], "thresholds":
+        [{"tier", "rr", "from"}], "total",
+        "updated"}``。``name``（と ``tag``）: そのプレイヤーだけ（どこにいても）。"""
         start = max(0, int(start))
-        # v3's documents name the page (from 1); older answers took start_index: both say the same page
+        # v3 のドキュメントはページ番号（1 から）、古い答えは start_index だった: どちらも同じページ
         asked = {"size": BOARD_PAGE, "start_index": start, "page": start // BOARD_PAGE + 1}
         if name:
             asked |= {"name": name} | ({"tag": tag} if tag else {})
-        path = f"/valorant/v3/leaderboard/{_region(region)}/{PLATFORM}?{urlencode(asked)}"
-        key = ("leaderboard", _region(region), start) + ((name.casefold(), tag.casefold()) if name else ())
+        path = f"/valorant/v3/leaderboard/{known_region(region)}/{PLATFORM}?{urlencode(asked)}"
+        key = ("leaderboard", known_region(region), start) + ((name.casefold(), tag.casefold()) if name else ())
         return self._get(key, path, KEEP["leaderboard"], _slim_board)
 
     def matches_by_puuid(self, region: str, puuid: str, size: int = 5) -> list:
-        """A player's latest matches by their puuid, only what activity.py keeps of them (the start, server,
-        queue, length, and each player's puuid and rank): for the background collector, which has no names."""
+        """puuid でのプレイヤーの最新の試合。activity.py が残す部分だけ（開始、サーバー、キュー、長さ、
+        各プレイヤーの puuid とランク）: 名前を持たない裏のコレクター用。"""
         query = urlencode({"size": size})
-        path = f"/valorant/v4/by-puuid/matches/{_region(region)}/{PLATFORM}/{_part(puuid)}?{query}"
+        path = f"/valorant/v4/by-puuid/matches/{known_region(region)}/{PLATFORM}/{_part(puuid)}?{query}"
         return self._get(("by-puuid", puuid), path, KEEP["matches"], _slim_collected)
 
     def has_board(self, region: str, start: int = 0, name: str = "", tag: str = "") -> bool:
-        """Whether that page of the leaderboard (or that player looked for) is kept: it needs no call."""
-        key = ("leaderboard", _region(region), max(0, int(start))) + ((name.casefold(), tag.casefold()) if name else ())
+        """ランキングのそのページ（または探したプレイヤー）が手元にあるか: あれば呼び出しは要らない。"""
+        key = ("leaderboard", known_region(region), max(0, int(start))) + (
+            (name.casefold(), tag.casefold()) if name else ()
+        )
         return self.cache.get(key) is not None
 
     def status(self, region: str) -> dict:
-        """Riot's notices for a region: ``{"maintenances": [...], "incidents": [...]}`` (_slim_status)."""
-        path = f"/valorant/v1/status/{_region(region)}"
-        return self._get(("status", _region(region)), path, KEEP["status"], _slim_status)
+        """リージョンの Riot のお知らせ: ``{"maintenances": [...], "incidents": [...]}``（slim_status）。"""
+        path = f"/valorant/v1/status/{known_region(region)}"
+        return self._get(("status", known_region(region)), path, KEEP["status"], slim_status)
 
     def featured(self) -> list:
-        """The store's featured bundles (the same for everyone): ``[{"uuid", "price", "until", "items"}]``."""
+        """ストアのおすすめバンドル（全員同じ）: ``[{"uuid", "price", "until", "items"}]``。"""
         return self._get(("featured",), "/valorant/v2/store-featured", KEEP["featured"], _slim_featured)
 
     def news(self, country: str) -> list:
-        """Riot's VALORANT news in a language (``ja-jp``, ``en-gb``...): ``[{"title", "at", "category", "url",
-        "banner"}]``, the latest first."""
+        """その言語（``ja-jp``、``en-gb`` など）
+        の Riot の VALORANT ニュース: ``[{"title", "at", "category", "url", "banner"}]``、新しい順。"""
         if self.cache.get(("no-news", country)):
-            raise HenrikError("notfound")  # asked a while ago, and there were none: not asked again for a while
+            raise HenrikError("notfound")  # 少し前に聞いたら無かった: しばらく聞かない
         try:
             return self._get(("news", country), f"/valorant/v1/website/{_part(country)}", KEEP["news"], _slim_news)
         except HenrikError as error:
@@ -297,11 +306,12 @@ class Henrik:
             raise
 
     def esports(self) -> tuple[list, float | None]:
-        """The esports schedule (every league): ``[{"at", "state", "league": {"name", "region", "icon"},
-        "tournament", "best_of", "vod", "teams": [{"name", "code", "icon", "won", "wins"}]}]``, by time, and
-        ``None``, or the time (``time.time()``) of the last schedule that came when a new one does not: that one is
-        shown (for up to a day) rather than nothing. After a failure nothing is asked for a while (each try costs
-        the shared allowance, up to 2 calls)."""
+        """eスポーツの予定（全リーグ）
+        : ``[{"at", "state", "league": {"name", "region", "icon"}, "tournament", "best_of", "vod", "teams": [{"name",
+        "code", "icon", "won",
+        "wins"}]}]``（時刻順）と、``None`` か、新しいものが来ないときに最後に来た予定の時刻（``time.time()``）
+        : 何も出さないより、それを出す（1 日まで）。失敗したらしばらく何も聞かない（1 回で分け合う呼び出し回数を最大
+        2 回使う）。"""
         fresh = self.cache.get(("esports",))
         if fresh is not None:
             return fresh, None
@@ -324,13 +334,14 @@ class Henrik:
         return games, None
 
     def _esports(self) -> list:
-        """A new schedule: the whole one, or when it does not come, the main leagues' (one call). The whole one is
-        big: a timeout, an error, or HTTP 429 from HenrikDev, which counts each request it makes to Riot for it
-        against the key (docs.henrikdev.xyz/general/rate-limiting); on the live site it was refused every time."""
+        """新しい予定: 全部、来なければ主要リーグのもの（1 回の呼び出し）。全部は大きい: タイムアウト、エラー、
+        または HenrikDev からの HTTP 429（HenrikDev はそのために Riot に出す各リクエストをキーに数える、
+        docs.henrikdev.xyz/general/rate-limiting）。本番では毎回断られた。"""
         path = "/valorant/v1/esports/schedule"
         if not self.cache.get(("no-esports",)):
             try:
-                return self._get(("esports",), path, KEEP["esports"], _slim_esports, last=False)
+                # 全部の予定の無応答は大きさのせいのことが多い: HenrikDev 全体が落ちたとはしない（trip）
+                return self._get(("esports",), path, KEEP["esports"], _slim_esports, last=False, trip=False)
             except HenrikError as error:
                 if not (error.kind == "down" or _refused(error)):
                     raise
@@ -339,7 +350,7 @@ class Henrik:
         else:
             first = HenrikError("down", "the whole schedule did not come a while ago")
         failed = self.cache.get(("no-esports", "leagues"))
-        if failed:  # failed a while ago: not asked again for a while (each visit would cost the budget)
+        if failed:  # 少し前に失敗した: しばらく聞かない（訪問のたびに予算を使ってしまう）
             raise HenrikError("down", f"{first.detail or first.kind}; leagues: {failed}")
         try:
             games = self._get(
@@ -349,7 +360,7 @@ class Henrik:
             if error.kind in ("nokey", "badkey"):
                 raise
             detail = f"{first.detail or first.kind}; leagues: {error.detail or error.kind}"
-            if error.kind == "busy":  # the allowance is used up for now: another time
+            if error.kind == "busy":  # 今は呼び出し回数を使い切っている: また今度
                 raise HenrikError("busy", detail) from None
             self.cache.put(("no-esports", "leagues"), error.detail or error.kind, KEEP["news"])
             raise HenrikError("down", detail) from None
@@ -357,15 +368,16 @@ class Henrik:
             raise HenrikError("down", f"{first.detail or first.kind}; leagues: no matches")
         return games
 
-    def _get(self, cache_key, path: str, seconds: float, shape=None, last: bool = True):
+    def _get(self, cache_key, path: str, seconds: float, shape=None, last: bool = True, trip: bool = True):
         kept = self.cache.get(cache_key)
         if kept is not None:
             return kept
         try:
-            return self._ask(cache_key, path, seconds, shape)
+            return self._ask(cache_key, path, seconds, shape, trip)
         except HenrikError as error:
-            # HenrikDev cannot answer now: the page keeps what it showed before ("データを更新" was pressed), or
-            # shows the last answer of the day (``last``; its age is on the page) rather than an error
+            # HenrikDev が今は答えられない: エラーにせず、
+            # ページは前に出したものを出し続ける（「データを更新」を押した場合）か、その日の最後の答えを出す（``last``。
+            # 古さはページに出す）
             spare = None
             if error.kind in ("busy", "down"):
                 spare = self.spares.get(cache_key) or (self.lasts.get(cache_key) if last else None)
@@ -376,17 +388,24 @@ class Henrik:
             self.read_times.put(cache_key, at, FRESH_AFTER)
             return data
 
-    def _ask(self, cache_key, path: str, seconds: float, shape):
+    def _ask(self, cache_key, path: str, seconds: float, shape, trip: bool = True):
+        """``trip``: 無応答と 520〜526 を HenrikDev 全体の問題とみなし、DOWN_WAIT の間ほかの呼び出しも止める。"""
         key = self.key()
         if not key:
             raise HenrikError("nokey")
+        if time.time() < self.down_until:
+            raise HenrikError("down", self.down_detail)
         if not self.budget.take():
             raise HenrikError("busy")
         status, body = self.fetch(BASE + path, {"Authorization": key, "Accept": "application/json"})
-        if status >= 500 and self.budget.take():
-            # HenrikDev's own trouble of a moment (502, 503, 504 come and go): asked once more. Not after a
-            # silence of 10 s, which a second 10 s would only double
+        if 500 <= status < 520 and self.budget.take():
+            # HenrikDev 自身の一時的な問題（502、503、504 は出たり消えたりする）: もう 1 回聞く。
+            # 10 秒の無応答と 520〜526 のあとは聞き直さない（2 回目の 10 秒で倍になるだけ）
             status, body = self.fetch(BASE + path, {"Authorization": key, "Accept": "application/json"})
+        if trip and (status == 0 or 520 <= status <= 526):
+            # 1 人のプレイヤーではなく HenrikDev 全体の問題: しばらく誰の分も聞かない
+            self.down_until = time.time() + DOWN_WAIT
+            self.down_detail = f"HTTP {status}" if status else "no answer within 10 s"
         if status in (401, 403):
             raise HenrikError("badkey")
         if status == 404:
@@ -404,34 +423,34 @@ class Henrik:
         if shape is not None:
             data = shape(data)
         self.cache.put(cache_key, data, seconds)
-        self.read_times.put(cache_key, time.time(), seconds)  # when it was read: the player's page says so
-        # kept on the side too: when HenrikDev does not answer later, the page shows this instead of an error
+        self.read_times.put(cache_key, time.time(), seconds)  # 読んだ時刻: プレイヤーページに出す
+        # 横にも残す: あとで HenrikDev が答えないとき、エラーの代わりにこれを出す
         self.lasts.put(cache_key, (data, time.time()), LAST_KEEP)
         return data
 
 
-#: The leagues asked for (in one call) when the whole esports schedule does not come, as HenrikDev's documentation
-#: names them (comma-separated, docs.henrikdev.xyz/valorant/api-reference/esports).
+#: eスポーツの予定全体が来ないときに（1 回の呼び出しで）頼むリーグ。 HenrikDev のドキュメントの名前で（カンマ区切り、
+#: docs.henrikdev.xyz/valorant/api-reference/esports）。
 ESPORTS_LEAGUES = "vct-international,vct-americas,vct-emea,vct-pacific,vct-china"
-#: How long the last schedule that came is shown when a new one does not (seconds), and how long nothing is asked
-#: after a failure: a short while when the allowance was used up, longer when HenrikDev did not answer.
+#: 新しい予定が来ないとき、最後に来た予定を出す秒数と、
+#: 失敗したあと何も聞かない秒数: 呼び出し回数を使い切ったときは短く、HenrikDev が答えなかったときは長く。
 ESPORTS_LAST = 24 * 3600
 ESPORTS_WAIT = {"busy": 20, "down": 120}
 
 
 def _refused(error: HenrikError) -> bool:
-    """HenrikDev itself said the key has asked too much (HTTP 429), not this site's own budget."""
+    """このサイト自身の予算ではなく、HenrikDev 自身がキーの使いすぎと言った（HTTP 429）。"""
     return error.kind == "busy" and error.detail == "HTTP 429"
 
 
 def shows_rr(mode: str) -> bool:
-    """Whether a list of this mode has competitive matches, whose RR changes are worth a call."""
+    """このモードの一覧にコンペティティブの試合があるか（RR の変化を呼び出す価値がある）。"""
     return mode in ("", "competitive") or mode not in MODES
 
 
 def _slim_mmr(data) -> dict:
     slim = _pick(data, ("current", "peak"))
-    if isinstance(slim.get("peak"), dict):  # the best rank ever: from an act before Ascendant, numbered its way
+    if isinstance(slim.get("peak"), dict):  # 今までの最高ランク: アセンダント以前のアクトのもの。その頃の番号で
         slim["peak"] = slim["peak"] | {"old": _old_ranks(slim["peak"])}
     seasons = [_slim_act(season) for season in (data or {}).get("seasonal") or [] if isinstance(season, dict)]
     slim["seasons"] = sorted(
@@ -440,51 +459,45 @@ def _slim_mmr(data) -> dict:
     return slim
 
 
-#: The act rank badge (the triangle, "onigiri") shows this many wins: the best ones.
+#: アクトランクのバッジ（三角、「おにぎり」）が出す勝利の数: 良いもの。
 BADGE_WINS = 9
 
 
 def _slim_act(season: dict) -> dict:
-    """One act of v3 mmr's ``seasonal``: its record, final rank, and the ranks of its best wins (``act_wins``)."""
-
-    def number(value) -> int:
-        try:
-            return int(value or 0)
-        except (TypeError, ValueError):
-            return 0
+    """v3 mmr の ``seasonal`` のアクト 1 つ: 戦績、最終ランク、良い勝利のランク（``act_wins``）。"""
 
     def tier(value) -> int:
-        return number(value.get("id")) if isinstance(value, dict) else number(value)
+        return to_int(value.get("id") if isinstance(value, dict) else value)
 
     short = str((season.get("season") or {}).get("short") or "") if isinstance(season.get("season"), dict) else ""
     board = season.get("leaderboard_placement")
     wins = sorted((tier(win) for win in season.get("act_wins") or []), reverse=True)
     return {
         "short": short.lower(),
-        "games": number(season.get("games")),
-        "wins": number(season.get("wins")),
+        "games": to_int(season.get("games")),
+        "wins": to_int(season.get("wins")),
         "end_tier": tier(season.get("end_tier")),
         "old": _old_ranks(season),
-        "board": number(board.get("rank")) if isinstance(board, dict) else 0,
+        "board": to_int(board.get("rank")) if isinstance(board, dict) else 0,
         "best": [win for win in wins if win > 2][:BADGE_WINS],
     }
 
 
 def _old_ranks(item: dict) -> bool:
-    """Whether an act of v3 mmr (or the peak's act) numbers its ranks as before Episode 5: there was no Ascendant,
-    so the same number was another rank."""
+    """v3 mmr のアクト（または最高ランクのアクト）のランク番号がエピソード 5 より前のものか:
+    アセンダントが無かったので、同じ番号でも別のランクだった。"""
     season = item.get("season") if isinstance(item.get("season"), dict) else {}
     episode = (_act_order(str(season.get("short") or ""))[:1] or (99,))[0]
     return str(item.get("ranking_schema") or "") == "base" or episode < 5
 
 
 def _act_order(short: str) -> tuple:
-    """ "e9a3" -> (9, 3): the latest act is the largest, whatever order the list is in."""
+    """ "e9a3" -> (9, 3): 一覧がどんな順でも、最新のアクトが一番大きい。"""
     return tuple(int(number) for number in re.findall(r"\d+", str(short or "")))
 
 
 def _slim_rr(data) -> dict:
-    """v1's list (or v2's ``{"history": [...]}``) -> ``{match id: {"change", "tier", "rr"}}``."""
+    """v1 の一覧（または v2 の ``{"history": [...]}``）-> ``{試合 ID: {"change", "tier", "rr"}}``。"""
     items = data.get("history") if isinstance(data, dict) else data
     found = {}
     for item in items if isinstance(items, list) else []:
@@ -508,25 +521,18 @@ def _slim_rr(data) -> dict:
 
 
 def _moment(value) -> int:
-    """Unix seconds from a number (v1's date_raw) or an ISO time (v2's date); 0 when it is neither."""
+    """数（v1 の date_raw）か ISO 時刻（v2 の date）からの unix 秒。どちらでもなければ 0。"""
     if isinstance(value, int | float):
         return int(value)
     try:
-        return int(datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp())
+        return int(datetime.fromisoformat(str(value)).timestamp())
     except ValueError:
         return 0
 
 
-def _number(value, default: int = 0) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
-
-
 def _slim_stored(matches) -> list:
-    """v1's stored matches: per match its act ("e9a3"), start, map, agent, rank, whether the player's team won (None:
-    a draw), its rounds, and the player's kills, deaths, assists, score, shots and damage."""
+    """v1 の保存済み試合: 試合ごとにアクト（"e9a3"）、開始、マップ、エージェント、ランク、
+    プレイヤーのチームが勝ったか（None: 引き分け）、ラウンド、プレイヤーのキル・デス・アシスト・スコア・命中・ダメージ。"""
     if not isinstance(matches, list):
         raise HenrikError("down")
     found = []
@@ -537,7 +543,7 @@ def _slim_stored(matches) -> list:
             match.get(key) if isinstance(match.get(key), dict) else {} for key in ("meta", "stats", "teams")
         )
         side = str(line.get("team") or "").lower()
-        red, blue = _number(teams.get("red")), _number(teams.get("blue"))
+        red, blue = to_int(teams.get("red")), to_int(teams.get("blue"))
         mine, theirs = (red, blue) if side == "red" else (blue, red)
         season = meta.get("season") if isinstance(meta.get("season"), dict) else {}
         shots = line.get("shots") if isinstance(line.get("shots"), dict) else {}
@@ -558,25 +564,25 @@ def _slim_stored(matches) -> list:
                 "us": mine,
                 "them": theirs,
                 "agent": str(agent.get("id") or "").lower(),
-                "tier": _number(line.get("tier")),
+                "tier": to_int(line.get("tier")),
                 "won": (mine > theirs) if side in ("red", "blue") and mine != theirs else None,
                 "rounds": red + blue,
-                "kills": _number(line.get("kills")),
-                "deaths": _number(line.get("deaths")),
-                "assists": _number(line.get("assists")),
-                "score": _number(line.get("score")),
-                "head": _number(shots.get("head")),
-                "body": _number(shots.get("body")),
-                "leg": _number(shots.get("leg")),
-                "made": _number(damage.get("made")),
-                "received": _number(damage.get("received")),
+                "kills": to_int(line.get("kills")),
+                "deaths": to_int(line.get("deaths")),
+                "assists": to_int(line.get("assists")),
+                "score": to_int(line.get("score")),
+                "head": to_int(shots.get("head")),
+                "body": to_int(shots.get("body")),
+                "leg": to_int(shots.get("leg")),
+                "made": to_int(damage.get("made")),
+                "received": to_int(damage.get("received")),
             }
         )
     return found
 
 
 def _slim_board(data) -> dict:
-    """v3's leaderboard (or v2's, whose names differ) -> what the page shows."""
+    """v3 のランキング（または名前の違う v2 のもの）-> ページに出すもの。"""
     if not isinstance(data, dict):
         raise HenrikError("down")
     players = []
@@ -586,14 +592,14 @@ def _slim_board(data) -> dict:
         tier = item.get("tier", item.get("competitiveTier"))
         players.append(
             {
-                "rank": _number(item.get("leaderboard_rank", item.get("leaderboardRank"))),
+                "rank": to_int(item.get("leaderboard_rank", item.get("leaderboardRank"))),
                 "name": str(item.get("name", item.get("gameName")) or ""),
                 "tag": str(item.get("tag", item.get("tagLine")) or ""),
                 "puuid": str(item.get("puuid") or ""),
                 "card": str(item.get("card", item.get("PlayerCardID")) or "").lower(),
-                "tier": _number(tier.get("id") if isinstance(tier, dict) else tier),
-                "rr": _number(item.get("rr", item.get("rankedRating"))),
-                "wins": _number(item.get("wins", item.get("numberOfWins"))),
+                "tier": to_int(tier.get("id") if isinstance(tier, dict) else tier),
+                "rr": to_int(item.get("rr", item.get("rankedRating"))),
+                "wins": to_int(item.get("wins", item.get("numberOfWins"))),
                 "hidden": bool(item.get("is_anonymized", item.get("IsAnonymized"))),
             }
         )
@@ -603,25 +609,25 @@ def _slim_board(data) -> dict:
             tier = item.get("tier")
             thresholds.append(
                 {
-                    "tier": _number(tier.get("id") if isinstance(tier, dict) else tier),
-                    "rr": _number(item.get("threshold")),
-                    "from": _number(item.get("start_index")) + 1,
+                    "tier": to_int(tier.get("id") if isinstance(tier, dict) else tier),
+                    "rr": to_int(item.get("threshold")),
+                    "from": to_int(item.get("start_index")) + 1,
                 }
             )
     for tier, key in ((27, "radiant_threshold"), (26, "immortal_3_threshold"), (25, "immortal_2_threshold")):
         if not thresholds and data.get(key) is not None:  # v2
-            thresholds.append({"tier": tier, "rr": _number(data[key]), "from": 0})
+            thresholds.append({"tier": tier, "rr": to_int(data[key]), "from": 0})
     results = data.get("results") if isinstance(data.get("results"), dict) else {}
     return {
         "players": players,
         "thresholds": sorted(thresholds, key=lambda item: -item["tier"]),
-        "total": _number(results.get("total", data.get("total_players"))),
+        "total": to_int(results.get("total", data.get("total_players"))),
         "updated": str(data.get("updated_at") or data.get("last_update") or ""),
     }
 
 
-def _https(value) -> str:
-    """An https address, or "" (nothing else is linked to or shown)."""
+def https_only(value) -> str:
+    """https のアドレス、または ""（それ以外はリンクも表示もしない）。"""
     value = str(value or "")
     return value if value.startswith("https://") else ""
 
@@ -636,8 +642,8 @@ def _slim_news(data) -> list:
                 "title": str(item["title"])[:200],
                 "at": str(item.get("date") or ""),
                 "category": str(item.get("category") or "").lower(),
-                "url": _https(item.get("external_link")) or _https(item.get("url")),
-                "banner": _https(item.get("banner_url")),
+                "url": https_only(item.get("external_link")) or https_only(item.get("url")),
+                "banner": https_only(item.get("banner_url")),
             }
         )
     return sorted(articles, key=lambda item: item["at"], reverse=True)
@@ -663,16 +669,16 @@ def _slim_esports(data) -> list:
                     "name": str(league.get("name") or ""),
                     "id": str(league.get("identifier") or league.get("name") or "").lower(),
                     "region": str(league.get("region") or ""),
-                    "icon": _https(league.get("icon")),
+                    "icon": https_only(league.get("icon")),
                 },
                 "tournament": str(tournament.get("name") or ""),
                 "best_of": int(kind.get("count") or 0) if str(kind.get("count") or "").isdigit() else 0,
-                "vod": _https(item.get("vod")),
+                "vod": https_only(item.get("vod")),
                 "teams": [
                     {
                         "name": str(team.get("name"))[:60],
                         "code": str(team.get("code") or "")[:8],
-                        "icon": _https(team.get("icon")),
+                        "icon": https_only(team.get("icon")),
                         "won": bool(team.get("has_won")),
                         "wins": int(team.get("game_wins") or 0) if str(team.get("game_wins") or 0).isdigit() else 0,
                     }
@@ -683,9 +689,10 @@ def _slim_esports(data) -> list:
     return sorted(games, key=lambda item: item["at"])
 
 
-def _slim_status(data) -> dict:
-    """Each notice: ``{"kind": maintenance / incident, "severity", "status", "titles": {locale: words},
-    "updates": [{"at", "words": {locale: words}}] (latest first), "at"}``."""
+def slim_status(data) -> dict:
+    """お知らせ 1 つずつ:
+    ``{"kind": maintenance / incident, "severity", "status", "titles": {locale: 文}, "updates": [{"at", "words": {locale: 文}}]（新しい順）
+    , "at"}``。"""
 
     def words(items) -> dict:
         return {
@@ -697,7 +704,7 @@ def _slim_status(data) -> dict:
     found = {}
     for kind in ("maintenances", "incidents"):
         notices = []
-        for item in (data or {}).get(kind) or [] if isinstance(data, dict) else []:
+        for item in data.get(kind) or [] if isinstance(data, dict) else []:
             if not isinstance(item, dict):
                 continue
             updates = [
@@ -707,7 +714,7 @@ def _slim_status(data) -> dict:
             ]
             notices.append(
                 {
-                    "kind": kind[:-1] if kind == "incidents" else "maintenance",
+                    "kind": "incident" if kind == "incidents" else "maintenance",
                     "severity": str(item.get("incident_severity") or ""),
                     "status": str(item.get("maintenance_status") or ""),
                     "titles": words(item.get("titles")),
@@ -721,7 +728,7 @@ def _slim_status(data) -> dict:
 
 
 def _slim_featured(data) -> list:
-    """v2's store-featured: each bundle's uuid, price, time left and items (uuid, type, name, price)."""
+    """v2 の store-featured: 各バンドルの uuid、値段、残り時間、アイテム（uuid、種類、名前、値段）。"""
     bundles = data if isinstance(data, list) else []
     found = []
     for bundle in bundles:
@@ -733,9 +740,9 @@ def _slim_featured(data) -> list:
                 "type": str(item.get("type") or ""),
                 "name": str(item.get("name") or ""),
                 "image": str(item.get("image") or ""),
-                "amount": _number(item.get("amount"), 1),
-                "price": _number(item.get("discounted_price", item.get("base_price"))),
-                "base": _number(item.get("base_price")),
+                "amount": to_int(item.get("amount"), 1),
+                "price": to_int(item.get("discounted_price", item.get("base_price"))),
+                "base": to_int(item.get("base_price")),
             }
             for item in bundle.get("items") or []
             if isinstance(item, dict)
@@ -743,9 +750,8 @@ def _slim_featured(data) -> list:
         found.append(
             {
                 "uuid": str(bundle["bundle_uuid"]).lower(),
-                "price": _number(bundle.get("bundle_price")),
-                "until": time.time() + _number(bundle.get("seconds_remaining")),  # kept a while: when it ends
-                "whole": bool(bundle.get("whole_sale_only")),
+                "price": to_int(bundle.get("bundle_price")),
+                "until": time.time() + to_int(bundle.get("seconds_remaining")),  # しばらく持つ: 終わるときまで
                 "items": items,
             }
         )
@@ -760,13 +766,13 @@ def _pick(item, keys) -> dict:
     return {key: item.get(key) for key in keys} if isinstance(item, dict) else {}
 
 
-def _slim_match(match) -> dict:
-    """A match with what the pages use only (METADATA, PLAYER, TEAM)."""
+def slim_match(match) -> dict:
+    """ページが使う部分だけの試合（METADATA、PLAYER、TEAM）。"""
     if not isinstance(match, dict) or not isinstance(match.get("metadata"), dict):
         raise HenrikError("down")
     return {
         "metadata": _pick(match["metadata"], METADATA),
-        # in the order of the match's own list: the digest names players by their place in it
+        # 試合自身の一覧の順で: ダイジェストはその中の位置でプレイヤーを指す
         "players": [_pick(player, PLAYER) for player in match.get("players") or [] if isinstance(player, dict)],
         "teams": [_pick(team, TEAM) for team in match.get("teams") or [] if isinstance(team, dict)],
         "digest": rounds.digest(match),
@@ -784,7 +790,7 @@ def _slim_collected(matches) -> list:
                 for player in match.get("players") or []
                 if isinstance(player, dict)
             ],
-            # which team won: the agents' win rates (activity.py)
+            # どのチームが勝ったか: エージェントの勝率（activity.py）
             "teams": [_pick(team, ("team_id", "won")) for team in match.get("teams") or [] if isinstance(team, dict)],
         }
         for match in matches
@@ -795,13 +801,13 @@ def _slim_collected(matches) -> list:
 def _slim_matches(matches) -> list:
     if not isinstance(matches, list):
         raise HenrikError("down")
-    return [_slim_match(match) for match in matches if isinstance(match, dict) and match.get("metadata")]
+    return [slim_match(match) for match in matches if isinstance(match, dict) and match.get("metadata")]
 
 
 def _part(text: str) -> str:
     return quote(text, safe="")
 
 
-def _region(region: str) -> str:
+def known_region(region: str) -> str:
     region = str(region or "").lower()
     return region if region in REGIONS else "ap"

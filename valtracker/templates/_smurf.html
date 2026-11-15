@@ -1,2 +1,2 @@
-{# The guess at a second account (smurf.py): a small chip, its reasons on hover and for screen readers #}
+{# サブ垢の推測（smurf.py）: 小さなチップ。理由はホバーとスクリーンリーダーで #}
 {%- if guess %}{% set words = {'likely': t('サブ垢の可能性: 高'), 'maybe': t('サブ垢の可能性: あり'), 'main': t('本垢らしい')}[guess.kind] %}<span class="smurf {{ guess.kind }}" title="{{ t('推測') }}: {% for item in guess.why %}{{ t(item[0], **item[1]) }}{% if not loop.last %} · {% endif %}{% endfor %}">{{ words }}<span class="sr"> ({{ t('推測') }}: {% for item in guess.why %}{{ t(item[0], **item[1]) }}{% if not loop.last %} · {% endif %}{% endfor %})</span></span>{% endif -%}

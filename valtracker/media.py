@@ -1,12 +1,11 @@
-"""The game's pictures, served from here: fetched once from media.valorant-api.com and kept in
-instance/media/ (the pages load nothing from other addresses).
+"""ゲームの絵をここから配る: media.valorant-api.com から 1 回取って instance/media/
+に置く（ページはほかのアドレスから何も読まない）。
 
-Only picture paths of the shape valorant-api.com uses are asked for (``agents/<uuid>/displayicon.png``,
-``competitivetiers/<uuid>/<tier>/smallicon.png``), so the route cannot be used to fetch anything else.
+頼むのは valorant-api.com の形の画像パスだけ（``agents/<uuid>/displayicon.png``、
+``competitivetiers/<uuid>/<tier>/smallicon.png``）なので、このルートでほかのものは取れない。
 
-The news' and esports' pictures (Riot's news site, the esports teams' logos) come the same way from the few
-addresses in OUTSIDE, each with the one shape of path it uses (``outside``, served at /pic/).
-"""
+ニュースとeスポーツの絵（Riot のニュースサイト、チームのロゴ）も同じように、OUTSIDE にある少数のアドレスから、
+それぞれ決まった形のパスだけを取る（``outside``、/pic/ で配る）。"""
 
 from __future__ import annotations
 
@@ -24,8 +23,7 @@ PATH = re.compile(
 )
 PNG = b"\x89PNG\r\n\x1a\n"
 MAX_BYTES = 4 * 1024 * 1024
-#: /pic/<key>/<path>: the address it is fetched from (with what is added to ask for a smaller picture), and the
-#: only shape of path asked for there.
+#: /pic/<key>/<path>: 取りに行くアドレス（小さい絵を頼むための付け足しも含む）と、そこで頼むパスの形。
 OUTSIDE = {
     "rgpub": (
         "https://cmsassets.rgpub.io/",
@@ -45,12 +43,12 @@ OUTSIDE = {
         re.compile(r"^(teams|leagues)/[A-Za-z0-9._-]{1,120}\.(png|jpg|jpeg|webp)$"),
     ),
 }
-#: The kinds of picture served, by their first bytes.
+#: 配る絵の種類（先頭のバイトで見分ける）。
 KINDS = ((PNG, "image/png"), (b"\xff\xd8\xff", "image/jpeg"), (b"RIFF", "image/webp"))
 
 
 def kind(body: bytes) -> str | None:
-    """A picture's media type from its first bytes (None when it is not one we serve)."""
+    """先頭のバイトからの絵のメディアタイプ（配らない種類なら None）。"""
     for start, name in KINDS:
         if body.startswith(start) and (name != "image/webp" or body[8:12] == b"WEBP"):
             return name
@@ -58,7 +56,7 @@ def kind(body: bytes) -> str | None:
 
 
 def outside_path(url) -> str | None:
-    """An outside picture's address -> its path under /pic/ (None when it is not one of OUTSIDE's)."""
+    """外部の絵のアドレス -> /pic/ の下のパス（OUTSIDE のものでなければ None）。"""
     url = str(url or "").split("?", 1)[0]
     for key, (base, _, shape) in OUTSIDE.items():
         if url.startswith(base) and shape.match(url[len(base) :]):
@@ -66,7 +64,7 @@ def outside_path(url) -> str | None:
     return None
 
 
-#: A picture that could not be fetched is not asked for again for this long.
+#: 取れなかった絵はこの間もう頼まない。
 MISS_SECONDS = 600
 
 
@@ -79,13 +77,13 @@ class Media:
         self._missed: dict[str, float] = {}
 
     def file(self, path: str) -> Path | None:
-        """The picture on this disk, fetched first if it is not here yet; None when there is none."""
+        """ディスクの絵。まだ無ければ先に取る。無ければ None。"""
         if not PATH.match(path):
             return None
         return self._kept(path, self.folder / path, content.MEDIA + path, png_only=True)
 
     def outside(self, path: str) -> Path | None:
-        """A news or esports picture (``<key>/<path>`` of OUTSIDE), fetched first if it is not here yet."""
+        """ニュース・eスポーツの絵（OUTSIDE の ``<key>/<path>``）。まだ無ければ先に取る。"""
         key, _, rest = path.partition("/")
         if key not in OUTSIDE or ".." in rest or not OUTSIDE[key][2].match(rest):
             return None
@@ -96,11 +94,11 @@ class Media:
         if target.is_file():
             return target
         with self._guard:
-            if len(self._locks) > 2000:  # made-up paths must not grow these without end
+            if len(self._locks) > 2000:  # でたらめなパスでこれらが際限なく増えないように
                 self._locks.clear()
                 self._missed.clear()
             lock = self._locks.setdefault(path, threading.Lock())
-        with lock:  # one fetch per picture, however many pages ask for it at once
+        with lock:  # 同時にいくつのページが頼んでも、絵 1 枚につき取りに行くのは 1 回
             if target.is_file():
                 return target
             if time.monotonic() - self._missed.get(path, -MISS_SECONDS) < MISS_SECONDS:
