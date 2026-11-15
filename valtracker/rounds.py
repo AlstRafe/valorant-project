@@ -1,19 +1,20 @@
-"""What a match's rounds and kills tell (HenrikDev v4 ``rounds`` and ``kills``), worked out once when the match is
-first read, so the rest of them (about 0.5 MB a match) can be dropped before it is kept (henrik.py).
+"""試合のラウンドとキル（HenrikDev v4 の ``rounds`` と ``kills``）からわかることを、
+試合を最初に読んだときに 1 回だけ計算する。残り（1 試合 0.5 MB ほど）は保存前に捨てられる（henrik.py）。
 
-For each player: first kills and deaths, KAST rounds (a kill, an assist, survived or traded), multi-kills, clutches
-won, plants and defuses, kills by weapon. For each round: who won and how, which team attacked, the plant site, each
-team's loadout, and its kills in order (compact: a player is their place in the match's ``players``), with where
-the victim died and where the killer stood (heatmap.py draws them).
+プレイヤーごと: ファーストキル・ファーストデス、KAST ラウンド（キル・アシスト・生存・トレード）、マルチキル、
+勝ったクラッチ、プラントとデフューズ、武器ごとのキル。ラウンドごと: 勝者と勝ち方、攻撃側のチーム、プラントしたサイト、
+各チームのロードアウト、キルの順（コンパクトに: プレイヤーは試合の ``players`` での位置）、
+やられた側が倒れた場所と倒した側の立ち位置（heatmap.py が描く）。
 
-HenrikDev's older answers (v2) named these differently; both are read, and whatever is missing is left out.
-"""
+HenrikDev の古い答え（v2）は名前が違う。どちらも読み、無いものは省く。"""
 
 from __future__ import annotations
 
-#: A death is traded when a team-mate kills the killer within this long.
+from valtracker.util import to_int
+
+#: 味方がこの時間内に倒した相手を倒せば、デスはトレードされたことになる。
 TRADE_MS = 5000
-#: How a round ended -> the short name the pages use.
+#: ラウンドの終わり方 -> ページで使う短い名前。
 ENDINGS = {
     "elimination": "elim",
     "eliminated": "elim",
@@ -22,19 +23,12 @@ ENDINGS = {
     "round timer expired": "time",
     "surrendered": "surrender",
 }
-#: Rounds in a half for the modes that swap sides (the red team attacks first); overtime swaps every round.
+#: 攻守が替わるモードの前半のラウンド数（Red チームが先に攻める）。オーバータイムは毎ラウンド替わる。
 HALF = {"competitive": 12, "unrated": 12, "premier": 12, "custom": 12, "swiftplay": 4, "spikerush": 3}
-#: One player's numbers before the first round. mk: rounds with 2, 3, 4 and 5 kills (an ace).
+#: 最初のラウンド前のプレイヤー 1 人分の数値。mk: 2・3・4・5 キル（エース）のラウンド数。
 EMPTY = {"fk": 0, "fd": 0, "kast": 0, "rounds": 0, "clutches": 0, "clutch_best": 0, "plants": 0, "defuses": 0}
-#: A list of kills longer than this is not kept (Deathmatch: hundreds of kills, no rounds to show them in).
+#: これより長いキルの一覧は残さない（デスマッチ: キルが何百もあり、出すラウンドも無い）。
 MAX_KILLS = 400
-
-
-def _int(value, default: int = 0) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
 
 
 def _puuid(who) -> str:
@@ -44,8 +38,8 @@ def _puuid(who) -> str:
 
 
 def _kill(raw: dict, place: dict) -> list | None:
-    """[round, ms into the round, killer, victim, weapon key, [assistants], weapon name, where the victim died,
-    where the killer stood] (players by place, -1: nobody's; places as _spot gives them)."""
+    """[ラウンド, ラウンド開始からの ms, 倒した側, やられた側, 武器のキー, [アシスト], 武器名,
+    やられた側が倒れた場所, 倒した側の立ち位置]（プレイヤーは位置、-1 は誰でもない。場所は _spot の形）。"""
     victim = place.get(_puuid(raw.get("victim") or raw.get("victim_puuid")))
     if victim is None:
         return None
@@ -67,8 +61,8 @@ def _kill(raw: dict, place: dict) -> list | None:
             killer_at = _spot(item.get("location"))
             break
     return [
-        _int(raw.get("round", raw.get("round_number"))),
-        _int(moment),
+        to_int(raw.get("round", raw.get("round_number"))),
+        to_int(moment),
         killer,
         victim,
         key or name,
@@ -80,7 +74,7 @@ def _kill(raw: dict, place: dict) -> list | None:
 
 
 def _spot(where) -> list | None:
-    """A place in the game's units, [x, y]; None when not known (HenrikDev gives 0, 0 for that)."""
+    """ゲームの単位での場所 [x, y]。不明なら None（HenrikDev はそのとき 0, 0 を出す）。"""
     if not isinstance(where, dict):
         return None
     x, y = where.get("x"), where.get("y")
@@ -112,13 +106,13 @@ def _round(raw: dict, place: dict, team: list) -> dict:
             continue
         who = place.get(_puuid(line.get("player") or line.get("player_puuid")))
         counted = line.get("stats") if isinstance(line.get("stats"), dict) else line
-        head = _int(counted.get("headshots"))
-        hits = head + _int(counted.get("bodyshots")) + _int(counted.get("legshots"))
+        head = to_int(counted.get("headshots"))
+        hits = head + to_int(counted.get("bodyshots")) + to_int(counted.get("legshots"))
         if who is not None and hits:
             shots.append([who, head, hits])
         economy = line.get("economy") if isinstance(line.get("economy"), dict) else {}
         if who is not None and team[who]:
-            loadout[team[who]] = loadout.get(team[who], 0) + _int(economy.get("loadout_value"))
+            loadout[team[who]] = loadout.get(team[who], 0) + to_int(economy.get("loadout_value"))
     ceremony = str(raw.get("ceremony") or raw.get("round_ceremony") or "").removeprefix("Ceremony").lower()
     return {
         "w": str(raw.get("winning_team") or ""),
@@ -129,14 +123,14 @@ def _round(raw: dict, place: dict, team: list) -> dict:
         "d": defuser,
         "a": "",
         "l": loadout,
-        # the hits of the round: [player, to the head, altogether] (the players who hit someone)
+        # ラウンドの命中: [プレイヤー, 頭, 合計]（誰かに当てたプレイヤー）
         "h": shots,
     }
 
 
 def _sides(rounds: list, team: list, queue: str) -> None:
-    """Which team attacked each round: the red team first, the halves of the mode; a plant is always the attackers',
-    so the guess is turned round when the plants say otherwise. Without a known half, the plants alone."""
+    """各ラウンドの攻撃側: Red チームが先、前半はモードによる。プラントはいつも攻撃側なので、
+    プラントが違うと示せば推測を反転する。前半がわからなければプラントだけで決める。"""
     teams = sorted({name for name in team if name})
     half = HALF.get(queue)
     if half and len(teams) == 2:
@@ -157,7 +151,7 @@ def _sides(rounds: list, team: list, queue: str) -> None:
 
 
 def digest(match: dict) -> dict:
-    """What the pages use of the rounds and kills (see the module's words); {} when the match has none."""
+    """ページが使うラウンドとキルの情報（モジュールの説明を参照）。試合に無ければ {}。"""
     players = [player for player in match.get("players") or [] if isinstance(player, dict)]
     ids = [_puuid(player) for player in players]
     place = {puuid: number for number, puuid in enumerate(ids) if puuid}
@@ -201,13 +195,13 @@ def digest(match: dict) -> dict:
             side = sides.setdefault(name, {"atk": [0, 0], "def": [0, 0]})["atk" if item["a"] == name else "def"]
             side[1] += 1
             side[0] += 1 if item["w"] == name else 0
-    # [round, ms, killer, victim, weapon, [assistants], where the victim died, where the killer stood]
+    # [ラウンド, ms, 倒した側, やられた側, 武器, [アシスト], やられた側が倒れた場所, 倒した側の立ち位置]
     compact = [kill[:6] + kill[7:9] for kill in kills] if rounds and len(kills) <= MAX_KILLS else []
     return {"rounds": rounds, "kills": compact, "weapons": weapons, "players": each, "sides": sides}
 
 
 def _round_players(item: dict, happened: list, team: list, each: list) -> None:
-    """One round's first kill and death, KAST, multi-kills and clutch, added to each player's."""
+    """1 ラウンドのファーストキル・ファーストデス、KAST、マルチキル、クラッチを各プレイヤーに足す。"""
     enemies = [kill for kill in happened if kill[2] >= 0 and team[kill[2]] != team[kill[3]]]
     if enemies:
         each[enemies[0][2]]["fk"] += 1
@@ -234,8 +228,8 @@ def _round_players(item: dict, happened: list, team: list, each: list) -> None:
         )
         if player in killed or player in helped or death is None or traded:
             each[player]["kast"] += 1
-    # a clutch: the last one alive of a team, against at least one, and the team won the round (a spike they
-    # planted before falling counts too)
+    # クラッチ: チーム最後の 1 人で、相手が 1 人以上、
+    # そしてチームがそのラウンドを取った（倒れる前に設置したスパイクでも）
     alive = {name: {player for player in range(len(team)) if team[player] == name} for name in set(team) if name}
     last: dict[str, tuple[int, int]] = {}
     for kill in happened:
@@ -251,15 +245,15 @@ def _round_players(item: dict, happened: list, team: list, each: list) -> None:
             each[player]["clutch_best"] = max(each[player]["clutch_best"], against)
 
 
-#: The game's units are centimetres: a kill's distance in metres is the floor distance between the two (x, y) / 100.
+#: ゲームの単位はセンチメートル: キルの距離（メートル）は 2 人の (x, y) の平面距離 / 100。
 METRE = 100
 
 
 def extras(match: dict, me: int) -> dict:
-    """What one player's rounds say beyond the digest's sums, read from its compact rounds and kills (so a match kept
-    before these were counted has them too): ``{"flawless": rounds the team won without losing anyone, "clutch":
-    {against: [won, tried]} (the moment the player was the last of their team, against 1-5), "far": {weapon key:
-    [metres, kills, longest]} (the player's kills with both places known)}``; {} without rounds and kills."""
+    """ダイジェストの合計以外に、1 人のプレイヤーのラウンドからわかること。
+    コンパクトなラウンドとキルから読む（これを数える前に保存した試合にもある）
+    : ``{"flawless": 誰も失わずに取ったラウンド, "clutch": {相手の人数: [勝ち, 挑戦]}（チーム最後の 1 人になった時点、相手 1〜5）, "far": {武器のキー: [メートル, キル, 最長]}（両方の場所がわかるキル）
+    }``。ラウンドとキルが無ければ {}。"""
     digest = match.get("digest") if isinstance(match.get("digest"), dict) else {}
     played, kills = digest.get("rounds") or [], digest.get("kills") or []
     players = [player for player in match.get("players") or [] if isinstance(player, dict)]
@@ -271,8 +265,8 @@ def extras(match: dict, me: int) -> dict:
         return {}
     by_round: dict[int, list] = {}
     for kill in kills:
-        if isinstance(kill, list) and len(kill) >= 4 and 0 <= _int(kill[3], -1) < len(team):
-            by_round.setdefault(_int(kill[0]), []).append(kill)
+        if isinstance(kill, list) and len(kill) >= 4 and 0 <= to_int(kill[3], -1) < len(team):
+            by_round.setdefault(to_int(kill[0]), []).append(kill)
     flawless, clutch, far = 0, {}, {}
     for number, item in enumerate(played):
         happened = by_round.get(number, [])
@@ -295,7 +289,7 @@ def extras(match: dict, me: int) -> dict:
     for kill in kills:
         if not isinstance(kill, list) or len(kill) < 8 or kill[2] != me or not kill[4]:
             continue
-        if not 0 <= _int(kill[3], -1) < len(team) or team[kill[3]] == mine:
+        if not 0 <= to_int(kill[3], -1) < len(team) or team[kill[3]] == mine:
             continue
         victim_at, killer_at = kill[6], kill[7]
         if not (isinstance(victim_at, list) and isinstance(killer_at, list) and len(victim_at) == len(killer_at) == 2):

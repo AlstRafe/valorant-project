@@ -1,15 +1,14 @@
-"""What the browser may do with our pages, and which requests may change something.
+"""ブラウザーがページで何をしてよいか、どのリクエストなら変更を許すか。
 
-- Every answer carries a Content-Security-Policy that allows only this site's own files, and the one inline
-  script (the theme, theme.py) by its hash; pictures of the game come through /media/, never from outside.
-  The one exception is the skin library's videos (megabytes each, far too many to keep here): played from
-  Riot's own CDN (content.VIDEOS) itself, and only when the visitor presses play (``preload="none"``).
-- A POST (the settings form) must carry the session's CSRF token (a random value only our own page knows),
-  and a request the browser marks cross-site is refused before the token is looked at.
-- Pages for the owner only (settings) are refused to visitors: Home Page's server marks a request from the
-  public name that is not signed in as the owner (``homepage.visitor``). Run on its own, the app listens on
-  this PC only (127.0.0.1), so whoever opens it is the owner.
-"""
+- すべての答えに Content-Security-Policy を付け、このサイト自身のファイルと、インラインのスクリプト 1 つ（テーマ、
+  theme.py）だけをハッシュで許す。ゲームの絵は /media/ 経由で、外からは読まない。
+  例外はスキン図鑑の動画（1 本数 MB で多すぎて置けない）: Riot 自身の CDN（content.VIDEOS）から、
+  訪問者が再生を押したときだけ読む（``preload="none"``）。
+- POST（設定のフォーム）にはセッションの CSRF トークン（こちらのページだけが知るランダムな値）が必要。
+  ブラウザーがクロスサイトと印を付けたリクエストはトークンを見る前に断る。
+- 持ち主専用ページ（設定）は訪問者には断る: Home Page のサーバーは、
+  公開名から来て持ち主としてサインインしていないリクエストに印を付ける（``homepage.visitor``）。単独で動かすときは、
+  この PC（127.0.0.1）でしか待ち受けないので、開いた人が持ち主。"""
 
 from __future__ import annotations
 
@@ -58,7 +57,7 @@ def is_owner() -> bool:
 
 
 def owner_only() -> None:
-    """Visitors are told there is no such page (it does not exist for them)."""
+    """訪問者には「そのページは無い」と答える（訪問者にとっては存在しない）。"""
     if not is_owner():
         abort(404)
 
@@ -70,7 +69,7 @@ def csrf_token() -> str:
 
 
 def secret_key(path: Path) -> bytes:
-    """Kept across restarts, so an open settings page still sends a valid token."""
+    """再起動をまたいで残す（開いたままの設定ページが送るトークンが有効なままになる）。"""
     try:
         data = path.read_bytes()
         if len(data) >= 32:
@@ -91,13 +90,13 @@ def secret_key(path: Path) -> bytes:
         except OSError:
             pass
     except OSError:
-        pass  # a read-only folder: the key lives as long as this process
+        pass  # 読み取り専用のフォルダー: 鍵はこのプロセスの間だけ
     return data
 
 
 class _SessionInterface(SecureCookieSessionInterface):
-    """The session cookie is Secure whenever the page came over https (Home Page's server marks the public
-    name's requests https) and still works over this PC's plain-http address."""
+    """ページが https で来たときはセッション cookie を Secure にする（Home Page のサーバーは公開名のリクエストに
+    https の印を付ける）。この PC の http のアドレスでも使える。"""
 
     def get_cookie_secure(self, app) -> bool:
         return request.is_secure or super().get_cookie_secure(app)
@@ -107,7 +106,7 @@ def init_app(app: Flask, instance: Path, mount: str) -> None:
     app.secret_key = secret_key(Path(instance) / "secret_key")
     app.session_interface = _SessionInterface()
     app.config.update(
-        # Its own name and path: News Site's session cookie lives on the same host.
+        # 専用の名前とパス: News Site のセッション cookie が同じホストにある。
         SESSION_COOKIE_NAME="val_session",
         SESSION_COOKIE_PATH=(mount or "") + "/",
         SESSION_COOKIE_SAMESITE="Strict",
@@ -118,14 +117,14 @@ def init_app(app: Flask, instance: Path, mount: str) -> None:
     @app.before_request
     def _check_csrf():
         if request.method in _SAFE_METHODS:
-            return None
+            return
         if request.headers.get("Sec-Fetch-Site", "") == "cross-site":
             abort(403)
         expected = session.get("csrf")
         supplied = request.form.get("csrf", "") or request.headers.get("X-CSRF-Token", "")
         if not expected or not hmac.compare_digest(str(supplied), str(expected)):
             abort(400)
-        return None
+        return
 
     @app.after_request
     def _headers(response):

@@ -1,7 +1,7 @@
-"""The owner's collection page: riot.py's answer (uuids and counts) with the game's names and pictures (content.py),
-laid out like the game's own collection screen (weapons in its order, then one weapon's skins and its buddy). The
-order of the items does not follow what is worn: wearing one (in place, without leaving the page) marks it where it
-is. Sets: the whole loadout saved under a name (owner.py keeps them) and worn again in one press."""
+"""持ち主のコレクションのページ: riot.py の答え（uuid と数）にゲームの名前と絵（content.py）を付け、
+ゲームのコレクション画面と同じように並べる（武器はゲームの順、次に 1 つの武器のスキンとガンバディ）。
+並び順は装備に左右されない: 装備すると（ページを離れずにその場で）その場所に印が付く。
+セット: ロードアウト全体を名前を付けて保存し（owner.py が持つ）、1 回押せばまた装備する。"""
 
 from __future__ import annotations
 
@@ -11,8 +11,9 @@ from datetime import datetime
 from valtracker import i18n
 from valtracker.content import Content, variant_name
 from valtracker.riot import ITEM_TYPES, wearing
+from valtracker.util import lower_id
 
-#: The tabs: the collection's kind -> its name on the page (in the page's language: i18n).
+#: タブ: コレクションの種類 -> ページでの名前（ページの言語で、i18n）。
 TABS = {
     "skins": "スキン",
     "buddies": "ガンバディー",
@@ -23,26 +24,26 @@ TABS = {
     "agents": "エージェント",
     "sets": "セット",
 }
-#: The tabs' kinds -> valorant-api.com's list of them (content.py).
+#: タブの種類 -> valorant-api.com の一覧（content.py）。
 LISTS = {"buddies": "buddies", "cards": "playercards", "sprays": "sprays", "titles": "playertitles", "flex": "flex"}
-#: The game's order of weapons: sidearms, SMGs, shotguns, rifles, snipers, machine guns, melee (cheapest first).
+#: ゲームの武器の順: サイドアーム、SMG、ショットガン、ライフル、スナイパー、マシンガン、近接（安い順）。
 CATEGORIES = ("Sidearm", "SMG", "Shotgun", "Rifle", "Sniper", "Heavy", "Melee")
-#: A gun's buddy in the loadout (the copy, the buddy, its level); melee weapons have none.
+#: ロードアウトでの銃のガンバディ（コピー、ガンバディ、レベル）。近接武器には無い。
 CHARM = ("CharmInstanceID", "CharmID", "CharmLevelID")
-#: A gun's skin in the loadout.
+#: ロードアウトでの銃のスキン。
 SKIN = ("SkinID", "SkinLevelID", "ChromaID")
-#: How many sets can be saved.
+#: 保存できるセットの数。
 MAX_SETS = 20
-#: The tiers of skins, cheapest first (valorant-api.com's devName): each has its colour on the page.
+#: スキンのティア（安い順、valorant-api.com の devName）: それぞれページでの色を持つ。
 TIERS = ("Select", "Deluxe", "Premium", "Exclusive", "Ultra")
-#: VALORANT Points, Radianite, Kingdom Credits: the wallet's order (anything else after them).
+#: VALORANT ポイント、レディアナイト、キングダムクレジット: ウォレットの順（ほかはその後）。
 CURRENCIES = (
     "85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741",
     "e59aa87c-4cbf-517a-5983-6e81511be9b7",
     "85ca954a-41f2-ce94-9b45-8ca3dd39a00d",
 )
-#: The agents every account has from the start (PD lists only the ones unlocked since): Brimstone, Jett,
-#: Phoenix, Sage, Sova.
+#: どのアカウントも最初から持っているエージェント（PD はその後に解放したものしか出さない）: ブリムストーン、ジェット、
+#: フェニックス、セージ、ソーヴァ。
 STARTERS = {
     "9f0d8ba9-4140-b941-57d3-a7ad57c6b417",
     "add6443a-41bd-e414-f6ad-e58d267f4e95",
@@ -52,24 +53,22 @@ STARTERS = {
 }
 
 
-def _id(value) -> str:
-    return str(value or "").lower()
-
-
 def expressions(loadout: dict) -> list[dict]:
-    """What the loadout's wheel holds, in its order: ``[{"slot", "type": PD's item type, "id"}]``. playerloadout v3
-    lists sprays and flex as ``ActiveExpressions`` (``TypeID``, ``AssetID``; a place is its position there), v2 had
-    only sprays (``Sprays``, a place is its ``EquipSlotID``)."""
+    """ロードアウトのホイールの中身（順番どおり）: ``[{"slot", "type": PD のアイテムタイプ, "id"}]``。
+    playerloadout v3 はスプレーとフレックスを ``ActiveExpressions``（``TypeID``、``AssetID``。場所はそこでの位置）に、
+    v2 はスプレーだけ（``Sprays``。場所は ``EquipSlotID``）。"""
     found = []
     if isinstance(loadout.get("ActiveExpressions"), list):
         for number, item in enumerate(loadout["ActiveExpressions"]):
             if isinstance(item, dict) and item.get("AssetID"):
-                found.append({"slot": str(number), "type": _id(item.get("TypeID")), "id": _id(item["AssetID"])})
+                found.append(
+                    {"slot": str(number), "type": lower_id(item.get("TypeID")), "id": lower_id(item["AssetID"])}
+                )
         return found
     for item in loadout.get("Sprays") or []:
         if isinstance(item, dict) and item.get("EquipSlotID"):
             found.append(
-                {"slot": str(item["EquipSlotID"]), "type": ITEM_TYPES["sprays"], "id": _id(item.get("SprayID"))}
+                {"slot": str(item["EquipSlotID"]), "type": ITEM_TYPES["sprays"], "id": lower_id(item.get("SprayID"))}
             )
     return found
 
@@ -79,15 +78,15 @@ def melee(weapon: dict) -> bool:
 
 
 def page(found: dict, content: Content, lang: str, show: str, weapon: str = "", sets: list | None = None) -> dict:
-    """What collection.html shows of ``found`` (riot.Riot.collection) with the tab ``show`` open; on the skins'
-    tab, ``weapon`` (a uuid) is the weapon whose skins are open, as the game's collection opens one at a time.
-    ``sets``: the saved sets (owner.py)."""
+    """タブ ``show`` を開いたときに collection.html に出す ``found``（riot.Riot.collection）。
+    スキンのタブでは ``weapon``（uuid）がスキンを開いている武器（ゲームのコレクションも 1 つずつ開く）。
+    ``sets``: 保存したセット（owner.py）。"""
     owned = found.get("owned") or {}
     loadout = found.get("loadout") if isinstance(found.get("loadout"), dict) else {}
     identity = loadout.get("Identity") if isinstance(loadout.get("Identity"), dict) else {}
     cards = content.index("playercards", lang)
-    card = cards.get(_id(identity.get("PlayerCardID"))) or {}
-    title = content.index("playertitles", lang).get(_id(identity.get("PlayerTitleID"))) or {}
+    card = cards.get(lower_id(identity.get("PlayerCardID"))) or {}
+    title = content.index("playertitles", lang).get(lower_id(identity.get("PlayerTitleID"))) or {}
     makers = {
         "skins": _skins,
         "buddies": _buddies,
@@ -103,7 +102,9 @@ def page(found: dict, content: Content, lang: str, show: str, weapon: str = "", 
         items = _sets(sets or [], loadout if found.get("loadout") is not None else None, content, lang)
     else:
         items = makers[show](owned, loadout, content, lang) if show in owned else []
-    picked = next((group for group in items if group.get("uuid") == _id(weapon)), None) if show == "skins" else None
+    picked = (
+        next((group for group in items if group.get("uuid") == lower_id(weapon)), None) if show == "skins" else None
+    )
     if picked:
         picked["buddy"] = _buddy_choices(found, loadout, content, lang, picked)
     return {
@@ -112,14 +113,14 @@ def page(found: dict, content: Content, lang: str, show: str, weapon: str = "", 
         "level": identity.get("AccountLevel"),
         "card": {"small": card.get("smallArt"), "wide": card.get("wideArt")},
         "title": title.get("titleText") or "",
-        "wallet": _wallet(found.get("wallet"), content, lang),
+        "wallet": wallet_info(found.get("wallet"), content, lang),
         "tabs": [
             {"key": key, "name": i18n.text(lang, name), "count": counts[key], "current": key == show}
             for key, name in TABS.items()
         ],
         "show": show,
         "missing": show != "sets" and (show in (found.get("missing") or []) or show not in owned),
-        # what is worn could not be read (PD's playerloadout): nothing is marked worn, and nothing called standard
+        # 装備が読めなかった（PD の playerloadout）: 装備中の印も標準の表示も出さない
         "worn_read": isinstance(found.get("loadout"), dict),
         "items": items,
         "picked": picked,
@@ -132,9 +133,9 @@ def page(found: dict, content: Content, lang: str, show: str, weapon: str = "", 
 
 
 def wheel(loadout: dict, content: Content, lang: str, kind: str) -> list[dict]:
-    """The wheel's places an item of ``kind`` (sprays, flex) can go to, in the loadout's order: ``[{"slot",
-    "number", "name": what is in it}]`` (the owner picks where it goes). playerloadout v3 lets any place hold a
-    spray or a flex; v2 had sprays only."""
+    """``kind``（スプレー、フレックス）のアイテムを入れられるホイールの場所（ロードアウトの順）
+    : ``[{"slot", "number", "name": 入っているもの}]``（どこに入れるかは持ち主が選ぶ）。
+    playerloadout v3 はどの場所にもスプレーかフレックスを入れられ、v2 はスプレーだけだった。"""
     sprays, flex = content.index("sprays", lang), content.index("flex", lang)
     v3 = isinstance(loadout.get("ActiveExpressions"), list)
     if not v3 and kind != "sprays":
@@ -149,19 +150,19 @@ def wheel(loadout: dict, content: Content, lang: str, kind: str) -> list[dict]:
 
 
 def _gun_choices(loadout: dict, content: Content, lang: str) -> list[dict]:
-    """The loadout's weapons a buddy can go on (not melee), in the game's order: ``[{"uuid", "name", "buddy": the
-    one on it}]``."""
+    """ガンバディを着けられるロードアウトの武器（近接以外、ゲームの順）
+    : ``[{"uuid", "name", "buddy": 着けているもの}]``。"""
     buddies = content.index("buddies", lang)
-    worn = {_id(gun.get("ID")): gun for gun in loadout.get("Guns") or [] if isinstance(gun, dict)}
+    worn = {lower_id(gun.get("ID")): gun for gun in loadout.get("Guns") or [] if isinstance(gun, dict)}
     choices = []
-    for weapon in sorted(content.weapons(lang), key=_weapon_order):
-        gun = worn.get(_id(weapon.get("uuid")))
+    for weapon in sorted(content.weapons(lang), key=weapon_order):
+        gun = worn.get(lower_id(weapon.get("uuid")))
         if gun is None or melee(weapon):
             continue
-        buddy = buddies.get(_id(gun.get("CharmLevelID"))) or buddies.get(_id(gun.get("CharmID"))) or {}
+        buddy = buddies.get(lower_id(gun.get("CharmLevelID"))) or buddies.get(lower_id(gun.get("CharmID"))) or {}
         choices.append(
             {
-                "uuid": _id(weapon.get("uuid")),
+                "uuid": lower_id(weapon.get("uuid")),
                 "name": weapon.get("displayName") or "",
                 "buddy": buddy.get("displayName"),
             }
@@ -170,31 +171,35 @@ def _gun_choices(loadout: dict, content: Content, lang: str) -> list[dict]:
 
 
 def _buddy_choices(found: dict, loadout: dict, content: Content, lang: str, weapon: dict) -> dict | None:
-    """The open weapon's buddy, as the game's weapon screen lets it be changed: ``{"items": [{"uuid", "name",
-    "current", "free": copies on no weapon, "from": the weapon it comes off}], "worn": whether one is on}``, or
-    None (a melee weapon, or one the loadout does not have)."""
+    """開いている武器のガンバディ（ゲームの武器画面と同じく変えられる）
+    : ``{"items": [{"uuid", "name", "current", "free": どの武器にも着けていないコピー数, "from": 外れる武器}], "worn":
+    着けているか}``。近接武器、またはロードアウトに無い武器なら None。"""
     gun = next(
-        (gun for gun in loadout.get("Guns") or [] if isinstance(gun, dict) and _id(gun.get("ID")) == weapon["uuid"]),
+        (
+            gun
+            for gun in loadout.get("Guns") or []
+            if isinstance(gun, dict) and lower_id(gun.get("ID")) == weapon["uuid"]
+        ),
         None,
     )
-    known = next((item for item in content.weapons(lang) if _id(item.get("uuid")) == weapon["uuid"]), {})
+    known = next((item for item in content.weapons(lang) if lower_id(item.get("uuid")) == weapon["uuid"]), {})
     if gun is None or melee(known):
         return None
     index = content.index("buddies", lang)
-    names = {_id(item.get("uuid")): item.get("displayName") or "" for item in content.weapons(lang)}
+    names = {lower_id(item.get("uuid")): item.get("displayName") or "" for item in content.weapons(lang)}
     on: dict[str, list] = {}
     for other in loadout.get("Guns") or []:
         if isinstance(other, dict):
-            buddy = index.get(_id(other.get("CharmLevelID"))) or index.get(_id(other.get("CharmID")))
+            buddy = index.get(lower_id(other.get("CharmLevelID"))) or index.get(lower_id(other.get("CharmID")))
             if buddy:
-                on.setdefault(_id(buddy.get("uuid")), []).append(_id(other.get("ID")))
+                on.setdefault(lower_id(buddy.get("uuid")), []).append(lower_id(other.get("ID")))
     copies: Counter = Counter()
     buddies: dict[str, dict] = {}
     for level, count in ((found.get("owned") or {}).get("buddies") or {}).items():
         buddy = index.get(level)
         if buddy:
-            buddies[_id(buddy.get("uuid"))] = buddy
-            copies[_id(buddy.get("uuid"))] += count
+            buddies[lower_id(buddy.get("uuid"))] = buddy
+            copies[lower_id(buddy.get("uuid"))] += count
     items = []
     for uuid, buddy in sorted(buddies.items(), key=lambda pair: pair[1].get("displayName") or ""):
         wearing_it = on.get(uuid, [])
@@ -209,16 +214,17 @@ def _buddy_choices(found: dict, loadout: dict, content: Content, lang: str, weap
                 "from": names.get(wearing_it[0], "") if wearing_it and not free and not current else "",
             }
         )
-    return {"items": items, "worn": bool(_id(gun.get("CharmID")))}
+    return {"items": items, "worn": bool(lower_id(gun.get("CharmID")))}
 
 
 def snapshot(loadout: dict) -> dict:
-    """What a set keeps of a loadout (PD's playerloadout): each weapon's skin and buddy, the wheel and the card and
-    title, in the loadout's own shape (so riot.wearing reads it as it reads a loadout)."""
-    guns = []
-    for gun in loadout.get("Guns") or []:
-        if isinstance(gun, dict) and gun.get("ID"):
-            guns.append({"ID": _id(gun["ID"]), **{key: gun[key] for key in SKIN + CHARM if key in gun}})
+    """セットがロードアウト（PD の playerloadout）から残すもの: 各武器のスキンとガンバディ、ホイール、カードと称号。
+    ロードアウトと同じ形（riot.wearing がロードアウトと同じく読める）。"""
+    guns = [
+        {"ID": lower_id(gun["ID"]), **{key: gun[key] for key in SKIN + CHARM if key in gun}}
+        for gun in loadout.get("Guns") or []
+        if isinstance(gun, dict) and gun.get("ID")
+    ]
     kept: dict = {"Guns": guns}
     if isinstance(loadout.get("ActiveExpressions"), list):
         kept["ActiveExpressions"] = [
@@ -234,19 +240,18 @@ def snapshot(loadout: dict) -> dict:
 
 
 def wear_set(kept: dict):
-    """The change to the loadout (riot.Riot.equip) that wears a saved set: its skins and buddies on its weapons,
-    its wheel, card and title. A weapon the set does not know keeps its skin, and gives up a buddy copy the set puts
-    on another weapon."""
-    guns = {_id(gun.get("ID")): gun for gun in kept.get("Guns") or [] if isinstance(gun, dict)}
-    copies = {_id(gun.get("CharmInstanceID")) for gun in guns.values() if gun.get("CharmInstanceID")}
+    """保存したセットを装備するためのロードアウトの変更（riot.Riot.equip）: 武器にスキンとガンバディ、ホイール、カード、
+    称号。セットが知らない武器はスキンをそのままにし、セットが別の武器に着けるガンバディのコピーは手放す。"""
+    guns = {lower_id(gun.get("ID")): gun for gun in kept.get("Guns") or [] if isinstance(gun, dict)}
+    copies = {lower_id(gun.get("CharmInstanceID")) for gun in guns.values() if gun.get("CharmInstanceID")}
 
     def change(loadout: dict) -> None:
         for gun in loadout.get("Guns") or []:
             if not isinstance(gun, dict):
                 continue
-            wanted = guns.get(_id(gun.get("ID")))
+            wanted = guns.get(lower_id(gun.get("ID")))
             if wanted is None:
-                if _id(gun.get("CharmInstanceID")) in copies:
+                if lower_id(gun.get("CharmInstanceID")) in copies:
                     for key in CHARM:
                         gun.pop(key, None)
                 continue
@@ -267,33 +272,33 @@ def wear_set(kept: dict):
 
 
 def _sets(sets: list, loadout: dict | None, content: Content, lang: str) -> list[dict]:
-    """The saved sets, newest first: ``[{"id", "name", "at", "card", "title", "guns": [{"weapon", "skin",
-    "buddy"}] (the weapons with a skin of the owner's, in the game's order), "skins", "buddies", "same": whether it
-    is what is worn now}]``."""
+    """保存したセット（新しい順）
+    : ``[{"id", "name", "at", "card", "title", "guns": [{"weapon", "skin", "buddy"}]（持ち主のスキンを着けた武器、ゲームの順）
+    , "skins", "buddies", "same": 今の装備と同じか}]``。"""
     index, tiers = content.skins(lang), content.index("contenttiers", lang)
     cards, titles = content.index("playercards", lang), content.index("playertitles", lang)
     buddies = content.index("buddies", lang)
-    order = {_id(weapon.get("uuid")): _weapon_order(weapon) for weapon in content.weapons(lang)}
-    names = {_id(weapon.get("uuid")): weapon.get("displayName") or "" for weapon in content.weapons(lang)}
+    order = {lower_id(weapon.get("uuid")): weapon_order(weapon) for weapon in content.weapons(lang)}
+    names = {lower_id(weapon.get("uuid")): weapon.get("displayName") or "" for weapon in content.weapons(lang)}
     now = wearing(loadout) if loadout is not None else None
     listed = []
     for kept in reversed(sets):
         guns = []
-        for gun in sorted(kept.get("Guns") or [], key=lambda gun: order.get(_id(gun.get("ID")), (99,))):
-            known = index.get(_id(gun.get("SkinID")))
-            skin = known[1] if known and _tier(known[1], tiers)["key"] else None
-            buddy = buddies.get(_id(gun.get("CharmLevelID"))) or buddies.get(_id(gun.get("CharmID"))) or {}
+        for gun in sorted(kept.get("Guns") or [], key=lambda gun: order.get(lower_id(gun.get("ID")), (99,))):
+            known = index.get(lower_id(gun.get("SkinID")))
+            skin = known[1] if known and tier_info(known[1], tiers)["key"] else None
+            buddy = buddies.get(lower_id(gun.get("CharmLevelID"))) or buddies.get(lower_id(gun.get("CharmID"))) or {}
             if skin or buddy:
                 guns.append(
                     {
-                        "weapon": names.get(_id(gun.get("ID")), ""),
+                        "weapon": names.get(lower_id(gun.get("ID")), ""),
                         "skin": (skin or {}).get("displayName") or "",
                         "buddy": buddy.get("displayName") or "",
                     }
                 )
         identity = kept.get("Identity") or {}
-        card = cards.get(_id(identity.get("PlayerCardID"))) or {}
-        title = titles.get(_id(identity.get("PlayerTitleID"))) or {}
+        card = cards.get(lower_id(identity.get("PlayerCardID"))) or {}
+        title = titles.get(lower_id(identity.get("PlayerTitleID"))) or {}
         listed.append(
             {
                 "id": kept.get("id") or "",
@@ -312,21 +317,20 @@ def _sets(sets: list, loadout: dict | None, content: Content, lang: str) -> list
 
 
 def _count(kind: str, owned: dict, content: Content, lang: str):
-    """The number on a tab: the items its list shows (a skin once, whatever levels of it PD names), or None when
-    they could not be read."""
+    """タブの数: 一覧に出るアイテムの数（PD がどのレベルを挙げてもスキンは 1 つ）。読めなければ None。"""
     if kind not in owned:
         return None
     if kind == "agents":
         unlocked = set(owned["agents"]) | STARTERS
-        return sum(_id(agent.get("uuid")) in unlocked for agent in content.agents(lang))
+        return sum(lower_id(agent.get("uuid")) in unlocked for agent in content.agents(lang))
     if kind == "skins":
         index = content.skins(lang)
-        return len({_id(index[item][1].get("uuid")) for item in owned["skins"] if item in index})
+        return len({lower_id(index[item][1].get("uuid")) for item in owned["skins"] if item in index})
     index = content.index(LISTS[kind], lang)
-    return len({_id(index[item].get("uuid")) for item in owned[kind] if item in index})
+    return len({lower_id(index[item].get("uuid")) for item in owned[kind] if item in index})
 
 
-def _wallet(balances, content: Content, lang: str) -> list[dict]:
+def wallet_info(balances, content: Content, lang: str) -> list[dict]:
     if not isinstance(balances, dict):
         return []
     known = content.index("currencies", lang)
@@ -342,8 +346,8 @@ def _wallet(balances, content: Content, lang: str) -> list[dict]:
     ]
 
 
-def _tier(skin: dict, tiers: dict) -> dict:
-    tier = tiers.get(_id(skin.get("contentTierUuid"))) or {}
+def tier_info(skin: dict, tiers: dict) -> dict:
+    tier = tiers.get(lower_id(skin.get("contentTierUuid"))) or {}
     dev = str(tier.get("devName") or "")
     return {
         "key": dev.lower() if dev in TIERS else "",
@@ -354,32 +358,37 @@ def _tier(skin: dict, tiers: dict) -> dict:
 
 
 def _skins(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict]:
-    """Weapons in the game's order, each with its owned skins: ``[{"name", "icon", "items": [...]}]``."""
+    """ゲームの順の武器と、それぞれの所持スキン: ``[{"name", "icon", "items": [...]}]``。"""
     index = content.skins(lang)
     tiers = content.index("contenttiers", lang)
     guns = [gun for gun in loadout.get("Guns") or [] if isinstance(gun, dict)]
-    equipped = {_id(gun.get("SkinID")): _id(gun.get("ChromaID")) for gun in guns}
+    equipped = {lower_id(gun.get("SkinID")): lower_id(gun.get("ChromaID")) for gun in guns}
     chromas = set(owned.get("chromas") or {})
     skins: dict[str, list] = {}
     for item in owned.get("skins") or {}:
         if item in index:
             weapon, skin = index[item]
-            skins.setdefault(_id(weapon.get("uuid")), [])
-            if all(_id(other.get("uuid")) != _id(skin.get("uuid")) for other in skins[_id(weapon.get("uuid"))]):
-                skins[_id(weapon.get("uuid"))].append(skin)
-    worn_on = {_id(gun.get("ID")): gun for gun in guns}
+            skins.setdefault(lower_id(weapon.get("uuid")), [])
+            if all(
+                lower_id(other.get("uuid")) != lower_id(skin.get("uuid"))
+                for other in skins[lower_id(weapon.get("uuid"))]
+            ):
+                skins[lower_id(weapon.get("uuid"))].append(skin)
+    worn_on = {lower_id(gun.get("ID")): gun for gun in guns}
     buddies = content.index("buddies", lang)
     groups = []
-    for weapon in sorted(content.weapons(lang), key=_weapon_order):
-        found = skins.get(_id(weapon.get("uuid")))
+    for weapon in sorted(content.weapons(lang), key=weapon_order):
+        found = skins.get(lower_id(weapon.get("uuid")))
         if not found:
             continue
         items = []
         for skin in found:
-            uuid = _id(skin.get("uuid"))
+            uuid = lower_id(skin.get("uuid"))
             parts = skin.get("chromas") or []
             on = uuid in equipped
-            worn = next((part for part in parts if _id(part.get("uuid")) == equipped.get(uuid)), None) if on else None
+            worn = (
+                next((part for part in parts if lower_id(part.get("uuid")) == equipped.get(uuid)), None) if on else None
+            )
             picture = (
                 (worn or {}).get("displayIcon")
                 or skin.get("displayIcon")
@@ -388,14 +397,14 @@ def _skins(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict
                 )
                 or (worn or (parts[0] if parts else {})).get("fullRender")
             )
-            # the variants the owner can wear: the first comes with the skin, the others once unlocked
+            # 持ち主が着けられるバリアント: 1 つ目はスキンに付いてくる、ほかは解放してから
             wearable = [
                 {
-                    "uuid": _id(part.get("uuid")),
+                    "uuid": lower_id(part.get("uuid")),
                     "name": variant_name(part.get("displayName"), skin.get("displayName") or ""),
                 }
                 for number, part in enumerate(parts)
-                if number == 0 or _id(part.get("uuid")) in chromas
+                if number == 0 or lower_id(part.get("uuid")) in chromas
             ]
             for number, part in enumerate(wearable):
                 part["current"] = on and part["uuid"] == equipped.get(uuid)
@@ -404,14 +413,14 @@ def _skins(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict
             items.append(
                 {
                     "uuid": uuid,
-                    "weapon": _id(weapon.get("uuid")),
+                    "weapon": lower_id(weapon.get("uuid")),
                     "name": skin.get("displayName") or "",
                     "image": picture,
-                    "tier": _tier(skin, tiers),
+                    "tier": tier_info(skin, tiers),
                     "equipped": on,
                     "wearable": wearable if len(wearable) > 1 else [],
-                    # the first chroma comes with the skin; the others are unlocked one by one
-                    "variants": 1 + sum(_id(part.get("uuid")) in chromas for part in parts[1:])
+                    # 1 つ目のクロマはスキンに付いてくる。ほかは 1 つずつ解放する
+                    "variants": 1 + sum(lower_id(part.get("uuid")) in chromas for part in parts[1:])
                     if len(parts) > 1
                     else 0,
                     "of": len(parts),
@@ -421,15 +430,15 @@ def _skins(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict
         worn = next((item for item in items if item["equipped"]), None)
         groups.append(
             {
-                "uuid": _id(weapon.get("uuid")),
+                "uuid": lower_id(weapon.get("uuid")),
                 "name": weapon.get("displayName") or "",
                 "icon": weapon.get("displayIcon"),
-                # the weapon's square on the page: what it wears now (the standard look: the weapon's own picture)
+                # ページでの武器の四角: 今着けているもの（標準の見た目なら武器自身の絵）
                 "image": (worn or {}).get("image") or weapon.get("displayIcon"),
                 "worn": (worn or {}).get("name") or "",
-                # at the top of the weapon's skins: what it wears now, as the game's own screen shows it
-                "now": _now(worn_on.get(_id(weapon.get("uuid"))), weapon, index, tiers, buddies),
-                # typing a skin's name finds its weapon
+                # 武器のスキンの一番上: 今着けているもの（ゲームの画面と同じ）
+                "now": _now(worn_on.get(lower_id(weapon.get("uuid"))), weapon, index, tiers, buddies),
+                # スキンの名前を入力すると、その武器が見つかる
                 "search": " ".join([weapon.get("displayName") or ""] + [item["name"] for item in items]).lower(),
                 "items": items,
             }
@@ -438,19 +447,24 @@ def _skins(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict
 
 
 def _now(gun: dict | None, weapon: dict, index: dict, tiers: dict, buddies: dict) -> dict:
-    """What a weapon wears now (the loadout's ``Guns`` entry): the skin, its variant and level, its picture,
-    tier and buddy. A weapon without a skin of the owner's wears its standard one."""
+    """武器が今着けているもの（ロードアウトの ``Guns`` の項目）: スキン、バリアントとレベル、絵、ティア、ガンバディ。
+    持ち主のスキンを着けていない武器は標準のもの。"""
     gun = gun or {}
-    known = index.get(_id(gun.get("SkinID")))
-    skin = known[1] if known and _id(known[0].get("uuid")) == _id(weapon.get("uuid")) else {}
+    known = index.get(lower_id(gun.get("SkinID")))
+    skin = known[1] if known and lower_id(known[0].get("uuid")) == lower_id(weapon.get("uuid")) else {}
     parts = skin.get("chromas") or []
-    chroma = next((part for part in parts if _id(part.get("uuid")) == _id(gun.get("ChromaID"))), None)
+    chroma = next((part for part in parts if lower_id(part.get("uuid")) == lower_id(gun.get("ChromaID"))), None)
     levels = [level for level in skin.get("levels") or [] if isinstance(level, dict)]
     level = next(
-        (number for number, item in enumerate(levels, 1) if _id(item.get("uuid")) == _id(gun.get("SkinLevelID"))), 0
+        (
+            number
+            for number, item in enumerate(levels, 1)
+            if lower_id(item.get("uuid")) == lower_id(gun.get("SkinLevelID"))
+        ),
+        0,
     )
-    buddy = buddies.get(_id(gun.get("CharmLevelID"))) or buddies.get(_id(gun.get("CharmID"))) or {}
-    tier = _tier(skin, tiers)
+    buddy = buddies.get(lower_id(gun.get("CharmLevelID"))) or buddies.get(lower_id(gun.get("CharmID"))) or {}
+    tier = tier_info(skin, tiers)
     return {
         "name": skin.get("displayName") or "",
         "standard": not tier["key"],
@@ -459,7 +473,7 @@ def _now(gun: dict | None, weapon: dict, index: dict, tiers: dict, buddies: dict
         or skin.get("displayIcon")
         or weapon.get("displayIcon"),
         "tier": tier,
-        # the first variant is the skin's own look
+        # 1 つ目のバリアントはスキン自身の見た目
         "variant": variant_name(chroma.get("displayName"), skin.get("displayName") or "")
         if chroma and parts and chroma is not parts[0]
         else "",
@@ -469,7 +483,7 @@ def _now(gun: dict | None, weapon: dict, index: dict, tiers: dict, buddies: dict
     }
 
 
-def _weapon_order(weapon: dict) -> tuple:
+def weapon_order(weapon: dict) -> tuple:
     category = str(weapon.get("category") or "").rsplit("::", 1)[-1]
     return (
         CATEGORIES.index(category) if category in CATEGORIES else len(CATEGORIES),
@@ -479,16 +493,16 @@ def _weapon_order(weapon: dict) -> tuple:
 
 
 def _simple(kind: str, owned, content: Content, lang: str, picture, equipped: Counter, name=None) -> list[dict]:
-    """Owned items of a valorant-api.com list (``kind``) whose items, or their levels, are what PD names
-    (``owned``: {uuid: copies}): one entry per item, by name."""
+    """valorant-api.com の一覧（``kind``）のうち、アイテムかそのレベルが PD の挙げるもの（``owned``: {uuid: コピー数}）
+    である所持アイテム: アイテムごとに 1 件、名前順。"""
     index = content.index(kind, lang)
     copies: Counter = Counter()
     items: dict[str, dict] = {}
     for item, count in (owned or {}).items():
         known = index.get(item)
         if known:
-            items[_id(known.get("uuid"))] = known
-            copies[_id(known.get("uuid"))] += count
+            items[lower_id(known.get("uuid"))] = known
+            copies[lower_id(known.get("uuid"))] += count
     listed = [
         {
             "uuid": uuid,
@@ -504,12 +518,12 @@ def _simple(kind: str, owned, content: Content, lang: str, picture, equipped: Co
 
 
 def _buddies(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict]:
-    worn = Counter(_id(gun.get("CharmID")) for gun in loadout.get("Guns") or [] if isinstance(gun, dict))
+    worn = Counter(lower_id(gun.get("CharmID")) for gun in loadout.get("Guns") or [] if isinstance(gun, dict))
     return _simple("buddies", owned.get("buddies"), content, lang, lambda item: item.get("displayIcon"), worn)
 
 
 def _cards(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict]:
-    worn = Counter([_id((loadout.get("Identity") or {}).get("PlayerCardID"))])
+    worn = Counter([lower_id((loadout.get("Identity") or {}).get("PlayerCardID"))])
     return _simple("playercards", owned.get("cards"), content, lang, lambda item: item.get("smallArt"), worn)
 
 
@@ -520,7 +534,7 @@ def _sprays(owned: dict, loadout: dict, content: Content, lang: str) -> list[dic
 
 
 def _titles(owned: dict, loadout: dict, content: Content, lang: str) -> list[dict]:
-    worn = Counter([_id((loadout.get("Identity") or {}).get("PlayerTitleID"))])
+    worn = Counter([lower_id((loadout.get("Identity") or {}).get("PlayerTitleID"))])
     words = lambda item: item.get("titleText")
     return _simple("playertitles", owned.get("titles"), content, lang, lambda item: None, worn, words)
 
@@ -536,14 +550,14 @@ def _agents(owned: dict, loadout: dict, content: Content, lang: str) -> list[dic
         {
             "name": agent.get("displayName") or "",
             "image": agent.get("displayIcon"),
-            "owned": _id(agent.get("uuid")) in unlocked,
+            "owned": lower_id(agent.get("uuid")) in unlocked,
         }
         for agent in content.agents(lang)
     ]
 
 
 def _saved_at(value, lang: str) -> str:
-    """When a set was saved (an ISO time in Japan's), short: 11月7日 2:50 / 7 Nov 2:50."""
+    """セットを保存した時刻（日本時間の ISO 時刻）を短く: 11月7日 2:50 / 7 Nov 2:50。"""
     try:
         return i18n.when(lang, datetime.fromisoformat(str(value or "")))
     except ValueError:

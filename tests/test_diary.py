@@ -1,5 +1,5 @@
-"""The owner's store diary (diary.py): the days before, the days in a row, the wish list, the night market's cards
-face down, and the calendar of the daily store's change (for everyone)."""
+"""持ち主のストア日記（diary.py）: 過去の日、連続日数、ほしい物リスト、ナイトマーケットの伏せたカード、
+デイリーストアの切り替わりカレンダー（全員向け）。"""
 
 import json
 import os

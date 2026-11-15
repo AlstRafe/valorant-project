@@ -1,4 +1,4 @@
-"""Riot's news (/news), the esports schedule (/esports) and their pictures through /pic/ (media.OUTSIDE)."""
+"""Riot のニュース（/news）、eスポーツの予定（/esports）、その画像の /pic/ 経由の表示（media.OUTSIDE）。"""
 
 import json
 import os
@@ -87,7 +87,7 @@ class WorldTest(unittest.TestCase):
         self.assertTrue(any("tags=patch_notes" in url for url, _ in self.fetch.asked))
 
     def failing(self, *parts: str, status: int = 400):
-        """HenrikDev answers ``status`` for the addresses that hold any of ``parts``."""
+        """``parts`` のどれかを含むアドレスには HenrikDev が ``status`` で答える。"""
         original = FakeFetch.__call__
 
         def answer(fetch, url, headers):
@@ -125,8 +125,8 @@ class WorldTest(unittest.TestCase):
     def test_esports_the_last_schedule_when_a_new_one_does_not_come(self):
         self.assertIn("Paper Rex", self.page("/esports"))
         henrik = self.app.config["VAL_HENRIK"]
-        henrik.cache.put(("esports",), None, -1)  # the schedule is old: a new one is asked for
-        henrik.budget = Budget(0, 60)  # and the allowance is used up
+        henrik.cache.put(("esports",), None, -1)  # 予定が古い: 新しいものを取りに行く
+        henrik.budget = Budget(0, 60)  # しかも呼び出し回数を使い切っている
         text = self.page("/esports")
         self.assertIn("Paper Rex", text, "the last schedule rather than 混み合っています")
         self.assertIn("時点のデータを表示しています", text)
@@ -147,7 +147,7 @@ class WorldTest(unittest.TestCase):
         def answer(fetch, url, headers):
             if url.endswith("/v1/esports/schedule"):
                 fetch.asked.append((url, headers))
-                return 429, b'{"errors": []}'  # it costs more of the key than there is
+                return 429, b'{"errors": []}'  # キーの残りより多く使う
             return original(fetch, url, headers)
 
         with mock.patch.object(FakeFetch, "__call__", answer):
@@ -167,7 +167,7 @@ class WorldTest(unittest.TestCase):
         def answer(fetch, url, headers):
             if url.endswith("/v1/esports/schedule"):
                 fetch.asked.append((url, headers))
-                return 0, b""  # no answer in time
+                return 0, b""  # 時間内に答えが無い
             return original(fetch, url, headers)
 
         with mock.patch.object(FakeFetch, "__call__", answer):

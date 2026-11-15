@@ -1,4 +1,4 @@
-"""The skin library (/skins, /skins/<uuid>), its videos (CSP media-src) and the visitors' ratings (ratings.py)."""
+"""スキン図鑑（/skins、/skins/<uuid>）、その動画（CSP の media-src）、訪問者の評価（ratings.py）。"""
 
 import os
 import unittest
@@ -30,7 +30,7 @@ class SkinLibraryTest(unittest.TestCase):
         return answer.get_data(as_text=True)
 
     def rate(self, uuid: str, stars, status: int = 303):
-        self.page(f"/skins/{PRIME}")  # the session's CSRF token
+        self.page(f"/skins/{PRIME}")  # セッションの CSRF トークン
         with self.client.session_transaction() as session:
             token = session["csrf"]
         answer = self.client.post(
@@ -80,7 +80,7 @@ class SkinLibraryTest(unittest.TestCase):
         self.assertIn("aa22_default_universal.mp4", text, "the chosen variant's video")
         self.assertRegex(text, r'href="[^"]*chroma=aa000000-0000-4000-8000-000000000022[^"]*" aria-current="true"')
         self.page(f"/skins/{STANDARD}", 404)
-        self.page("/skins/aa000000-0000-4000-8000-000000000011", 404)  # a level's uuid
+        self.page("/skins/aa000000-0000-4000-8000-000000000011", 404)  # レベルの uuid
         self.page("/skins/not-a-uuid", 404)
         self.page("/skins/00000000-0000-4000-8000-000000000000", 404)
 
@@ -101,7 +101,7 @@ class SkinLibraryTest(unittest.TestCase):
         self.assertIn("評価しました", text)
         self.assertIn("1 人が評価（平均は 3 人から表示）", text, "no average from one rating")
         self.assertRegex(text, r'value="5" required checked')
-        self.rate(PRIME, 3)  # the same browser changes its rating
+        self.rate(PRIME, 3)  # 同じブラウザーは評価を付け直せる
         self.assertIn("1 人が評価（平均は 3 人から表示）", self.page(f"/skins/{PRIME}"))
         self.rate(PRIME, 0, 400)
         self.rate(PRIME, 6, 400)

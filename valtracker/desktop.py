@@ -1,40 +1,36 @@
-"""VAL Tracker as a Windows app: ``python -m valtracker.desktop``, or VALTracker.exe (built by
-.github/workflows/desktop.yml from desktop/VALTracker.py).
+"""Windows アプリとしての VAL Tracker: ``python -m valtracker.desktop``、
+または VALTracker.exe（.github/workflows/desktop.yml が desktop/VALTracker.py からビルド）。
 
-The site's own pages, served on this PC only (127.0.0.1, a free port) in a window of the app's own (WebView2: the
-Edge engine Windows already has), signed in through the Riot Client on this PC (localclient.py): nothing to paste,
-and /live switches the moment the client says the match is found.
+サイト自身のページを、この PC だけ（127.0.0.1、空いているポート）
+でアプリ専用のウィンドウ（WebView2: Windows に入っている Edge のエンジン）に出し、
+この PC の Riot Client でサインインする（localclient.py）: 何も貼らなくてよく、
+クライアントが試合成立を言った瞬間に /live が切り替わる。
 
-Made never to get in VALORANT's way:
+VALORANT の邪魔を決してしないように作る:
 
-- it never touches the game: nothing reads or writes its process or memory, nothing is drawn over it (no
-  overlay), no keys or clicks are sent. It talks to the Riot Client's local API and to Riot's servers, as the
-  site does;
-- it runs below normal priority, so the game gets the processor first (the window's processes too: they inherit
-  it, and the few Chromium raises itself are put back), in Windows 11's efficiency mode, and Windows takes its
-  memory back first;
-- the window draws without the graphics card and without animations: the GPU stays the game's;
-- it waits for the Riot Client's events instead of asking every second, and a hidden or minimised window asks
-  nothing at all;
-- it never brings itself to the front (that would take a full-screen game out of focus): a match found while
-  the owner is in another program lights its taskbar button, and nothing at all while the game is in front
-  (pc.py);
-- the site's background work (looking at more players for the busy-hour estimates) is off.
+- ゲームには一切触らない: プロセスやメモリを読み書きせず、上に何も描かず（オーバーレイ無し）、キーもクリックも送らない。
+  サイトと同じく、Riot Client のローカル API と Riot のサーバーと話すだけ
+- 通常より低い優先度で動くので、プロセッサーはゲームが先に使う（ウィンドウのプロセスも引き継ぐ。
+  Chromium が自分で上げるいくつかは戻す）。Windows 11 の効率モードで、メモリも Windows が先に取り戻す
+- ウィンドウはグラフィックカードもアニメーションも使わずに描く: GPU はゲームのもの
+- 毎秒聞く代わりに Riot Client のイベントを待ち、隠れているか最小化されたウィンドウは何も聞かない
+- 自分を前面に出さない（フルスクリーンのゲームのフォーカスを奪う）
+  : 持ち主がほかのプログラムにいる間の試合成立はタスクバーのボタンを光らせ、ゲームが前面にあるときは何もしない（pc.py）
+- サイトの裏の仕事（混む時間の推定のためにほかのプレイヤーを見る）は止める
 
-What a window without a browser around it needs: other sites' links open in the default browser (app.js), back,
-forward and reload are buttons and keys (app.js), saving a picture or a calendar file asks where, the window opens
-where and as large as it was left (window.json), and a newer build is told on every page (the site is asked a
-minute after the start, then every few hours: one small request), and the title bar is as dark or light as the
-page (follow_look).
+ブラウザーに包まれていないウィンドウに必要なもの: ほかのサイトのリンクは既定のブラウザーで開く（app.js）、戻る・進む・
+再読み込みはボタンとキー（app.js）、絵やカレンダーのファイルの保存は場所を聞く、
+ウィンドウは前に閉じた場所と大きさで開く（window.json）、新しいビルドは全ページで知らせる（起動 1 分後、
+そのあと数時間ごとにサイトに聞く: 小さなリクエスト 1 つ）、タイトルバーはページと同じ明暗（follow_look）。
 
-What the site cannot do and the app does: the owner's friends and where each is (friends.py), a match found told
-while another program is in front, and starting with Windows, minimised (pc.py), a checkup of everything the
-app reads on this PC (checkup.py), and updating itself when the owner presses the button (update.py).
-"""
+サイトにはできずアプリができること: 持ち主のフレンドとそれぞれの居場所（friends.py）、
+ほかのプログラムが前面にあるときの試合成立の通知と、Windows 起動時の最小化での開始（pc.py）、
+この PC でアプリが読むもの全部のチェックアップ（checkup.py）、持ち主がボタンを押したときの自動更新（update.py）。"""
 
 from __future__ import annotations
 
 import argparse
+import contextlib
 import ctypes
 import json
 import os
@@ -49,25 +45,27 @@ from pathlib import Path
 from valtracker import NAME, create_app, pc, release, update
 from valtracker.localclient import LocalClient, moment
 
-#: The window's engine is told: no graphics card, no animations (the site's prefers-reduced-motion rules).
+#: ウィンドウのエンジンに伝えること: グラフィックカード無し、
+#: アニメーション無し（サイトの prefers-reduced-motion のルール）。
 BROWSER_ARGUMENTS = "--disable-gpu --force-prefers-reduced-motion --disable-features=ElasticOverscroll"
-#: The window's first size and its smallest (the site's phone layout below 760 px).
+#: ウィンドウの最初の大きさと最小の大きさ（760 px 未満でサイトのスマホ向けレイアウト）。
 SIZE, SMALLEST = (1180, 860), (400, 560)
-#: The room left below the window on its screen: Windows' taskbar.
+#: 画面でウィンドウの下に空けておく場所: Windows のタスクバー。
 TASKBAR = 48
-#: The page the window opens on.
+#: ウィンドウが最初に開くページ。
 FIRST_PAGE = "/live"
-#: The server's threads: the pages, their pictures, and the pages waiting for the client's next event.
+#: サーバーのスレッド: ページ、その絵、クライアントの次のイベントを待つページ。
 THREADS = 8
-#: Held while the app runs: a second start finds it and says so instead of starting twice.
+#: アプリが動いている間持つもの: 2 回目の起動はこれを見つけ、2 つ起動せずにそう伝える。
 MUTEX = "Local\\VALTracker.Desktop"
-#: The app's window among the windows with its title: WinForms names its windows' class so. Another program's
-#: window can have the same title (the data folder open in Explorer is "VAL Tracker" too).
+#: 同じタイトルのウィンドウのうちアプリのもの: WinForms はウィンドウのクラスにこう名前を付ける。
+#: ほかのプログラムのウィンドウが同じタイトルのことがある（エクスプローラーで開いたデータフォルダーも "VAL Tracker"）。
 WINDOW_CLASS = "WindowsForms10."
 ALREADY_OPEN = "VAL Tracker はすでに起動しています（タスクバーを確認してください）。\nVAL Tracker is already open (see the taskbar)."
 IN_BROWSER = "ブラウザーで開きました。OK を押すと VAL Tracker を終了します。"
-#: Why there is no window (window()'s answers; "" when it was shown), and what the owner is asked then: the
-#: browser is opened only when they say so (a browser beside the game is what the app is there to avoid).
+#: ウィンドウが無い理由（window() の答え。出せたら ""）と、
+#: そのとき持ち主に聞くこと: ブラウザーは持ち主がそう言ったときだけ開く（ゲームの横のブラウザーこそアプリが避けたいもの
+#: ）。
 NO_RUNTIME, NO_PART = "runtime", "part"
 NO_WINDOW = {
     NO_RUNTIME: "アプリのウィンドウを開けませんでした。Microsoft Edge WebView2 Runtime が見つかりません。\n"
@@ -80,18 +78,18 @@ IN_BROWSER_INSTEAD = (
     "代わりにブラウザーで開きますか？「いいえ」を選ぶと、何も開かずに終了します。\n"
     "(Open in the browser instead? No: the app ends and opens nothing.)"
 )
-#: Windows' mark on a file that came from the internet: a second stream of data beside the file's own.
+#: インターネットから来たファイルに Windows が付ける印: ファイル本体の横にある 2 つ目のデータストリーム。
 MARK = ":Zone.Identifier"
-_held = []  # the mutex's handle, for the app's life
-#: Where the site says which build is the newest (after the site's own address).
+_held = []  # ミューテックスのハンドル。アプリが動いている間持つ
+#: サイトが最新ビルドを答える場所（サイト自身のアドレスの後ろ）。
 LATEST = "/app/latest"
-#: When the site is asked: a minute after the start (not while the window opens), then every 6 hours; in half an
-#: hour when it could not be asked, or when the newest build is still being made.
+#: サイトに聞く時刻: 起動 1 分後（ウィンドウが開いている途中ではない）、そのあと 6 時間ごと。聞けなかったとき、
+#: 最新ビルドがまだ作っている途中のときは 30 分後。
 LOOK_FIRST, LOOK_EVERY, LOOK_AGAIN = 60.0, 6 * 3600.0, 1800.0
 
 
 def data_folder() -> Path:
-    """Settings, saved lists and pictures: %LOCALAPPDATA%\\VAL Tracker (VAL_DESKTOP_HOME names another)."""
+    r"""設定、保存した一覧、絵: %LOCALAPPDATA%\VAL Tracker（VAL_DESKTOP_HOME で別の場所を指定できる）。"""
     named = os.environ.get("VAL_DESKTOP_HOME")
     if named:
         return Path(named)
@@ -117,8 +115,8 @@ def _kernel():
 
 
 def calm() -> list[str]:
-    """Makes this process (and the window's, which inherit the priority) give way to the game: below normal
-    priority, efficiency mode (Windows 11: slower cores, lower clocks), low memory priority. What was set."""
+    """このプロセス（と、優先度を引き継ぐウィンドウのプロセス）をゲームに譲らせる: 通常より低い優先度、
+    効率モード（Windows 11: 遅いコア、低いクロック）、低いメモリ優先度。設定できたものを返す。"""
     if sys.platform != "win32":
         return []
     kernel, done = _kernel(), []
@@ -132,7 +130,7 @@ def calm() -> list[str]:
     class Memory(ctypes.Structure):
         _fields_ = [("MemoryPriority", ctypes.c_ulong)]
 
-    # ProcessPowerThrottling (4): PROCESS_POWER_THROTTLING_EXECUTION_SPEED on = EcoQoS
+    # ProcessPowerThrottling (4): PROCESS_POWER_THROTTLING_EXECUTION_SPEED オン = EcoQoS
     throttling = Throttling(1, 1, 1)
     if kernel.SetProcessInformation(me, 4, ctypes.byref(throttling), ctypes.sizeof(throttling)):
         done.append("efficiency mode")
@@ -143,10 +141,10 @@ def calm() -> list[str]:
     return done
 
 
-#: Priority classes at or under below normal (BELOW_NORMAL, IDLE): left as they are.
+#: 通常より低い以下の優先度クラス（BELOW_NORMAL、IDLE）: そのままにする。
 _LOW = (0x00004000, 0x00000040)
-#: When (seconds after the window opens) the window's processes are put back below normal: as they start, then
-#: every KEEP_LOW seconds.
+#: ウィンドウのプロセスを通常より低い優先度に戻す時刻（ウィンドウが開いてからの秒）: 起動したとき、
+#: そのあと KEEP_LOW 秒ごと。
 LOWER_AT, KEEP_LOW = (2, 5, 15), 30
 
 
@@ -166,7 +164,7 @@ class _Entry(ctypes.Structure):
 
 
 def descendants(pairs: list[tuple[int, int]], root: int) -> set[int]:
-    """The processes started (at any depth) by ``root``, from (process, parent) pairs."""
+    """(プロセス, 親) の組から、``root`` が（何段下でも）起動したプロセス。"""
     found, grew = set(), True
     while grew:
         more = {child for child, parent in pairs if (parent == root or parent in found) and child not in found}
@@ -177,8 +175,8 @@ def descendants(pairs: list[tuple[int, int]], root: int) -> set[int]:
 
 
 def lower_window() -> int:
-    """Puts the window's processes (WebView2's, all started by this app) back below normal priority: they inherit
-    it, but Chromium raises a few itself (its GPU process above normal). How many were lowered (Windows only)."""
+    """ウィンドウのプロセス（どれもこのアプリが起動した WebView2 のもの）を通常より低い優先度に戻す: 引き継ぐはずだが、
+    Chromium がいくつかを自分で上げる（GPU プロセスは通常より高い）。下げた数を返す（Windows だけ）。"""
     if sys.platform != "win32":
         return 0
     kernel, pairs = _kernel(), []
@@ -196,7 +194,7 @@ def lower_window() -> int:
         kernel.CloseHandle(snapshot)
     lowered = 0
     for pid in descendants(pairs, os.getpid()):
-        handle = kernel.OpenProcess(0x0200 | 0x1000, False, pid)  # SET_INFORMATION, QUERY_LIMITED_INFORMATION
+        handle = kernel.OpenProcess(0x0200 | 0x1000, False, pid)  # SET_INFORMATION、QUERY_LIMITED_INFORMATION
         if not handle:
             continue
         try:
@@ -208,8 +206,8 @@ def lower_window() -> int:
 
 
 def keep_window_low(stop: threading.Event) -> None:
-    """lower_window as the window's processes start, then every KEEP_LOW seconds (a new renderer, or one Chromium
-    raised again), until ``stop``. One small list of processes a time."""
+    """ウィンドウのプロセスが起動したら lower_window を呼び、そのあと KEEP_LOW 秒ごと（新しいレンダラーや、
+    Chromium がまた上げたもの）、``stop`` まで。1 回にプロセスの小さな一覧 1 つ。"""
 
     def run():
         started = time.monotonic()
@@ -227,7 +225,7 @@ def keep_window_low(stop: threading.Event) -> None:
 
 
 def first() -> bool:
-    """Whether no other VAL Tracker app is running (Windows; elsewhere always)."""
+    """ほかの VAL Tracker アプリが動いていないか（Windows。ほかの OS ではいつも True）。"""
     if sys.platform != "win32":
         return True
     kernel = _kernel()
@@ -237,14 +235,14 @@ def first() -> bool:
 
 
 def is_app_window(title: str, kind: str) -> bool:
-    """Whether a window with this title and window class is the app's (WINDOW_CLASS)."""
+    """このタイトルとウィンドウクラスのウィンドウがアプリのもの（WINDOW_CLASS）か。"""
     return title == NAME and kind.startswith(WINDOW_CLASS)
 
 
 def show_running() -> bool:
-    """The window of the VAL Tracker already running, put back when it is minimised and brought to the front: the
-    owner asked for it by opening the app again (the one time the app comes to the front). False when it is not
-    found (still starting), or not on Windows."""
+    """すでに動いている VAL Tracker のウィンドウを、最小化されていれば戻して前面に出す:
+    持ち主がアプリをもう一度開いて頼んだ（アプリが前面に出る唯一の場合）。見つからない（まだ起動中）
+    か Windows でなければ False。"""
     if sys.platform != "win32":
         return False
     user = ctypes.WinDLL("user32", use_last_error=True)
@@ -261,7 +259,7 @@ def show_running() -> bool:
         user.GetClassNameW(handle, kind, 128)
         if is_app_window(title.value, kind.value):
             found.append(handle)
-        return not found  # stops at the first
+        return not found  # 最初の 1 つで止める
 
     user.EnumWindows(each(look), None)
     if not found:
@@ -273,7 +271,7 @@ def show_running() -> bool:
 
 
 def tell(words: str) -> None:
-    """A message box (Windows), else a line on the console."""
+    """メッセージボックス（Windows）。ほかではコンソールに 1 行。"""
     if sys.platform == "win32":
         ctypes.windll.user32.MessageBoxW(None, words, NAME, 0x40)  # MB_ICONINFORMATION
     else:
@@ -281,20 +279,19 @@ def tell(words: str) -> None:
 
 
 def ask(words: str) -> bool:
-    """A message box with はい and いいえ (Windows; いいえ is the one Enter presses): whether はい was pressed.
-    Elsewhere the words are printed and the answer is yes."""
+    """はい・いいえのメッセージボックス（Windows。Enter で押されるのはいいえ）: はいが押されたか。ほかでは文を出力して、
+    答えははい。"""
     if sys.platform != "win32":
         print(words, flush=True)
         return True
-    # MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON2; IDYES
+    # MB_YESNO | MB_ICONWARNING | MB_DEFBUTTON2、IDYES
     return ctypes.windll.user32.MessageBoxW(None, words, NAME, 0x4 | 0x30 | 0x100) == 6
 
 
 def in_browser(url: str, why: str, log: Path, built: bool | None = None) -> bool:
-    """Opens ``url`` in the default browser, because it was asked for (``why`` is "") or because there is no
-    window (``why``: window()'s answer): whether it was opened. The built app never opens a browser by itself (a
-    browser beside the game is what the app is there to avoid): the owner is told why there is no window, and
-    asked first."""
+    """頼まれたから（``why`` が ""）、またはウィンドウが無いから（``why``: window() の答え）、
+    ``url`` を既定のブラウザーで開く: 開いたか。ビルドしたアプリは勝手にブラウザーを開かない（ゲームの横のブラウザーこそ
+    アプリが避けたいもの）: ウィンドウが無い理由を伝え、先に聞く。"""
     built = bool(getattr(sys, "frozen", False)) if built is None else built
     if built and why and not ask(f"{NO_WINDOW[why].format(log=log)}\n\n{IN_BROWSER_INSTEAD}"):
         return False
@@ -303,13 +300,14 @@ def in_browser(url: str, why: str, log: Path, built: bool | None = None) -> bool
 
 
 def unmark(home: Path | None, remove=os.remove) -> int:
-    """Takes Windows' mark "this file came from the internet" off the app's own files: how many had it.
+    """アプリ自身のファイルから Windows の「インターネットから来たファイル」の印を外す: 印があった数を返す。
 
-    A browser marks the zip it downloads and Explorer passes the mark on to every file it unpacks. .NET does not
-    load a marked library ("Operation is not supported", 0x80131515), so the window's part (pythonnet, WebView2's
-    libraries) could not start and the app opened in the browser instead. The mark is a second stream beside the
-    file's data; removing it is what "Unblock" in the file's properties does. Only the app's own folder is looked
-    at (``home``: update.running_home(), None for the source), and a file that cannot be changed is left."""
+    ブラウザーはダウンロードした zip に印を付け、エクスプローラーは展開したすべてのファイルに印を引き継ぐ。
+    .NET は印の付いたライブラリを読まない（"Operation is not supported"、0x80131515）ので、ウィンドウの部分（pythonnet、
+     WebView2 のライブラリ）が起動できず、アプリは代わりにブラウザーで開いていた。
+    印はファイルのデータの横の 2 つ目のストリームで、消すのはファイルのプロパティの「許可する」と同じこと。
+    見るのはアプリ自身のフォルダーだけ（``home``: update.running_home()、ソースなら None）。
+    変えられないファイルはそのままにする。"""
     if home is None:
         return 0
     count = 0
@@ -317,14 +315,14 @@ def unmark(home: Path | None, remove=os.remove) -> int:
         try:
             remove(f"{path}{MARK}")
             count += 1
-        except OSError:  # no mark on this one (the usual case), or the folder cannot be written
+        except OSError:  # このファイルには印が無い（ふつうはこれ）、またはフォルダーに書けない
             continue
     return count
 
 
 class OnlyHere:
-    """Answers only requests addressed to this PC's own address: a web page whose name was pointed at 127.0.0.1
-    (DNS rebinding) gets nothing from the owner's pages."""
+    """この PC 自身のアドレス宛てのリクエストだけに答える: 名前を 127.0.0.1 に向けた Web ページ（DNS リバインディング）
+    は持ち主のページから何も得られない。"""
 
     def __init__(self, app, hosts: set[str]):
         self.app, self.hosts = app, hosts
@@ -337,7 +335,7 @@ class OnlyHere:
 
 
 def serve(app, port: int = 0):
-    """Starts the server in a thread: (the server, its address)."""
+    """サーバーをスレッドで起動する: （サーバー, アドレス）。"""
     from waitress.server import create_server
 
     hosts: set[str] = set()
@@ -350,7 +348,7 @@ def serve(app, port: int = 0):
 
 
 def light_windows() -> bool:
-    """Whether Windows is set to light apps (the window's colour before the page has drawn)."""
+    """Windows がアプリをライトに設定しているか（ページが描く前のウィンドウの色）。"""
     try:
         import winreg
 
@@ -363,24 +361,24 @@ def light_windows() -> bool:
 
 
 def read_build() -> dict | None:
-    """The built app's commit and when it was made (desktop.yml writes valtracker/BUILD), None when run from the
-    source."""
+    """ビルドしたアプリのコミットと作った時刻（desktop.yml が valtracker/BUILD に書く）。
+    ソースから動かしているなら None。"""
     return release.read_build(Path(__file__).with_name("BUILD"))
 
 
 def _latest(site: str) -> object:
-    """What the site says the newest build is (release.py)."""
+    """サイトが答える最新ビルド（release.py）。"""
     if not site.startswith("https://"):
         raise ValueError("not a site to ask")
     request = urllib.request.Request(site + LATEST, headers={"User-Agent": "VALTracker-desktop"})
-    with urllib.request.urlopen(request, timeout=15) as answer:  # noqa: S310 - https, checked above
+    with urllib.request.urlopen(request, timeout=15) as answer:  # https（上で確かめた）
         return json.loads(answer.read(4096))
 
 
 def look_for_updates(app, stop: threading.Event, read=_latest) -> None:
-    """Asks the site for the newest build now and then (LOOK_FIRST, LOOK_EVERY) while the app runs: a newer one
-    is put in app.config["VAL_UPDATE"] (every page says so). Nothing when this app was not built (from the
-    source)."""
+    """アプリが動いている間、時々（LOOK_FIRST、 LOOK_EVERY）
+    最新ビルドをサイトに聞く: 新しいものは app.config["VAL_UPDATE"] に入れる（全ページでそう出る）。
+    ビルドしたアプリでなければ（ソースから）何もしない。"""
     build = app.config.get("VAL_BUILD")
     if not build:
         return
@@ -392,10 +390,10 @@ def look_for_updates(app, stop: threading.Event, read=_latest) -> None:
             try:
                 found = release.newer(build, read(app.config["VAL_PUBLIC"]), time.time())
             except (OSError, ValueError):
-                wait = LOOK_AGAIN  # no network, or the site is down: in half an hour
+                wait = LOOK_AGAIN  # ネット無し、またはサイトが落ちている: 30 分後に
                 continue
             if found and not found["ready"]:
-                wait = LOOK_AGAIN  # the change is minutes old: its build is still being made
+                wait = LOOK_AGAIN  # 変更から数分しか経っていない: そのビルドはまだ作っている途中
                 continue
             app.config["VAL_UPDATE"] = found
             app.config["VAL_UPDATE_LOOKED"] = time.time()
@@ -403,14 +401,13 @@ def look_for_updates(app, stop: threading.Event, read=_latest) -> None:
     threading.Thread(target=run, name="updates", daemon=True).start()
 
 
-#: Where the window was left: window.json in the data folder.
+#: ウィンドウを閉じた場所: データフォルダーの window.json。
 PLACE = "window.json"
 
 
 def placed(folder: Path, screens: list[tuple[int, int, int, int]]) -> dict:
-    """create_window's size and place from where the window was left: its size (at least the smallest, at most
-    its screen), its place only when its top left is on one of today's ``screens`` (x, y, width, height), and
-    whether it was maximised."""
+    """前に閉じた場所からの create_window の大きさと位置: 大きさ（最小以上、画面以下）、
+    位置は左上が今の ``screens``（x, y, 幅, 高さ）のどれかにあるときだけ、最大化していたか。"""
     try:
         saved = json.loads((folder / PLACE).read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -428,27 +425,28 @@ def placed(folder: Path, screens: list[tuple[int, int, int, int]]) -> dict:
         "maximized": saved.get("maximized") is True,
     }
     x, y = number("x", -20000, 20000, None), number("y", -20000, 20000, None)
-    screen = screens[0] if screens else None  # the main screen, where a window without a place opens
+    screen = screens[0] if screens else None  # メイン画面（位置の無いウィンドウはここに開く）
     if x is not None and y is not None:
-        # the title bar's left end must be on a screen (one unplugged since: the window opens in the middle)
+        # タイトルバーの左端は画面の上にないといけない（その後外した画面なら真ん中に開く）
         for left, top, wide, high in screens:
             if left <= x + 40 < left + wide and top <= y + 10 < top + high:
                 found |= {"x": x, "y": y}
                 screen = (left, top, wide, high)
                 break
     if screen:
-        # never larger than its screen (a small or enlarged one: 1366 x 768, or 1920 x 1080 at 150 %), with the
-        # taskbar's room below
+        # 画面より大きくしない（小さい画面や拡大表示: 1366 x 768、1920 x 1080 で 150 %）。下にタスクバーの場所を空ける
         found["width"] = max(SMALLEST[0], min(found["width"], screen[2]))
         found["height"] = max(SMALLEST[1], min(found["height"], screen[3] - TASKBAR))
     return found
 
 
 def left(form) -> dict | None:
-    """Where the window is as it closes (its WinForms form): its normal size and place (a maximised or minimised
-    window's are the ones it goes back to) and whether it is maximised. None when they cannot be read."""
+    """閉じるときのウィンドウ（WinForms のフォーム）の状態: 通常の大きさと位置（最大化・
+    最小化しているなら戻ったときのもの）と、最大化しているか。読めなければ None。"""
     try:
-        scale = float(getattr(form, "_scale", 1.0) or 1.0)  # pywebview's: the screen's pixels per window pixel
+        scale = float(
+            getattr(form, "_scale", 1.0) or 1.0
+        )  # pywebview のもの: ウィンドウの 1 ピクセルあたりの画面のピクセル
         shape = str(form.WindowState).rsplit(".", 1)[-1]
         bounds = form.Bounds if shape == "Normal" else form.RestoreBounds
         found = {
@@ -458,27 +456,24 @@ def left(form) -> dict | None:
             "height": round(bounds.Height / scale),
             "maximized": shape == "Maximized",
         }
-    except Exception:  # noqa: BLE001 - not WinForms (another platform), or the form is gone
+    except Exception:  # WinForms でない（別のプラットフォーム）、またはフォームがもう無い
         return None
     return found if found["width"] >= SMALLEST[0] and found["height"] >= SMALLEST[1] else None
 
 
 def remember(window, folder: Path) -> None:
-    """Writes where the window was left (window.json) as it closes: it opens there next time (placed)."""
+    """閉じるときにウィンドウの場所を書く（window.json）: 次回はそこに開く（placed）。"""
 
     def closing():
         found = left(getattr(window, "native", None))
         if found is not None:
-            try:
+            with contextlib.suppress(OSError):
                 (folder / PLACE).write_text(json.dumps(found), encoding="utf-8")
-            except OSError:
-                pass
 
     window.events.closing += closing
 
 
-#: Whether the page is dark now: the owner's choice with the header's button (<html data-theme>, theme.py), else
-#: Windows' own setting.
+#: 今ページが暗いか: ヘッダーのボタンでの持ち主の選択（<html data-theme>、theme.py）、無ければ Windows 自身の設定。
 IS_DARK = (
     "(function(){var t=document.documentElement.getAttribute('data-theme');"
     "return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches})()"
@@ -486,8 +481,8 @@ IS_DARK = (
 
 
 def title_bar(handle: int, dark: bool) -> bool:
-    """The window's title bar dark or light (Windows 10 of 2020 and later; an older one keeps its own). Whether
-    Windows took it."""
+    """ウィンドウのタイトルバーを暗く・明るくする（2020 年以降の Windows 10。古いものは自分のまま）。
+    Windows が受け入れたか。"""
     if sys.platform != "win32" or not handle:
         return False
     try:
@@ -500,22 +495,22 @@ def title_bar(handle: int, dark: bool) -> bool:
             return dwm.DwmSetWindowAttribute(handle, what, ctypes.byref(number), ctypes.sizeof(number)) == 0
 
         took = put(20, int(dark))  # DWMWA_USE_IMMERSIVE_DARK_MODE
-        put(38, 2 if dark else 1)  # DWMWA_SYSTEMBACKDROP_TYPE, as pywebview sets it with Windows' own look
+        put(38, 2 if dark else 1)  # DWMWA_SYSTEMBACKDROP_TYPE（pywebview が Windows 自身の見た目で設定するもの）
         return took
     except (OSError, AttributeError):
         return False
 
 
 def follow_look(window, put=title_bar) -> None:
-    """The title bar takes the page's look, at every page: pywebview gives it Windows' own, which is not the
-    page's once the owner has picked dark or light with the header's button (a dark page under a white bar).
-    One question to the page as it has loaded, nothing in between."""
+    """タイトルバーをページごとにページの見た目に合わせる: pywebview は Windows 自身の見た目にするので、
+    持ち主がヘッダーのボタンでダーク・ライトを選ぶとページと合わなくなる（白いバーの下に暗いページ）。
+    読み込み終わったページに 1 回聞くだけで、その間は何もしない。"""
 
     def loaded():
         try:
             dark = window.evaluate_js(IS_DARK)
             handle = int(window.native.Handle.ToInt64())
-        except Exception:  # noqa: BLE001 - the window is closing, or it is not a WinForms one
+        except Exception:  # ウィンドウが閉じる途中、または WinForms のものでない
             return
         if isinstance(dark, bool):
             put(handle, dark)
@@ -524,25 +519,25 @@ def follow_look(window, put=title_bar) -> None:
 
 
 def window_handle(shown) -> int:
-    """The window's handle (Windows'), 0 while there is none (no window yet, or not a WinForms one)."""
+    """ウィンドウのハンドル（Windows のもの）。無い間は 0（まだウィンドウが無い、または WinForms のものでない）。"""
     try:
         return int(shown.native.Handle.ToInt64())
-    except Exception:  # noqa: BLE001 - no window, another platform, or it is closing
+    except Exception:  # ウィンドウが無い、別のプラットフォーム、または閉じる途中
         return 0
 
 
 def _screens(webview) -> list[tuple[int, int, int, int]]:
     try:
         return [(screen.x, screen.y, screen.width, screen.height) for screen in webview.screens]
-    except Exception:  # noqa: BLE001 - not known: the window opens in the middle
+    except Exception:  # 不明: ウィンドウは真ん中に開く
         return []
 
 
 def window(url: str, folder: Path, close_after: float = 0, minimized: bool = False, made=None) -> str:
-    """Shows ``url`` in the app's window until it is closed, and answers "". When there is no window to be had,
-    why (and the reason is printed, which is the app's log): NO_PART (no pywebview, or its .NET part could not
-    start) or NO_RUNTIME (Windows without WebView2). ``minimized``: it opens in the taskbar (the start with
-    Windows); ``made(window)``: told of the window once it is there."""
+    """閉じるまで ``url`` をアプリのウィンドウに出し、"" を返す。
+    ウィンドウが出せなければその理由（理由はアプリのログに出力する）: NO_PART（pywebview が無い、
+    またはその .NET 部分が起動できない）か NO_RUNTIME（WebView2 の無い Windows）。
+    ``minimized``: タスクバーに開く（Windows 起動時の開始）。``made(window)``: ウィンドウができたら知らせる。"""
     os.environ.setdefault("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", BROWSER_ARGUMENTS)
     try:
         import webview
@@ -550,13 +545,13 @@ def window(url: str, folder: Path, close_after: float = 0, minimized: bool = Fal
         if sys.platform == "win32":
             from webview.platforms import winforms
 
-            if winforms.renderer != "edgechromium":  # Internet Explorer's engine: the pages need a modern one
+            if winforms.renderer != "edgechromium":  # Internet Explorer のエンジン: ページには新しいものが必要
                 print(f"{NAME}: no window: WebView2 Runtime was not found (engine: {winforms.renderer})", flush=True)
                 return NO_RUNTIME
-    except Exception as error:  # noqa: BLE001 - no pywebview, or its .NET part could not start
+    except Exception as error:  # pywebview が無い、またはその .NET 部分が起動できない
         print(f"{NAME}: no window: {type(error).__name__}: {str(error)[:600]}", flush=True)
         return NO_PART
-    # a picture or a calendar file the page saves: Windows' "save as" box (else the window drops it)
+    # ページが保存する絵やカレンダーのファイル: Windows の「名前を付けて保存」（無いとウィンドウが捨ててしまう）
     webview.settings["ALLOW_DOWNLOADS"] = True
     start = placed(folder, _screens(webview))
     shown = webview.create_window(
@@ -569,7 +564,7 @@ def window(url: str, folder: Path, close_after: float = 0, minimized: bool = Fal
         maximized=start["maximized"] and not minimized,
         minimized=minimized,
         min_size=SMALLEST,
-        background_color="#f6f4ef" if light_windows() else "#161513",  # the site's paper
+        background_color="#f6f4ef" if light_windows() else "#161513",  # サイトの紙の色
         text_select=True,
     )
     remember(shown, folder)
@@ -581,13 +576,13 @@ def window(url: str, folder: Path, close_after: float = 0, minimized: bool = Fal
         time.sleep(close_after)
         shown.destroy()
 
-    # cookies (language, the session) and the page's own lists are kept in the app's folder
+    # cookie（言語、セッション）とページ自身の一覧はアプリのフォルダーに残す
     webview.start(close_later if close_after else None, private_mode=False, storage_path=str(folder / "window"))
     return ""
 
 
 def check(base: str) -> int:
-    """The build's test (--check): the pages answer, a foreign address is refused. 0 when all is well."""
+    """ビルドのテスト（--check）: ページが答え、外のアドレスは断る。全部よければ 0。"""
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     failed = 0
     for path, wanted, host in (
@@ -621,19 +616,20 @@ def check(base: str) -> int:
 
 
 def _output(folder: Path) -> None:
-    """Without a console (the .exe), what would be printed goes to desktop.log in the app's folder."""
+    """コンソールが無い（.exe）ときは、出力するものをアプリのフォルダーの desktop.log に書く。"""
     if sys.stdout is None or sys.stderr is None or getattr(sys, "frozen", False):
-        log = open(folder / "desktop.log", "w", encoding="utf-8", buffering=1)  # noqa: SIM115 - open for the app's life
+        log = open(folder / "desktop.log", "w", encoding="utf-8", buffering=1)
         sys.stdout = sys.stderr = log
 
 
 def _install_over(target: str, pid: int) -> int:
-    """The new build's part of an update (update.install_over), with what it did written to update.log in the
-    app's data folder (the .exe has no console; the app's own log is the running app's)."""
+    """更新の新しいビルドの部分（update.install_over）。
+    したことはアプリのデータフォルダーの update.log に書く（.exe にはコンソールが無い。
+    アプリ自身のログは動いているアプリのもの）。"""
     folder = data_folder()
     folder.mkdir(parents=True, exist_ok=True)
     try:
-        log = open(folder / "update.log", "a", encoding="utf-8", buffering=1)  # noqa: SIM115 - for this run
+        log = open(folder / "update.log", "a", encoding="utf-8", buffering=1)
     except OSError:
         log = None
 
@@ -660,35 +656,35 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(update.UPDATED, action="store_true", help="the app was just updated (the page says so)")
     args = parser.parse_args(argv)
     if args.install_over:
-        # the new build, started by the app that downloaded it (update.py): it takes the app's place and ends
+        # ダウンロードしたアプリ（update.py）が起動した新しいビルド: アプリと入れ替わって終わる
         return _install_over(args.install_over, args.wait_pid)
     if not args.check and not first():
-        # opened twice: the window already there comes back (minimised, or behind other windows)
+        # 2 回開いた: すでにあるウィンドウが戻ってくる（最小化、またはほかのウィンドウの裏）
         if not show_running():
             tell(ALREADY_OPEN)
         return 0
     folder = data_folder()
     folder.mkdir(parents=True, exist_ok=True)
-    _output(folder)  # after the check above: the running app's log is not emptied
+    _output(folder)  # 上の確認の後: 動いているアプリのログは空にしない
     calmed = calm()
     print(f"{NAME}: {', '.join(calmed) or 'no Windows priorities (not Windows)'}", flush=True)
-    # unpacked from a downloaded zip: Windows' mark is taken off before the window's part is loaded
+    # ダウンロードした zip から展開した: ウィンドウの部分を読む前に Windows の印を外す
     unmarked = unmark(update.running_home())
     if unmarked:
         print(f"{NAME}: {unmarked} of the app's files were marked as come from the internet: unmarked", flush=True)
-    os.environ.setdefault("VAL_COLLECT_SECONDS", "0")  # the busy-hour collector: the site's work, not the PC's
+    os.environ.setdefault("VAL_COLLECT_SECONDS", "0")  # 混む時間のコレクター: サイトの仕事で、PC の仕事ではない
     local = LocalClient()
     app = create_app(instance=folder, local=local)
     app.config["VAL_BUILD"] = read_build()
     app.config["VAL_CALM"] = calmed
-    # a match found while another program is in front: the taskbar button lights up (pc.py)
+    # ほかのプログラムが前面にあるときの試合成立: タスクバーのボタンが光る（pc.py）
     shown: list = []
     app.config["VAL_ALERT"] = alert = pc.Alert(
         app.config["VAL_SETTINGS"], folder, lambda: window_handle(shown[0]) if shown else 0, pc.windows()
     )
     local.listen(alert)
     app.config["VAL_AUTOSTART"] = pc.Autostart.here()
-    # the app updates itself when the owner presses the button (update.py)
+    # 持ち主がボタンを押したら自動更新（update.py）
     stopping = threading.Event()
 
     def where() -> str:
@@ -716,8 +712,8 @@ def main(argv: list[str] | None = None) -> int:
         why = "" if args.browser else window(first_page, folder, args.close_after, args.minimized, shown.append)
         if args.browser or why:
             if not in_browser(first_page, why, folder / "desktop.log"):
-                return 0  # no window, and the owner did not want a browser
-            if getattr(sys, "frozen", False):  # no console to stop it from: the box's OK does
+                return 0  # ウィンドウが無く、持ち主はブラウザーを望まなかった
+            if getattr(sys, "frozen", False):  # 止めるためのコンソールが無い: ボックスの OK がその代わり
                 tell(IN_BROWSER)
                 return 0
             print("Ctrl+C で終わります。", flush=True)

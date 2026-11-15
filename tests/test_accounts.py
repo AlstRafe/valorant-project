@@ -1,5 +1,5 @@
-"""Several Riot accounts of the owner's: linking more than one, the buttons that show another, what each keeps of
-its own (the store's diary, the saved sets), and the PC app, where the game is always the Riot Client's account's."""
+"""持ち主の複数の Riot アカウント: 2 つ以上の連携、別のアカウントを表示するボタン、
+アカウントごとに持つもの（ストア日記、保存したセット）、PC アプリ（ゲームはいつも Riot Client のアカウント）。"""
 
 import json
 import os
@@ -19,7 +19,7 @@ VISITOR = {"homepage.visitor": True}
 
 
 class AccountsTest(unittest.TestCase):
-    """The site: the accounts are linked with their cookies."""
+    """サイト: アカウントは cookie で連携する。"""
 
     def setUp(self):
         self.env = mock.patch.dict(os.environ, {"VAL_HENRIK_KEY": ""})
@@ -62,8 +62,10 @@ class AccountsTest(unittest.TestCase):
         self.assertEqual(saved["others"][PUUID]["name"], "Owner")
         self.assertTrue(saved["others"][PUUID]["cookies"]["ssid"].startswith("ssid-"), "its own cookie is kept")
         self.assertNotIn("linked_first", saved, "the site has no Riot Client to choose against")
-        # the settings: one line each, the one in use marked, the other with a button to it
-        row = re.compile(r'<li( class="now")?>\s*<span class="account-name"><strong>(\w+#\w+)</strong>(.*?)</li>', re.S)
+        # 設定: 1 行ずつ、使用中に印、ほかには切り替えボタン
+        row = re.compile(
+            r'<li( class="now")?>\s*<span class="account-name"><strong>(\w+#\w+)</strong>(.*?)</li>', re.DOTALL
+        )
         rows = {name: (bool(now), rest) for now, name, rest in row.findall(text)}
         self.assertEqual(list(rows), ["Owner#JP1", "Smurf#JP2"], "by name, the same order whichever is in use")
         self.assertTrue(rows["Smurf#JP2"][0])
@@ -88,7 +90,7 @@ class AccountsTest(unittest.TestCase):
         saved = self.saved()
         self.assertEqual((saved["puuid"], list(saved["others"])), (PUUID, [PUUID2]))
         self.assertIn('href="/p/Owner/JP1"><strong>戦績</strong>', self.page("/"))
-        # what is read next is read as that account, with its own cookie
+        # 次からはそのアカウントとして、その cookie で読む
         before = len(self.riot.asked)
         self.assertIn("ヴァンダル", self.page("/collection"))
         asked = [url for _, url, _, _ in self.riot.asked[before:] if "pvp.net" in url]
@@ -127,7 +129,7 @@ class AccountsTest(unittest.TestCase):
         for outside in ("https://example.com/", "//example.com/", "/\\example.com", "javascript:alert(1)", ""):
             self.assertEqual(self.switch(PUUID, outside).headers["Location"], "/", outside)
         self.assertEqual(self.switch(PUUID2, "/collection?show=sets").headers["Location"], "/collection?show=sets")
-        # an account that is not linked (any more): nothing changes
+        # 連携していない（もうしていない）アカウント: 何も変わらない
         self.assertEqual(self.switch("0e0e0e0e-1111-4222-8333-666666666666").status_code, 303)
         self.assertEqual(self.saved()["puuid"], PUUID2)
 
@@ -135,7 +137,7 @@ class AccountsTest(unittest.TestCase):
         app, _, _ = make_app(mount="/val")
         self.addCleanup(app._test_folder.cleanup)
         client = app.test_client()
-        base = "http://localhost/val"  # as Home Page's server serves it
+        base = "http://localhost/val"  # Home Page のサーバーが配る形で
         page = client.get("/settings", base_url=base).get_data(as_text=True)
         token = re.search(r'name="csrf" value="([^"]+)"', page).group(1)
         for pasted in ("ssid-1", "sub-1"):
@@ -144,7 +146,7 @@ class AccountsTest(unittest.TestCase):
         self.assertIn('name="next" value="/val/shop"', text)
         data = {"csrf": token, "account": PUUID, "next": "/val/shop"}
         self.assertEqual(client.post("/account", data=data, base_url=base).headers["Location"], "/val/shop")
-        data["next"] = "/shop"  # not under the mount: another site's page on this host
+        data["next"] = "/shop"  # マウントの外: このホストの別サイトのページ
         self.assertEqual(client.post("/account", data=data, base_url=base).headers["Location"], "/val/")
 
     def test_switching_and_unlinking_on_the_settings_page(self):
@@ -153,7 +155,7 @@ class AccountsTest(unittest.TestCase):
         text = self.client.post("/settings", data=data).get_data(as_text=True)
         self.assertIn("Owner#JP1 に切り替えました。", text)
         self.assertEqual(self.saved()["puuid"], PUUID)
-        # the one in use is unlinked: the other one is used from then on
+        # 使用中のものを解除: 以後はもう一方を使う
         data = {"csrf": self.token(), "do": "riot_off", "account": PUUID}
         text = self.client.post("/settings", data=data).get_data(as_text=True)
         self.assertIn("Riot アカウントとの連携を解除しました。", text)
@@ -161,7 +163,7 @@ class AccountsTest(unittest.TestCase):
         self.assertEqual(saved["puuid"], PUUID2)
         self.assertNotIn("others", saved)
         self.assertNotIn("Owner#JP1", text)
-        # one that is not in use is unlinked: the one in use stays
+        # 使っていないものを解除: 使用中のものはそのまま
         self.link(self.riot.ssid)
         self.assertEqual(self.saved()["puuid"], PUUID)
         self.client.post("/settings", data={"csrf": self.token(), "do": "riot_off", "account": PUUID2})
@@ -174,7 +176,7 @@ class AccountsTest(unittest.TestCase):
 
     def test_pasting_an_account_again_links_it_once(self):
         self.both()
-        self.link(self.riot.ssid)  # the first one's cookie as it is now: that account again, in use
+        self.link(self.riot.ssid)  # 1 つ目の今の cookie: そのアカウントがまた使用中に
         saved = self.saved()
         self.assertEqual((saved["puuid"], list(saved["others"])), (PUUID, [PUUID2]))
         self.assertEqual([row["name"] for row in self.app.config["VAL_RIOT"].accounts()], ["Owner", "Smurf"])
@@ -190,7 +192,7 @@ class AccountsTest(unittest.TestCase):
     def test_an_account_riot_signed_out_says_so(self):
         self.both()
         self.switch(PUUID)
-        # Riot no longer takes the second account's cookie, and its hour's token is over
+        # Riot が 2 つ目のアカウントの cookie を受け付けなくなり、1 時間のトークンも切れた
         self.riot.second, self.riot.refuse = "gone", 1
         self.switch(PUUID2)
         self.assertIn("Riot のログインが切れました", self.page("/collection"))
@@ -206,7 +208,7 @@ class AccountsTest(unittest.TestCase):
         self.page("/shop")
         first = self.saved("diary.json")
         self.assertEqual(len(first["days"]), 1)
-        self.link("sub-1")  # what was kept so far is the first account's
+        self.link("sub-1")  # ここまで保存したものは 1 つ目のアカウントのもの
         self.assertEqual(self.saved("diary.json")["account"], PUUID)
         self.assertIn("まだ記録がありません", self.page("/shop/history"), "the second account has looked at no store")
         self.page("/shop")
@@ -238,7 +240,7 @@ class AccountsTest(unittest.TestCase):
 
 
 class AppAccountsTest(unittest.TestCase):
-    """The PC app: the Riot Client's account, and accounts linked beside it."""
+    """PC アプリ: Riot Client のアカウントと、その横に連携したアカウント。"""
 
     def setUp(self):
         self.env = mock.patch.dict(os.environ, {"VAL_HENRIK_KEY": ""})
@@ -290,7 +292,7 @@ class AppAccountsTest(unittest.TestCase):
         before = len(self.riot.asked)
         self.assertIn("ヴァンダル", self.page("/collection"))
         self.assertTrue(any(PUUID2 in url for _, url, _, _ in self.riot.asked[before:]), "its own collection")
-        # the game on this PC is the Riot Client's account's, whichever is shown
+        # この PC のゲームは、どれを表示していても Riot Client のアカウント
         self.riot.phase = "menus"
         before = len(self.riot.asked)
         live = self.page("/live")
@@ -299,12 +301,12 @@ class AppAccountsTest(unittest.TestCase):
         self.assertTrue(glz)
         self.assertTrue(all(PUUID2 not in url for url in glz))
         self.assertNotIn('class="accounts"', live, "no choice on the game's own page")
-        # the settings: both, the client's with a button back to it
+        # 設定: 両方。クライアントのものに戻るボタンつき
         text = self.page("/settings")
         self.assertIn("<strong>Owner#JP1</strong><small>AP · Riot クライアント</small>", text)
         self.assertRegex(text, rf'name="account" value="{PUUID}"><button type="submit" name="do" value="riot_use"')
         self.assertRegex(text, rf'name="account" value="{PUUID2}"><button type="submit" name="do" value="riot_off"')
-        # back to the client's account
+        # クライアントのアカウントに戻る
         self.client.post("/account", data={"csrf": self.token(), "account": PUUID, "next": "/"})
         self.assertNotIn("linked_first", self.saved())
         self.assertIn('href="/p/Owner/JP1"><strong>戦績</strong>', self.page("/"))
@@ -314,18 +316,18 @@ class AppAccountsTest(unittest.TestCase):
         self.link()
         self.assertIn('href="/p/Smurf/JP2"><strong>戦績</strong>', self.page("/"))
         lockfile = self.lockfile.read_text(encoding="utf-8")
-        self.lockfile.unlink()  # the Riot Client is closed: the linked account is the only one
+        self.lockfile.unlink()  # Riot Client が閉じている: 連携したアカウントだけ
         text = self.page("/settings")
         self.assertNotIn("Owner#JP1", text)
         self.assertIn("Smurf#JP2", text)
         self.assertTrue(self.saved()["linked_first"], "the choice holds while the client is closed")
-        self.lockfile.write_text(lockfile, encoding="utf-8")  # opened again: its account is shown again
+        self.lockfile.write_text(lockfile, encoding="utf-8")  # また開いた: そのアカウントをまた表示する
         self.assertIn('href="/p/Owner/JP1"><strong>戦績</strong>', self.page("/"))
         self.assertNotIn("linked_first", self.saved())
         self.assertEqual(self.saved()["puuid"], PUUID2, "the linked account stays linked")
 
     def test_the_clients_account_linked_too_is_one_line(self):
-        self.link("ssid-1")  # the same account as the client's, with its cookie
+        self.link("ssid-1")  # クライアントと同じアカウント（cookie つき）
         rows = self.app.config["VAL_RIOT"].accounts()
         self.assertEqual(len(rows), 1)
         self.assertEqual((rows[0]["client"], rows[0]["linked"], rows[0]["current"]), (True, True, True))

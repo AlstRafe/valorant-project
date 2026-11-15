@@ -1,29 +1,27 @@
-"""A match's score out of 1000, and "top X%" for a player's numbers: each measured against the lines of the players
-of the same rank band in the matches this site has seen (activity.py's yardstick), so a Gold player is measured
-against Gold players and a Radiant against the top ranks.
+"""1000 点満点の試合スコアと、プレイヤーの数値の「上位 X%」。どちらも、
+このサイトが見た試合での同じランク帯のプレイヤーの成績と比べる（activity.py の物差し）。ゴールドはゴールドと、
+レディアントは上位ランクと比べることになる。
 
-The score of a match: where the player's ACS, KAST and DDΔ (damage dealt less taken, per round) stand among those
-lines (0 = below every one, 1 = above every one), and whether the team won, weighed 30 / 25 / 25 / 20:
+試合のスコア: ACS・KAST・DDΔ（ラウンドあたりの与ダメージ − 被ダメージ）がその成績の中のどこにいるか（0 は全員より下、
+1 は全員より上）と勝敗を 30 / 25 / 25 / 20 で重み付けする:
 
-    score = 1000 × (0.30 × ACS + 0.25 × KAST + 0.25 × DDΔ + 0.20 × win) / the weights of what is known
+score = 1000 × (0.30 × ACS + 0.25 × KAST + 0.25 × DDΔ + 0.20 × 勝敗) / わかっているものの重みの合計
 
-so a player in the middle of their band who wins half their games scores about 500. The grade: S from 800, A from
-650, B from 500, C from 350, else D. The weights and the grades are on the page, so the number can be checked; a
-score is not shown when the yardstick has fewer than activity.LINES_ENOUGH lines.
-"""
+帯の真ん中で勝率 5 割なら約 500。評価: 800 から S、650 から A、500 から B、350 から C、それ未満は D。
+重みと評価はページに書いてあるので数字を確かめられる。物差しの成績が activity.LINES_ENOUGH 件未満ならスコアは出さない。"""
 
 from __future__ import annotations
 
 from bisect import bisect_left, bisect_right
 
-#: How much each part counts.
+#: 各要素の重み。
 WEIGHTS = {"acs": 0.30, "kast": 0.25, "dd": 0.25, "won": 0.20}
-#: (from, grade), best first.
+#: （下限, 評価）、良い順。
 GRADES = ((800, "S"), (650, "A"), (500, "B"), (350, "C"), (0, "D"))
 
 
 def standing(values: list, value) -> float | None:
-    """Where ``value`` stands among the sorted ``values``: the share below it, ties counted half (0..1)."""
+    """並べた ``values`` の中で ``value`` がどこにいるか: それより下の割合、同じ値は半分として数える（0〜1）。"""
     if value is None or not values:
         return None
     low, high = bisect_left(values, value), bisect_right(values, value)
@@ -31,9 +29,8 @@ def standing(values: list, value) -> float | None:
 
 
 def match_score(line: dict, won: float | None, stick: dict) -> int | None:
-    """A match's score (0-1000) from the player's line (stats.line), the result (1, 0.5 for a draw, 0; None when
-    there is none, as in Deathmatch) and the yardstick (``{stat: sorted values}``). None without a yardstick or
-    with less than half the weights known."""
+    """プレイヤーの成績（stats.line）、結果（1、引き分け 0.5、0。デスマッチのように無ければ None）、
+    物差し（``{stat: 並べた値}``）からの試合スコア（0〜1000）。物差しが無い、またはわかっている重みが半分未満なら None。"""
     if not stick:
         return None
     total, weight = 0.0, 0.0
@@ -57,7 +54,7 @@ def grade(score: int | None) -> str:
 
 
 def top(standings: list) -> int | None:
-    """ "Top X%" from a number's standings in several matches (their average): 1 at best, 100 at worst."""
+    """複数の試合での順位（平均）からの「上位 X%」: 一番良くて 1、一番悪くて 100。"""
     known = [value for value in standings if value is not None]
     if not known:
         return None

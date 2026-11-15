@@ -1,22 +1,20 @@
-"""The Riot Client on this PC, for the desktop app (desktop.py): the game's own sign-in and where the game is, read
-on this PC instead of asked of Riot's servers every few seconds.
+"""デスクトップアプリ（desktop.py）用の、この PC の Riot Client: ゲーム自身のサインインとゲームの状態を、
+数秒ごとに Riot のサーバーに聞く代わりにこの PC で読む。
 
-The Riot Client answers on 127.0.0.1 (its port and password are in its lockfile, there while it runs): the local
-API its own window uses. From it come
+Riot Client は 127.0.0.1 で答える（ポートとパスワードは動いている間だけある lockfile の中）
+: クライアント自身のウィンドウが使うローカル API。そこから取れるもの:
 
-- the tokens of the account signed in to the client (nothing to paste on the settings page),
-- that account's Riot ID, and from VALORANT's launch its shard, its party server and the client's version,
-- events, through one websocket: the owner's presence (the menus, matchmaking, the match found, agent select, the
-  match), VALORANT opening or closing, and Riot's pushes about the party, agent select and the match. /live is
-  read again the moment one comes (``wait``), and nothing is asked while nothing happens,
-- the owner's friends and where each of them is, as the client's own window lists them (``friends``),
-- and, for the checkup page, whether each of these could be read (``examine``: statuses and shapes, nothing
-  personal).
+- クライアントにサインインしているアカウントのトークン（設定ページに何も貼らなくてよい）
+- そのアカウントの Riot ID と、VALORANT の起動情報からシャード、パーティーサーバー、クライアントのバージョン
+- websocket 1 本でのイベント: 持ち主のプレゼンス（メニュー、マッチング中、試合成立、エージェント選択、試合）、
+  VALORANT の起動・終了、パーティー・エージェント選択・試合についての Riot のプッシュ。
+  来た瞬間に /live を読み直し（``wait``）、何も起きていない間は何も聞かない
+- 持ち主のフレンドとそれぞれの居場所。クライアント自身のウィンドウと同じもの（``friends``）
+- チェックアップのページ用に、これらがそれぞれ読めたか（``examine``: ステータスと形だけ、個人的なものは無し）
 
-Nothing here touches VALORANT itself: no reading or writing of its process or memory, nothing drawn over it, no
-keys pressed. Its log is read once (only for the server's name, when the launch does not say). Every field is read
-as optional: this is the client's own API, which Riot can change without notice.
-"""
+ここでは VALORANT 自体には触らない: プロセスやメモリを読み書きせず、上に何も描かず、キーも押さない。
+ログは 1 回だけ読む（起動情報にサーバー名が無いときだけ）。
+どの項目も無くてよいものとして読む: これはクライアント自身の API で、Riot は予告なく変えられる。"""
 
 from __future__ import annotations
 
@@ -30,37 +28,38 @@ import threading
 import time
 from pathlib import Path
 
+from valtracker.util import token_claims
+
 _HOME = Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local")
-#: Written by the Riot Client while it runs: ``name:pid:port:password:protocol``.
+#: Riot Client が動いている間に書くもの: ``name:pid:port:password:protocol``。
 LOCKFILE = _HOME / "Riot Games" / "Riot Client" / "Config" / "lockfile"
-#: VALORANT's log: the party server's address (glz-<region>-1.<shard>.a.pvp.net) is in its first lines.
+#: VALORANT のログ: パーティーサーバーのアドレス（glz-<region>-1.<shard>.a.pvp.net）が最初の方の行にある。
 LOG = _HOME / "VALORANT" / "Saved" / "Logs" / "ShooterGame.log"
-#: The events listened to: the owner's presence, the games the client has open, and Riot's pushes.
+#: 聞くイベント: 持ち主のプレゼンス、クライアントが開いているゲーム、Riot のプッシュ。
 PRESENCES = "OnJsonApiEvent_chat_v4_presences"
 SESSIONS = "OnJsonApiEvent_product-session_v1_external-sessions"
 MESSAGES = "OnJsonApiEvent_riot-messaging-service_v1_message"
 EVENTS = (PRESENCES, SESSIONS, MESSAGES)
-#: Riot's pushes that change what /live shows (the party, agent select, the match).
+#: /live の表示を変える Riot のプッシュ（パーティー、エージェント選択、試合）。
 PUSHED = ("ares-parties", "ares-pregame", "ares-core-game")
-#: Seconds between looks for the lockfile while the Riot Client is closed (one small file read).
+#: Riot Client が閉じている間に lockfile を見る間隔の秒数（小さなファイルを 1 回読むだけ）。
 CLOSED_WAIT = 5.0
-#: Seconds before connecting again after the websocket closed (the client restarting).
+#: websocket が閉じたあと（クライアントの再起動）、つなぎ直すまでの秒数。
 RETRY_WAIT = 3.0
-#: A quiet websocket is asked whether it is still there this often (seconds), and the presence read again then
-#: (an event missed is caught within this).
+#: 静かな websocket にまだいるか聞く間隔（秒）。そのときプレゼンスも読み直す（取りこぼしたイベントもこの間隔で拾える）。
 QUIET = 30.0
-#: Without events (no websocket), VALORANT's launch (shard, version) is read again after this long (seconds).
+#: イベントが無い（websocket が無い）とき、VALORANT の起動情報（シャード、バージョン）を読み直すまでの秒数。
 LAUNCH_KEEP = 60.0
-#: Pages waiting at once for the next change (each holds one of the server's threads): an older one is let go.
+#: 次の変化を同時に待てるページの数（それぞれサーバーのスレッドを 1 つ持つ）: 古いものから手放す。
 WAITING = 3
-#: A token is asked for again this long (seconds) before it runs out.
+#: トークンが切れるこの秒数前に取り直す。
 EARLY = 300
-#: How much of VALORANT's log is read for the server's name (the address is in its first few kB).
+#: サーバー名のために読む VALORANT のログの量（アドレスは最初の数 kB にある）。
 LOG_BYTES = 2 * 1024 * 1024
-#: The friends list is kept this long (seconds): the page asks again every few seconds while it is open.
+#: フレンドリストを持つ秒数: 開いている間、ページは数秒ごとに聞き直す。
 FRIENDS_KEEP = 5.0
-#: The moments of the owner's game a listener is told of (``listen``): the match found (the game's five-second
-#: count), or agent select when that was missed.
+#: 通知先（``listen``）に知らせる持ち主のゲームの瞬間: 試合成立（ゲームの 5 秒カウント）、
+#: それを取りこぼしたらエージェント選択。
 TOLD = ("found", "pregame")
 _UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 _GLZ = re.compile(rb"https://glz-([a-z]+)-1\.([a-z]+)\.a\.pvp\.net")
@@ -68,11 +67,11 @@ _SHARDS = ("ap", "kr", "eu", "na", "pbe")
 
 
 class LocalError(Exception):
-    """The Riot Client did not answer (closed, starting, or it refused)."""
+    """Riot Client が答えなかった（閉じている、起動中、断った）。"""
 
 
 def read_lockfile(path: Path) -> tuple[int, str] | None:
-    """(port, password) of the running Riot Client, or None (not running)."""
+    """動いている Riot Client の (port, password)。動いていなければ None。"""
     try:
         parts = Path(path).read_text(encoding="utf-8", errors="replace").strip().split(":")
     except OSError:
@@ -87,8 +86,8 @@ def _basic(password: str) -> str:
 
 
 def _local_tls() -> ssl.SSLContext:
-    """The Riot Client's own certificate (Riot's private root, made for 127.0.0.1) is not one Windows knows: it is
-    taken for this one address, which nothing but this PC can answer."""
+    """Riot Client 自身の証明書（127.0.0.1 用に作った Riot 独自のルート）
+    は Windows が知らないもの: このアドレス（この PC 以外は答えられない）に限って受け入れる。"""
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context.check_hostname = False
     context.verify_mode = ssl.CERT_NONE
@@ -96,7 +95,7 @@ def _local_tls() -> ssl.SSLContext:
 
 
 def ask(door: tuple[int, str], path: str) -> tuple[int, object]:
-    """GET ``path`` of the Riot Client: (status, its JSON or None). Status 0: no answer."""
+    """Riot Client への GET ``path``: （ステータス, JSON か None）。ステータス 0: 答え無し。"""
     port, password = door
     connection = http.client.HTTPSConnection("127.0.0.1", port, timeout=3, context=_local_tls())
     try:
@@ -114,11 +113,11 @@ def ask(door: tuple[int, str], path: str) -> tuple[int, object]:
 
 
 class _Socket:
-    """The Riot Client's websocket (websocket-client), as LocalClient uses it: ``send``, ``recv`` (None when
-    nothing came for QUIET seconds; ConnectionError when it closed) and ``close``."""
+    """LocalClient が使う形の Riot Client の websocket（websocket-client）: ``send``、
+    ``recv``（QUIET 秒何も来なければ None、閉じたら ConnectionError）、``close``。"""
 
     def __init__(self, door: tuple[int, str]):
-        import websocket  # the desktop app's own requirement (requirements-desktop.txt)
+        import websocket  # デスクトップアプリ専用の依存（requirements-desktop.txt）
 
         self._closed = (websocket.WebSocketConnectionClosedException,)
         self._quiet = websocket.WebSocketTimeoutException
@@ -127,7 +126,7 @@ class _Socket:
             f"wss://127.0.0.1:{port}/",
             header=[f"Authorization: {_basic(password)}"],
             sslopt={"cert_reqs": ssl.CERT_NONE, "check_hostname": False},
-            http_no_proxy=["127.0.0.1", "localhost"],  # never through a proxy the PC may name
+            http_no_proxy=["127.0.0.1", "localhost"],  # PC が指定するプロキシは決して通さない
             timeout=QUIET,
             enable_multithread=True,
         )
@@ -152,21 +151,12 @@ class _Socket:
     def close(self) -> None:
         try:
             self.socket.close()
-        except Exception:  # noqa: BLE001 - closing a broken socket
+        except Exception:  # 壊れたソケットを閉じる
             pass
 
 
-def _claims(token: str) -> dict:
-    try:
-        middle = token.split(".")[1]
-        value = json.loads(base64.urlsafe_b64decode(middle + "=" * (-len(middle) % 4)))
-    except (IndexError, ValueError, UnicodeDecodeError):
-        return {}
-    return value if isinstance(value, dict) else {}
-
-
-def _private(value) -> dict:
-    """A presence's ``private`` part: base64 of a JSON object (or the object itself)."""
+def decode_private(value) -> dict:
+    """プレゼンスの ``private`` の部分: JSON オブジェクトの base64（またはオブジェクトそのもの）。"""
     if isinstance(value, dict):
         return value
     text = str(value or "")
@@ -181,10 +171,11 @@ def _private(value) -> dict:
 
 
 def where(item: dict) -> dict:
-    """The owner's presence -> ``{"loop": MENUS / PREGAME / INGAME or "", "party": the party's id, "party_state":
-    e.g. MATCHMAKING or MATCHMADE_GAME_STARTING, "queue"}``. Both shapes the game has used: everything at the top
-    (before 2024), or in matchPresenceData / partyPresenceData."""
-    data = _private(item.get("private"))
+    """持ち主のプレゼンス
+    -> ``{"loop": MENUS / PREGAME / INGAME か "", "party": パーティーの ID, "party_state": MATCHMAKING や MATCHMADE_GAME_STARTING など,
+    "queue"}``。ゲームが使ってきた両方の形を読む: 全部が一番上（2024 年より前）、
+    または matchPresenceData / partyPresenceData の中。"""
+    data = decode_private(item.get("private"))
     match = data.get("matchPresenceData") if isinstance(data.get("matchPresenceData"), dict) else data
     party = data.get("partyPresenceData") if isinstance(data.get("partyPresenceData"), dict) else data
     party_id = str(party.get("partyId") or data.get("partyId") or "").lower()
@@ -197,8 +188,8 @@ def where(item: dict) -> dict:
 
 
 def moment(seen: dict | None) -> str:
-    """Where a presence (``where``) says the owner's game is: "found" (the match found, before agent select),
-    "pregame", "ingame", "queue" (matchmaking), "menus", or "" (not known)."""
+    """プレゼンス（``where``）が示す持ち主のゲームの状態: "found"（試合成立、エージェント選択の前）、"pregame"、
+    "ingame"、"queue"（マッチング中）、"menus"、""（不明）。"""
     if not seen:
         return ""
     if seen["loop"] == "PREGAME":
@@ -213,8 +204,9 @@ def moment(seen: dict | None) -> str:
 
 
 def launched(sessions) -> dict:
-    """The client's open games (product-session's external sessions) -> ``{"running": whether VALORANT is open,
-    "shard", "version": the client's version (release-...)}`` (the shard from its launch arguments)."""
+    """クライアントが開いているゲーム（product-session の外部セッション）
+    -> ``{"running": VALORANT が開いているか, "shard", "version": クライアントのバージョン（release-...）
+    }``（シャードは起動引数から）。"""
     for session in (sessions or {}).values() if isinstance(sessions, dict) else []:
         if not isinstance(session, dict) or str(session.get("productId") or "").lower() != "valorant":
             continue
@@ -233,7 +225,8 @@ def launched(sessions) -> dict:
 
 
 def logged_server(path: Path) -> tuple[str, str] | None:
-    """(region, shard) of the party server in VALORANT's log, or None. Read with the log left open to the game."""
+    """VALORANT のログにあるパーティーサーバーの (region, shard)。無ければ None。
+    ゲームのためにログは開いたままにして読む。"""
     try:
         with open(path, "rb") as log:
             found = _GLZ.search(log.read(LOG_BYTES))
@@ -243,46 +236,48 @@ def logged_server(path: Path) -> tuple[str, str] | None:
 
 
 class LocalClient:
-    """The Riot Client on this PC. ``start`` begins listening to its events (a thread, asleep while nothing
-    happens); ``signed_in`` gives riot.Riot the tokens; ``presence`` and ``version`` / ``wait`` tell /live where the
-    game is and when it changed. ``ask`` and ``connect`` are the tests' own."""
+    """この PC の Riot Client。``start`` でイベントを聞き始める（スレッド。何も起きていない間は眠る）。
+    ``signed_in`` は riot.Riot にトークンを渡す。``presence`` と ``version`` / ``wait`` は /live
+    にゲームの状態と変わった時を伝える。``ask`` と ``connect`` はテスト用。"""
 
     def __init__(self, lockfile: Path = LOCKFILE, log: Path = LOG, ask=ask, connect=_Socket, clock=time.time):
         self.lockfile, self.log = Path(lockfile), Path(log)
         self.ask, self.connect, self.clock = ask, connect, clock
         self._lock = threading.Lock()
         self._changed = threading.Condition()
-        #: Grows by one at every change /live should show at once.
+        #: /live がすぐ出すべき変化のたびに 1 つ増える。
         self.version = 0
-        #: The pages waiting for it (``wait``): their tickets, oldest first, and the ones told to stop waiting.
+        #: それを待っているページ（``wait``）: その番号（古い順）と、待つのをやめるよう言われたもの。
         self._tickets = 0
         self._waiting: list[int] = []
         self._let_go: set[int] = set()
         self._tokens: dict | None = None
         self._account: dict | None = None
-        #: VALORANT's launch ({"running", "shard", "version"}), read when the client says it changed.
+        #: VALORANT の起動情報（{"running", "shard", "version"}）。変わったとクライアントが言ったときに読む。
         self._game: dict | None = None
         self._server: tuple[str, str] | None = None
-        #: The launch as read when not listening (no events): (when, launch), asked again after LAUNCH_KEEP.
+        #: 聞いていないとき（イベント無し）に読んだ起動情報: （時刻, 起動情報）。LAUNCH_KEEP 過ぎたら聞き直す。
         self._launch_read: tuple[float, dict] | None = None
-        #: The owner's presence (where), while VALORANT is open.
+        #: VALORANT が開いている間の持ち主のプレゼンス（where）。
         self._seen: dict | None = None
         self._listening = False
-        #: The events heard since the app started, by kind (the checkup page: are the client's events coming?).
+        #: アプリ起動からのイベントを種類ごとに数えたもの（チェックアップ: クライアントのイベントは来ているか）。
         self.heard = {"presences": 0, "sessions": 0, "pushes": 0}
-        #: Told when the owner's match is found (``listen``): moment -> None, each in the listening thread.
+        #: 持ち主の試合が成立したら知らせる先（``listen``）: moment -> None。どれも聞いているスレッドで呼ぶ。
         self._listeners: list = []
-        #: The friends as last read: (when, the door, {"friends", "presences"}).
+        #: 最後に読んだフレンド: （時刻, 扉, {"friends", "presences"}）。
         self._friends: tuple[float, tuple[int, str], dict] | None = None
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
-    # -- what riot.Riot and the pages use ----------------------------------------------------------------
+    # -- riot.Riot とページが使うもの ------------------------------------------------------------------
 
     def signed_in(self, renew: bool = False) -> tuple[dict, dict] | None:
-        """(tokens, account) of the account signed in to the Riot Client, or None (closed, or nobody signed in).
-        tokens: riot.Riot's ``{"access", "entitlements", "until", "version"}``; account: ``{"puuid", "name",
-        "tag", "shard", "region"}``. Asked of the client once an hour (and when ``renew``: a token refused)."""
+        """Riot Client にサインインしているアカウントの (tokens, account)。
+        閉じているか誰もサインインしていなければ None。
+        tokens: riot.Riot の ``{"access", "entitlements", "until", "version"}``、
+        account: ``{"puuid", "name", "tag", "shard", "region"}``。
+        クライアントには 1 時間に 1 回聞く（``renew``＝トークンを断られたときも）。"""
         door = read_lockfile(self.lockfile)
         if door is None:
             with self._lock:
@@ -309,9 +304,9 @@ class LocalClient:
             return given | {"version": game.get("version") or ""}, account
 
     def presence(self) -> dict | None:
-        """Where the game is, from the client's events: ``{"running": False}`` (VALORANT closed), ``{"running":
-        True, "loop", "party", "party_state", "queue"}``, or None (not known: not listening, or the game still
-        opening; the party server is asked then, as without the app)."""
+        """クライアントのイベントからのゲームの状態: ``{"running": False}``（VALORANT は閉じている）、
+        ``{"running": True, "loop", "party", "party_state", "queue"}``、または None（不明: 聞いていない、
+        またはゲームがまだ起動中。そのときはアプリが無いときと同じくパーティーサーバーに聞く）。"""
         with self._lock:
             if not self._listening or self._game is None:
                 return None
@@ -322,8 +317,9 @@ class LocalClient:
             return {"running": True, **self._seen}
 
     def wait(self, seen: int, seconds: float) -> int:
-        """Waits until ``version`` is not ``seen`` (or ``seconds`` passed): the version then. At most WAITING wait
-        at once: a page left while it waited (its server thread still waiting) makes way for the next page's."""
+        """``version`` が ``seen`` でなくなるまで（か ``seconds`` 過ぎるまで）待つ: そのときの version を返す。
+        同時に待てるのは WAITING まで: 待っている間に離れたページ（サーバーのスレッドはまだ待っている）
+        は次のページに譲る。"""
         with self._changed:
             self._tickets += 1
             ticket = self._tickets
@@ -342,14 +338,15 @@ class LocalClient:
             return self.version
 
     def listen(self, told) -> None:
-        """``told(moment)`` is called when the owner's match is found ("found"; "pregame" when agent select is the
-        first the client says of it), once a match, from the listening thread: it must not wait."""
+        """持ち主の試合が成立したら ``told(moment)`` を呼ぶ（"found"。
+        クライアントが最初に言ったのがエージェント選択なら "pregame"）。 1 試合 1 回、
+        聞いているスレッドから呼ぶので待ってはいけない。"""
         self._listeners.append(told)
 
     def friends(self) -> dict | None:
-        """The owner's friends and the presences the client holds (theirs and the owner's), as the client gives
-        them: ``{"friends": [...], "presences": [...], "me": the owner's puuid}``. None when the client is closed
-        or does not answer. Two small local reads, kept FRIENDS_KEEP seconds."""
+        """持ち主のフレンドと、クライアントが持つプレゼンス（フレンドと持ち主のもの）
+        をクライアントが出すまま: ``{"friends": [...], "presences": [...], "me": 持ち主の puuid}``。
+        クライアントが閉じているか答えなければ None。ローカルの小さな読み込み 2 回で、FRIENDS_KEEP 秒持つ。"""
         door = read_lockfile(self.lockfile)
         if door is None:
             return None
@@ -357,7 +354,7 @@ class LocalClient:
             kept = self._friends
             if kept is not None and kept[1] == door and self.clock() - kept[0] < FRIENDS_KEEP:
                 return kept[2]
-        signed = self.signed_in()  # who the owner is (kept: asked of the client once an hour)
+        signed = self.signed_in()  # 持ち主が誰か（保持: クライアントには 1 時間に 1 回聞く）
         me = signed[1]["puuid"] if signed else ""
         try:
             listed, present = self._get(door, "/chat/v4/friends"), self._get(door, "/chat/v4/presences")
@@ -377,8 +374,8 @@ class LocalClient:
         return found
 
     def examine(self) -> dict:
-        """What the client answers right now, for the checkup page: each read's status and the shape of its answer.
-        No token, name or id is in it. ``{"lockfile": bool}`` alone when the client is closed."""
+        """チェックアップ用の、今クライアントが答えるもの: 読み込みごとのステータスと答えの形。トークン・名前・
+        ID は入れない。クライアントが閉じていれば ``{"lockfile": bool}`` だけ。"""
         door = read_lockfile(self.lockfile)
         found: dict = {"lockfile": door is not None, "log": logged_server(self.log)}
         with self._lock:
@@ -420,7 +417,7 @@ class LocalClient:
             ),
             None,
         )
-        private = _private(mine.get("private")) if mine else {}
+        private = decode_private(mine.get("private")) if mine else {}
         seen = where(mine) if mine else None
         found["presence"] = {
             "status": status,
@@ -443,7 +440,7 @@ class LocalClient:
     def stop(self) -> None:
         self._stop.set()
 
-    # -- reading the client ------------------------------------------------------------------------------
+    # -- クライアントを読む ----------------------------------------------------------------------------
 
     def _get(self, door: tuple[int, str], path: str):
         status, value = self.ask(door, path)
@@ -458,10 +455,10 @@ class LocalClient:
             return None
         found = found if isinstance(found, dict) else {}
         access, entitlements = str(found.get("accessToken") or ""), str(found.get("token") or "")
-        puuid = str(found.get("subject") or _claims(access).get("sub") or "").lower()
+        puuid = str(found.get("subject") or token_claims(access).get("sub") or "").lower()
         if not access or not entitlements or not _UUID.match(puuid):
-            return None  # the client is open but nobody is signed in yet
-        until = float(_claims(access).get("exp") or self.clock() + 3600) - EARLY
+            return None  # クライアントは開いているが、まだ誰もサインインしていない
+        until = float(token_claims(access).get("exp") or self.clock() + 3600) - EARLY
         self._tokens = {"access": access, "entitlements": entitlements, "until": until, "puuid": puuid, "door": door}
         return self._tokens
 
@@ -486,7 +483,7 @@ class LocalClient:
             return {"running": False, "shard": "", "version": ""}
 
     def _launch(self, door: tuple[int, str]) -> dict:
-        """VALORANT's launch: the events' (kept as they come), else read now and then."""
+        """VALORANT の起動情報: イベントからのもの（来たときに保持）、無ければ時々読む。"""
         if self._game is not None:
             return self._game
         if self._launch_read is None or self.clock() - self._launch_read[0] > LAUNCH_KEEP:
@@ -494,8 +491,8 @@ class LocalClient:
         return self._launch_read[1]
 
     def _server_name(self, game: dict) -> tuple[str, str]:
-        """(region, shard) of the party server: the launch's shard, the log's address, else Asia-Pacific (the
-        owner plays in Japan)."""
+        """パーティーサーバーの (region, shard): 起動情報のシャード、ログのアドレス、
+        それも無ければアジア太平洋（持ち主は日本で遊ぶ）。"""
         if self._server is None:
             self._server = logged_server(self.log)
         if self._server and (not game.get("shard") or self._server[1] == game["shard"]):
@@ -521,7 +518,7 @@ class LocalClient:
                 return where(item)
         return None
 
-    # -- the events ---------------------------------------------------------------------------------------
+    # -- イベント ------------------------------------------------------------------------------------
 
     def _changed_now(self) -> None:
         with self._changed:
@@ -529,20 +526,20 @@ class LocalClient:
             self._changed.notify_all()
 
     def _tell(self, was: dict | None, seen: dict | None) -> None:
-        """The listeners hear of a match found: when the presence goes from the menus or matchmaking to the match
-        found or agent select (not from one to the other, and not when the app only now learns where the game
-        is)."""
+        """試合成立を通知先に知らせる: プレゼンスがメニューかマッチング中から、
+        試合成立かエージェント選択に変わったとき（その 2 つの間の変化と、
+        アプリがゲームの状態を今知っただけのときは除く）。"""
         before, now = moment(was), moment(seen)
         if now not in TOLD or before not in ("menus", "queue"):
             return
         for told in self._listeners:
             try:
                 told(now)
-            except Exception:  # noqa: BLE001, S112 - a listener's own trouble must not end the listening
+            except Exception:  # 通知先自身の問題で待ち受けを終わらせない
                 continue
 
     def _look_again(self, door: tuple[int, str]) -> None:
-        """Reads the game's launch and the owner's presence (when connecting, and now and then)."""
+        """ゲームの起動情報と持ち主のプレゼンスを読む（つないだときと、時々）。"""
         game = self._read_game(door)
         found = self.signed_in()
         seen = self._read_presence(door, found[1]["puuid"]) if found and game["running"] else None
@@ -557,7 +554,7 @@ class LocalClient:
             self._tell(was, seen)
 
     def handle(self, door: tuple[int, str], text: str) -> None:
-        """One message of the websocket: ``[8, event, {"data", "eventType", "uri"}]``."""
+        """websocket のメッセージ 1 つ: ``[8, event, {"data", "eventType", "uri"}]``。"""
         try:
             message = json.loads(text)
         except ValueError:
@@ -573,7 +570,7 @@ class LocalClient:
             seen = self._mine(data.get("presences"), puuid) if puuid else None
             if seen is None:
                 with self._lock:
-                    self._friends = None  # a friend's presence: the friends page reads the list again
+                    self._friends = None  # フレンドのプレゼンス: フレンドページは一覧を読み直す
                 return
             with self._lock:
                 changed = seen != self._seen
@@ -607,7 +604,7 @@ class LocalClient:
                 continue
             try:
                 socket = self.connect(door)
-            except Exception:  # noqa: BLE001 - the client starting, or no websocket library
+            except Exception:  # クライアントが起動中、または websocket のライブラリが無い
                 self._stop.wait(RETRY_WAIT)
                 continue
             try:
@@ -619,14 +616,14 @@ class LocalClient:
                 looked = self.clock()
                 while not self._stop.is_set():
                     text = socket.recv()
-                    if text is None:  # quiet: still there? (and an event missed is caught)
+                    if text is None:  # 静か: まだいるか？（取りこぼしたイベントも拾う）
                         socket.ping()
                         if self.clock() - looked >= QUIET:
                             self._look_again(door)
                             looked = self.clock()
                     elif text:
                         self.handle(door, text)
-            except Exception:  # noqa: BLE001 - the client closed or restarted: connect again
+            except Exception:  # クライアントが閉じたか再起動した: つなぎ直す
                 pass
             finally:
                 socket.close()

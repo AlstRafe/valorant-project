@@ -1,19 +1,18 @@
-"""Whole made-up matches for the screenshots (serve.py --real): ten players, every round, every kill and every hit,
-in HenrikDev v4's shape (``match``) and in the game's own (``to_pd``: Riot's match-details), so that each page
-shows what a real match gives it.
+"""スクリーンショット用の作りものの試合まるごと（serve.py --real）: 10 人、全ラウンド・全キル・全命中を、
+HenrikDev v4 の形（``match``）とゲーム自身の形（``to_pd``: Riot の match-details）で。
+各ページが本物の試合と同じものを出すように。
 
-Nobody's match: the names are made up and the numbers come from a seeded random.Random. Only the maps, agents and
-weapons are the game's (valorant-api.com), and a kill is put near one of the map's named places.
-"""
+誰の試合でもない: 名前は作りもので、数値はシード付きの random.Random から。マップ・エージェント・
+武器だけはゲームのもの（valorant-api.com）で、キルはマップの名前付きの場所の近くに置く。"""
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
 
-#: The made-up player whose record the pages show (henrik_account.json), and who they queue with.
+#: ページが記録を出す作りもののプレイヤー（henrik_account.json）と、一緒に並ぶ人。
 ME, MATE = "puuid-me", "puuid-2"
 MATE_NAME = ("Ren", "0001")
-#: Made-up names for the other eight (ordinary words, nobody's Riot ID on purpose).
+#: ほかの 8 人の作りものの名前（普通の単語。わざと誰の Riot ID でもないもの）。
 NAMES = (
     "Sakura",
     "mochi",
@@ -45,7 +44,7 @@ NAMES = (
     "しらたま",
     "もみじ",
 )
-#: How a match ends (the winner's rounds, the loser's): close ones more often than one-sided ones.
+#: 試合の終わり方（勝者のラウンド, 敗者のラウンド）: 一方的なものより接戦を多く。
 SCORES = (
     (13, 11),
     (13, 10),
@@ -60,7 +59,7 @@ SCORES = (
     (13, 3),
     (14, 12),
 )
-#: What is carried in a round: the weapon, how often, what the loadout with it costs.
+#: ラウンドで持つもの: 武器、頻度、それを含むロードアウトの値段。
 BOUGHT = (
     ("Vandal", 40, 4400),
     ("Phantom", 26, 4400),
@@ -74,18 +73,18 @@ BOUGHT = (
     ("Marshal", 2, 1750),
 )
 PISTOLS = (("Classic", 45, 700), ("Ghost", 30, 900), ("Sheriff", 15, 800), ("Frenzy", 10, 850))
-#: Who the made-up player's friend plays, and the endings as the game's own record names them.
+#: 作りもののプレイヤーのフレンドが使うものと、ゲーム自身の記録での終わり方の名前。
 MATE_AGENTS = ("Sova", "Omen", "Killjoy", "Skye")
 PD_ENDINGS = {"Elimination": "Eliminated"}
 POD = "aresriot.aws-rclusterprod-ape1-1.ap-gp-tokyo-1"
 
 
 def _order(pick, won: int, lost: int, winner: str, loser: str) -> list[str]:
-    """Who won each round, so that the match ends ``won``-``lost`` with its last round (overtime: 12-12 first)."""
+    """各ラウンドの勝者。最後のラウンドで ``won``-``lost`` で終わるように（オーバータイム: まず 12-12）。"""
     if won > 13:
         first = [winner] * 12 + [loser] * 12
         pick.shuffle(first)
-        return first + [winner, winner]
+        return [*first, winner, winner]
     first = [winner] * (won - 1) + [loser] * lost
     pick.shuffle(first)
     return [*first, winner]
@@ -98,9 +97,9 @@ def _carried(pick, table: tuple, weapons: dict) -> tuple[str, int]:
 
 
 def match(pick, match_id: str, started: float, place: dict, agents: dict, weapons: dict, **how) -> dict:
-    """A made-up match on ``place`` (valorant-api.com's map) in HenrikDev v4's shape. ``agents`` and ``weapons``:
-    the game's, name -> uuid. ``how``: won (the made-up player's team wins), mine (their agent), mate (their friend
-    plays too), queue, tier (theirs; the others are near it)."""
+    """``place``（valorant-api.com のマップ）での作りものの試合を HenrikDev v4 の形で。
+    ``agents`` と ``weapons``: ゲームのもの（名前 -> uuid）。 ``how``: won（作りもののプレイヤーのチームが勝つ）、
+    mine（その人のエージェント）、mate（フレンドも出る）、queue、 tier（その人の。ほかの人はその近く）。"""
     won, mine, queue = how.get("won", True), how.get("mine", "Jett"), how.get("queue", "competitive")
     tier, with_mate = how.get("tier", 21), how.get("mate", True)
     my_team, their_team = pick.sample(("Red", "Blue"), 2)
@@ -119,15 +118,15 @@ def match(pick, match_id: str, started: float, place: dict, agents: dict, weapon
         person["tier"] = tier if number == 0 else max(3, min(27, tier + pick.randint(-2, 2)))
         person["level"] = 120 if number == 0 else pick.randint(24, 420)
         person["weight"] = 1.15 if number == 0 else max(0.55, pick.gauss(1.0, 0.22))
-        person["aim"] = 0.5 if number == 0 else pick.uniform(0.3, 0.65)  # how many of their kills are headshots
-    for side in (people[:5], people[5:]):  # five different agents a team
+        person["aim"] = 0.5 if number == 0 else pick.uniform(0.3, 0.65)  # キルのうちヘッドショットの数
+    for side in (people[:5], people[5:]):  # 1 チームに違うエージェント 5 人
         taken = {person["agent"] for person in side if "agent" in person}
         free = [name for name in sorted(agents) if name not in taken]
         pick.shuffle(free)
         for person in side:
             person.setdefault("agent", free.pop() if free else mine)
     if pick.random() < 0.5:
-        people[6]["party_id"] = people[5]["party_id"]  # two of the others queue together
+        people[6]["party_id"] = people[5]["party_id"]  # ほかの 2 人が一緒に並ぶ
 
     def who(number: int) -> dict:
         person = people[number]
@@ -152,7 +151,7 @@ def match(pick, match_id: str, started: float, place: dict, agents: dict, weapon
     total = {
         number: {"score": 0, "kills": 0, "deaths": 0, "assists": 0, "spent": 0, "value": 0} for number in range(10)
     }
-    shots = {number: [0, 0, 0, 0, 0] for number in range(10)}  # head, body, leg, damage dealt, damage received
+    shots = {number: [0, 0, 0, 0, 0] for number in range(10)}  # 頭、体、脚、与ダメージ、被ダメージ
     rounds, kills = [], []
     for number, round_winner in enumerate(order):
         round_loser = "Blue" if round_winner == "Red" else "Red"
@@ -168,17 +167,17 @@ def match(pick, match_id: str, started: float, place: dict, agents: dict, weapon
         else:
             ending = "Round timer expired" if pick.random() < 0.06 else "Elimination"
             left = 0 if ending == "Elimination" else pick.choice((1, 2, 3))
-        # who dies in which order: the losers but ``left`` of them, some of the winners, never the last winner
+        # 誰がどの順でやられるか: 敗者は ``left`` 人を残して全員、勝者の一部。最後の勝者はやられない
         dying = [round_loser] * (5 - left) + [round_winner] * pick.choices((0, 1, 2, 3, 4), (12, 25, 28, 22, 13))[0]
         pick.shuffle(dying)
         if not left:
             dying.remove(round_loser)
             dying.append(round_loser)
         alive = {team: list(members) for team, members in side.items()}
-        hits: dict[int, list] = {player: [] for player in range(10)}  # [receiver, damage, head, body, leg]
-        made = {player: [0, 0] for player in range(10)}  # kills, assists
+        hits: dict[int, list] = {player: [] for player in range(10)}  # [受けた人, ダメージ, 頭, 体, 脚]
+        made = {player: [0, 0] for player in range(10)}  # キル、アシスト
         died_at: dict[int, int] = {}
-        alone_against = 0  # how many the last winner alive still had to beat
+        alone_against = 0  # 生き残った最後の勝者がまだ倒すべき人数
         for when, team in zip(sorted(pick.randint(7000, 88000) for _ in dying), dying, strict=True):
             other = "Blue" if team == "Red" else "Red"
             victim = pick.choices(alive[team], [1 / people[player]["weight"] for player in alive[team]])[0]
@@ -221,7 +220,7 @@ def match(pick, match_id: str, started: float, place: dict, agents: dict, weapon
                     else [],
                 }
             )
-        for _ in range(pick.randint(2, 5)):  # shots that hit and killed nobody
+        for _ in range(pick.randint(2, 5)):  # 当たったが誰も倒さなかった弾
             shooter = pick.randrange(10)
             hurt = pick.choice(side["Blue" if people[shooter]["team_id"] == "Red" else "Red"])
             hits[shooter].append([hurt, pick.randint(14, 90), int(pick.random() < 0.25), 1, 0])
@@ -368,20 +367,20 @@ def match(pick, match_id: str, started: float, place: dict, agents: dict, weapon
 
 
 def is_win(found: dict) -> bool:
-    """Whether the made-up player's team won ``found`` (a match of ``match``)."""
+    """作りもののプレイヤーのチームが ``found``（``match`` の試合）で勝ったか。"""
     team = next(player["team_id"] for player in found["players"] if player["puuid"] == ME)
     return any(side["team_id"] == team and side["won"] for side in found["teams"])
 
 
 def to_pd(found: dict, place: dict, season: str, subject: str) -> dict:
-    """``found`` (a match of ``match``) as the game's own record of it (Riot's match-details, what pdmatch.to_v4
-    reads), the made-up player being ``subject`` (the owner signed in)."""
+    """``found``（``match`` の試合）をゲーム自身の記録の形に（Riot の match-details、pdmatch.to_v4 が読むもの）。
+    作りもののプレイヤーを ``subject``（サインインした持ち主）にする。"""
 
     def named(puuid: str) -> str:
         return subject if puuid == ME else puuid
 
     metadata = found["metadata"]
-    start = int(datetime.fromisoformat(metadata["started_at"].replace("Z", "+00:00")).timestamp() * 1000)
+    start = int(datetime.fromisoformat(metadata["started_at"]).timestamp() * 1000)
     played = len(found["rounds"])
     players = [
         {

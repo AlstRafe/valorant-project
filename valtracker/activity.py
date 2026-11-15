@@ -1,90 +1,87 @@
-"""How busy each server is, and how long the wait for the next match is: worked out from the matches this site sees,
-because neither Riot nor HenrikDev tells how many play or how long the queues are.
+"""各サーバーの混み具合と、次の試合までの待ち時間: このサイトが見た試合から計算する（Riot も HenrikDev も、
+何人遊んでいるかもキューの長さも教えないため）。
 
-Every match the site reads (a player's list, a match page, and the collector below) leaves one row: its region,
-server (``cluster``: Tokyo, Hong Kong, ...), queue, start, length and the average rank of its players. Two matches
-of one player in a row leave the time between them: from the end of one to the start of the next, which is the
-queue, the agent select and the loading together (a break is longer, and is left out). No names or ids of players
-are kept: a gap is known by its two matches only.
+サイトが読む試合（プレイヤーの一覧、試合ページ、下のコレクター）ごとに 1 行残す: リージョン、
+サーバー（``cluster``: 東京、香港など）、キュー、開始、長さ、プレイヤーの平均ランク。
+同じプレイヤーの連続する 2 試合からはその間の時間を残す: 1 つ目の終わりから次の開始まで＝キュー・エージェント選択・
+ロードの合計（休憩はもっと長いので省く）。プレイヤーの名前も ID も残さない: 間は 2 つの試合だけでわかる。
 
-From these, per server: in which hours of the day its matches start (the share of the day's matches, so a busy
-hour stands out however many matches were seen), and per queue and rank band the middle of the waits. They are an
-estimate from a sample, and the pages say so, with how many matches it rests on.
+そこからサーバーごとに: 1 日のどの時間に試合が始まるか（その日の試合に対する割合なので、
+見た試合が何件でも混む時間が目立つ）、キューとランク帯ごとの待ち時間の中央値。標本からの推定なので、ページにもそう書き、
+何試合からの数字かも出す。
 
-Each player's line in a 5-against-5 match is kept too, without who it was: their rank, ACS, ADR, K/D, HS%, KAST,
-DDΔ and whether their team won. These are the yardstick of the score and the "top X%" on a player's page: how a
-line stands among the lines of the same rank band (score.py).
+5 対 5 の試合の各プレイヤーの成績も、誰のものかは残さずに残す: ランク、ACS、ADR、K/D、HS%、KAST、DDΔ、チームが勝ったか。
+これがプレイヤーページのスコアと「上位 X%」の物差しになる: 同じランク帯の成績の中でどこにいるか（score.py）。
 
-The collector looks at a few more players in the background (one every few minutes, from the players of the
-matches already seen, the rank bands with the fewest samples first), so the numbers do not depend on visitors
-alone. It uses the same HenrikDev key and budget as the pages, and stops when there is no key.
-"""
+コレクターは裏でさらに何人かを見る（数分に 1 人、見た試合のプレイヤーから、標本の少ないランク帯から）ので、
+数字は訪問者だけに頼らない。ページと同じ HenrikDev のキーと予算を使い、キーが無ければ止まる。"""
 
 from __future__ import annotations
 
+import itertools
 import random
 import sqlite3
 import statistics
 import threading
 import time
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
 from valtracker import pdmatch, stats
-from valtracker.henrik import _slim_match
+from valtracker.henrik import slim_match
 from valtracker.riot import RiotError
 
-#: The regions the collector goes round (HenrikDev's names).
+#: コレクターが回るリージョン（HenrikDev の名前）。
 REGIONS = ("ap", "kr", "eu", "na", "latam", "br")
-#: Rows older than this are dropped.
+#: これより古い行は捨てる。
 KEEP_DAYS = 28
-#: The days the pages count.
+#: ページが数える日数。
 WINDOW_DAYS = 14
-#: A wait longer than this is a break, not the queue; shorter than this is not a real one.
+#: これより長い待ちはキューではなく休憩、これより短いものは本物ではない。
 GAP_MAX = 20 * 60
 GAP_MIN = 30
-#: Rank bands (competitive tiers, first..last) for the waits: low ranks wait less than the top.
+#: 待ち時間用のランク帯（コンペティティブの tier、最初..最後）: 低ランクは上位より待ちが短い。
 BANDS = (
     ("iron-gold", 3, 14),
     ("plat-diamond", 15, 20),
     ("ascendant", 21, 23),
     ("immortal-radiant", 24, 27),
 )
-#: A number from fewer samples than this is not shown.
+#: 標本がこれより少ない数字は出さない。
 FEW = 6
-#: Matches a server needs before the page says when it is busy: with fewer, one evening of one player is a "peak".
+#: 混む時間をページに出すのに必要な試合数: 少ないと 1 人の一晩が「ピーク」になってしまう。
 ENOUGH = 48
-#: The queues of five against five whose players' lines are the yardstick (deathmatch and the like are not alike).
+#: プレイヤーの成績を物差しにする 5 対 5 のキュー（デスマッチなどは似ていない）。
 LINE_QUEUES = ("competitive", "unrated", "premier", "swiftplay")
-#: The numbers of a line that are measured against the others.
+#: 成績のうちほかと比べる数値。
 LINE_STATS = ("acs", "adr", "kd", "hs", "kast", "dd")
-#: Lines a rank band needs before it is its own yardstick (else every band together); with fewer than this
-#: altogether, nothing is measured.
+#: ランク帯が自分の物差しになるのに必要な成績数（足りなければ全帯をまとめる）。全体でこれより少なければ何も比べない。
 LINES_ENOUGH = 200
-#: Competitive lines a region needs before its rank distribution is shown (and a player's place in it).
+#: ランク分布（とその中のプレイヤーの位置）を出すのにリージョンで必要なコンペティティブの成績数。
 RANKS_ENOUGH = 100
-#: The collector: seconds between two players (0: off), and how many recent players it can pick from.
+#: コレクター: 次のプレイヤーまでの秒数（0: 止める）と、選べる最近のプレイヤーの数。
 COLLECT_SECONDS = 240
-#: Matches of one player read from the game's own records at a look (Collector._riot): a few calls every few minutes.
+#: 1 回でゲーム自身の記録から読むプレイヤー 1 人の試合数（Collector._riot）: 数分ごとに数回の呼び出し。
 RIOT_MATCHES = 3
 CANDIDATES = 600
 
 
 def _unix(value) -> int:
     try:
-        return int(datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp())
+        return int(datetime.fromisoformat(str(value)).timestamp())
     except (TypeError, ValueError):
         return 0
 
 
 def quiet_hours(shares: list[float]) -> tuple[int, int] | None:
-    """The longest run of quiet hours (at most 0.7 of the average hour) in a day of shares, going round midnight:
-    (first hour, the hour after the last), or None."""
+    """1 日の割合の中で静かな時間（平均の 0.7 以下）が一番長く続く範囲。
+    0 時をまたいでもよい: （最初の時間, 最後の次の時間）、無ければ None。"""
     quiet = [share <= 0.7 * 100 / 24 for share in shares]
     if all(quiet) or not any(quiet):
         return None
     best, start = (0, 0), None
-    for index in range(48):  # twice round, for a run that crosses midnight
+    for index in range(48):  # 2 周して、0 時をまたぐ範囲も見る
         if quiet[index % 24]:
             start = index if start is None else start
             if index - start + 1 > best[1] - best[0] and index - start < 24:
@@ -102,7 +99,7 @@ def band(tier: int) -> str:
 
 
 def _facts(match: dict) -> dict | None:
-    """What a row keeps of a (slim) match: None for one without a start or a server."""
+    """（小さくした）試合から行に残すもの: 開始かサーバーの無いものは None。"""
     metadata = match.get("metadata") or {}
     queue = metadata.get("queue") if isinstance(metadata.get("queue"), dict) else {}
     started = _unix(metadata.get("started_at"))
@@ -130,8 +127,9 @@ def _facts(match: dict) -> dict | None:
 
 
 def _picks(match: dict) -> list[tuple]:
-    """Each team's agents in a match of two teams, and whether that team won: ``(match, team, agent, won, queue,
-    tier, map, started)``. No player is kept, only the agent and the team."""
+    """2 チームの試合での各チームのエージェントと、
+    そのチームが勝ったか: ``(match, team, agent, won, queue, tier, map, started)``。プレイヤーは残さず、
+    エージェントとチームだけ。"""
     facts = _facts(match)
     teams = {
         str(team.get("team_id") or ""): bool(team.get("won"))
@@ -139,7 +137,7 @@ def _picks(match: dict) -> list[tuple]:
         if isinstance(team, dict) and team.get("team_id")
     }
     if not facts or len(teams) != 2 or not any(teams.values()):
-        return []  # a deathmatch, or a draw: nothing to count
+        return []  # デスマッチか引き分け: 数えるものが無い
     place = (match.get("metadata") or {}).get("map")
     map_id = str((place or {}).get("id") or "").lower() if isinstance(place, dict) else ""
     found = {}
@@ -163,13 +161,13 @@ def _picks(match: dict) -> list[tuple]:
 
 
 def _lines(match: dict) -> list[tuple]:
-    """Each player's line in a match of five against five: ``(match, slot, queue, tier, acs, adr, kd, hs, kast, dd,
-    won, started)``; ``won`` is 1, 0.5 (a draw) or 0. No player is kept: ``slot`` is their place in the list."""
+    """5 対 5 の試合での各プレイヤーの成績: ``(match, slot, queue, tier, acs, adr, kd, hs, kast, dd, won, started)``。
+    ``won`` は 1、0.5（引き分け）、0。プレイヤーは残さない: ``slot`` は一覧での位置。"""
     facts = _facts(match)
     if not facts or facts["queue"] not in LINE_QUEUES:
         return []
     rounds = stats.rounds_played(match)
-    if rounds < 5:  # left early (a remake): not a match's worth of numbers
+    if rounds < 5:  # 途中で終わった（リメイク）: 試合 1 つ分の数値にならない
         return []
     teams = {
         str(team.get("team_id") or ""): bool(team.get("won"))
@@ -190,14 +188,26 @@ def _lines(match: dict) -> list[tuple]:
         found = stats.line(player, rounds, stats.advanced(match, player))
         won = 0.5 if draw else float(teams.get(str(player.get("team_id") or ""), False))
         rows.append(
-            (facts["id"], slot, facts["queue"], number, found["acs"], found["adr"], found["kd"], found["hs"])
-            + (found["kast"], found["dd"], won, facts["started"])
+            (
+                facts["id"],
+                slot,
+                facts["queue"],
+                number,
+                found["acs"],
+                found["adr"],
+                found["kd"],
+                found["hs"],
+                found["kast"],
+                found["dd"],
+                won,
+                facts["started"],
+            )
         )
     return rows
 
 
 def _shaped(kind: str, answer):
-    """The site's answer (JSON) as the method of that name gives it, or None when it is not one."""
+    """その名前のメソッドが返す形のサイトの答え（JSON）。その形でなければ None。"""
     if kind == "yardstick":
         if not (isinstance(answer, list) and len(answer) == 3 and isinstance(answer[0], dict)):
             return None
@@ -214,18 +224,18 @@ def _shaped(kind: str, answer):
 
 class Activity:
     def __init__(self, folder: Path, clock=time.time):
-        #: the PC app: how the site's numbers are asked for (kind, params) -> its JSON (_ask); None on the site
-        self.shared = None
+        #: PC アプリ: サイトの数字の聞き方 (kind, params) -> JSON（_ask）。サイトでは None
+        self.shared: Callable[[str, dict], dict | None] | None = None
         self._shared: dict = {}
         self.path = Path(folder) / "activity.sqlite"
         self.clock = clock
         self._lock = threading.Lock()
         self._db: sqlite3.Connection | None = None
         self._summary: dict[tuple, tuple[float, dict]] = {}
-        #: per rank band (and "" for every band): (when read, {stat: sorted values}, how many lines)
+        #: ランク帯ごと（"" は全帯）: （読んだ時刻, {stat: 並べた値}, 成績の数）
         self._yardsticks: dict[str, tuple[float, dict, int]] = {}
         self._pruned = 0.0
-        #: players seen in recent matches, for the collector: (region, puuid, tier); in memory only
+        #: 最近の試合で見たプレイヤー（コレクター用）: (region, puuid, tier)。メモリだけ
         self.candidates: list[tuple[str, str, int]] = []
 
     def _connect(self) -> sqlite3.Connection:
@@ -254,12 +264,12 @@ class Activity:
             )
         return self._db
 
-    # -- what is seen ---------------------------------------------------------------------------------
+    # -- 見たもの ---------------------------------------------------------------------------------------
 
     def _ask(self, kind: str, params: dict):
-        """The site's own numbers for the PC app (``shared``: how the site is asked, None on the site itself):
-        the site looks at matches all day, the app's own file holds only what its owner opened. Kept 10 minutes;
-        None when the site did not answer (asked again in 5), so the app's own numbers are shown."""
+        """PC アプリ用のサイト自身の数字（``shared``: サイトへの聞き方。サイト自身では None）
+        : サイトは一日中試合を見ていて、アプリ自身のファイルには持ち主が開いたものしか無い。 10 分持つ。
+        サイトが答えなければ None（5 分後に聞き直す）で、アプリ自身の数字を出す。"""
         if self.shared is None:
             return None
         key = (kind, tuple(sorted(params.items())))
@@ -269,7 +279,7 @@ class Activity:
             return kept[1]
         try:
             found = _shaped(kind, self.shared(kind, params))
-        except Exception:  # noqa: BLE001 - whatever went wrong on the way: the app's own numbers
+        except Exception:  # 途中で何が起きても: アプリ自身の数字
             found = None
         if len(self._shared) > 200:
             self._shared.clear()
@@ -277,15 +287,14 @@ class Activity:
         return found
 
     def seen(self, matches: list, puuid: str = "") -> int:
-        """Keep the matches (a player's list when ``puuid`` is theirs: the waits between them too). Returns how
-        many were new."""
+        """試合を残す（``puuid`` がその人のものならプレイヤーの一覧として、試合の間の待ちも）。新しかった数を返す。"""
         facts = [found for match in matches or [] if isinstance(match, dict) for found in [_facts(match)] if found]
         if not facts:
             return 0
         gaps = []
         if puuid:
             ordered = sorted(facts, key=lambda item: item["started"])
-            for before, after in zip(ordered, ordered[1:], strict=False):
+            for before, after in itertools.pairwise(ordered):
                 wait = after["started"] - (before["started"] + before["length"])
                 if before["length"] and GAP_MIN <= wait <= GAP_MAX and before["queue"] == after["queue"]:
                     gaps.append(
@@ -318,7 +327,7 @@ class Activity:
                 self._prune(db)
                 db.commit()
         except sqlite3.Error:
-            return 0  # the numbers are an extra: a full or locked disk must not break a page
+            return 0  # 数字はおまけ: ディスクがいっぱい・ロック中でもページを壊さない
         if new:
             self._summary.clear()
         return new
@@ -349,14 +358,13 @@ class Activity:
         db.execute("DELETE FROM picks WHERE started < ?", (oldest,))
         db.execute("DELETE FROM lines WHERE started < ?", (oldest,))
 
-    # -- what the pages show -----------------------------------------------------------------------------
+    # -- ページに出すもの -------------------------------------------------------------------------------
 
     def servers(self, region: str, offset_hours: float = 9) -> dict:
-        """``{"servers": [{"name", "matches", "hours": [24 shares], "now": share, "level", "peak", "quiet",
-        "tier"}], "waits": [{"queue", "band", "seconds", "samples"}], "lengths": [{"queue", "seconds", "samples"}],
-        "matches", "hour_now"}`` for a region over the last WINDOW_DAYS, the hours in the visitor's time
-        (``offset_hours`` from UTC). A server with fewer than ENOUGH matches has the level "few" and no peak or
-        quiet hours. Kept a few minutes."""
+        """リージョンの直近 WINDOW_DAYS
+        日の ``{"servers": [{"name", "matches", "hours": [24 個の割合], "now": 割合, "level", "peak", "quiet", "tier"}], "waits": [{"queue", "band", "seconds", "samples"}], "lengths": [{"queue", "seconds", "samples"}], "matches",
+        "hour_now"}``。時間は訪問者の時刻（UTC から ``offset_hours``）。試合が ENOUGH 未満のサーバーは level "few" で、
+        ピークも静かな時間も無し。数分持つ。"""
         shared = self._ask("servers", {"region": region, "offset": offset_hours})
         if shared is not None:
             return shared
@@ -393,7 +401,7 @@ class Activity:
                 counts[hour] += 1
             shares = [round(100 * count / len(items), 1) for count in counts]
             tiers = [tier for _, tier in items if tier]
-            # this hour beside the server's average hour (100/24 % of its matches)
+            # サーバーの平均の 1 時間（試合の 100/24 %）と比べた今の時間
             level = shares[hour_now] / (100 / 24)
             enough = len(items) >= ENOUGH
             servers.append(
@@ -443,9 +451,9 @@ class Activity:
         return found
 
     def agents(self, queue: str = "competitive", band_name: str = "", map_id: str = "") -> dict:
-        """How often each agent is picked and how often its team wins, in the matches seen over WINDOW_DAYS:
-        ``{"matches", "agents": [{"agent", "picks", "wins", "pick" (% of the teams), "win" (%)}], "maps": {map:
-        matches}}`` (most picked first), for a queue, a rank band (BANDS' names) and a map. Kept a few minutes."""
+        """直近 WINDOW_DAYS 日に見た試合での各エージェントのピック率とチームの勝率:
+        ``{"matches", "agents": [{"agent", "picks", "wins", "pick"（チームに対する %）, "win"（%）
+        }], "maps": {map: 試合数}}``（ピックの多い順）。キュー、ランク帯（BANDS の名前）、マップで絞る。数分持つ。"""
         shared = self._ask("agents", {"queue": queue, "band": band_name, "map": map_id})
         if shared is not None:
             return shared
@@ -497,9 +505,9 @@ class Activity:
         return found
 
     def ranks(self, region: str) -> dict:
-        """How many competitive lines (one a player a match) of a region over WINDOW_DAYS are at each rank:
-        ``{"lines", "tiers": {tier: count}}``. Players who play more count more: no player is kept to tell them
-        apart. Read again every 10 minutes."""
+        """リージョンの直近 WINDOW_DAYS 日のコンペティティブの成績（1 試合 1 人 1 件）
+        が各ランクに何件あるか: ``{"lines", "tiers": {tier: 件数}}``。
+        多く遊ぶ人ほど多く数えられる（見分けるためのプレイヤーを残さない）。10 分ごとに読み直す。"""
         shared = self._ask("ranks", {"region": region})
         if shared is not None:
             return shared
@@ -523,9 +531,9 @@ class Activity:
         return found
 
     def yardstick(self, tier: int) -> tuple[dict, int, str]:
-        """The lines of the rank band of ``tier`` over WINDOW_DAYS, each number sorted (``{stat: [values]}``), how
-        many lines, and the band's name ("" when every band is the yardstick, as when the band has fewer than
-        LINES_ENOUGH). Nothing (``{}, 0, ""``) with fewer than LINES_ENOUGH altogether. Read again every 10 minutes."""
+        """直近 WINDOW_DAYS 日の ``tier`` のランク帯の成績。数値ごとに並べたもの（``{stat: [値]}``）、成績の数、
+        帯の名前（全帯が物差しのときは ""。帯の成績が LINES_ENOUGH 未満のときなど）。
+        全体で LINES_ENOUGH 未満なら何も無し（``{}, 0, ""``）。 10 分ごとに読み直す。"""
         shared = self._ask("yardstick", {"tier": int(tier)})
         if shared is not None:
             return shared
@@ -572,18 +580,18 @@ class Activity:
 
 
 class Collector:
-    """Looks at one more player every COLLECT_SECONDS in a thread of its own (see the module's words)."""
+    """専用のスレッドで COLLECT_SECONDS ごとに 1 人ずつ見る（モジュールの説明を参照）。"""
 
     def __init__(self, activity: Activity, henrik, seconds: float = COLLECT_SECONDS, riot=None, maps=None):
         self.activity, self.henrik, self.seconds = activity, henrik, seconds
-        #: the owner's Riot account (riot.Riot) and the maps' index (a callable), for the game's own records
+        #: ゲーム自身の記録用の、持ち主の Riot アカウント（riot.Riot）とマップの索引（呼び出せるもの）
         self.riot, self.maps = riot, maps
-        #: matches read from the game's own records, not read again
+        #: ゲーム自身の記録から読んだ試合。もう読まない
         self.read: set[str] = set()
         self._started = False
         self._lock = threading.Lock()
         self.looked: set[str] = set()
-        #: how many players of each region were looked at
+        #: リージョンごとに見たプレイヤーの数
         self.regions: dict[str, int] = {}
 
     def start(self) -> None:
@@ -598,15 +606,15 @@ class Collector:
             time.sleep(self.seconds)
             try:
                 self.once()
-            except Exception:  # noqa: BLE001 - a failed look is tried again next time
+            except Exception:  # 失敗した回は次にまた試す
                 pass
 
     def _riot(self) -> int | None:
-        """One player's latest matches from the game's own records (PD's match history and match details, with
-        the owner's linked account): whole matches of players the owner never met, with no HenrikDev key and none
-        of its budget. Only in the owner's own region (the records are kept per region); the first player is the
-        owner, then the players of the matches read. No name is read (pdmatch). None: not this time (no account,
-        no one new in the region, or Riot said no), so HenrikDev is asked as before."""
+        """ゲーム自身の記録（PD の試合履歴と試合詳細、持ち主の連携アカウント）
+        からの 1 人のプレイヤーの最新の試合: 持ち主が会ったことのない人のまるごとの試合を、
+        HenrikDev のキーも予算も使わずに。持ち主自身のリージョンだけ（記録はリージョンごと）。最初は持ち主、
+        次に読んだ試合のプレイヤー。名前は読まない（pdmatch）。 None: 今回は無し（アカウントが無い、
+        リージョンに新しい人がいない、 Riot が断った）なので、今までどおり HenrikDev に聞く。"""
         if self.riot is None or self.maps is None:
             return None
         try:
@@ -626,7 +634,7 @@ class Collector:
                 self.read.add(match_id)
                 raw = pdmatch.to_v4(self.riot.match_details(region, match_id), region, self.maps())
                 if raw and raw["metadata"].get("is_completed", True):
-                    matches.append(_slim_match(raw))
+                    matches.append(slim_match(raw))
         except RiotError:
             return None
         if len(self.read) > 5000:
@@ -634,7 +642,7 @@ class Collector:
         return self.activity.seen(matches, puuid)
 
     def pick(self) -> tuple[str, str] | None:
-        """A player not looked at yet: from the region, then the rank band, with the fewest of them so far."""
+        """まだ見ていないプレイヤー: これまで一番少ないリージョン、次にランク帯から。"""
         fresh = [item for item in self.activity.candidates if item[1] not in self.looked and item[0]]
         if not fresh:
             return None
@@ -647,8 +655,8 @@ class Collector:
         return region, puuid
 
     def once(self) -> int:
-        """One player's latest matches into the numbers; how many matches were new. Now and then (and when no one
-        is left to look at) a player of the leaderboard of the region looked at least, so every region fills."""
+        """1 人のプレイヤーの最新の試合を数字に入れる。新しかった試合数を返す。時々（と、見る人がいなくなったとき）
+        一番見ていないリージョンのランキングから 1 人選び、どのリージョンも埋まるようにする。"""
         own = self._riot()
         if own is not None:
             return own

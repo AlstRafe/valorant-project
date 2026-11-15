@@ -1,21 +1,20 @@
-"""VAL Tracker as one site of Home Page's server (``~/Documents/Claude/Home Page``, homepage/server.py).
+"""Home Page のサーバー（``~/Documents/Claude/Home Page``、homepage/server.py）の 1 サイトとしての VAL Tracker。
 
-That server owns the address and lists the sites on "/". Its sites.toml names this site:
+アドレスはあちらのサーバーが持ち、"/" にサイトを並べる。sites.toml でこのサイトを次のように指定する:
 
-    [[site]]
-    mount = "/val"
-    python = "../VALORANT-Project"
-    entry = "valtracker.hosting:site"
+[[site]]
+mount = "/val"
+python = "../VALORANT-Project"
+entry = "valtracker.hosting:site"
 
-and calls ``site`` once at its start. It handles ``?lang=``, the public name (https, HSTS) and marks a
-visitor's requests (``homepage.visitor``), so the owner-only pages can tell them apart (security.py).
-"""
+起動時に ``site`` を 1 回呼ぶ。``?lang=``、公開名（https、HSTS）を扱い、
+訪問者のリクエストに印を付ける（``homepage.visitor``）ので、持ち主専用ページは見分けられる（security.py）。"""
 
 from __future__ import annotations
 
 from valtracker import NAME, create_app, paths
 
-#: Under the mount, for crawlers to leave alone.
+#: クローラーに触らせないマウント下のパス。
 DISALLOW = (
     "/media/",
     "/pic/",
@@ -31,7 +30,7 @@ DISALLOW = (
 
 
 def site(mount: str = "/val", host: dict | None = None) -> dict:
-    """The WSGI ``app`` and what Home Page's front page shows. ``host`` (where the host answers) is not needed."""
+    """WSGI の ``app`` と、Home Page のトップに出すもの。``host``（ホストの答える場所）は使わない。"""
     return {
         "app": create_app(mount=mount),
         "name": NAME,

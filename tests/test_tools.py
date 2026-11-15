@@ -1,4 +1,4 @@
-"""The tools: the leaderboard, the server status, crosshair codes and the store."""
+"""ツール: ランキング、サーバーステータス、クロスヘアコード、ストア。"""
 
 import os
 import re
@@ -23,7 +23,7 @@ class ToolsTest(unittest.TestCase):
         self.client.set_cookie("lang", "ja")
 
     def test_the_numbers_for_the_pc_app(self):
-        """What the site worked out, as JSON: the app's own file holds only its owner's matches."""
+        """サイトが集計したもの（JSON）: アプリ自身のファイルには持ち主の試合しか無い。"""
         ranks = self.client.get("/numbers/ranks?region=ap")
         self.assertEqual(ranks.get_json(), {"lines": 0, "tiers": {}})
         self.assertIn("max-age=600", ranks.headers["Cache-Control"])
@@ -52,7 +52,7 @@ class ToolsTest(unittest.TestCase):
         self.assertNotIn("マイアカウント", text)
         self.assertIn('<h2 id="tools-me">マイアカウント</h2>', self.page("/tools"))
 
-    # -- the leaderboard ------------------------------------------------------------------------------
+    # -- ランキング ----------------------------------------------------------------------------------
 
     def test_leaderboard_comes_later_then_at_once(self):
         text = self.page("/leaderboard")
@@ -109,15 +109,15 @@ class ToolsTest(unittest.TestCase):
         self.assertIn("650 RR から", part, "Radiant's RR, from Riot's tiers")
         self.assertIn("501 位から", part, "Immortal 3 from the 501st")
         self.assertNotIn("<small>0 RR から", part, "Immortal 1 has no place of its own on the list")
-        # a player who hides their name: their place, rank, RR and wins only
+        # 名前を隠しているプレイヤー: 順位・ランク・RR・勝利数だけ
         self.assertIn("1,250", part)
         self.assertNotIn("Hidden Name", part)
         self.assertNotIn("XX1", part)
         self.assertIn("非公開", part)
-        # kept a while: the page at once, and no second call
+        # しばらく保持: ページはすぐ出て、2 回目の呼び出しは無い
         self.assertNotIn("data-load=", self.page("/leaderboard?region=ap", environ_base=VISITOR))
         self.assertEqual(len(self.pd_boards()), 1)
-        # Korea's leaderboard is on Korea's server
+        # 韓国のランキングは韓国のサーバーにある
         self.page("/leaderboard/part?region=kr&page=2", environ_base=VISITOR)
         self.assertIn("https://pd.kr.a.pvp.net/mmr/v1/leaderboards/affinity/kr/", self.pd_boards()[-1])
         self.assertIn("startIndex=50&size=50", self.pd_boards()[-1])
@@ -130,7 +130,7 @@ class ToolsTest(unittest.TestCase):
         self.assertIn("TopFrag", part)
         self.assertNotIn("Riot から直接", part)
         self.assertIn("/v3/leaderboard/ap/pc?size=50&start_index=0&page=1", self.fetch.henrik_calls()[0])
-        # the region rests a while: Riot is not asked again on every visit
+        # リージョンはしばらく休む: 訪問のたびに Riot に聞かない
         self.page("/leaderboard/part?region=ap&page=2", environ_base=VISITOR)
         self.assertEqual(len(self.pd_boards()), 1)
 
@@ -146,17 +146,17 @@ class ToolsTest(unittest.TestCase):
         self.assertNotIn('class="thresholds"', part)
         self.assertIn("ランキング全体に戻る", part)
         self.assertNotIn('rel="next"', part)
-        # Riot's own: the name asked for, the tag checked here
+        # Riot 公式: 名前で頼み、タグはこちらで確かめる
         self.link_riot()
         part = self.page("/leaderboard/part?region=ap&q=riottop%23ap1", environ_base=VISITOR)
         self.assertIn("&query=riottop", self.pd_boards()[-1])
         self.assertIn('href="/p/RiotTop/AP1"', part)
         self.assertNotIn("RiotTopper", part, "a name that only starts so is someone else")
-        # a hidden player is not found by the name they hide
+        # 隠している名前では見つからない
         part = self.page("/leaderboard/part?region=ap&q=Hidden%20Name%23XX1", environ_base=VISITOR)
         self.assertNotIn("1,250", part)
         self.assertIn("非公開のプレイヤーは名前で検索できません", part)
-        # not a Riot ID
+        # Riot ID ではない
         part = self.page("/leaderboard/part?region=ap&q=%23%23", 400, environ_base=VISITOR)
         self.assertIn("「名前#タグ」の形式で入力してください。", part)
 
@@ -165,7 +165,7 @@ class ToolsTest(unittest.TestCase):
         text = self.page("/leaderboard", 503, environ_base=VISITOR)
         self.assertIn("準備中", text)
 
-    # -- the server status ----------------------------------------------------------------------------
+    # -- サーバーステータス ------------------------------------------------------------------------
 
     def test_status_in_the_visitors_language(self):
         text = self.page("/status")
@@ -201,7 +201,7 @@ class ToolsTest(unittest.TestCase):
             self.assertIn("メンテナンス・障害ともにありません", self.page("/status?region=eu"))
             self.assertEqual(self.page("/status/notice").strip(), "")
 
-    # -- crosshairs -----------------------------------------------------------------------------------
+    # -- クロスヘア ----------------------------------------------------------------------------------
 
     def test_crosshair_code(self):
         text = self.page("/crosshair?code=0;P;c;5;h;0;0l;4;0o;2;0a;1;1b;0")
@@ -237,7 +237,7 @@ class ToolsTest(unittest.TestCase):
         self.assertEqual(len(crosshair.shapes(default["primary"])), 16, "8 lines and their outlines")
 
     def test_what_makes_a_crosshair_move_is_known(self):
-        """The movement and firing errors are the game's own settings, not ones the site does not know."""
+        """移動・射撃エラーはゲーム自身の設定で、サイトが知らない設定ではない。"""
         found = crosshair.parse("0;P;h;0;f;0;m;1;0l;4;0o;2;0a;1;0m;1;0f;0;0s;0.5;0e;2;1m;0;1f;0;1s;1;1e;1;s;0")
         self.assertEqual(found["unknown"], [])
         about = crosshair.describe(found["primary"])
@@ -261,7 +261,7 @@ class ToolsTest(unittest.TestCase):
                 code = crosshair.code(crosshair.PRIMARY | settings)
                 self.assertEqual(crosshair.parse(code)["primary"], crosshair.PRIMARY | settings)
 
-    # -- the store ------------------------------------------------------------------------------------
+    # -- ストア --------------------------------------------------------------------------------------
 
     def test_featured_for_everyone(self):
         text = self.page("/shop", environ_base=VISITOR)

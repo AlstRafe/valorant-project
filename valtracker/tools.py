@@ -1,11 +1,10 @@
-"""The pages around the tracker: a region's leaderboard, Riot's notices (maintenance, incidents), crosshair codes
-drawn before they are pasted into the game, the store (featured bundles; the owner's own daily offers), how busy
-each server usually is and the wait for a match (activity.py), the maps in rotation and who may queue together
-(queues.py), a sensitivity converter, and the tools page that leads to them."""
+"""トラッカーまわりのページ: リージョンのランキング、Riot のお知らせ（メンテナンス、障害）、
+ゲームに貼る前に描くクロスヘアコード、ストア（おすすめバンドル。持ち主には本人のデイリーオファー）、
+各サーバーのいつもの混み具合とマッチの待ち時間（activity.py）、ローテーション中のマップと一緒に並べる人（queues.py）、
+感度の換算、それらへの入口のツールページ。"""
 
 from __future__ import annotations
 
-import re
 import time
 from datetime import UTC, datetime
 
@@ -20,9 +19,19 @@ from valtracker.henrik import BOARD_PAGE, HenrikError
 from valtracker.riot import RiotError
 from valtracker.riotweb import RiotWebError
 from valtracker.stats import JST
-from valtracker.views import QUEUES, _failure, _rank, _t, act_left, cluster, riot_failure, share_text
+from valtracker.views import (
+    QUEUES,
+    act_left,
+    cluster,
+    failure_info,
+    rank_family,
+    rank_info,
+    riot_failure,
+    share_text,
+    tr,
+)
 
-#: The leaderboard's and the notices' regions, in the order of the tabs -> their names (translated).
+#: ランキングとお知らせのリージョン（タブの順）-> 名前（訳す）。
 REGION_NAMES = {
     "ap": "アジア太平洋",
     "kr": "韓国",
@@ -31,22 +40,22 @@ REGION_NAMES = {
     "latam": "ラテンアメリカ",
     "br": "ブラジル",
 }
-#: The region shown when none is chosen: the one most of a language's players are in.
+#: 選んでいないときに出すリージョン: その言語のプレイヤーが一番多いところ。
 HOME_REGION = {"ja": "ap", "ko": "kr", "en-GB": "eu", "zh-TW": "ap"}
-#: Riot writes its notices in each of these (HenrikDev's names, see henrik._slim_status); English otherwise.
+#: Riot はお知らせをこれらの言語で書く（HenrikDev の名前、henrik.slim_status を参照）。ほかは英語。
 NOTICE_LOCALES = {"ja": "ja_jp", "ko": "ko_kr", "en-GB": "en_gb", "zh-TW": "zh_tw"}
-#: Pages of the leaderboard that can be asked for (HenrikDev lists about the top 10,000 of a region).
+#: 頼めるランキングのページ数（HenrikDev はリージョンの上位 1 万人ほどを出す）。
 BOARD_PAGES = 200
-#: The servers page counts hours in the visitor's own clock: hours from UTC, and its name (translated).
+#: サーバーのページは訪問者自身の時計で時間を数える: UTC からの時間と、その名前（訳す）。
 CLOCKS = {"ja": (9, "日本時間"), "ko": (9, "韓国時間"), "zh-TW": (8, "台湾時間"), "en-GB": (0, "協定世界時（UTC）")}
-#: The sensitivity converter's games: (name, degrees a count of the mouse turns at sensitivity 1).
+#: 感度換算のゲーム: （名前, 感度 1 でマウス 1 カウントあたりに回る角度）。
 GAMES = {
     "valorant": ("VALORANT", 0.07),
     "cs2": ("Counter-Strike 2", 0.022),
     "apex": ("Apex Legends", 0.022),
     "overwatch": ("Overwatch 2", 0.0066),
 }
-#: Why a party may or may not queue together (queues.check) -> the words (translated).
+#: パーティーで並べる・並べない理由（queues.check）-> 文（訳す）。
 PARTY_WORDS = {
     "size": "{size} 人パーティーではコンペティティブに参加できません。",
     "high": "{rank} 以上を含むパーティーは {size} 人まで（5 人は可）。",
@@ -57,7 +66,7 @@ PARTY_WORDS = {
     "gap": "組めません。{low} と組めるのは {top} まで（{high} はランク差が大きすぎます）。",
     "unknown": "このランクの制限データがありません。",
 }
-#: A notice for these platforms only is not about the PC game, which this site tracks.
+#: これらのプラットフォームだけのお知らせは、このサイトが追う PC 版のものではない。
 CONSOLES = {"playstation", "xbox", "ps5", "xbsx", "console"}
 
 
@@ -68,21 +77,21 @@ def _region() -> str:
 
 def _regions(endpoint: str, current: str, **values) -> list[dict]:
     return [
-        {"key": key, "name": _t(name), "url": url_for(endpoint, region=key, **values), "current": key == current}
+        {"key": key, "name": tr(name), "url": url_for(endpoint, region=key, **values), "current": key == current}
         for key, name in REGION_NAMES.items()
     ]
 
 
 def _moment(value) -> datetime | None:
-    """An ISO time (HenrikDev's) in Japan's time, or None."""
+    """ISO の時刻（HenrikDev のもの）を日本時間に。無ければ None。"""
     try:
-        found = datetime.fromisoformat(str(value or "").replace("Z", "+00:00"))
+        found = datetime.fromisoformat(str(value or ""))
     except ValueError:
         return None
     return found.astimezone(JST) if found.tzinfo else found.replace(tzinfo=JST)
 
 
-def _when(value) -> dict | None:
+def moment_info(value) -> dict | None:
     found = _moment(value)
     return {"iso": found.isoformat(), "text": i18n.when(g.lang, found)} if found else None
 
@@ -95,8 +104,8 @@ def _page_number() -> int:
 
 
 def _wanted() -> tuple[str, str, str]:
-    """The player looked for on the leaderboard (``?q=Name#Tag``): (what was typed, name, tag); a problem's
-    words instead of the name when it cannot be a Riot ID."""
+    """ランキングで探すプレイヤー（``?q=Name#Tag``）: （入力されたもの, 名前, タグ）。
+    Riot ID になりえないときは名前の代わりに問題の文。"""
     typed = " ".join(str(request.args.get("q", "")).split())[:40]
     if not typed:
         return "", "", ""
@@ -108,7 +117,7 @@ def _wanted() -> tuple[str, str, str]:
 
 
 def _riot_board_act() -> str:
-    """The act the game's own leaderboard is asked for, when the owner's Riot account can ask (else "")."""
+    """ゲーム自身のランキングを頼むアクト（持ち主の Riot アカウントで聞けるとき。でなければ ""）。"""
     found = current_app.config["VAL_RIOT"].status()
     if not found["linked"] or found["signed_out"]:
         return ""
@@ -116,13 +125,13 @@ def _riot_board_act() -> str:
 
 
 def _board(region: str, page: int) -> tuple[dict, int]:
-    """What leaderboard.html shows of one page (or of the player looked for), and the status. Riot's own
-    leaderboard first (the game's server, through the owner's Riot account); HenrikDev's when that is not there."""
+    """leaderboard.html に出す 1 ページ分（または探したプレイヤー）と、ステータス。
+    まず Riot 自身のランキング（持ち主の Riot アカウントでゲームのサーバーから）、無ければ HenrikDev のもの。"""
     typed, name, tag = _wanted()
     values = {"region": region, "page": page, "problem": "", "settings_link": False, "loading": False}
     values |= {"q": typed, "searched": bool(typed)}
     if typed and not name:
-        values["problem"] = _t("「名前#タグ」の形式で入力してください。")
+        values["problem"] = tr("「名前#タグ」の形式で入力してください。")
         return values | {"players": [], "thresholds": []}, 400
     start = 0 if typed else (page - 1) * BOARD_PAGE
     found, source = None, ""
@@ -138,9 +147,9 @@ def _board(region: str, page: int) -> tuple[dict, int]:
             found = current_app.config["VAL_HENRIK"].leaderboard(region, start, name, tag)
             source = "henrik"
         except HenrikError as error:
-            status, values["problem"], values["settings_link"] = _failure(error.kind)
+            status, values["problem"], values["settings_link"] = failure_info(error.kind)
             if error.kind == "notfound":
-                values["problem"], status = _t("このページにはプレイヤーがいません。"), 404
+                values["problem"], status = tr("このページにはプレイヤーがいません。"), 404
                 if typed:
                     values["problem"], status = "", 200
                     return values | {"players": [], "thresholds": [], "source": source}, status
@@ -148,19 +157,21 @@ def _board(region: str, page: int) -> tuple[dict, int]:
     players = []
     for item in found["players"]:
         if typed and (item["hidden"] or item["name"].casefold() != name.casefold()):
-            continue  # Riot looks for names that start so; hidden players are never found by their name
+            continue  # Riot はそう始まる名前を探す。隠しているプレイヤーは名前では見つからない
         if typed and tag and item["tag"].casefold() != tag.casefold():
             continue
         players.append(
             item
             | {
-                "rank_shown": _rank({"id": item["tier"]}) if item["tier"] else None,
+                "rank_shown": rank_info({"id": item["tier"]}) if item["tier"] else None,
                 "url": url_for("player", name=item["name"], tag=item["tag"])
                 if item["name"] and item["tag"] and not item["hidden"]
                 else "",
             }
         )
-    thresholds = [item | {"rank_shown": _rank({"id": item["tier"]})} for item in found["thresholds"] if item["tier"]]
+    thresholds = [
+        item | {"rank_shown": rank_info({"id": item["tier"]})} for item in found["thresholds"] if item["tier"]
+    ]
     more = not typed and len(found["players"]) >= BOARD_PAGE and page < BOARD_PAGES
     if found["total"]:
         more = more and page * BOARD_PAGE < found["total"]
@@ -168,7 +179,7 @@ def _board(region: str, page: int) -> tuple[dict, int]:
         "players": players,
         "thresholds": thresholds,
         "source": source,
-        "updated": _when(found["updated"]),
+        "updated": moment_info(found["updated"]),
         "earlier": url_for("leaderboard", region=region, page=page - 1 if page > 2 else None)
         if page > 1 and not typed
         else "",
@@ -177,7 +188,8 @@ def _board(region: str, page: int) -> tuple[dict, int]:
 
 
 def _status(region: str) -> dict:
-    """A region's server notices: from Riot's own file, else HenrikDev's copy (HenrikError when neither came)."""
+    """リージョンのサーバーのお知らせ: Riot 自身のファイル、無ければ HenrikDev の写し（どちらも来なければ HenrikError）
+    。"""
     try:
         return current_app.config["VAL_RIOT_WEB"].status(region)
     except RiotWebError:
@@ -185,7 +197,7 @@ def _status(region: str) -> dict:
 
 
 def _notices(found: dict) -> list[dict]:
-    """Riot's notices in the visitor's language (English, else any, when Riot did not write one in it)."""
+    """訪問者の言語での Riot のお知らせ（その言語で書かれていなければ英語、それも無ければどれか）。"""
     wanted = NOTICE_LOCALES.get(g.lang, "en_us")
 
     def pick(words: dict) -> str:
@@ -201,9 +213,9 @@ def _notices(found: dict) -> list[dict]:
             listed.append(
                 {
                     "kind": item["kind"],
-                    "title": pick(item.get("titles") or {}) or _t("お知らせ"),
+                    "title": pick(item.get("titles") or {}) or tr("お知らせ"),
                     "words": pick(latest.get("words") or {}),
-                    "when": _when(latest.get("at") or item.get("at")),
+                    "when": moment_info(latest.get("at") or item.get("at")),
                     "severity": item.get("severity") or "",
                     "status": item.get("status") or "",
                 }
@@ -218,17 +230,17 @@ def _shapes(settings: dict | None) -> list[dict] | None:
 def _crosshair_page(code: str) -> dict:
     found = crosshairs.parse(code) if code else None
     shown = found or crosshairs.parse("0")
-    table = [("primary", _t("通常"), shown["primary"])]
+    table = [("primary", tr("通常"), shown["primary"])]
     if shown["ads"] is not None:
-        table.append(("ads", _t("ADS"), shown["ads"]))
+        table.append(("ads", tr("ADS"), shown["ads"]))
     described = []
     for key, name, settings in table:
         about = crosshairs.describe(settings)
-        about["colour_name"] = _t(about["colour_name"])
+        about["colour_name"] = tr(about["colour_name"])
         described.append({"key": key, "name": name, "about": about})
     return {
         "code": code,
-        "problem": _t("クロスヘアコードとして読み取れません。ゲームでコピーしたものをそのまま貼ってください。")
+        "problem": tr("クロスヘアコードとして読み取れません。ゲームでコピーしたものをそのまま貼ってください。")
         if code and not found
         else "",
         "unknown": found["unknown"] if found else [],
@@ -239,7 +251,7 @@ def _crosshair_page(code: str) -> dict:
         "described": described,
         "presets": [
             {
-                "name": _t(name),
+                "name": tr(name),
                 "code": crosshairs.code(settings),
                 "shapes": crosshairs.shapes(crosshairs.PRIMARY | settings),
             }
@@ -249,16 +261,16 @@ def _crosshair_page(code: str) -> dict:
 
 
 def _left(until: float) -> dict | None:
-    """The time left until ``until`` (a Unix time), for the page and its script (which counts it down)."""
+    """``until``（Unix 時刻）までの残り時間。ページとそのスクリプト（カウントダウンする）用。"""
     seconds = until - time.time()
     if not until or seconds <= 0:
         return None
     parts = store.left(seconds)
     days = parts["hours"] // 24
     words = (
-        _t("残り {days} 日", days=days)
+        tr("残り {days} 日", days=days)
         if days >= 2
-        else _t("残り {hours} 時間 {minutes} 分", hours=parts["hours"], minutes=parts["minutes"])
+        else tr("残り {hours} 時間 {minutes} 分", hours=parts["hours"], minutes=parts["minutes"])
     )
     return {"until": int(until), "text": words}
 
@@ -267,24 +279,19 @@ def _clock_text(seconds: int) -> str:
     return f"{seconds // 60}:{seconds % 60:02d}"
 
 
-def _family(name: str) -> str:
-    """A rank's name without its division ("Gold 3" -> "Gold")."""
-    return re.sub(r"\s*\d+$", "", name) or name
-
-
 def _zone() -> tuple[float, str]:
-    """The clock the servers page counts hours in: the visitor's own (the ``tz`` cookie, minutes from UTC, which the
-    page's script sets), or their language's (Japan's for ja) when there is none or it is the same."""
+    """サーバーのページが時間を数える時計: 訪問者自身のもの（ページのスクリプトが入れる ``tz`` cookie、UTC からの分）。
+    無いか同じなら言語のもの（ja なら日本）。"""
     offset, name = CLOCKS.get(g.lang, CLOCKS["ja"])
     try:
         minutes = int(request.cookies.get("tz", ""))
     except ValueError:
-        return offset, _t(name)
+        return offset, tr(name)
     if minutes % 15 or not -720 <= minutes <= 840 or minutes == offset * 60:
-        return offset, _t(name)
+        return offset, tr(name)
     hours, rest = divmod(abs(minutes), 60)
     zone = f"UTC{'+' if minutes >= 0 else '−'}{hours}" + (f":{rest:02d}" if rest else "")
-    return minutes / 60, _t("現地時間（{zone}）", zone=zone)
+    return minutes / 60, tr("現地時間（{zone}）", zone=zone)
 
 
 def _numbers_region() -> str:
@@ -295,8 +302,8 @@ def _numbers_region() -> str:
 
 
 def _ranks_page(region: str) -> dict:
-    """How the competitive lines seen in a region spread over the ranks, best first: each rank's share and the
-    share at it or above ("top X%")."""
+    """リージョンで見たコンペティティブの成績がランクにどう分布するか（上から）: 各ランクの割合と、
+    そのランク以上の割合（「上位 X%」）。"""
     found = current_app.config["VAL_ACTIVITY"].ranks(region)
     total = found["lines"]
     values = {"lines": total, "enough": total >= RANKS_ENOUGH, "rows": [], "days": WINDOW_DAYS}
@@ -311,7 +318,7 @@ def _ranks_page(region: str) -> dict:
         above += count
         values["rows"].append(
             {
-                "rank": _rank({"id": number}),
+                "rank": rank_info({"id": number}),
                 "count": count,
                 "share": share_text(100 * count / total),
                 "bar": round(100 * count / widest, 1),
@@ -331,7 +338,7 @@ def _servers_page(region: str) -> dict:
             server
             | {
                 "shown": cluster(server["name"]),
-                "rank": _rank({"id": server["tier"]}) if server["tier"] else None,
+                "rank": rank_info({"id": server["tier"]}) if server["tier"] else None,
                 "bars": [
                     {"x": hour * 10 + 1, "h": round(44 * share / top, 1), "share": share, "hour": hour}
                     for hour, share in enumerate(server["hours"])
@@ -344,14 +351,14 @@ def _servers_page(region: str) -> dict:
     for item in found["waits"]:
         band = ""
         if item["band"]:
-            low, high = (_family(_rank({"id": tier})["name"]) for tier in labels[item["band"]])
+            low, high = (rank_family(rank_info({"id": tier})["name"]) for tier in labels[item["band"]])
             band = low if low == high else f"{low} – {high}"
-        queue = _t(QUEUES[item["queue"]]) if item["queue"] in QUEUES else item["queue"]
+        queue = tr(QUEUES[item["queue"]]) if item["queue"] in QUEUES else item["queue"]
         waits.append(item | {"queue_name": queue, "band_name": band, "text": _clock_text(item["seconds"])})
     lengths = [
         item
         | {
-            "queue_name": _t(QUEUES[item["queue"]]) if item["queue"] in QUEUES else item["queue"],
+            "queue_name": tr(QUEUES[item["queue"]]) if item["queue"] in QUEUES else item["queue"],
             "text": _clock_text(item["seconds"]),
         }
         for item in found.get("lengths", [])
@@ -381,14 +388,14 @@ def _sensitivity(args) -> dict:
         new_dpi = int(float(args.get("new_dpi", "") or 0))
     except ValueError:
         sens, dpi, new_dpi = 0, 0, 0
-        values["problem"] = _t("数値を入力してください。")
+        values["problem"] = tr("数値を入力してください。")
     values |= {"sens": args.get("sens", ""), "dpi": args.get("dpi", ""), "new_dpi": args.get("new_dpi", "")}
     if not sens or not dpi:
         return values
     if not (0 < sens <= 1000 and 50 <= dpi <= 64000) or (new_dpi and not 50 <= new_dpi <= 64000):
-        values["problem"] = _t("感度は 0 より大きい値、DPI は 50〜64000 で入力してください。")
+        values["problem"] = tr("感度は 0 より大きい値、DPI は 50〜64000 で入力してください。")
         return values
-    turn = sens * GAMES[game][1]  # degrees a count turns
+    turn = sens * GAMES[game][1]  # 1 カウントで回る角度
     rows = []
     for key, (name, yaw) in GAMES.items():
         rows.append({"key": key, "name": name, "sens": round(turn / yaw, 4), "edpi": round(dpi * turn / yaw, 1)})
@@ -413,25 +420,25 @@ def _queues_page() -> tuple[dict, int]:
             values["problem"] = riot_failure(error.kind)
             values["settings_link"] = error.kind not in ("busy", "down")
         else:
-            values["problem"] = _t("ゲームの設定を取得できません。しばらくしてからお試しください。")
+            values["problem"] = tr("ゲームの設定を取得できません。しばらくしてからお試しください。")
         return values, 200 if error.kind == "nologin" else 503
     data = queues.settings(found.get("config") or {}, current_app.config["VAL_CONTENT"].map_index(g.lang))
     for queue in data["queues"]:
-        queue["name"] = _t(QUEUES[queue["id"]]) if queue["id"] in QUEUES else queue["id"]
+        queue["name"] = tr(QUEUES[queue["id"]]) if queue["id"] in QUEUES else queue["id"]
     values["queues"] = data["queues"]
-    values["read_at"] = _when(datetime.fromtimestamp(float(found.get("at") or time.time()), JST).isoformat())
+    values["read_at"] = moment_info(datetime.fromtimestamp(float(found.get("at") or time.time()), JST).isoformat())
     competitive = data["competitive"]
     if competitive and competitive["ceilings"]:
         values["competitive"] = competitive | {
             "table": [
-                {"rank": _rank({"id": tier}), "top": _rank({"id": top})}
+                {"rank": rank_info({"id": tier}), "top": rank_info({"id": top})}
                 for tier, top in competitive["ceilings"].items()
             ],
-            "high_rank": _rank({"id": competitive["high_tier"]}) if competitive["high_tier"] else None,
+            "high_rank": rank_info({"id": competitive["high_tier"]}) if competitive["high_tier"] else None,
         }
         tiers = current_app.config["VAL_CONTENT"].tiers(g.lang)
-        values["choices"] = [{"tier": 0, "name": _t("未ランク")}] + [
-            {"tier": tier, "name": _rank({"id": tier})["name"]} for tier in sorted(tiers) if tier >= queues.IRON
+        values["choices"] = [{"tier": 0, "name": tr("未ランク")}] + [
+            {"tier": tier, "name": rank_info({"id": tier})["name"]} for tier in sorted(tiers) if tier >= queues.IRON
         ]
         picked = []
         for value in request.args.getlist("rank")[:5]:
@@ -441,23 +448,23 @@ def _queues_page() -> tuple[dict, int]:
                 continue
         picked = [tier for tier in picked if tier == 0 or tier in tiers or tier >= queues.IRON]
         values["picked"] = picked + [None] * (5 - len(picked))
-        if len([tier for tier in picked]) >= 2:
+        if len(list(picked)) >= 2:
             verdict = queues.check(picked, competitive)
             why, said = verdict["why"], dict(verdict["values"])
             for key in ("low", "high", "top"):
                 if key in said:
-                    said[key] = _rank({"id": said[key]})["name"]
+                    said[key] = rank_info({"id": said[key]})["name"]
             if why == "high":
-                said["rank"] = _rank({"id": said.pop("tier")})["name"]
+                said["rank"] = rank_info({"id": said.pop("tier")})["name"]
                 why = "high" if competitive["bypass"] else "high_strict"
-            values["verdict"] = {"ok": verdict["ok"], "words": _t(PARTY_WORDS[why], **said)}
+            values["verdict"] = {"ok": verdict["ok"], "words": tr(PARTY_WORDS[why], **said)}
     return values, 200
 
 
 def _diary(own: dict) -> None:
-    """Notes the owner's store of today (diary.py) and marks the skins they want, and the days in a row."""
+    """持ち主の今日のストアを日記に残し（diary.py）、ほしいスキンと連続日数に印を付ける。"""
     diary = current_app.config["VAL_DIARY"]
-    account = current_app.config["VAL_RIOT"].me()  # each account has its own store, so its own days
+    account = current_app.config["VAL_RIOT"].me()  # ストアはアカウントごとなので、日付もアカウントごと
     now = time.time()
     day = store_day(own["daily_until"], now)
     diary.note(
@@ -476,7 +483,7 @@ def _diary(own: dict) -> None:
         item["wanted"] = bool(item.get("skin")) and item["skin"] in wants and not item.get("owned")
     own["wanted"] = list(dict.fromkeys(item["name"] for item in shown if item["wanted"]))
     own["streak"] = diary.streak(day, account)
-    # the night market's cards the game has not shown yet lie face down until turned (app.js, remembered there)
+    # ゲームがまだ見せていないナイトマーケットのカードは、めくるまで伏せる（app.js が覚える）
     own["night_key"] = day
     for number, item in enumerate(own["night"] or []):
         item["flip"] = "" if item.get("seen") else str(number + 1)
@@ -491,7 +498,7 @@ def _day_text(day: str) -> str:
 
 
 def _ics(text: str) -> str:
-    """A calendar's text value: backslashes, commas, semicolons and line breaks escaped."""
+    """カレンダーのテキストの値: バックスラッシュ、カンマ、セミコロン、改行をエスケープする。"""
     return text.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
 
 
@@ -499,15 +506,15 @@ def _reminder():
     now = time.time()
     start = datetime.fromtimestamp(_next_reset(now), UTC).strftime("%Y%m%dT%H%M%SZ")
     stamp = datetime.fromtimestamp(now, UTC).strftime("%Y%m%dT%H%M%SZ")
-    title = _ics(_t("VALORANT のストアが更新されました"))
-    about = _ics(_t("デイリーの 4 スキンが入れ替わりました。") + " " + shared_url("shop"))
+    title = _ics(tr("VALORANT のストアが更新されました"))
+    about = _ics(tr("デイリーの 4 スキンが入れ替わりました。") + " " + shared_url("shop"))
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
         "PRODID:-//VAL Tracker//Store//EN",
         "CALSCALE:GREGORIAN",
         "METHOD:PUBLISH",
-        "X-WR-CALNAME:" + _ics(_t("VALORANT のストア")),
+        "X-WR-CALNAME:" + _ics(tr("VALORANT のストア")),
         "BEGIN:VEVENT",
         "UID:daily-store@val-tracker",
         "DTSTAMP:" + stamp,
@@ -532,7 +539,7 @@ def _reminder():
 
 
 def _next_reset(now: float) -> float:
-    """The daily store's next change: midnight UTC (9:00 in Japan)."""
+    """デイリーストアの次の切り替わり: UTC の 0 時（日本時間 9:00）。"""
     return (int(now) // 86400 + 1) * 86400
 
 
@@ -543,21 +550,21 @@ def register(app: Flask) -> None:
 
     @app.get("/help")
     def help_page():
-        """How to use the site, for someone who opens it for the first time: what to type, why a player is not
-        found, how new the numbers are, the hidden players, what the numbers mean and where they come from."""
+        """初めて開いた人向けのサイトの使い方: 何を入力するか、プレイヤーが見つからない理由、数値の新しさ、
+        隠しているプレイヤー、数値の意味と出どころ。"""
         return render_template("help.html")
 
     @app.get("/leaderboard")
     def leaderboard():
-        """At once when the page is kept; else the page without the players, which the script asks for
-        (leaderboard_part), as a player's page does. ``?full=1`` waits for them."""
+        """保持しているページならすぐ出す。でなければプレイヤー無しのページを出し、スクリプトが頼む（leaderboard_part）
+        。プレイヤーページと同じ。``?full=1`` なら待つ。"""
         region, page = _region(), _page_number()
         typed, name, tag = _wanted()
         henrik, act = current_app.config["VAL_HENRIK"], _riot_board_act()
         start = 0 if typed else (page - 1) * BOARD_PAGE
         common = {
             "regions": _regions("leaderboard", region, q=typed or None),
-            "region_name": _t(REGION_NAMES[region]),
+            "region_name": tr(REGION_NAMES[region]),
             "act": act_left(),
         }
         if act:
@@ -582,18 +589,18 @@ def register(app: Flask) -> None:
     @app.get("/status")
     def status():
         region = _region()
-        values = {"regions": _regions("status", region), "region_name": _t(REGION_NAMES[region]), "notices": []}
+        values = {"regions": _regions("status", region), "region_name": tr(REGION_NAMES[region]), "notices": []}
         try:
             found = _status(region)
         except HenrikError as error:
-            code, problem, settings_link = _failure(error.kind)
+            code, problem, settings_link = failure_info(error.kind)
             return render_template("status.html", **values, problem=problem, settings_link=settings_link), code
         return render_template("status.html", **values | {"notices": _notices(found)}, problem="")
 
     @app.get("/status/notice")
     def status_notice():
-        """The top page's line about maintenance or an incident in the visitor's region (empty when there is
-        none, or it could not be asked): its script puts it in place."""
+        """訪問者のリージョンのメンテナンス・障害についてのトップページの 1 行（無い、または聞けなければ空）
+        : スクリプトが差し込む。"""
         region = _region()
         try:
             notices = _notices(_status(region))
@@ -613,8 +620,8 @@ def register(app: Flask) -> None:
 
     @app.get("/numbers/<kind>")
     def numbers(kind: str):
-        """The numbers this site worked out from the matches it has seen, for the PC app (activity.Activity._ask):
-        the app's own file holds only its owner's matches. No player is in them."""
+        """このサイトが見た試合から計算した数値（PC アプリ用、 activity.Activity._ask）
+        : アプリ自身のファイルには持ち主の試合しか無い。プレイヤーは入っていない。"""
         activity = current_app.config["VAL_ACTIVITY"]
         asked = request.args
         if kind == "agents":
@@ -638,7 +645,7 @@ def register(app: Flask) -> None:
             except ValueError:
                 tier = 0
             stick, lines, band = activity.yardstick(tier)
-            # every 400th part of each sorted list is as good a yardstick as the whole (a megabyte of numbers)
+            # 並べた各一覧の 400 分の 1 ずつで、全体（数 MB の数値）と同じくらいの物差しになる
             thin = {
                 stat: values if len(values) <= 400 else [values[i * (len(values) - 1) // 399] for i in range(400)]
                 for stat, values in stick.items()
@@ -656,7 +663,7 @@ def register(app: Flask) -> None:
         values = _servers_page(region)
         values["regions"] = _regions("servers", region)
         values["region"] = region
-        values["region_name"] = _t(REGION_NAMES[region])
+        values["region_name"] = tr(REGION_NAMES[region])
         return render_template("servers.html", **values)
 
     @app.get("/ranks")
@@ -665,7 +672,7 @@ def register(app: Flask) -> None:
         values = _ranks_page(region)
         values["regions"] = _regions("ranks", region)
         values["region"] = region
-        values["region_name"] = _t(REGION_NAMES[region])
+        values["region_name"] = tr(REGION_NAMES[region])
         return render_template("ranks.html", **values)
 
     @app.get("/queues")
@@ -680,19 +687,18 @@ def register(app: Flask) -> None:
 
     @app.get("/shop")
     def shop():
-        """Everyone: the featured bundles (HenrikDev). The owner: their own store too (riot.py), with what they
-        already have marked."""
+        """全員: おすすめバンドル（HenrikDev）。持ち主: 本人のストアも（riot.py）。所持済みに印。"""
         content = current_app.config["VAL_CONTENT"]
         values: dict = {"featured": [], "featured_problem": "", "own": None, "own_problem": "", "own_detail": ""}
         try:
             values["featured"] = store.featured(current_app.config["VAL_HENRIK"].featured(), content, g.lang)
         except HenrikError:
-            values["featured_problem"] = _t("読み込めませんでした。")
+            values["featured_problem"] = tr("読み込めませんでした。")
         for bundle in values["featured"]:
             bundle["left"] = _left(bundle["until"])
         values["vp_icon"] = (content.index("currencies", g.lang).get(store.VP) or {}).get("displayIcon")
         reset = _next_reset(time.time())
-        values["reset"] = {"left": _left(reset), "when": _when(datetime.fromtimestamp(reset, JST).isoformat())}
+        values["reset"] = {"left": _left(reset), "when": moment_info(datetime.fromtimestamp(reset, JST).isoformat())}
         if security.is_owner():
             riot = current_app.config["VAL_RIOT"]
             try:
@@ -717,7 +723,7 @@ def register(app: Flask) -> None:
 
     @app.get("/shop/history")
     def shop_history():
-        """The owner's stores of the days before (diary.py), with the skins they want marked."""
+        """持ち主の過去のストア（diary.py）。ほしいスキンに印。"""
         security.owner_only()
         content, diary = current_app.config["VAL_CONTENT"], current_app.config["VAL_DIARY"]
         account = current_app.config["VAL_RIOT"].me()
@@ -747,5 +753,6 @@ def register(app: Flask) -> None:
 
     @app.get("/shop/reminder.ics")
     def shop_reminder():
-        """A calendar with one event a day when the daily store changes (midnight UTC), for any calendar app."""
+        """デイリーストアが切り替わるとき（UTC の 0 時）に 1 日 1 件の予定を入れるカレンダー（どのカレンダーアプリでも）
+        。"""
         return _reminder()

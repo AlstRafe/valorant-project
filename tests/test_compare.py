@@ -1,4 +1,4 @@
-"""Two players side by side (/compare)."""
+"""2 人の比較（/compare）。"""
 
 import json
 import os
@@ -13,7 +13,7 @@ ORIGINAL = FakeFetch.__call__
 
 
 def other_player(self, url, headers):
-    """HenrikDev's answers for "Other#KR1": the fixtures' player with another name, a higher rank and level."""
+    """「Other#KR1」の HenrikDev の答え: フィクスチャのプレイヤーを別名にし、ランクとレベルを上げたもの。"""
     status, body = ORIGINAL(self, url, headers)
     if "/Other/" not in url or status != 200:
         return status, body

@@ -1,8 +1,8 @@
-# Tests and style checks on every push. The VM serves whatever reaches master
-# within a minute, so a red mark here is the warning before (or right after) it goes live.
+# push のたびにテストとスタイルの確認。master に届いたものは 1 分以内に VM が配るので、ここの赤い印は公開前（か直後）
+# の警告。
 name: CI
 
-# Every branch on push (a pull request shows the run of its branch's last commit), or by hand.
+# push ではどのブランチも（プルリクエストにはそのブランチの最後のコミットの実行が出る）、または手動で。
 on:
   push:
   workflow_dispatch:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 env:
-  # Windows runners print with cp1252; the pages and messages are Japanese.
+  # Windows のランナーは cp1252 で出力する。ページとメッセージは日本語。
   PYTHONUTF8: "1"
 
 concurrency:
@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Ubuntu 24.04 with Python 3.12 is what the VM runs; Windows is the PC.
+        # VM が動かしているのは Ubuntu 24.04 と Python 3.12。Windows は PC。
         os: [ubuntu-24.04, windows-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
@@ -70,7 +70,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      # Chromium and the fonts it needs (Japanese, Korean and Chinese among them), so text is as wide as on a PC.
+      # Chromium と必要なフォント（日本語・韓国語・中国語も）。文字の幅が PC と同じになる。
       - run: npx playwright install --with-deps chromium
       - name: Look for broken layout (the tests' made-up answers)
         run: |
@@ -83,8 +83,8 @@ jobs:
           for i in $(seq 30); do curl -sf -o /dev/null http://127.0.0.1:5078/ && break; sleep 1; done
           node tests/ui/audit.js http://127.0.0.1:5078 --quick --desktop
 
-  # By hand only (Actions -> CI -> Run workflow): the live site, with real players, matches and pictures. The VM is
-  # small, so this is slow; it tells what it finds as it goes, and never fails the run (the live site may lag master).
+  # 手動だけ（Actions -> CI -> Run workflow）: 本番のサイトを本物のプレイヤー・試合・絵で。VM は小さいので遅い。
+  # 見つけたものを順に伝え、実行を失敗にはしない（本番は master より遅れることがある）。
   live-layout:
     name: Layout of the live site
     if: github.event_name == 'workflow_dispatch'
@@ -99,8 +99,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      # Dispatched right after a merge: the VM takes master within a minute, then the server restarts
-      # (about a minute), so the pages are checked once the new code answers.
+      # マージ直後に起動: VM は 1 分以内に master を取り、サーバーが再起動する（1 分ほど）ので、
+      # 新しいコードが答えてからページを確かめる。
       - name: Give the VM time to take the push
         run: sleep 150
       - run: node tests/ui/audit.js https://haruxera.duckdns.org/val --live

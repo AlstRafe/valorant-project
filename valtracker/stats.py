@@ -1,32 +1,27 @@
-"""Numbers worked out from HenrikDev's v4 matches: one player's line in a match, a scoreboard, a summary."""
+"""HenrikDev v4 の試合から計算する数値: 試合でのプレイヤーの成績、スコアボード、まとめ。"""
 
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta, timezone
 
+from valtracker.util import to_int
+
 JST = timezone(timedelta(hours=9))
-
-
-def _int(value) -> int:
-    try:
-        return int(value or 0)
-    except (TypeError, ValueError):
-        return 0
 
 
 def rounds_played(match: dict) -> int:
     teams = [team for team in match.get("teams") or [] if isinstance(team, dict)]
     if teams:
         rounds = teams[0].get("rounds") or {}
-        return _int(rounds.get("won")) + _int(rounds.get("lost"))
+        return to_int(rounds.get("won")) + to_int(rounds.get("lost"))
     return len(match.get("rounds") or [])
 
 
 def started(match: dict) -> datetime | None:
-    """When the match started, in Japan's time."""
+    """試合の開始時刻（日本時間）。"""
     raw = str((match.get("metadata") or {}).get("started_at") or "")
     try:
-        moment = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        moment = datetime.fromisoformat(raw)
     except ValueError:
         return None
     if moment.tzinfo is None:
@@ -35,7 +30,7 @@ def started(match: dict) -> datetime | None:
 
 
 def advanced(match: dict, player: dict) -> dict:
-    """The player's numbers from the match's rounds and kills (``digest``, rounds.py), or {} without them."""
+    """試合のラウンドとキルからのプレイヤーの数値（``digest``、rounds.py）。無ければ {}。"""
     digest = match.get("digest") or {}
     each = digest.get("players") or []
     players = [other for other in match.get("players") or [] if isinstance(other, dict)]
@@ -46,46 +41,46 @@ def advanced(match: dict, player: dict) -> dict:
 
 
 def line(player: dict, rounds: int, adv: dict | None = None) -> dict:
-    """One player's numbers: K / D / A, ACS (score per round), ADR (damage per round), HS%, +/-, DDΔ (damage dealt
-    less taken, per round), the economy rating (damage per 1000 credits spent); with ``adv`` (advanced) also KAST,
-    first kills and deaths, rounds of 3 kills or more, and clutches."""
+    """1 人分の数値: K / D / A、ACS（ラウンドあたりスコア）、ADR（ラウンドあたりダメージ）、HS%、+/-、
+    DDΔ（ラウンドあたり与ダメージ − 被ダメージ）、エコレーティング（1000 クレジットあたりのダメージ）。 ``adv``（詳細）
+    なら KAST、ファーストキル・デス、3 キル以上のラウンド、クラッチも。"""
     stats = player.get("stats") or {}
-    kills, deaths, assists = _int(stats.get("kills")), _int(stats.get("deaths")), _int(stats.get("assists"))
-    shots = _int(stats.get("headshots")) + _int(stats.get("bodyshots")) + _int(stats.get("legshots"))
-    damage = _int((stats.get("damage") or {}).get("dealt"))
-    taken = _int((stats.get("damage") or {}).get("received"))
-    spent = _int(((player.get("economy") or {}).get("spent") or {}).get("overall"))
+    kills, deaths, assists = to_int(stats.get("kills")), to_int(stats.get("deaths")), to_int(stats.get("assists"))
+    shots = to_int(stats.get("headshots")) + to_int(stats.get("bodyshots")) + to_int(stats.get("legshots"))
+    damage = to_int((stats.get("damage") or {}).get("dealt"))
+    taken = to_int((stats.get("damage") or {}).get("received"))
+    spent = to_int(((player.get("economy") or {}).get("spent") or {}).get("overall"))
     adv = adv or {}
-    played = _int(adv.get("rounds"))
+    played = to_int(adv.get("rounds"))
     return {
         "kills": kills,
         "deaths": deaths,
         "assists": assists,
         "diff": kills - deaths,
         "kd": round(kills / deaths, 2) if deaths else float(kills),
-        "acs": round(_int(stats.get("score")) / rounds) if rounds else 0,
+        "acs": round(to_int(stats.get("score")) / rounds) if rounds else 0,
         "adr": round(damage / rounds) if rounds else 0,
-        "hs": round(100 * _int(stats.get("headshots")) / shots) if shots else 0,
+        "hs": round(100 * to_int(stats.get("headshots")) / shots) if shots else 0,
         "shots": shots,
-        "headshots": _int(stats.get("headshots")),
-        "bodyshots": _int(stats.get("bodyshots")),
-        "legshots": _int(stats.get("legshots")),
+        "headshots": to_int(stats.get("headshots")),
+        "bodyshots": to_int(stats.get("bodyshots")),
+        "legshots": to_int(stats.get("legshots")),
         "damage": damage,
         "taken": taken,
         "dd": round((damage - taken) / rounds) if rounds else 0,
         "econ": round(damage * 1000 / spent) if spent and rounds else None,
-        "score": _int(stats.get("score")),
-        "kast": round(100 * _int(adv.get("kast")) / played) if played else None,
-        "fk": _int(adv.get("fk")) if adv else None,
-        "fd": _int(adv.get("fd")) if adv else None,
+        "score": to_int(stats.get("score")),
+        "kast": round(100 * to_int(adv.get("kast")) / played) if played else None,
+        "fk": to_int(adv.get("fk")) if adv else None,
+        "fd": to_int(adv.get("fd")) if adv else None,
         "mk": sum((adv.get("mk") or [0, 0, 0, 0])[1:]) if adv else None,
-        "clutches": _int(adv.get("clutches")) if adv else None,
+        "clutches": to_int(adv.get("clutches")) if adv else None,
     }
 
 
 def lobby(match: dict, player: dict, rounds: int) -> dict | None:
-    """The other players' average line in the match (the yardstick of the player's own): ACS, ADR, HS%, K/D, KAST
-    and first kills and deaths per round. None without rounds or others."""
+    """試合でのほかのプレイヤーの平均（プレイヤー自身の物差し）: ACS、ADR、HS%、K/D、KAST、
+    ラウンドあたりのファーストキル・デス。ラウンドかほかの人がいなければ None。"""
     others = [other for other in match.get("players") or [] if isinstance(other, dict) and other is not player]
     others = [other for other in others if other.get("puuid") != player.get("puuid")]
     if not rounds or not others:
@@ -103,7 +98,7 @@ def lobby(match: dict, player: dict, rounds: int) -> dict | None:
 
 
 def mates(match: dict, player: dict) -> list[dict]:
-    """Who queued with the player (the same party): ``[{"puuid", "name", "tag"}]``."""
+    """プレイヤーと一緒に並んだ人（同じパーティー）: ``[{"puuid", "name", "tag"}]``。"""
     party = player.get("party_id")
     if not party:
         return []
@@ -119,12 +114,12 @@ def mates(match: dict, player: dict) -> list[dict]:
 
 
 def team_result(match: dict, team_id: str) -> dict:
-    """``{"won": True/False/None (a draw or no teams), "us": rounds won, "them": rounds lost, "rounds": whether
-    the mode has rounds}``. Team Deathmatch and Escalation have none: only who won."""
+    """``{"won": True/False/None（引き分けかチーム無し）, "us": 取ったラウンド, "them": 取られたラウンド, "rounds":
+    モードにラウンドがあるか}``。チームデスマッチとエスカレーションにはラウンドが無く、勝敗だけ。"""
     for team in match.get("teams") or []:
         if isinstance(team, dict) and str(team.get("team_id")) == str(team_id):
             rounds = team.get("rounds") or {}
-            us, them = _int(rounds.get("won")), _int(rounds.get("lost"))
+            us, them = to_int(rounds.get("won")), to_int(rounds.get("lost"))
             won = team.get("won")
             if not us and not them:
                 return {"won": won if isinstance(won, bool) else None, "us": 0, "them": 0, "rounds": False}
@@ -133,15 +128,14 @@ def team_result(match: dict, team_id: str) -> dict:
 
 
 def placing(match: dict, player: dict) -> dict:
-    """Where the player finished among everyone: ``{"place": 1.., "of": players, "mvp": "match" / "team" / ""}``.
-    Places go by kills in a match without teams (Deathmatch), else by combat score; the MVPs (the game's
-    badges) only in a match with rounds."""
+    """全員の中での順位: ``{"place": 1.., "of": 人数, "mvp": "match" / "team" / ""}``。チームの無い試合（デスマッチ）
+    はキル数、ほかはコンバットスコアで順位。 MVP（ゲームのバッジ）はラウンドのある試合だけ。"""
     players = [other for other in match.get("players") or [] if isinstance(other, dict)]
     teams = bool(team_result(match, str(player.get("team_id") or ""))["rounds"])
     measure = "score" if teams else "kills"
 
     def value(other: dict) -> int:
-        return _int((other.get("stats") or {}).get(measure))
+        return to_int((other.get("stats") or {}).get(measure))
 
     mine = value(player)
     place = 1 + sum(1 for other in players if value(other) > mine)
@@ -169,7 +163,7 @@ def find_player(match: dict, puuid: str = "", name: str = "", tag: str = "") -> 
     return None
 
 
-#: The numbers set beside the lobby's: (key, higher is better).
+#: ロビーと並べる数値: （キー, 大きい方が良いか）。
 COMPARED = (("acs", True), ("adr", True), ("kd", True), ("hs", True), ("kast", True), ("fk", True), ("fd", False))
 
 
@@ -200,7 +194,7 @@ def _per_agent(played: list[dict]) -> list[dict]:
 
 
 def _totals(rows: list[dict]) -> dict:
-    """Games, wins and losses, win rate, K/D, ACS, ADR, DDΔ, HS%, KAST and the time played over some of the rows."""
+    """行のうちいくつかでの試合数、勝敗、勝率、K/D、ACS、ADR、DDΔ、HS%、KAST、プレイ時間。"""
     wins = sum(1 for row in rows if row["result"]["won"] is True)
     losses = sum(1 for row in rows if row["result"]["won"] is False)
     kills = sum(row["line"]["kills"] for row in rows)
@@ -228,7 +222,7 @@ def _totals(rows: list[dict]) -> dict:
 
 
 def _per_role(played: list[dict]) -> list[dict]:
-    """The player's numbers by the role of the agents they played (Duelist, Initiator, ...), the most played first."""
+    """使ったエージェントのロール（デュエリスト、イニシエーターなど）ごとのプレイヤーの数値。多く使った順。"""
     roles: dict[str, dict] = {}
     for row in played:
         role = row.get("role") or {}
@@ -259,8 +253,8 @@ def _per_map(played: list[dict]) -> list[dict]:
 
 
 def _best_agent(rows: list[dict]) -> dict | None:
-    """The agent the player does best with on a map: of those played there more than once (else the most played),
-    the highest win rate, then the most games and ACS. ``{"name", "icon", "games", "win_rate", "acs"}``."""
+    """そのマップでプレイヤーが一番得意なエージェント: 2 回以上使ったもの（無ければ一番使ったもの）
+    のうち勝率が一番高いもの、次に試合数と ACS。``{"name", "icon", "games", "win_rate", "acs"}``。"""
     agents: dict[str, list] = {}
     for row in rows:
         if row.get("agent_name"):
@@ -277,7 +271,7 @@ def _best_agent(rows: list[dict]) -> dict | None:
 
 
 def _sides(rows: list[dict]) -> dict:
-    """Rounds won on attack and on defence: ``{"atk": [won, played], "def": [...], "atk_rate", "def_rate"}``."""
+    """攻撃側と防衛側で取ったラウンド: ``{"atk": [取った, プレイした], "def": [...], "atk_rate", "def_rate"}``。"""
     found = {"atk": [0, 0], "def": [0, 0]}
     for row in rows:
         for side in ("atk", "def"):
@@ -288,7 +282,7 @@ def _sides(rows: list[dict]) -> dict:
 
 
 def _versus_lobby(rows: list[dict]) -> list[dict]:
-    """The player's averages beside their lobbies' (the other players of the same matches)."""
+    """プレイヤーの平均とロビー（同じ試合のほかの人）の平均を並べる。"""
     rows = [row for row in rows if row.get("lobby")]
     if not rows:
         return []
@@ -313,14 +307,14 @@ def _versus_lobby(rows: list[dict]) -> list[dict]:
                 "lobby": theirs,
                 "better": (relative > 0.05) if higher else (relative < -0.05),
                 "worse": (relative < -0.05) if higher else (relative > 0.05),
-                "score": relative if higher else -relative,  # how much better than the lobby (worse: below 0)
+                "score": relative if higher else -relative,  # ロビーよりどれだけ良いか（悪ければ 0 未満）
             }
         )
     return compared
 
 
 def _mates(rows: list[dict]) -> list[dict]:
-    """Who queued with the player most, and how those games went."""
+    """一番よく一緒に並んだ人と、その試合の結果。"""
     found: dict[str, dict] = {}
     for row in rows:
         for mate in row.get("mates") or []:
@@ -333,9 +327,9 @@ def _mates(rows: list[dict]) -> list[dict]:
 
 
 def summary(rows: list[dict]) -> dict:
-    """Over the matches shown (the standard games, when there are any): wins and losses, win rate, average K/D/A,
-    ACS, ADR, HS%, KAST, DDΔ, first kills and deaths, multi-kills, clutches, the time played, where the shots
-    landed, by agent, by map (and side), the weapons' kills, the player beside their lobbies, and their party."""
+    """出している試合（通常の試合があればそれ）全体で: 勝敗、勝率、平均 K/D/A、ACS、ADR、HS%、KAST、DDΔ、
+    ファーストキル・デス、マルチキル、クラッチ、プレイ時間、命中部位、エージェント別、マップ別（と攻守）、
+    武器ごとのキル、ロビーとの比較、パーティー。"""
     played = [row for row in rows if row.get("line")]
     played = [row for row in played if row.get("standard", True)] or played
     if not played:
@@ -389,7 +383,7 @@ def summary(rows: list[dict]) -> dict:
         "assists_total": assists,
         "kad": round((kills + assists) / deaths, 2) if deaths else float(kills + assists),
         "kpr": round(kills / rounds, 2) if rounds else None,
-        # ACS, ADR and DDΔ are per round: a mode without rounds has none
+        # ACS、ADR、DDΔ はラウンドあたり: ラウンドの無いモードには無い
         "acs": totals["acs"],
         "adr": totals["adr"],
         "dd": round(sum(row["line"].get("damage", 0) - row["line"].get("taken", 0) for row in with_rounds) / rounds)
@@ -403,17 +397,17 @@ def summary(rows: list[dict]) -> dict:
         ),
         "fk": sum(row["adv"]["fk"] for row in detailed) if detailed else None,
         "fd": sum(row["adv"]["fd"] for row in detailed) if detailed else None,
-        # the share of the rounds the player took (or gave) the first kill of
+        # プレイヤーがファーストキルを取った（取られた）ラウンドの割合
         "fk_rate": round(100 * sum(row["adv"]["fk"] for row in detailed) / detailed_rounds)
         if detailed_rounds
         else None,
         "fd_rate": round(100 * sum(row["adv"]["fd"] for row in detailed) / detailed_rounds)
         if detailed_rounds
         else None,
-        "multi": multi if detailed else None,  # rounds with 2, 3, 4 and 5 kills
+        "multi": multi if detailed else None,  # 2・3・4・5 キルのラウンド
         "clutches": sum(row["adv"]["clutches"] for row in detailed) if detailed else None,
         "clutch_best": max((row["adv"]["clutch_best"] for row in detailed), default=0),
-        # clutches by how many were against the player: won and tried (the matches with their kills kept)
+        # 相手の人数ごとのクラッチ: 勝ちと挑戦（キルを保存している試合）
         "clutch_table": [
             {"against": against, "won": won, "tried": attempts, "rate": _rate(won, attempts)}
             for against, (won, attempts) in clutch.items()
@@ -437,8 +431,8 @@ def summary(rows: list[dict]) -> dict:
         "plants": sum(row["adv"]["plants"] for row in detailed) if detailed else None,
         "defuses": sum(row["adv"]["defuses"] for row in detailed) if detailed else None,
         "minutes": round(sum(row.get("length") or 0 for row in played) / 60000),
-        "timed": sum(1 for row in played if row.get("length")),  # a stored line (archive.py) has no length
-        "detailed": len(detailed),  # the matches with their rounds and kills: the first kills' and the like
+        "timed": sum(1 for row in played if row.get("length")),  # 保存した成績（archive.py）には長さが無い
+        "detailed": len(detailed),  # ラウンドとキルがある試合: ファーストキルなど
         "aim": {
             "head": round(100 * heads / shots),
             "body": round(100 * bodies / shots),
@@ -447,7 +441,7 @@ def summary(rows: list[dict]) -> dict:
         }
         if shots
         else None,
-        "decided": totals["wins"] + totals["losses"],  # 0: no wins or losses to speak of (Deathmatch)
+        "decided": totals["wins"] + totals["losses"],  # 0: 勝ち負けと言えるものが無い（デスマッチ）
         "left_out": len([row for row in rows if row.get("line")]) - count,
         "form": [
             "win" if row["result"]["won"] is True else "loss" if row["result"]["won"] is False else "draw"
@@ -463,7 +457,7 @@ def summary(rows: list[dict]) -> dict:
                 "key": key,
                 "kills": number,
                 "share": round(100 * number / weapon_kills),
-                # how far the kills were (metres), of those with both places known
+                # キルの距離（メートル）。両方の場所がわかるものだけ
                 "far": round(far[key][0] / far[key][1]) if far.get(key) and far[key][1] else None,
                 "longest": round(far[key][2]) if far.get(key) and far[key][1] else None,
             }

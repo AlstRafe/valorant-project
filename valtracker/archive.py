@@ -1,20 +1,18 @@
-"""Every match the site has read of a player, kept on disk, so a player's page can count all of them ("通算"), not
-only the latest RECENT that HenrikDev lists.
+"""サイトが読んだプレイヤーの全試合をディスクに残す。プレイヤーページで、
+HenrikDev が出す最新 RECENT 試合だけでなく全部を数えられる（「通算」）。
 
-Where the matches come from:
+試合の出どころ:
 
-- each match HenrikDev gives the site (a player's latest, a match page): whole, with every player's line;
-- the game's own records (Riot's PD, read with the owner's linked account), once a visitor opens a player's
-  lifetime: their match history, then each match not kept yet, one call every FILL_SECONDS in the background
-  (Filler), and the RR each competitive match moved. PD's names are left out (pdmatch.py);
-- only when Riot cannot be asked (no linked account, or it refuses): HenrikDev's older pages of the player's
-  matches;
-- for what Riot no longer gives: HenrikDev's stored matches (v1), one line of the player per match without its
-  rounds (no KAST, first kills, weapons or places: "thin").
+- HenrikDev がサイトに渡す試合（プレイヤーの最新、試合ページ）: 全プレイヤーの成績入りでまるごと
+- ゲーム自身の記録（Riot の PD。持ち主の連携アカウントで読む）。訪問者がプレイヤーの通算を開いたら: 試合履歴、
+  次にまだ無い試合を 1 つずつ、裏で FILL_SECONDS ごとに 1 回（Filler）、コンペティティブの各試合の RR の動き。
+  PD の名前は消す（pdmatch.py）
+- Riot に聞けないとき（連携アカウントが無い、または断られた）だけ: HenrikDev のプレイヤーの古い試合のページ
+- Riot がもう出さないもの: HenrikDev の保存済み試合（v1）。試合ごとにプレイヤーの成績 1 行、ラウンド無し（KAST、
+  ファーストキル、武器、場所が無い:「薄い」）
 
-Kept in instance/archive.sqlite: each match once (compressed, as henrik._slim_match keeps it), who played in it,
-the thin lines, the RR changes, the matches still to read, and how far each player's history has been read.
-"""
+instance/archive.sqlite に残す: 各試合 1 回（圧縮、henrik.slim_match の形）、出た人、薄い成績、RR の変化、まだ読む試合、
+各プレイヤーの履歴をどこまで読んだか。"""
 
 from __future__ import annotations
 
@@ -27,24 +25,21 @@ from datetime import datetime
 from pathlib import Path
 
 from valtracker import pdmatch
-from valtracker.henrik import PAGE, HenrikError, _slim_match
+from valtracker.henrik import PAGE, HenrikError, slim_match
 from valtracker.riot import HISTORY_PAGE, RiotError
 
-#: Seconds between two of the background's calls to Riot (0: off): slow enough to leave the owner's own pages
-#: (the live match, the store) room, and Riot's limits too.
+#: 裏から Riot を呼ぶ間隔の秒数（0: 止める）: 持ち主自身のページ（ライブ、ストア）にも Riot の制限にも余裕を残す遅さ。
 FILL_SECONDS = 2.5
-#: Seconds between two calls to HenrikDev, whose allowance every visitor shares; and the calls of that allowance
-#: left for the visitors before the background asks.
+#: HenrikDev を呼ぶ間隔の秒数（呼び出し回数は訪問者全員で分け合う）と、裏が聞く前に訪問者用に残す回数。
 HENRIK_SECONDS = 15
 HENRIK_ROOM = 12
-#: After Riot says "too many" (429), seconds before it is asked again.
+#: Riot が「多すぎる」（429）と言ったあと、次に聞くまでの秒数。
 REST = 120
-#: A player whose history was read through is read again (the new matches only) when their lifetime is opened
-#: this long after.
+#: 最後まで読んだプレイヤーは、この時間が過ぎてから通算を開かれたら読み直す（新しい試合だけ）。
 AGAIN = 20 * 60
-#: Stored matches (HenrikDev v1) are read again after this long.
+#: 保存済み試合（HenrikDev v1）はこの時間が過ぎたら読み直す。
 STORED_AGAIN = 6 * 3600
-#: Where a match came from: HenrikDev's names every player, so it is kept over Riot's, which names one.
+#: 試合の出どころ: HenrikDev は全プレイヤーの名前を出すので、1 人しか名前の無い Riot のものより優先して残す。
 SOURCES = {"riot": 1, "henrik": 2}
 
 
@@ -63,7 +58,7 @@ def _unpack(blob) -> dict:
 def _started(match: dict) -> int:
     raw = str((match.get("metadata") or {}).get("started_at") or "")
     try:
-        return int(datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp())
+        return int(datetime.fromisoformat(raw).timestamp())
     except ValueError:
         return 0
 
@@ -111,11 +106,11 @@ class Archive:
                 self._db.close()
                 self._db = None
 
-    # -- what is kept -----------------------------------------------------------------------------------
+    # -- 残すもの ---------------------------------------------------------------------------------------
 
     def keep(self, matches: list, source: str = "henrik") -> int:
-        """Finished matches (henrik._slim_match's shape) into the archive; how many were new. A match kept from
-        HenrikDev is not replaced by Riot's (which names no one but the player)."""
+        """終わった試合（henrik.slim_match の形）をアーカイブに入れる。新しかった数を返す。
+        HenrikDev から残した試合は Riot のもの（プレイヤー以外の名前が無い）で置き換えない。"""
         rank = SOURCES.get(source, 0)
         rows, played = [], []
         for match in matches or []:
@@ -149,7 +144,7 @@ class Archive:
             return 0
 
     def keep_thin(self, puuid: str, lines: list) -> None:
-        """A player's stored lines (henrik._slim_stored's shape)."""
+        """プレイヤーの保存済みの成績（henrik._slim_stored の形）。"""
         rows = [
             (puuid, str(line["id"]).lower(), int(line.get("at") or 0), str(line.get("queue") or ""), json.dumps(line))
             for line in lines or []
@@ -158,7 +153,7 @@ class Archive:
         self._write("INSERT OR REPLACE INTO thin VALUES (?, ?, ?, ?, ?)", rows)
 
     def keep_rr(self, puuid: str, changes: dict) -> None:
-        """The RR each competitive match moved (henrik._slim_rr's shape)."""
+        """コンペティティブの各試合の RR の動き（henrik._slim_rr の形）。"""
         rows = [
             (
                 puuid,
@@ -192,10 +187,10 @@ class Archive:
         except sqlite3.Error:
             return []
 
-    # -- what the pages read ----------------------------------------------------------------------------
+    # -- ページが読むもの ------------------------------------------------------------------------------
 
     def known(self, ids: list[str]) -> set[str]:
-        """Which of these matches are kept whole."""
+        """このうち、まるごと残している試合。"""
         ids = [str(item).lower() for item in ids]
         if not ids:
             return set()
@@ -203,7 +198,7 @@ class Archive:
         return {row[0] for row in self._read(f"SELECT id FROM matches WHERE id IN ({marks})", tuple(ids))}
 
     def matches(self, puuid: str, queue: str = ""):
-        """The player's whole matches, newest first (of one queue, or of all): each as henrik._slim_match keeps it."""
+        """プレイヤーのまるごとの試合（新しい順、1 つのキューか全部）: henrik.slim_match の形。"""
         query = "SELECT m.data FROM played p JOIN matches m ON m.id = p.id WHERE p.puuid = ?"
         values: tuple = (puuid,)
         if queue:
@@ -215,7 +210,7 @@ class Archive:
                 yield found
 
     def thin(self, puuid: str, queue: str = "") -> list[dict]:
-        """The player's stored lines of the matches not kept whole, newest first."""
+        """まるごと残していない試合の、プレイヤーの保存済みの成績（新しい順）。"""
         query = (
             "SELECT t.data FROM thin t WHERE t.puuid = ? AND NOT EXISTS "
             "(SELECT 1 FROM played p WHERE p.puuid = t.puuid AND p.id = t.id)"
@@ -235,14 +230,14 @@ class Archive:
         return found
 
     def rr(self, puuid: str) -> dict:
-        """Every RR change kept of the player: henrik._slim_rr's shape."""
+        """残しているプレイヤーの RR の変化全部: henrik._slim_rr の形。"""
         return {
             row[0]: {"at": row[1], "tier": row[2], "rr": row[3], "change": row[4], "elo": row[5]}
             for row in self._read("SELECT id, at, tier, rr, change, elo FROM rr WHERE puuid = ?", (puuid,))
         }
 
     def version(self, puuid: str) -> tuple:
-        """Changes whenever something of the player is added (the pages keep what they worked out until then)."""
+        """プレイヤーのものが何か増えるたびに変わる値（ページはそれまで計算したものを持ち続ける）。"""
         found = self._read(
             "SELECT (SELECT COUNT(*) FROM played WHERE puuid = ?), (SELECT COUNT(*) FROM thin WHERE puuid = ?), "
             "(SELECT COUNT(*) FROM rr WHERE puuid = ?)",
@@ -251,7 +246,7 @@ class Archive:
         return tuple(found[0]) if found else (0, 0, 0)
 
     def first(self, puuid: str) -> int:
-        """When the player's oldest kept match started (unix seconds; 0 without one)."""
+        """残しているプレイヤーの一番古い試合の開始時刻（unix 秒。無ければ 0）。"""
         found = self._read(
             "SELECT MIN(started) FROM (SELECT started FROM played WHERE puuid = ? AND started > 0 "
             "UNION ALL SELECT started FROM thin WHERE puuid = ? AND started > 0)",
@@ -259,7 +254,7 @@ class Archive:
         )
         return int(found[0][0] or 0) if found else 0
 
-    # -- how far each player has been read ---------------------------------------------------------------
+    # -- 各プレイヤーをどこまで読んだか -----------------------------------------------------------------
 
     FIELDS = (
         "puuid",
@@ -284,15 +279,14 @@ class Archive:
         return dict(zip(self.FIELDS, found[0], strict=True)) if found else None
 
     def want(self, puuid: str, region: str, name: str, tag: str) -> dict:
-        """A visitor opened the player's lifetime: read their history (again, for the new matches only, when it
-        was read through over AGAIN ago)."""
+        """訪問者がプレイヤーの通算を開いた: 履歴を読む（最後まで読んだのが AGAIN より前なら、新しい試合だけ読み直す）。"""
         now = self.clock()
         state = self.player(puuid)
         if state is None:
-            # older: the next of HenrikDev's older pages (-2: not begun, -1: read through)
+            # older: 次に読む HenrikDev の古いページ（-2: 始めていない、-1: 最後まで読んだ）
             state = dict.fromkeys(self.FIELDS, 0) | {"puuid": puuid, "total": -1, "older": -2, "via": "", "problem": ""}
         elif state["finished"] and now - state["finished"] > AGAIN:
-            # Riot first again (an account may have been linked since), the newest pages only
+            # また Riot から（その後アカウントを連携したかもしれない）。新しいページだけ
             state |= {"scanned": 0, "total": -1, "rr_scanned": 0, "rr_done": 0, "finished": 0, "again": 1}
             state |= {"via": "", "older": -2, "problem": ""}
         state |= {"region": region, "name": name, "tag": tag, "wanted": now}
@@ -306,19 +300,19 @@ class Archive:
         )
 
     def busy(self) -> dict | None:
-        """The player most lately wanted whose history is not read through, or None."""
+        """一番最近求められた、履歴を最後まで読んでいないプレイヤー。無ければ None。"""
         found = self._read(
             f"SELECT {', '.join(self.FIELDS)} FROM players WHERE finished = 0 ORDER BY wanted DESC LIMIT 1"
         )
         return dict(zip(self.FIELDS, found[0], strict=True)) if found else None
 
     def add_todo(self, puuid: str, matches: list[dict]) -> None:
-        """Matches of the player's history to read (pdmatch.history's ``{"id", "at"}``)."""
+        """これから読むプレイヤーの履歴の試合（pdmatch.history の ``{"id", "at"}``）。"""
         rows = [(puuid, str(item["id"]).lower(), int(item.get("at") or 0)) for item in matches]
         self._write("INSERT OR IGNORE INTO todo VALUES (?, ?, ?)", rows)
 
     def next_todo(self, puuid: str) -> str:
-        """The newest match still to read ("" when none is)."""
+        """まだ読む試合のうち一番新しいもの（無ければ ""）。"""
         found = self._read("SELECT id FROM todo WHERE puuid = ? ORDER BY at DESC LIMIT 1", (puuid,))
         return str(found[0][0]) if found else ""
 
@@ -331,10 +325,10 @@ class Archive:
 
 
 class Filler:
-    """Reads the wanted players' histories in a thread of its own, one call at a time (see the module's words)."""
+    """求められたプレイヤーの履歴を専用のスレッドで 1 回ずつ読む（モジュールの説明を参照）。"""
 
     def __init__(self, archive: Archive, riot, henrik, maps, seconds: float = FILL_SECONDS, clock=time.time):
-        """``maps``: () -> valorant-api.com's maps by their address name (content.Content.map_index)."""
+        """``maps``: () -> valorant-api.com のマップをアドレス名で（content.Content.map_index）。"""
         self.archive, self.riot, self.henrik, self.maps = archive, riot, henrik, maps
         self.seconds, self.clock = seconds, clock
         self._started = False
@@ -345,7 +339,7 @@ class Filler:
 
     def want(self, region: str, puuid: str, name: str, tag: str) -> dict:
         state = self.archive.want(puuid.lower(), region, name, tag)
-        self._wake.set()  # the thread (started with the app's first page) goes on at once
+        self._wake.set()  # スレッド（アプリの最初のページで始まる）はすぐ続ける
         return state
 
     def start(self) -> None:
@@ -359,7 +353,7 @@ class Filler:
         while True:
             try:
                 did = self.step()
-            except Exception:  # noqa: BLE001 - a failed call is tried again next time
+            except Exception:  # 失敗した呼び出しは次の回にまた試す
                 did = "failed"
             if did:
                 time.sleep(self.seconds)
@@ -368,7 +362,7 @@ class Filler:
                 self._wake.clear()
 
     def step(self) -> str:
-        """One call for the player most lately wanted: what it was ("" when there is nothing to do)."""
+        """一番最近求められたプレイヤーのための 1 回の呼び出し: 何をしたか（することが無ければ ""）。"""
         state = self.archive.busy()
         if state is None:
             return ""
@@ -381,7 +375,7 @@ class Filler:
                 if error.kind == "busy":
                     self.resting_until = self.clock() + REST
                     return "rest"
-                # no linked account, or Riot does not give this player's history: HenrikDev's pages instead
+                # 連携アカウントが無い、または Riot がこのプレイヤーの履歴を出さない: 代わりに HenrikDev のページ
                 state |= {"via": "henrik", "problem": error.kind, "older": -2}
                 self.archive.save(state)
                 return "switch"
@@ -396,10 +390,10 @@ class Filler:
             except RiotError as error:
                 if error.kind != "down" or " 404" not in f" {error.detail}":
                     raise
-                details = {}  # a match Riot no longer has: the others are still read
+                details = {}  # Riot がもう持っていない試合: ほかは引き続き読む
             raw = pdmatch.to_v4(details, region, self.maps(), puuid, state["name"], state["tag"])
             if raw:
-                self.archive.keep([_slim_match(raw)], "riot")
+                self.archive.keep([slim_match(raw)], "riot")
             self.archive.drop_todo(puuid, match_id)
             return "match"
         if state["total"] < 0 or state["scanned"] < state["total"]:
@@ -411,7 +405,7 @@ class Filler:
             state["scanned"] += len(ids)
             state["total"] = max(page["total"], state["scanned"]) if ids else state["scanned"]
             if state["again"] and not new:
-                state["total"] = state["scanned"]  # a look for new matches: the rest were read before
+                state["total"] = state["scanned"]  # 新しい試合を見に来ただけ: 残りは前に読んだ
             self.archive.save(state)
             return "history"
         if not state["rr_done"]:
@@ -448,7 +442,7 @@ class Filler:
         return self._stored(state)
 
     def _stored(self, state: dict) -> str:
-        """HenrikDev's stored lines, for the matches Riot no longer gives (once in STORED_AGAIN); then done."""
+        """Riot がもう出さない試合のための HenrikDev の保存済みの成績（STORED_AGAIN に 1 回）。それで終わり。"""
         if self.henrik.key() and self.clock() - float(state["stored"] or 0) > STORED_AGAIN:
             if self.clock() - self._henrik_at < HENRIK_SECONDS or self.henrik.budget.room() < HENRIK_ROOM:
                 return "wait"
@@ -472,14 +466,14 @@ class Filler:
 
 
 def progress(state: dict | None, archive: Archive) -> dict:
-    """What the page says of a player's reading: ``{"busy", "via", "read", "total", "left", "minutes"}``."""
+    """プレイヤーの読み込みについてページに出すもの: ``{"busy", "via", "read", "total", "left", "minutes"}``。"""
     if not state:
         return {"busy": False, "via": "", "read": 0, "total": 0, "left": 0, "minutes": 0}
     busy = not state["finished"]
     left = archive.todo_count(state["puuid"]) if state["via"] != "henrik" else 0
     total = max(0, int(state["total"] or 0))
     if busy and state["via"] != "henrik" and total:
-        left += max(0, total - int(state["scanned"] or 0))  # not looked at yet: about one call each
+        left += max(0, total - int(state["scanned"] or 0))  # まだ見ていない: 1 つにつき約 1 回の呼び出し
     return {
         "busy": busy,
         "via": state["via"] or "riot",

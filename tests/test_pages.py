@@ -59,7 +59,7 @@ class PagesTest(unittest.TestCase):
         self.assertIn("default-src 'self'", csp)
         self.assertEqual(answer.headers["X-Frame-Options"], "DENY")
         self.assertEqual(answer.headers["X-Content-Type-Options"], "nosniff")
-        scripts = re.findall(r"<script>(.*?)</script>", answer.get_data(as_text=True), re.S)
+        scripts = re.findall(r"<script>(.*?)</script>", answer.get_data(as_text=True), re.DOTALL)
         self.assertEqual(len(scripts), 1, "the only inline script is the theme's")
         digest = base64.b64encode(hashlib.sha256(scripts[0].encode()).digest()).decode()
         self.assertIn(f"'sha256-{digest}'", csp)
@@ -74,14 +74,14 @@ class PagesTest(unittest.TestCase):
                 self.assertEqual(outside, [], "pictures and files come from this site")
 
     def test_link_previews_have_full_addresses(self):
-        # LINE, X and Discord show no picture for a relative og:image (Home Page's server marks the public name https)
+        # LINE、X、Discord は相対の og:image では絵を出さない（Home Page のサーバーは公開名に https の印を付ける）
         text = self.client.get("/p/Tester/JP1?x=1", base_url="https://example.org/val").get_data(as_text=True)
         image = re.search(r'<meta property="og:image" content="([^"]+)"', text).group(1)
         self.assertRegex(image, r"^https://example\.org/val/static/og\.png\?v=\w+$")
         self.assertIn('<meta property="og:url" content="https://example.org/val/p/Tester/JP1">', text)
 
     def test_search_goes_to_the_player(self):
-        answer = self.get("/search?q=Tester%EF%BC%83JP1")  # a full-width ＃ too
+        answer = self.get("/search?q=Tester%EF%BC%83JP1")  # 全角の ＃ も
         self.assertEqual(answer.status_code, 303)
         self.assertTrue(answer.headers["Location"].endswith("/p/Tester/JP1"))
 
@@ -89,19 +89,19 @@ class PagesTest(unittest.TestCase):
         answer = self.get("/search?q=Tester")
         self.assertEqual(answer.status_code, 400)
         text = answer.get_data(as_text=True)
-        self.assertIn("タグも入力してください。例: Tester#JP1", text)  # what is missing, with their name
+        self.assertIn("タグも入力してください。例: Tester#JP1", text)  # 足りないものを、名前と一緒に
         self.assertIn('href="/help#riot-id"', text)
-        self.assertIn('id="same-name" data-name="Tester"', text)  # the kept players of that name (app.js)
+        self.assertIn('id="same-name" data-name="Tester"', text)  # その名前で保存したプレイヤー（app.js）
         self.assertNotIn('class="guess"', text)
-        # a space where the # goes: the likely Riot ID is offered, not opened (a name may hold spaces)
+        # # の位置に空白: Riot ID らしいものを候補に出すが開かない（名前に空白が入ることもある）
         text = self.get("/search?q=Tester+JP1").get_data(as_text=True)
         self.assertIn('<a class="button quiet" href="/p/Tester/JP1">「Tester#JP1」で検索</a>', text)
         self.assertIn("例: Tester#JP1", text)
-        # not a name at all: the general words
+        # 名前ではない: 一般的な文
         text = self.get("/search?q=%3Cb%3E").get_data(as_text=True)
         self.assertIn("「名前#タグ」の形式で入力してください", text)
         self.assertNotIn('id="same-name"', text)
-        self.assertIn('list="known"', self.get("/").get_data(as_text=True))  # the kept players suggested
+        self.assertIn('list="known"', self.get("/").get_data(as_text=True))  # 保存したプレイヤーを候補に
 
     def test_help_page(self):
         for lang, words in {"ja": "ヘルプ", "ko": "도움말", "en-GB": "Help"}.items():
@@ -113,7 +113,7 @@ class PagesTest(unittest.TestCase):
                 self.assertIn('id="riot-id"', text)
                 self.assertIn('<details class="glossary" open>', text)
                 self.assertEqual(text.count("<dt>"), 18, "every word of the numbers")
-        self.assertIn('href="/help"', self.get("/agents").get_data(as_text=True))  # from every page's foot
+        self.assertIn('href="/help"', self.get("/agents").get_data(as_text=True))  # 全ページの下から
 
     def test_the_numbers_explained_where_they_are(self):
         text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
@@ -128,34 +128,34 @@ class PagesTest(unittest.TestCase):
     def test_when_the_numbers_were_read_and_reading_again(self):
         os.environ["VAL_HENRIK_KEY"] = "HDEV-test"
         text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
-        self.assertIn('<span class="read-at" id="read-at">たった今更新</span>', text)  # no press for a minute
+        self.assertIn('<span class="read-at" id="read-at">たった今更新</span>', text)  # 1 分間押していない
         self.assertNotIn('class="refresh"', text)
         calls = len(self.fetch.henrik_calls())
         henrik = self.app.config["VAL_HENRIK"]
-        for key in henrik.player_keys("ap", "Tester", "JP1"):  # read three minutes ago
+        for key in henrik.player_keys("ap", "Tester", "JP1"):  # 3 分前に読んだ
             at = henrik.read_times.get(key)
             if at:
                 henrik.read_times.put(key, at - 180, 60)
-        text = self.get("/p/Tester/JP1").get_data(as_text=True)  # at once: still kept
+        text = self.get("/p/Tester/JP1").get_data(as_text=True)  # すぐ: まだ保持
         self.assertIn("3 分前に更新", text)
-        self.assertIn('href="/p/Tester/JP1?fresh=1&amp;full=1"', text)  # without JavaScript, the whole page
+        self.assertIn('href="/p/Tester/JP1?fresh=1&amp;full=1"', text)  # JavaScript 無し: ページまるごと
         self.assertIn('data-part="/p/Tester/JP1/part?fresh=1"', text)
         self.assertEqual(len(self.fetch.henrik_calls()), calls, "nothing asked again yet")
 
-        shell = self.get("/p/Tester/JP1?fresh=1").get_data(as_text=True)  # pressed: the page asks again
+        shell = self.get("/p/Tester/JP1?fresh=1").get_data(as_text=True)  # 押した: ページが聞き直す
         self.assertIn('data-part="/p/Tester/JP1/part?fresh=1"', shell)
         part = self.get("/p/Tester/JP1/part?fresh=1").get_data(as_text=True)
         self.assertIn("たった今更新", part)
         self.assertEqual(len(self.fetch.henrik_calls()), calls + 4, "the rank, the RR and both parts of the matches")
-        self.get("/p/Tester/JP1/part?fresh=1")  # pressed again at once: a minute must pass
+        self.get("/p/Tester/JP1/part?fresh=1")  # すぐまた押した: 1 分待つ必要がある
         self.assertEqual(len(self.fetch.henrik_calls()), calls + 4)
 
     def test_the_last_answer_when_the_stats_server_does_not_answer(self):
-        """HenrikDev has moments (502, 503): asked once more, and then the day's last answer rather than an error."""
+        """HenrikDev は時々 502・503 を返す: もう 1 回聞き、それでもだめならエラーではなくその日の最後の答えを出す。"""
         self.assertIn("Tester", self.get("/p/Tester/JP1?full=1").get_data(as_text=True))
         henrik = self.app.config["VAL_HENRIK"]
         for key in henrik.player_keys("ap", "Tester", "JP1", ""):
-            henrik.cache.drop(key)  # what was read is old
+            henrik.cache.drop(key)  # 読んだものが古い
         self.fetch.henrik_status = 503
         asked = len(self.fetch.asked)
         answer = self.get("/p/Tester/JP1?full=1")
@@ -178,31 +178,31 @@ class PagesTest(unittest.TestCase):
         answer = self.get("/p/Tester/JP1/part?fresh=1")
         self.assertEqual(answer.status_code, 200)
         text = answer.get_data(as_text=True)
-        self.assertIn("Tier 21", text)  # what it showed before
+        self.assertIn("Tier 21", text)  # 前に出したもの
         self.assertIn("2 分前に更新", text)
 
     def test_player(self):
         answer = self.get("/p/Tester/JP1?full=1")
         self.assertEqual(answer.status_code, 200)
         text = answer.get_data(as_text=True)
-        self.assertIn("Tier 21", text)  # the rank as valorant-api.com names it
-        self.assertIn("アセント", text)  # the map too
+        self.assertIn("Tier 21", text)  # valorant-api.com の名前のランク
+        self.assertIn("アセント", text)  # マップも
         self.assertIn("13–9", text)
         self.assertIn("7–13", text)
-        self.assertIn("<small>ACS</small><strong>255</strong>", text)  # 5600 / 22 rounds
-        self.assertIn("50%", text)  # one win, one loss
+        self.assertIn("<small>ACS</small><strong>255</strong>", text)  # 5600 / 22 ラウンド
+        self.assertIn("50%", text)  # 1 勝 1 敗
         self.assertIn('data-name="Tester"', text)
         self.assertIn(f"/m/ap/{MATCH}", text)
         self.assertIn("Authorization", self.fetch.asked[0][1])
 
     def test_player_page_comes_at_once(self):
-        # HenrikDev takes seconds: the page comes first, and its script asks for the rank and matches
+        # HenrikDev は数秒かかる: ページが先に来て、そのスクリプトがランクと試合を頼む
         shell = self.get("/p/Tester/JP1")
         self.assertEqual(shell.status_code, 200)
         text = shell.get_data(as_text=True)
         self.assertIn('data-part="/p/Tester/JP1/part"', text)
         self.assertIn("戦績を読み込み中", text)
-        self.assertIn('href="/p/Tester/JP1?full=1"', text)  # without JavaScript
+        self.assertIn('href="/p/Tester/JP1?full=1"', text)  # JavaScript 無し
         self.assertEqual(self.fetch.henrik_calls(), [])
 
         part = self.get("/p/Tester/JP1/part")
@@ -213,18 +213,17 @@ class PagesTest(unittest.TestCase):
         self.assertNotIn("<html", text)
         self.assertEqual(part.headers["Cache-Control"], "no-store")
         self.assertRegex(part.headers["Server-Timing"], r"^henrik;dur=\d+$")
-        # the account, then side by side the rank, each match's RR and the matches (15: in two parts, as an answer
-        # gives 10 at most)
+        # アカウント、それから同時にランク、各試合の RR、試合（15 試合: 1 回の答えは最大 10 なので 2 回に分ける）
         self.assertEqual(len(self.fetch.henrik_calls()), 5)
 
     def test_what_a_player_page_tells(self):
         text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
         self.assertIn('<progress class="rr-bar" max="100" value="42" aria-label="RR 42 / 100"></progress>', text)
-        self.assertIn('<option value="e9a3">E9 A3</option>', text)  # the act rank: the latest act first
+        self.assertIn('<option value="e9a3">E9 A3</option>', text)  # アクトランク: 最新のアクトから
         self.assertIn('<div class="act" data-act="e9a3">', text)
         self.assertIn('<div class="act" data-act="e9a2" hidden>', text)
-        self.assertIn("<span>60%</span>", text)  # 12 of 20
-        # the badge: the 9 best wins from the top, triangles pointing up and down in turn
+        self.assertIn("<span>60%</span>", text)  # 20 のうち 12
+        # バッジ: 上から良い勝利 9 つ、三角は上向きと下向きを交互に
         badge = text[text.index('data-act="e9a3"') : text.index('data-act="e9a2"')]
         triangles = re.findall(r"competitivetiers/[^/]+/(\d+)/ranktriangle(up|down)icon", badge)
         self.assertEqual(
@@ -246,20 +245,20 @@ class PagesTest(unittest.TestCase):
         self.assertIn("Old 21", old, "Episode 4's 21 was Immortal 1")
         self.assertEqual(old.count(' won"'), 5, "wins without a picture still fill their place")
         self.assertEqual(old.count('"></span>') - old.count(' won"'), 4, "5 wins: 4 places left")
-        self.assertIn('<span class="up">+18 RR</span>', text)  # each competitive match's RR
+        self.assertIn('<span class="up">+18 RR</span>', text)  # コンペティティブの各試合の RR
         self.assertIn('<span class="down">-15 RR</span>', text)
-        # the guess at a second account, with its reasons on hover
+        # サブ垢の推測。理由はホバーで
         self.assertRegex(text, r'<span class="smurf (main|maybe|likely)" title="推測: ')
-        # each match's line: the rank (its picture, or its name without one) and the RR it left the player at
+        # 各試合の行: ランク（絵、無ければ名前）とその試合後の RR
         self.assertRegex(text, r'<small class="then" title="この試合時点のランク">.*?<span>\d+ RR</span></small>')
-        self.assertIn('<span class="mvp match" title="マッチ MVP">MVP', text)  # the best combat score of the match
+        self.assertIn('<span class="mvp match" title="マッチ MVP">MVP', text)  # 試合の最高コンバットスコア
         self.assertEqual(text.count('class="mvp match'), 1)
-        self.assertIn('<span class="mvp place" title="4人中 3位">3位</span>', text)  # where the loss left the player
-        self.assertIn('<li class="win">勝</li><li class="loss">敗</li>', text)  # newest first
+        self.assertIn('<span class="mvp place" title="4人中 3位">3位</span>', text)  # 負けた後のランク
+        self.assertIn('<li class="win">勝</li><li class="loss">敗</li>', text)  # 新しい順
         self.assertIn("<dt>ダメージ / ラウンド</dt><dd>143", text)  # (3000 / 22 -> 136, 3000 / 20 -> 150) / 2
         self.assertIn(f"/m/ap/{MATCH}?me=Tester%23JP1", text)
         self.assertNotIn("デスマッチなどは除く", text)
-        self.assertIn("勝利", text)  # the game's words
+        self.assertIn("勝利", text)  # ゲームの文
         self.assertIn("敗北", text)
         self.assertNotIn("勝ち", text)
 
@@ -269,7 +268,7 @@ class PagesTest(unittest.TestCase):
         self.assertIn('<li class="win">W</li><li class="loss">L</li>', english)
 
     def test_the_best_rank_is_the_best_ever_in_todays_numbers(self):
-        # v3 mmr's peak is Tier 22, but Episode 4 ended at 21: before Ascendant that was Immortal 1, today's 24
+        # v3 mmr の最高は Tier 22 だが、エピソード 4 は 21 で終わった: アセンダント以前はそれがイモータル 1（今の 24）
         text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
         best = text[text.index('<p class="label">通算最高</p>') :]
         self.assertIn("<span>Tier 24</span>", best[:400])
@@ -277,27 +276,27 @@ class PagesTest(unittest.TestCase):
 
     def test_a_player_page_in_depth(self):
         text = self.get("/p/Tester/JP1?full=1").get_data(as_text=True)
-        self.assertIn("Tier 22 まであと 58 RR · 平均 +18 で約 4 勝", text)  # 42 RR of 100
-        self.assertIn('<path class="line" d="M14.0,93.3 L786.0,56.7"/>', text)  # the RR trend: two competitive matches
+        self.assertIn("Tier 22 まであと 58 RR · 平均 +18 で約 4 勝", text)  # 100 のうち 42 RR
+        self.assertIn('<path class="line" d="M14.0,93.3 L786.0,56.7"/>', text)  # RR の推移: コンペティティブ 2 試合
         self.assertIn("+3 RR", text)  # +18 - 15
-        self.assertIn("<dd>59%", text)  # KAST over the match told round by round
+        self.assertIn("<dd>59%", text)  # ラウンドごとの試合での KAST
         self.assertIn("<dt>ファーストキル</dt><dd>13", text)
         self.assertIn("<dt>ファーストデス</dt><dd>1<", text)
-        self.assertIn("機会 9 · 成功 11%", text)  # 1 of the 9 rounds the player was the last of their team
+        self.assertIn("機会 9 · 成功 11%", text)  # 9 ラウンド中 1 回、チーム最後の 1 人になった
         self.assertIn(
             '<dt>1v2</dt><dd><meter min="0" max="100" value="0"></meter><span>0%</span><small>0/8</small>', text
         )
-        self.assertIn("1時間20分", text)  # two matches of 40 minutes
+        self.assertIn("1時間20分", text)  # 40 分の試合 2 つ
         self.assertIn('class="versus"', text)
         self.assertIn("強み", text)
         self.assertIn("頭 25%・体 62%・脚 13%", text)
         self.assertIn("攻撃", text)
         self.assertIn('id="ag-title"', text)
         self.assertIn('id="map-title"', text)
-        self.assertIn("ヴァンダル", text)  # the weapons by valorant-api.com's name
+        self.assertIn("ヴァンダル", text)  # valorant-api.com の名前の武器
         self.assertIn("/media/weapons/9c82e19d-4575-0200-1a81-3eacf00cf872/killstreamicon.png", text)
-        self.assertIn('href="/p/Mate/0001"', text)  # the party
-        self.assertIn('data-rank="Tier 21"', text)  # kept with the favourites
+        self.assertIn('href="/p/Mate/0001"', text)  # パーティー
+        self.assertIn('data-rank="Tier 21"', text)  # お気に入りと一緒に保存
         self.assertIn('data-day="{wins}勝 {losses}敗"', text)
         self.assertIn('data-outcome="win" data-rr="18"', text)
 
@@ -338,7 +337,7 @@ class PagesTest(unittest.TestCase):
         self.assertNotIn("data-part", kept, "kept: the whole page at once")
         self.assertIn("data-part", self.get("/p/Tester/JP1").get_data(as_text=True), "every mode is another list")
 
-        none = self.get("/p/Tester/JP1/part?mode=unrated").get_data(as_text=True)  # the fixture has only competitive
+        none = self.get("/p/Tester/JP1/part?mode=unrated").get_data(as_text=True)  # フィクスチャはコンペティティブだけ
         self.assertIn("このモードの最近の試合はありません。", none)
         bogus = self.get("/p/Tester/JP1/part?mode=bogus").get_data(as_text=True)
         self.assertIn('<a href="/p/Tester/JP1" aria-current="true">すべて</a>', bogus)
@@ -353,7 +352,7 @@ class PagesTest(unittest.TestCase):
 
     def test_player_not_found(self):
         self.fetch.henrik_status = 404
-        self.assertEqual(self.get("/p/Nobody/0000").status_code, 200)  # the page, asking for the rest
+        self.assertEqual(self.get("/p/Nobody/0000").status_code, 200)  # ページが残りを頼む
         for path in ("/p/Nobody/0000/part", "/p/Nobody/0000?full=1"):
             with self.subTest(path=path):
                 answer = self.get(path)
@@ -399,27 +398,27 @@ class PagesTest(unittest.TestCase):
         text = self.get(f"/m/ap/{MATCH}?me=Tester%23JP1").get_data(as_text=True)
         self.assertIn('href="/p/Tester/JP1">← Tester#JP1 の戦績', text)
         self.assertIn("平均ランク", text)
-        self.assertEqual(text.count('<li class="win'), 13)  # Tester's team won 13 rounds
-        self.assertIn('<li class="win swap"', text)  # the second half begins at round 13
+        self.assertEqual(text.count('<li class="win'), 13)  # Tester のチームが 13 ラウンド取った
+        self.assertIn('<li class="win swap"', text)  # 後半はラウンド 13 から
         self.assertIn('<use href="#end-detonate"/>', text)
         self.assertIn('<span class="cer">CLUTCH</span>', text)
-        self.assertIn("レッド: エコ", text)  # 800 a player in a pistol round
+        self.assertIn("レッド: エコ", text)  # ピストルラウンドは 1 人 800
         self.assertIn('<details class="round-feed win" id="r1">', text)
         self.assertIn("スパイク爆発 · A サイト", text)
         self.assertIn("0:10", text)
-        self.assertIn("+ Mate", text)  # the assist
+        self.assertIn("+ Mate", text)  # アシスト
         self.assertIn(
             '<th scope="col"><abbr title="キル・アシスト・生存・トレードがあったラウンドの割合">KAST</abbr></th>', text
         )
         self.assertIn('<span class="party p1" title="パーティ 1">1</span>', text)
         self.assertEqual(text.count('class="party '), 2, "only parties of two or more")
         self.assertIn("Tester の対面成績", text)
-        self.assertIn('<span class="up" title="キル">12</span>', text)  # Tester on Foe
-        # the player's numbers after each round: kills, deaths, K/D and the share of hits to the head so far
+        self.assertIn('<span class="up" title="キル">12</span>', text)  # Tester が Foe を
+        # ラウンドごとのプレイヤーの数値: そこまでのキル、デス、K/D、ヘッドショット率
         self.assertIn("Tester のラウンドごとの推移", text)
         self.assertRegex(text, r'<tr class="win"><th scope="row"><a href="#r1">1</a></th><td>\d</td>')
         self.assertIn('<th scope="col">HS%</th>', text)
-        # without the player the visitor came from: the rounds by team colour, no duels
+        # 訪問者がどのプレイヤーから来たかわからないとき: ラウンドはチーム色で、撃ち合いは無し
         plain = self.get(f"/m/ap/{MATCH}").get_data(as_text=True)
         self.assertIn('<li class="red"', plain)
         self.assertNotIn("対面成績", plain)
@@ -430,7 +429,7 @@ class PagesTest(unittest.TestCase):
         self.assertIn("7–13", self.get("/p/Tester/JP1?full=1").get_data(as_text=True))
         self.assertNotIn("ラウンドの流れ", text)
         self.assertNotIn("KAST", text)
-        self.assertIn("DDΔ", text)  # from the match's own numbers
+        self.assertIn("DDΔ", text)  # 試合自身の数値から
 
     def test_the_players_own_line_stands_out(self):
         text = self.get(f"/m/ap/{MATCH}?me=tester%23jp1").get_data(as_text=True)
@@ -459,7 +458,7 @@ class PagesTest(unittest.TestCase):
         page = self.get("/agents/11111111-1111-4111-8111-111111111111")
         self.assertEqual(page.status_code, 200)
         self.assertIn("ジェット の説明", page.get_data(as_text=True))
-        # the game's own marks in an ability's text ("<whitebold>…</>") are not shown
+        # アビリティの文中のゲームの印（"<whitebold>…</>"）は出さない
         self.assertIn("<p>大技を構える。ダメージを与える。</p>", page.get_data(as_text=True))
         self.assertNotIn("whitebold", page.get_data(as_text=True))
         self.assertEqual(self.get("/agents/nope").status_code, 404)
@@ -482,7 +481,7 @@ class PagesTest(unittest.TestCase):
                 self.assertEqual(self.get(bad).status_code, 404)
 
     def test_media_of_every_shape_the_pages_use(self):
-        """valorant-api.com's pictures nest differently: a role's icon and an ability's were refused before."""
+        """valorant-api.com の絵は入れ子が違う: ロールのアイコンとアビリティのアイコンは前は断っていた。"""
         agent = "11111111-1111-4111-8111-111111111111"
         for path in (
             "agents/roles/dbe8757e-9e92-4ed4-b39f-9dfc589691d4/displayicon.png",

@@ -1,4 +1,4 @@
-"""The owner's collection: linking the Riot account on the settings page, and the page of what it owns."""
+"""持ち主のコレクション: 設定ページでの Riot アカウント連携と、持っている物のページ。"""
 
 import json
 import os
@@ -92,11 +92,11 @@ class CollectionTest(unittest.TestCase):
         self.link()
         text = self.page()
         self.assertIn('Owner<span class="tag">#JP1</span>', text)
-        self.assertIn("ゴッド", text)  # the equipped title
+        self.assertIn("ゴッド", text)  # 装備中の称号
         self.assertIn("レベル 187", text)
         self.assertIn("1,250", text)
         self.assertIn("4,200", text)
-        # first every weapon in the game's order (sidearms first), each with what it wears (the chroma's picture)
+        # まず全武器をゲームの順（サイドアームから）で、それぞれ着けているもの（クロマの絵）と一緒に
         guns = text[text.index('<ul class="guns"') :]
         self.assertLess(guns.index("クラシック"), guns.index("ヴァンダル"))
         self.assertIn("weaponskinchromas/aa000000-0000-4000-8000-000000000022/displayicon.png", guns)
@@ -109,7 +109,7 @@ class CollectionTest(unittest.TestCase):
         self.assertRegex(text, r"スキン <small>3</small>")
         sources = re.findall(r'(?:src|href)="([^"]+)"', text)
         self.assertEqual([s for s in sources if s.startswith(("http:", "https:", "//"))], [])
-        # then one weapon's skins: the dearest first, whatever is worn (it is marked where it is)
+        # 次に 1 つの武器のスキン: 高い順、着けているものも含む（その場所に印）
         vandal = self.page(f"/collection?weapon={VANDAL}")
         self.assertIn(
             f'href="/collection?weapon={VANDAL}#gun" title="ヴァンダル: プライム ヴァンダル" aria-current="true"',
@@ -123,11 +123,11 @@ class CollectionTest(unittest.TestCase):
         self.assertIn('<span class="badge">装備中</span>', rows)
         self.assertNotIn("スタンダード", rows)
         self.assertIn('href="/collection">← 武器一覧</a>', vandal)
-        # at the top, before the list: what the weapon wears now, with its variant, level and buddy
+        # 一覧の前に: 今その武器が着けているもの（バリアント・レベル・ガンバディ）
         now = vandal[vandal.index('class="worn-now') : vandal.index('class="items skins rows"')]
         self.assertIn('class="worn-now tier-premium"', now)
         self.assertIn('<p class="worn-name">プライム ヴァンダル</p>', now)
-        self.assertIn("aa000000-0000-4000-8000-000000000022/fullrender.png", now)  # the worn variant's picture
+        self.assertIn("aa000000-0000-4000-8000-000000000022/fullrender.png", now)  # 着けているバリアントの絵
         self.assertIn("<span>バリエーション 2 ゴールド</span>", now)
         self.assertRegex(now, r"レベル \d/\d")
         self.assertIn("バディー：チリ バディー", now)
@@ -151,7 +151,7 @@ class CollectionTest(unittest.TestCase):
         self.assertIn('aria-current="true">スキン', self.page("/collection?show=nothing"))
 
     def test_the_loadout_v3(self):
-        """PD's playerloadout v3 (v2 answers 404 since September 2026): sprays and flex are its ActiveExpressions."""
+        """PD の playerloadout v3（v2 は 2026 年 9 月から 404）: スプレーとフレックスは ActiveExpressions に入る。"""
         self.link()
         vandal = self.page(f"/collection?weapon={VANDAL}")
         self.assertIn('<p class="worn-name">プライム ヴァンダル</p>', vandal)
@@ -177,7 +177,7 @@ class CollectionTest(unittest.TestCase):
         self.assertIn('<option value="x">1（現在: GG スプレー）</option>', self.page("/collection?show=sprays"))
 
     def test_what_is_worn_cannot_be_read(self):
-        """No loadout (both answer 404): nothing is called worn or standard, and the page says why."""
+        """ロードアウトが無い（どちらも 404）: 装備中・標準とは書かず、ページに理由を出す。"""
         self.riot.loadout_version = 1
         self.link()
         text = self.page()

@@ -1,35 +1,30 @@
-"""The game's queue settings (riot.Riot.queues: GLZ customgameconfigs) read for people: which maps each mode plays
-now, and who may queue for competitive together (the rank gap, the party sizes the top ranks may have).
+"""ゲームのキュー設定（riot.Riot.queues: GLZ の customgameconfigs）を人が読める形に: 各モードが今どのマップで遊べるか、
+コンペティティブに一緒に入れるのは誰か（ランク差、上位ランクのパーティー人数）。
 
-Riot's names: ``Queues[].MapWeights`` (``"<map>:<weight>"``, weight 0 = not played), ``PartySkillDisparity
-CompetitiveTiersCeilings`` ({tier: the highest tier a party with that tier in it may have}), ``HighSkillTier`` and
-``MaxPartySizeHighSkill`` (from that tier up, a party may have at most that many, unless it is a full party and
-``AllowFullPartyBypassSkillRestrictions``), ``InvalidPartySizes``, ``MaxPartySize``. Anything missing is left out.
-"""
+Riot の名前: ``Queues[].MapWeights``（``"<map>:<weight>"``、weight 0 は出ない）、
+``PartySkillDisparityCompetitiveTiersCeilings``（{tier: その tier がいるパーティーで許される最高 tier}）、
+``HighSkillTier`` と ``MaxPartySizeHighSkill``（その tier 以上がいるとパーティーはその人数まで。
+ただしフルパーティーで ``AllowFullPartyBypassSkillRestrictions`` なら別）、``InvalidPartySizes``、``MaxPartySize``。
+無いものは省く。"""
 
 from __future__ import annotations
 
-#: The modes the page lists, in the game's order (QueueID).
+from valtracker.util import to_int
+
+#: ページに並べるモード（ゲームの順、QueueID）。
 ORDER = ("competitive", "unrated", "swiftplay", "spikerush", "deathmatch", "ggteam", "hurm", "premier")
-#: The lowest rank tier (Iron 1); 0-2 are "unranked" in the tables.
+#: 一番下のランク tier（アイアン 1）。表では 0〜2 が「ランクなし」。
 IRON = 3
 
 
-def _int(value, default: int = 0) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
-
-
 def _maps(queue: dict, index: dict) -> list[dict]:
-    """The maps a queue plays now: ``[{"name", "image"}]`` in valorant-api.com's names."""
+    """キューの今のマップ: ``[{"name", "image"}]``（valorant-api.com の名前）。"""
     found = []
     for entry in queue.get("MapWeights") or []:
         text = ":".join(entry) if isinstance(entry, list) else str(entry)
         where, _, weight = text.rpartition(":")
         where = where or text
-        if weight and _int(weight, 1) <= 0:
+        if weight and to_int(weight, 1) <= 0:
             continue
         known = index.get(where.rsplit("/", 1)[-1].lower()) or index.get(where.lower()) or {}
         name = known.get("displayName") or where.rsplit("/", 1)[-1]
@@ -39,7 +34,7 @@ def _maps(queue: dict, index: dict) -> list[dict]:
 
 
 def settings(config: dict, map_index: dict) -> dict:
-    """``{"queues": [{"id", "maps", "party": (min, max), "invalid": [...]}], "competitive": rules or None}``."""
+    """``{"queues": [{"id", "maps", "party": (最少, 最多), "invalid": [...]}], "competitive": ルールか None}``。"""
     queues = {
         str(item.get("QueueID") or "").lower(): item
         for item in (config or {}).get("Queues") or []
@@ -55,8 +50,8 @@ def settings(config: dict, map_index: dict) -> dict:
             {
                 "id": key,
                 "maps": maps,
-                "party": (_int(queue.get("MinPartySize"), 1), _int(queue.get("MaxPartySize"), 5)),
-                "invalid": sorted(_int(size) for size in queue.get("InvalidPartySizes") or []),
+                "party": (to_int(queue.get("MinPartySize"), 1), to_int(queue.get("MaxPartySize"), 5)),
+                "invalid": sorted(to_int(size) for size in queue.get("InvalidPartySizes") or []),
             }
         )
     competitive = queues.get("competitive")
@@ -65,21 +60,23 @@ def settings(config: dict, map_index: dict) -> dict:
 
 def rules(queue: dict) -> dict:
     ceilings = {
-        _int(tier): _int(top) for tier, top in (queue.get("PartySkillDisparityCompetitiveTiersCeilings") or {}).items()
+        to_int(tier): to_int(top)
+        for tier, top in (queue.get("PartySkillDisparityCompetitiveTiersCeilings") or {}).items()
     }
     return {
         "ceilings": {tier: top for tier, top in sorted(ceilings.items()) if tier >= IRON},
-        "high_tier": _int(queue.get("HighSkillTier")),
-        "high_size": _int(queue.get("MaxPartySizeHighSkill")),
+        "high_tier": to_int(queue.get("HighSkillTier")),
+        "high_size": to_int(queue.get("MaxPartySizeHighSkill")),
         "bypass": bool(queue.get("AllowFullPartyBypassSkillRestrictions")),
-        "max": _int(queue.get("MaxPartySize"), 5),
-        "invalid": sorted(_int(size) for size in queue.get("InvalidPartySizes") or []),
+        "max": to_int(queue.get("MaxPartySize"), 5),
+        "invalid": sorted(to_int(size) for size in queue.get("InvalidPartySizes") or []),
     }
 
 
 def check(tiers: list[int], found: dict) -> dict:
-    """Whether a party of these ranks (tier numbers, 0 = not ranked yet) may queue for competitive:
-    ``{"ok": bool or None (cannot tell), "why": a reason key, "values": for its words}``."""
+    """このランク（tier の番号、0 はまだランクなし）
+    のパーティーでコンペティティブに入れるか: ``{"ok": bool か None（わからない）
+    , "why": 理由のキー, "values": 文に入れる値}``。"""
     size = len(tiers)
     ranked = [tier for tier in tiers if tier >= IRON]
     if size < 2:
@@ -87,9 +84,9 @@ def check(tiers: list[int], found: dict) -> dict:
     if size > found["max"] or size in found["invalid"]:
         return {"ok": False, "why": "size", "values": {"size": size}}
     full = size == 5 and found["bypass"]
-    if found["high_tier"] and found["high_size"] and any(tier >= found["high_tier"] for tier in ranked):
-        if size > found["high_size"] and not full:
-            return {"ok": False, "why": "high", "values": {"size": found["high_size"], "tier": found["high_tier"]}}
+    high = found["high_tier"] and found["high_size"] and any(tier >= found["high_tier"] for tier in ranked)
+    if high and size > found["high_size"] and not full:
+        return {"ok": False, "why": "high", "values": {"size": found["high_size"], "tier": found["high_tier"]}}
     if full:
         return {"ok": True, "why": "full", "values": {}}
     if len(ranked) < 2:

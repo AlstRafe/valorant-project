@@ -1,26 +1,25 @@
-"""The owner's own Riot account: what VALORANT's store servers (PD) say it owns, which no public API tells.
+"""持ち主自身の Riot アカウント: VALORANT のストアのサーバー（PD）が言う所持品。公開の API では取れない。
 
-Signing in: Riot's sign-in page has a captcha, so this server never sees the password. The owner signs in once in
-a browser and pastes on the settings page either
+サインイン: Riot のサインインページには captcha があるので、このサーバーはパスワードを見ない。
+持ち主はブラウザーで 1 回サインインし、設定ページに次のどちらかを貼る:
 
-- the ``ssid`` cookie of auth.riotgames.com (or a whole Cookie header): it is traded for an hour's tokens whenever
-  they are needed, and the fresh cookie Riot hands back each time is saved in its place, or
-- the address the browser lands on after signing in (``https://playvalorant.com/opt_in#access_token=...``): an
-  hour's tokens, with nothing long-lived kept.
+- auth.riotgames.com の ``ssid`` cookie（または Cookie ヘッダーまるごと）: 必要なときに 1 時間のトークンと交換し、
+  Riot が毎回返す新しい cookie で置き換えて保存する
+- サインイン後にブラウザーが行き着くアドレス（``https://playvalorant.com/opt_in#access_token=...``）
+  : 1 時間のトークンだけで、長く残るものは持たない
 
-In the desktop app (desktop.py) none of this is needed: the account signed in to the Riot Client on the PC gives its
-tokens (localclient.py), and the client's events say where the game is without asking GLZ's session.
+デスクトップアプリ（desktop.py）ではどちらも要らない: PC の Riot Client にサインインしているアカウントがトークンを出し（
+ localclient.py）、ゲームの状態は GLZ のセッションに聞かなくてもクライアントのイベントでわかる。
 
-Several accounts can be linked, one of them in use: the pages show that one's store, collection and progress, and
-the owner switches between them (the top page, the settings). In the desktop app the Riot Client's account is one
-of them, and the game on this PC (/live: the queue, the picks) is always that account's, whichever is shown.
+複数のアカウントを連携でき、そのうち 1 つを使う: ページはそのアカウントのストア・コレクション・進み具合を出し、
+持ち主が切り替える（トップページ、設定）。デスクトップアプリでは Riot Client のアカウントもその 1 つで、
+この PC のゲーム（/live: キュー、ピック）はどれを表示していてもいつもそのアカウントのもの。
 
-Kept in instance/riot.json (readable by its owner only, never in Git): the cookies, the account (puuid, Riot ID,
-shard) and the tokens until they run out, of the account in use; the other linked accounts under ``others``
-(``{puuid: the same keys}``), and ``linked_first`` (the desktop app: a linked account is shown although the Riot
-Client is signed in to another). These are the game client's own addresses, not a published API: Riot
-can change them without notice, so every field is read as optional, and what failed is kept for the owner to see.
-"""
+instance/riot.json に残す（持ち主だけが読める、Git には入れない）: 使用中のアカウントの cookie、アカウント（puuid、
+Riot ID、シャード）、切れるまでのトークン。ほかの連携アカウントは ``others`` に（``{puuid: 同じキー}``）、
+``linked_first``（デスクトップアプリ: Riot Client が別のアカウントでも連携アカウントを表示する）。
+これらはゲームクライアント自身のアドレスで、公開の API ではない: Riot は予告なく変えられるので、
+どの項目も無くてよいものとして読み、失敗したものは持ち主が見られるように残す。"""
 
 from __future__ import annotations
 
@@ -37,6 +36,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 from valtracker import net, pdmatch
 from valtracker.cache import TTLCache
 from valtracker.settings import Settings
+from valtracker.util import to_float, token_claims
 
 AUTHORIZE = (
     "https://auth.riotgames.com/authorize?redirect_uri=https%3A%2F%2Fplayvalorant.com%2Fopt_in"
@@ -46,45 +46,45 @@ ENTITLEMENTS = "https://entitlements.auth.riotgames.com/api/token/v1"
 USERINFO = "https://auth.riotgames.com/userinfo"
 GEO = "https://riot-geo.pas.si.riotgames.com/pas/v1/product/valorant"
 PD = "https://pd.{shard}.a.pvp.net"
-#: The party server: the game's queue settings (map pools, who may queue together) come from here. Its region is
-#: the shard's but in Latin America and Brazil (latam, br on the na shard), which only the desktop app knows.
+#: パーティーサーバー: ゲームのキュー設定（マップのプール、一緒に並べる人）はここから。リージョンはシャードと同じだが、
+#: ラテンアメリカとブラジル（na シャードの latam、br）は別で、それはデスクトップアプリしか知らない。
 GLZ = "https://glz-{region}-1.{shard}.a.pvp.net"
-#: How long the queue settings are kept (seconds): they change with a patch or a map rotation.
+#: キュー設定を持つ秒数: パッチやマップのローテーションで変わる。
 QUEUES_KEEP = 1800
-#: Where the owner's game is, kept this long (seconds): only so that two pages asking at once ask Riot once. The
-#: pages ask as often as the moment needs (live.EVERY): each second once a match is found.
+#: 持ち主のゲームの状態を持つ秒数: 2 つのページが同時に聞いても Riot に聞くのが 1 回で済むようにするためだけ。
+#: ページはその時に必要な頻度で聞く（live.EVERY）: 試合が見つかったら毎秒。
 LIVE_KEEP = 1
-#: The phases of a match the owner can be in, and where GLZ tells of each.
+#: 持ち主がいうる試合の段階と、GLZ がそれぞれを答える場所。
 PHASES = (("pregame", "/pregame/v1"), ("ingame", "/core-game/v1"))
-#: The game's session (loopState) -> the phase GLZ is asked about first.
+#: ゲームのセッション（loopState）-> 最初に GLZ に聞く段階。
 LOOPS = {"PREGAME": "pregame", "INGAME": "ingame"}
-#: A party in one of these states is matchmaking, or its match was found (the game's 5-second count before agent
-#: select, "MATCHMADE_GAME_STARTING"): agent select is asked for at once, and the owner's agents are read ahead.
+#: パーティーがこのどれかの状態ならマッチング中、または試合が見つかった（エージェント選択前のゲームの 5 秒カウント、
+#: "MATCHMADE_GAME_STARTING"）: すぐエージェント選択を聞き、持ち主のエージェントを先に読む。
 QUEUEING = ("MATCHMAKING", "STARTING")
-#: The owner's agents (for the pick screen) are kept this long (seconds): an agent is unlocked rarely.
+#: 持ち主のエージェント（ピック画面用）を持つ秒数: エージェントの解放はめったに無い。
 AGENTS_KEEP = 1800
-#: A player's name is kept this long (seconds) for the party and the match: asked once, not every few seconds.
+#: パーティーと試合でのプレイヤーの名前を持つ秒数: 数秒ごとではなく 1 回だけ聞く。
 NAME_KEEP = 3600
-#: How long a look at agent select waits for the players' ranks (seconds): the ones not read by then come with
-#: the next look, and the page shows the game's own badge meanwhile.
+#: エージェント選択を見るときにプレイヤーのランクを待つ秒数: それまでに読めなかったものは次の確認で来て、
+#: その間ページはゲーム自身のバッジを出す。
 RANK_WAIT = 0.8
-#: What the owner can press on /live (Riot.act): start a queue (its id), leave it, pick or lock an agent (its uuid).
+#: 持ち主が /live で押せるもの（Riot.act）: キューの開始（キュー ID）、離脱、エージェントのピック・ロック（uuid）。
 ACTIONS = ("start", "leave", "select", "lock")
-#: A player's rank (PD's mmr) is asked once a match at most: it changes only when a match ends.
+#: プレイヤーのランク（PD の mmr）を聞くのは 1 試合 1 回まで: 試合が終わったときにしか変わらない。
 RANK_KEEP = 900
-#: A page of a region's leaderboard is kept this long (seconds): Riot itself counts it again every few minutes.
+#: リージョンのランキングの 1 ページを持つ秒数: Riot 自身が数分ごとに数え直す。
 BOARD_KEEP = 300
-#: A region whose leaderboard Riot did not give is not asked again for this long (HenrikDev's is shown meanwhile).
+#: Riot がランキングを出さなかったリージョンにまた聞くまでの時間（その間は HenrikDev のものを出す）。
 BOARD_RESTING = 600
-#: The leaderboard's regions (as the game names them) -> the PD server that keeps each.
+#: ランキングのリージョン（ゲームの名前）-> それを持つ PD サーバー。
 BOARD_REGIONS = {"ap": "ap", "kr": "kr", "eu": "eu", "na": "na", "latam": "na", "br": "na"}
 _QUEUE_ID = re.compile(r"^[a-z0-9_-]{2,40}$")
 _UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-#: The account's region (Riot's geo answer) -> the PD server that keeps its items.
+#: アカウントのリージョン（Riot の geo の答え）-> そのアイテムを持つ PD サーバー。
 SHARDS = {"na": "na", "latam": "na", "br": "na", "eu": "eu", "ap": "ap", "kr": "kr", "pbe": "pbe"}
-#: Matches (or RR changes) asked for in one call of a player's history: as many as the game's client asks for.
+#: プレイヤーの履歴の 1 回の呼び出しで頼む試合（または RR の変化）の数: ゲームのクライアントと同じ。
 HISTORY_PAGE = 20
-#: The PC game client, as PD wants to be told.
+#: PD に伝える PC のゲームクライアント。
 PLATFORM = base64.b64encode(
     json.dumps(
         {
@@ -95,30 +95,30 @@ PLATFORM = base64.b64encode(
         }
     ).encode()
 ).decode()
-#: Where the owner's loadout is (PD's playerloadout), newest first: v3 since September 2026 (v2 answers 404
-#: RESOURCE_NOT_FOUND there; v3's sprays are in ``ActiveExpressions``). The next is asked when one answers 404, and
-#: a change goes back where the loadout came from.
+#: 持ち主のロードアウトの場所（PD の playerloadout）、
+#: 新しい順: 2026 年 9 月からは v3（そこでは v2 が 404 RESOURCE_NOT_FOUND。v3 のスプレーは ``ActiveExpressions``）。
+#: 404 なら次を聞き、変更はロードアウトを読んだ場所に戻す。
 LOADOUTS = ("/personalization/v3/players/{puuid}/playerloadout", "/personalization/v2/players/{puuid}/playerloadout")
-#: The collection's kinds -> PD's item types.
+#: コレクションの種類 -> PD のアイテムタイプ。
 ITEM_TYPES = {
-    "skins": "e7c63390-eda7-46e0-bb7a-a6abdacd2433",  # skin levels
+    "skins": "e7c63390-eda7-46e0-bb7a-a6abdacd2433",  # スキンのレベル
     "chromas": "3ad1b2b2-acdb-4524-852f-954a76ddae0a",
-    "buddies": "dd3bf334-87f3-40bd-b043-682a57a8dc3a",  # buddy levels, one entitlement per copy
+    "buddies": "dd3bf334-87f3-40bd-b043-682a57a8dc3a",  # ガンバディのレベル。コピーごとにエンタイトルメント 1 つ
     "cards": "3f296c07-64c3-494c-923b-fe692a4fa1bd",
     "sprays": "d5f120f8-ff8c-4aac-92ea-f2b5acbe9475",
     "titles": "de7caa6b-adf7-4588-bbd1-143831e786c6",
     "flex": "03a572de-4234-31ed-d344-ababa488f981",
     "agents": "01bb38e1-da47-4e6a-9b3d-945fe4655707",
 }
-#: How long the collection is kept (seconds): a skin bought in the game shows here after this.
+#: コレクションを持つ秒数: ゲームで買ったスキンはこれが過ぎてからここに出る。
 KEEP = 90
-#: What riot.json keeps of one linked account (the rest of the file is not one account's).
+#: riot.json が連携アカウント 1 つについて持つもの（ファイルの残りは 1 つのアカウントのものではない）。
 ACCOUNT_KEYS = ("cookies", "token", "puuid", "name", "tag", "shard", "signed_out")
-#: Accounts linked at most.
+#: 連携できるアカウントの最大数。
 ACCOUNTS_MAX = 8
-#: A token is traded for a new one this long before it runs out.
+#: トークンが切れるこの時間前に新しいものと交換する。
 EARLY = 300
-#: At most this much of what is pasted (a whole Cookie header is a few kB).
+#: 貼られたものから読む最大の長さ（Cookie ヘッダーまるごとで数 kB）。
 MAX_PASTE = 8000
 _COOKIE_NAME = re.compile(r"^[A-Za-z0-9_.\-]{1,64}$")
 _COOKIE_VALUE = re.compile(r"^[\x21-\x7e]{1,4096}$")
@@ -126,10 +126,10 @@ _TOKEN = re.compile(r"^[A-Za-z0-9._\-]{20,8192}$")
 
 
 class RiotError(Exception):
-    """Why there is no answer: ``kind`` is one of nologin (no account linked), badpaste (what was pasted is
-    neither a cookie nor a signed-in address), signedout (Riot no longer takes the cookie, or the hour is over),
-    busy, down (no answer, or one that cannot be read), full (ACCOUNTS_MAX accounts are linked already), unknown
-    (no such account or button). ``detail``: what Riot said, for the owner."""
+    """答えが無い理由: ``kind`` は nologin（アカウント未連携）、
+    badpaste（貼ったものが cookie でもサインイン後のアドレスでもない）、signedout（Riot が cookie を受け付けない、
+    または 1 時間が過ぎた）、busy、down（答えが無い、または読めない）、full（もう ACCOUNTS_MAX 個連携している）、
+    unknown（そのアカウントやボタンは無い）のどれか。``detail``: 持ち主向けの Riot の文。"""
 
     def __init__(self, kind: str, detail: str = ""):
         super().__init__(kind)
@@ -138,37 +138,37 @@ class RiotError(Exception):
 
 class Riot:
     def __init__(self, folder: Path, send: net.Send = net.send, version=dict, clock=time.time, local=None):
-        """``version``: () -> valorant-api.com's /version (content.Content.client_version), which PD wants.
-        ``local``: the Riot Client on this PC (localclient.LocalClient, the desktop app), else None."""
+        """``version``: () -> PD が求める valorant-api.com の /version（content.Content.client_version）。
+        ``local``: この PC の Riot Client（localclient.LocalClient、デスクトップアプリ）、無ければ None。"""
         self.store = Settings(folder, "riot.json")
         self.send, self.version, self.clock, self.local = send, version, clock, local
-        #: The client's event count /live was last read at: a newer event reads it again at once.
+        #: 最後に /live を読んだときのクライアントのイベント番号: 新しいイベントがあればすぐ読み直す。
         self._local_version = -1
-        #: The account the Riot Client was last seen signed in to ("": closed; None: not looked at yet).
+        #: 最後に見たとき Riot Client にサインインしていたアカウント（"": 閉じている、None: まだ見ていない）。
         self._client_seen: str | None = None
         self.cache = TTLCache(8)
-        #: Players' ranks in the owner's match: {puuid: PD's mmr answer}.
+        #: 持ち主の試合のプレイヤーのランク: {puuid: PD の mmr の答え}。
         self.ranks = TTLCache(64)
-        #: Players' names in the owner's party or match: {puuid: [name, tag]}.
+        #: 持ち主のパーティーか試合のプレイヤーの名前: {puuid: [name, tag]}。
         self.names = TTLCache(64)
-        #: Where GLZ last had the owner ({"party": id, "pregame": id, "ingame": id}): the next look asks for it
-        #: at once, without asking first where the owner is.
+        #: GLZ で最後に持ち主がいた場所（{"party": id, "pregame": id, "ingame": id}）: 次の確認では、
+        #: まず持ち主の居場所を聞かずにすぐそこを聞く。
         self.where: dict[str, str] = {}
-        #: The ranks being read (the riot-rank threads), each asked once however many looks want it.
+        #: 読んでいる途中のランク（riot-rank スレッド）。何回の確認が求めても 1 回だけ聞く。
         self._asking: set[str] = set()
         self._asking_lock = threading.Lock()
         self._ranker = ThreadPoolExecutor(5, thread_name_prefix="riot-rank")
-        #: Pages of the leaderboards, and the regions resting after a failure.
+        #: ランキングのページと、失敗して休んでいるリージョン。
         self.boards = TTLCache(64)
         self._lock = threading.Lock()
 
-    # -- what the pages use ---------------------------------------------------------------------------
+    # -- ページが使うもの ----------------------------------------------------------------------------
 
     def status(self, game: bool = False) -> dict:
-        """For the settings page: the account in use, whether it lasts (a cookie) or ends at ``until`` (an
-        hour's address), and whether Riot refused it last time (``signed_out``). ``client``: the account is the
-        one signed in to the Riot Client on this PC (the desktop app). ``game``: the account the game on this PC
-        is played with (the Riot Client's, whichever account the pages show)."""
+        """設定ページ用: 使用中のアカウント、それが続くか（cookie）``until`` で終わるか（1 時間のアドレス）、
+        前回 Riot に断られたか（``signed_out``）。``client``: そのアカウントがこの PC の Riot Client
+        にサインインしているもの（デスクトップアプリ）。
+        ``game``: この PC でゲームをしているアカウント（ページがどれを表示していても Riot Client のもの）。"""
         saved = self.store.load()
         found = self._client(game=game)
         if found is not None:
@@ -192,21 +192,23 @@ class Riot:
             "tag": str(saved.get("tag") or ""),
             "shard": str(saved.get("shard") or ""),
             "lasting": lasting,
-            "until": 0.0 if lasting else _number(token.get("until")) + EARLY,
-            "signed_out": bool(saved.get("signed_out")) or (not lasting and _number(token.get("until")) < self.clock()),
+            "until": 0.0 if lasting else to_float(token.get("until")) + EARLY,
+            "signed_out": bool(saved.get("signed_out"))
+            or (not lasting and to_float(token.get("until")) < self.clock()),
             "problem": str(saved.get("problem") or ""),
             "client": False,
         }
 
     def me(self, game: bool = False) -> str:
-        """The puuid of the account in use: the Riot Client's on this PC (the desktop app), else the linked one.
-        ``game``: of the account the game on this PC is played with."""
+        """使用中のアカウントの puuid: この PC の Riot Client のもの（デスクトップアプリ）、無ければ連携しているもの。
+        ``game``: この PC でゲームをしているアカウントのもの。"""
         found = self._client(game=game)
         return found[1]["puuid"] if found is not None else str(self.store.load().get("puuid") or "").lower()
 
     def _client(self, renew: bool = False, game: bool = False) -> tuple[dict, dict] | None:
-        """(tokens, account) from the Riot Client on this PC, or None: no desktop app, the client closed, or
-        (unless ``game``: what the game itself is asked) the owner chose to see a linked account instead."""
+        """この PC の Riot Client からの (tokens, account)、または None: デスクトップアプリでない、
+        クライアントが閉じている、または（``game``＝ゲーム自体に聞くとき以外で）
+        持ち主が連携アカウントを表示すると選んだ。"""
         if self.local is None:
             return None
         found = self.local.signed_in(renew)
@@ -218,8 +220,8 @@ class Riot:
         return None if saved.get("linked_first") and linked and linked != found[1]["puuid"] else found
 
     def _follow(self, puuid: str) -> None:
-        """The desktop app: when the Riot Client opens, or signs in to another account, its account is the one
-        shown again. A linked account the owner chose to see is shown until then."""
+        """デスクトップアプリ: Riot Client が開いたとき、または別のアカウントにサインインしたとき、
+        そのアカウントをまた表示する。それまでは持ち主が選んだ連携アカウントを表示する。"""
         if puuid == self._client_seen:
             return
         self._client_seen = puuid
@@ -228,10 +230,9 @@ class Riot:
             self._forget()
 
     def accounts(self) -> list[dict]:
-        """Every account the owner can use, always in the same order (the Riot Client's first, then the linked
-        ones by name): ``[{"puuid", "name", "tag", "shard", "current": the pages show it now, "client": it is the
-        one signed in to the Riot Client on this PC, "linked": with a cookie or an address (it can be unlinked),
-        "signed_out": Riot refused it last time}]``."""
+        """持ち主が使える全アカウント。いつも同じ順（Riot Client のものが先、次に連携しているものを名前順）
+        : ``[{"puuid", "name", "tag", "shard", "current": 今ページに出している, "client": この PC の Riot Client にサインインしている, "linked": cookie かアドレスつき（解除できる）
+        , "signed_out": 前回 Riot に断られた}]``。"""
         saved = self.store.load()
         signed = self._client(game=True)
         found: list[dict] = []
@@ -241,10 +242,10 @@ class Riot:
         for item in sorted(linked, key=lambda item: str(item.get("name") or "").casefold()):
             row = _row(item)
             if found and found[0]["client"] and row["puuid"] == found[0]["puuid"]:
-                found[0]["linked"] = True  # the client's account is linked as well: one line
+                found[0]["linked"] = True  # クライアントのアカウントも連携している: 1 行にまとめる
                 continue
             token = item.get("token") if isinstance(item.get("token"), dict) else {}
-            over = not item.get("cookies") and _number(token.get("until")) < self.clock()
+            over = not item.get("cookies") and to_float(token.get("until")) < self.clock()
             found.append({**row, "client": False, "linked": True, "signed_out": bool(item.get("signed_out")) or over})
         current = self.me()
         for row in found:
@@ -252,8 +253,8 @@ class Riot:
         return found
 
     def switch(self, puuid: str) -> dict:
-        """Shows another of the owner's accounts from now on: a linked one, or (the desktop app) the one signed
-        in to the Riot Client. RiotError ``unknown`` when it is neither."""
+        """今から持ち主の別のアカウントを表示する: 連携しているもの、または（デスクトップアプリ）
+        Riot Client にサインインしているもの。どちらでもなければ RiotError ``unknown``。"""
         puuid = str(puuid or "").strip().lower()
         with self._lock:
             saved = self.store.load()
@@ -261,7 +262,7 @@ class Riot:
             signed = self._client(game=True)
             first = True if self.local is not None else None
             if signed is not None and puuid == signed[1]["puuid"]:
-                changes = {"linked_first": None}  # the Riot Client's account again, whichever it is
+                changes = {"linked_first": None}  # どれであっても、また Riot Client のアカウント
             elif puuid and puuid == str(saved.get("puuid") or "").lower():
                 changes = {"linked_first": first}
             elif puuid in others:
@@ -273,12 +274,12 @@ class Riot:
         return self.status()
 
     def _forget(self) -> None:
-        """Nothing read of the account shown until now is shown for the next one."""
+        """今まで表示していたアカウントで読んだものは、次のアカウントでは出さない。"""
         self.cache = TTLCache(8)
         self.where = {}
 
     def sign_in(self, pasted: str) -> dict:
-        """Link the account from what the owner pasted (see the module's words); RiotError when it does not work."""
+        """持ち主が貼ったものでアカウントを連携する（モジュールの説明を参照）。うまくいかなければ RiotError。"""
         pasted = pasted.strip()[:MAX_PASTE]
         with self._lock:
             if "access_token=" in pasted:
@@ -295,7 +296,7 @@ class Riot:
             saved = self.store.load()
             others, now = _others(saved), str(saved.get("puuid") or "").lower()
             if now and now != account["puuid"]:
-                # another account: the one in use until now stays linked, among the others
+                # 別のアカウント: 今まで使っていたものはほかのものと一緒に連携したまま
                 if account["puuid"] not in others and len(others) + 2 > ACCOUNTS_MAX:
                     raise RiotError("full")
                 others = {key: value for key, value in others.items() if key != account["puuid"]}
@@ -306,15 +307,15 @@ class Riot:
                 signed_out=None,
                 problem=None,
                 others=others or None,
-                linked_first=True if self.local is not None else None,  # the account just linked is the one shown
+                linked_first=True if self.local is not None else None,  # 今連携したアカウントを表示する
                 **account,
             )
-            self._forget()  # another account's collection is not shown
+            self._forget()  # 別のアカウントのコレクションは出さない
         return self.status()
 
     def sign_out(self, puuid: str = "") -> None:
-        """Unlinks an account (the linked one in use when none is named). Another linked account, when there is
-        one, is used from then on."""
+        """アカウントの連携を解除する（名前が無ければ使用中の連携アカウント）。ほかに連携アカウントがあれば、
+        以後はそれを使う。"""
         with self._lock:
             saved = self.store.load()
             others, now = _others(saved), str(saved.get("puuid") or "").lower()
@@ -330,15 +331,13 @@ class Riot:
             self._forget()
 
     def collection(self) -> dict:
-        """``{"name", "tag", "wallet": {currency uuid: amount} or None, "loadout": PD's playerloadout or None,
-        "owned": {kind: {item uuid: copies}}, "instances": {buddy level uuid: [each copy's InstanceID]},
-        "missing": [what could not be read], "problem": why}``.
-        RiotError when nothing could be read."""
+        """``{"name", "tag", "wallet": {通貨 uuid: 量} か None, "loadout": PD の playerloadout か None, "owned": {種類: {アイテム uuid: コピー数}}, "instances": {ガンバディのレベル uuid: [各コピーの InstanceID]}, "missing": [読めなかったもの], "problem":
+        理由}``。何も読めなければ RiotError。"""
         return self._kept("collection", self._collect)
 
     def loadout(self) -> dict:
-        """PD's playerloadout of the owner, read now (not the collection's kept one): what a set saved from the
-        collection page holds. RiotError when it could not be read."""
+        """今読んだ持ち主の PD の playerloadout（コレクションが持っているものではない）
+        : コレクションのページから保存するセットの中身。読めなければ RiotError。"""
 
         def read(tokens: dict, saved: dict) -> dict:
             base, puuid, headers = self._base(saved), str(saved["puuid"]), self._headers(tokens)
@@ -347,24 +346,25 @@ class Riot:
         return self._kept("loadout", read, 0)["loadout"]
 
     def shop(self) -> dict:
-        """Today's store (shop.py reads it): ``{"name", "tag", "wallet", "storefront": PD's storefront or None,
-        "missing", "problem"}``. RiotError when nothing could be read."""
+        """今日のストア（shop.py が読む）
+        : ``{"name", "tag", "wallet", "storefront": PD の storefront か None, "missing", "problem"}``。
+        何も読めなければ RiotError。"""
         return self._kept("shop", self._storefront)
 
     def queues(self) -> dict:
-        """The game's settings of its queues (GLZ customgameconfigs: the same for everyone of the region, so the
-        public pages may show them): ``{"config": Riot's answer, "at", "missing", "problem"}``."""
+        """ゲームのキュー設定（GLZ の customgameconfigs: リージョンの全員で同じなので、公開ページで出してよい）
+        : ``{"config": Riot の答え, "at", "missing", "problem"}``。"""
         return self._kept("queues", self._queues, QUEUES_KEEP)
 
     def contracts(self) -> dict:
-        """The battle pass, the events' passes, the agents' contracts and the missions (PD's contracts):
-        ``{"contracts": PD's answer, "missing", "problem"}``. RiotError when it could not be read."""
+        """バトルパス、イベントのパス、エージェントのコントラクト、ミッション（PD の contracts）
+        : ``{"contracts": PD の答え, "missing", "problem"}``。読めなければ RiotError。"""
         return self._kept("contracts", self._contracts)
 
     def agents(self) -> set[str]:
-        """The owner's agents (uuids; PD's entitlements of the agent type), for the pick screen (so of the account
-        the game is played with): one call, kept AGENTS_KEEP (the whole collection is ten). RiotError when it
-        could not be read."""
+        """持ち主のエージェント（uuid。エージェント種類の PD のエンタイトルメント）。
+        ピック画面用（なのでゲームをしているアカウントのもの）
+        : 1 回の呼び出しで AGENTS_KEEP 持つ（コレクション全部だと 10 回）。読めなければ RiotError。"""
 
         def read(tokens: dict, saved: dict) -> dict:
             url = f"{self._base(saved)}/store/v1/entitlements/{saved['puuid']}/{ITEM_TYPES['agents']}"
@@ -379,22 +379,22 @@ class Riot:
         return set(self._kept("agents", read, AGENTS_KEEP, game=True)["agents"])
 
     def live(self) -> dict:
-        """Where the owner's game is now (GLZ): ``{"running": whether VALORANT is open (None: could not tell),
-        "phase": "menus", "pregame" (agent select), "ingame" or "" (not playing), "match": GLZ's match or None,
-        "party": GLZ's party (in the menus) or None, "names": {puuid: [name, tag]}, "ranks": {puuid: PD's mmr},
-        "at", "missing", "problem"}``. Names are asked only for players who do not hide theirs (``Incognito``)."""
+        """今の持ち主のゲームの状態（GLZ）
+        : ``{"running": VALORANT が開いているか（None: わからない）, "phase": "menus"、"pregame"（エージェント選択）、"ingame"、""（プレイしていない）, "match": GLZ の試合か None, "party": GLZ のパーティー（メニュー）
+        か None, "names": {puuid: [name, tag]}, "ranks": {puuid: PD の mmr}, "at", "missing", "problem"}``。
+        名前は隠していない（``Incognito`` でない）プレイヤーのものだけ聞く。"""
         if self.local is not None and self.local.version != self._local_version:
-            # the client told of a change (the match found, agent select, a pick): read now, not the kept answer
+            # クライアントが変化（試合成立、エージェント選択、ピック）を知らせた: 持っている答えではなく今読む
             self._local_version = self.local.version
             self.cache.put("live", None, 0)
         return self._kept("live", self._live, LIVE_KEEP, game=True)
 
     def leaderboard(self, region: str, season: str, start: int = 0, size: int = 50, query: str = "") -> dict:
-        """One page of a region's ranked leaderboard from the game's own server (PD), in henrik.Henrik.leaderboard's
-        shape: ``{"players": [{"rank", "name", "tag", "puuid", "card", "tier", "rr", "wins", "hidden"}],
-        "thresholds": [{"tier", "rr", "from"}], "total", "updated"}``. It is the same for every player, so the
-        public pages may show it; the players who hide their name (Riot's ``IsAnonymized``) come without one.
-        ``query``: a name to look for. RiotError when Riot does not give it (the region then rests a while)."""
+        """ゲーム自身のサーバー（PD）からのリージョンのランク戦ランキングの 1 ページ。
+        henrik.Henrik.leaderboard の形: ``{"players": [{"rank", "name", "tag", "puuid", "card", "tier", "rr", "wins", "hidden"}], "thresholds": [{"tier", "rr", "from"}], "total",
+        "updated"}``。全プレイヤーで同じなので公開ページで出してよい。
+        名前を隠しているプレイヤー（Riot の ``IsAnonymized``）は名前無し。``query``: 探す名前。
+        Riot が出さなければ RiotError（そのリージョンはしばらく休む）。"""
         if region not in BOARD_REGIONS or not _UUID.match(season):
             raise RiotError("down", "leaderboard: no such region or act")
         resting = self.boards.get(("resting", region))
@@ -423,13 +423,13 @@ class Riot:
         return found
 
     def has_board(self, region: str, season: str, start: int = 0, size: int = 50, query: str = "") -> bool:
-        """Whether that page is kept (it needs no call)."""
+        """そのページを持っているか（あれば呼び出しは要らない）。"""
         key = ("board", region, season, max(0, int(start)), int(size), query.casefold())
         return self.boards.get(key) is not None
 
     def history(self, region: str, puuid: str, start: int = 0) -> dict:
-        """A page of any player's match history from the game's own server (PD), newest first:
-        ``{"total", "matches": [{"id", "at", "queue"}]}`` (pdmatch.history). RiotError without it."""
+        """ゲーム自身のサーバー（PD）からの、任意のプレイヤーの試合履歴の 1 ページ（新しい順）
+        : ``{"total", "matches": [{"id", "at", "queue"}]}``（pdmatch.history）。無ければ RiotError。"""
         if not _UUID.match(puuid):
             raise RiotError("down", "history: not a puuid")
         asked = urlencode({"startIndex": max(0, int(start)), "endIndex": max(0, int(start)) + HISTORY_PAGE})
@@ -441,7 +441,7 @@ class Riot:
         return self._read(read)
 
     def match_details(self, region: str, match_id: str) -> dict:
-        """A finished match as the game's own server keeps it (PD's match-details; pdmatch.to_v4 reads it)."""
+        """ゲーム自身のサーバーが持つ形の終わった試合（PD の match-details。pdmatch.to_v4 が読む）。"""
         if not _UUID.match(match_id):
             raise RiotError("down", "match: not a match id")
 
@@ -452,8 +452,8 @@ class Riot:
         return self._read(read)
 
     def rr_updates(self, region: str, puuid: str, start: int = 0) -> dict:
-        """A page of any player's competitive matches with the RR each moved (PD's competitiveupdates), newest
-        first: ``{"changes": {match id: {"change", "tier", "rr", "elo", "at"}}, "count": matches on the page}``."""
+        """任意のプレイヤーのコンペティティブの試合と、それぞれの RR の動きの 1 ページ（PD の competitiveupdates）、
+        新しい順: ``{"changes": {試合 ID: {"change", "tier", "rr", "elo", "at"}}, "count": ページの試合数}``。"""
         if not _UUID.match(puuid):
             raise RiotError("down", "rr: not a puuid")
         start = max(0, int(start))
@@ -468,10 +468,11 @@ class Riot:
         return self._read(read)
 
     def act(self, action: str, value: str = "") -> dict:
-        """One of the owner's buttons on /live, sent as the game's own client sends it: ``start`` (value: a queue
-        id) sets the party's queue and starts matchmaking, ``leave`` stops it, ``select`` / ``lock`` (value: an
-        agent's uuid) pick or lock an agent at agent select. RiotError: ``unknown`` (not one of these),
-        ``notnow`` (not in a party, or not at agent select), or what Riot said."""
+        """/live の持ち主のボタンを、ゲーム自身のクライアントと同じように送る: ``start``（値: キュー ID）
+        はパーティーのキューを設定してマッチングを始め、``leave`` は止め、
+        ``select`` / ``lock``（値: エージェントの uuid）はエージェント選択でピック・ロックする。
+        RiotError: ``unknown``（このどれでもない）、``notnow``（パーティーにいない、またはエージェント選択でない）、
+        または Riot の言ったこと。"""
         value = str(value or "").strip().lower()
         if (
             action not in ACTIONS
@@ -484,7 +485,7 @@ class Riot:
             glz, puuid, headers = self._glz(saved), str(saved["puuid"]), self._headers(tokens)
             posted = {**headers, "Content-Type": "application/json"}
             if action in ("select", "lock"):
-                # the agent select the page shows (the last look's): a pick is sent with one call, not two
+                # ページが出しているエージェント選択（前回の確認のもの）: ピックは 2 回ではなく 1 回の呼び出しで送る
                 match_id = self.where.get("pregame") or self._now(
                     "pregame", f"{glz}/pregame/v1/players/{puuid}", headers, "MatchID"
                 )
@@ -503,10 +504,10 @@ class Riot:
         try:
             return self._kept("act", send, 0, game=True)
         finally:
-            self.cache.put("live", None, 0)  # what the page shows next is asked again
+            self.cache.put("live", None, 0)  # ページが次に出すものを聞き直す
 
     def _now(self, key: str, url: str, headers: dict, field: str) -> str:
-        """The id GLZ gives for where the owner is now (their party, their agent select), or RiotError notnow."""
+        """今持ち主がいる場所（パーティー、エージェント選択）の GLZ の ID。無ければ RiotError notnow。"""
         try:
             found = str(self._pd(key, url, headers).get(field) or "").lower()
         except RiotError as error:
@@ -518,14 +519,14 @@ class Riot:
         return found
 
     def equip(self, change) -> dict:
-        """Changes the owner's loadout: ``change(loadout)`` edits PD's playerloadout (a fresh one) in place, and
-        it is sent back whole, as the game client does. The collection is read again afterwards."""
+        """持ち主のロードアウトを変える: ``change(loadout)`` が PD の playerloadout（新しく読んだもの）
+        をその場で書き換え、ゲームクライアントと同じくまるごと送り返す。そのあとコレクションを読み直す。"""
 
         def send(tokens: dict, saved: dict) -> dict:
             base, puuid, headers = self._base(saved), str(saved["puuid"]), self._headers(tokens)
             loadout, url = self._loadout(base, puuid, headers)
             change(loadout)
-            # the body is the loadout without Subject and Version (PD gives the new Version)
+            # 本文は Subject と Version を除いたロードアウト（新しい Version は PD が付ける）
             loadout.pop("Version", None)
             loadout.pop("Subject", None)
             body = json.dumps(loadout).encode()
@@ -552,8 +553,8 @@ class Riot:
 
     def _live(self, tokens: dict, saved: dict) -> dict:
         glz, puuid, headers = self._glz(saved), str(saved["puuid"]), self._headers(tokens)
-        # the game's session says whether it is open and where: the menus, agent select or a match; in the desktop
-        # app the Riot Client has told it already (its events), and GLZ is not asked
+        # ゲームのセッションで、開いているかとどこにいるか（メニュー、エージェント選択、試合）がわかる。
+        # デスクトップアプリでは Riot Client がもう知らせているので（イベント）GLZ には聞かない
         running, loop = None, ""
         seen = self.local.presence() if self.local is not None else None
         if seen is not None and not seen["running"]:
@@ -572,10 +573,10 @@ class Riot:
         if seen is not None:
             running, loop = True, seen["loop"]
             if loop == "MENUS" and _UUID.match(seen.get("party") or ""):
-                self.where["party"] = seen["party"]  # asked for at once (and checked: the owner must be in it)
+                self.where["party"] = seen["party"]  # すぐ聞く（そして確かめる: 持ち主がそこにいるはず）
         else:
             running, loop = self._session(glz, puuid, headers)
-        # a match remembered from an earlier look is the owner's only while the session is still in its phase
+        # 前の確認で覚えた試合が持ち主のものなのは、セッションがまだその段階にいる間だけ
         for phase in ("pregame", "ingame"):
             if LOOPS.get(loop) != phase:
                 self.where.pop(phase, None)
@@ -583,7 +584,7 @@ class Riot:
             found = self._menus(glz, puuid, headers, saved, quick=True)
             state = str((found.get("party") or {}).get("State") or "").upper()
             if "STARTING" in state:
-                # the match is found (the game's 5-second count): agent select is there before the session says so
+                # 試合が見つかった（ゲームの 5 秒カウント）: セッションが言う前にエージェント選択がある
                 early = self._match(glz, puuid, headers, saved, ("pregame",))
                 if early["phase"]:
                     return early | {"running": True}
@@ -594,12 +595,12 @@ class Riot:
         found = self._match(glz, puuid, headers, saved, sorted(dict(PHASES), key=lambda phase: phase != first))
         if found["phase"]:
             return found | {"running": True}
-        if running is None:  # the session could not be read: the party tells whether the game is open
+        if running is None:  # セッションが読めなかった: パーティーでゲームが開いているかわかる
             return self._menus(glz, puuid, headers, saved)
         return found | {"running": running}
 
     def _session(self, glz: str, puuid: str, headers: dict) -> tuple[bool | None, str]:
-        """GLZ's session of the owner: (whether the game is open, None: not known; its loopState)."""
+        """持ち主の GLZ のセッション: （ゲームが開いているか。None は不明, その loopState）。"""
         try:
             session = self._pd("session", f"{glz}/session/v1/sessions/{puuid}", headers)
         except RiotError as error:
@@ -610,25 +611,25 @@ class Riot:
         return str(session.get("cxnState") or "CONNECTED").upper() == "CONNECTED" and bool(loop), loop
 
     def _read_agents_ahead(self) -> None:
-        """The owner's agents read while the party is matchmaking: agent select then opens without waiting for
-        them (they are kept AGENTS_KEEP, so this asks once in a while at most)."""
+        """パーティーがマッチング中に読んでおく持ち主のエージェント: エージェント選択がそれを待たずに開く（AGENTS_KEEP
+        持つので、聞くのはたまにだけ）。"""
         if self.cache.get("agents") is None and not self.cache.get("agents-resting"):
             try:
                 self.agents()
             except RiotError:
-                # not asked again at each look; agent select asks once more, and shows every agent if it fails
+                # 確認のたびには聞き直さない。エージェント選択でもう 1 回聞き、失敗したら全エージェントを出す
                 self.cache.put("agents-resting", True, 300)
 
     def _menus(self, glz: str, puuid: str, headers: dict, saved: dict, quick: bool = False) -> dict:
-        """In the menus: the owner's party (its queue, whether it is matchmaking, its members). ``quick``: the
-        session says the owner is in the menus, so the party of the last look is asked for at once."""
+        """メニューで: 持ち主のパーティー（キュー、マッチング中か、メンバー）。
+        ``quick``: セッションが持ち主はメニューにいると言うので、前回の確認のパーティーをすぐ聞く。"""
         empty = {"phase": "", "match": None, "party": None, "names": {}, "ranks": {}, "at": self.clock()}
         party = None
         if quick and self.where.get("party"):
             party = self._remembered("party", f"{glz}/parties/v1/parties/{self.where['party']}", headers)
             members = party.get("Members") if isinstance(party, dict) else None
             if not any(isinstance(item, dict) and str(item.get("Subject")).lower() == puuid for item in members or []):
-                party = None  # left that party
+                party = None  # そのパーティーを離れた
         if party is None:
             self.where.pop("party", None)
             try:
@@ -651,8 +652,7 @@ class Riot:
         }
 
     def _remembered(self, key: str, url: str, headers: dict) -> dict | None:
-        """GLZ's answer at an address remembered from an earlier look, or None (gone: the owner is asked for
-        again)."""
+        """前の確認で覚えたアドレスでの GLZ の答え、または None（もう無い: 持ち主の居場所を聞き直す）。"""
         try:
             return self._pd(key, url, headers)
         except RiotError as error:
@@ -661,7 +661,7 @@ class Riot:
             return None
 
     def _open_names(self, saved: dict, headers: dict, players: list) -> tuple[dict, str]:
-        """The names of the players who do not hide theirs (the others' are never asked), and a problem."""
+        """名前を隠していないプレイヤーの名前（ほかの人のものは決して聞かない）と、問題。"""
         open_names = [
             str(item.get("Subject")).lower()
             for item in players
@@ -677,8 +677,8 @@ class Riot:
             return {}, error.detail or error.kind
 
     def _ranks(self, saved: dict, headers: dict, subjects: list[str]) -> dict:
-        """PD's mmr of each player (their rank, as the game's own scoreboard shows it), kept RANK_KEEP. The ranks
-        not here yet are read side by side, and waited for RANK_WAIT at most: the rest come with a later look."""
+        """各プレイヤーの PD の mmr（ゲーム自身のスコアボードと同じランク）。RANK_KEEP 持つ。
+        まだ無いランクは同時に読み、最大 RANK_WAIT 待つ: 残りはあとの確認で来る。"""
         found, wanted = {}, []
         for subject in subjects:
             kept = self.ranks.get(subject)
@@ -692,7 +692,7 @@ class Riot:
             try:
                 answer = self._pd("rank", f"{base}/mmr/v1/players/{subject}", headers)
             except RiotError:
-                answer = {}  # not asked again this match either: the page falls back to GLZ's badge
+                answer = {}  # この試合ではもう聞かない: ページは GLZ のバッジにする
             self.ranks.put(subject, answer, RANK_KEEP)
             with self._asking_lock:
                 self._asking.discard(subject)
@@ -710,8 +710,8 @@ class Riot:
         return found
 
     def _match(self, glz: str, puuid: str, headers: dict, saved: dict, phases=("pregame", "ingame")) -> dict:
-        """Agent select or the match the owner is in (``phase`` "" when neither), GLZ asked in ``phases``' order.
-        The match of the last look is asked for at once (one call instead of two)."""
+        """持ち主がいるエージェント選択か試合（どちらでもなければ ``phase`` は ""）。GLZ には ``phases`` の順で聞く。
+        前回の確認の試合はすぐ聞く（2 回ではなく 1 回の呼び出し）。"""
         paths = dict(PHASES)
         for phase in phases:
             path = paths[phase]
@@ -726,7 +726,7 @@ class Riot:
                     player = self._pd(phase, f"{glz}{path}/players/{puuid}", headers)
                 except RiotError as error:
                     if error.kind == "down" and " 404" in f" {error.detail}":
-                        continue  # not in this phase
+                        continue  # この段階にはいない
                     raise
                 match_id = str(player.get("MatchID") or "").lower()
                 if not _UUID.match(match_id):
@@ -765,8 +765,8 @@ class Riot:
         }
 
     def _names(self, saved: dict, headers: dict, subjects: list[str]) -> dict:
-        """PD's name service: ``{puuid: [game name, tag]}`` of these players, each kept NAME_KEEP (the party and
-        the match are looked at every few seconds)."""
+        """PD の名前サービス: このプレイヤーたちの ``{puuid: [ゲーム名, タグ]}``。
+        それぞれ NAME_KEEP 持つ（パーティーと試合は数秒ごとに見る）。"""
         found, wanted = {}, []
         for subject in subjects:
             kept = self.names.get(subject)
@@ -807,21 +807,21 @@ class Riot:
         }
 
     def _kept(self, key: str, read, seconds: float = KEEP, game: bool = False) -> dict:
-        """``read(tokens, saved)``'s answer, kept ``seconds`` (0: a button, done each time it is pressed: Windows'
-        clock moves in 16 ms steps, so an answer kept for 0 seconds was still there for the next press); a refused
-        token is traded for a new one once. ``game``: asked as the account the game on this PC is played with."""
+        """``read(tokens, saved)`` の答えを ``seconds`` 持つ（0: ボタン。押すたびに実行する。
+        Windows の時計は 16 ms 刻みなので、0 秒持つ答えが次の押下にまだ残っていた）。
+        断られたトークンは 1 回だけ新しいものと交換する。``game``: この PC でゲームをしているアカウントとして聞く。"""
         kept = self.cache.get(key) if seconds > 0 else None
         if kept is not None:
             return kept
         found = self._read(read, game)
-        if (self.store.load().get("problem") or None) != (found["problem"] or None):  # not a write every look
+        if (self.store.load().get("problem") or None) != (found["problem"] or None):  # 確認のたびには書かない
             self.store.save(problem=found["problem"] or None)
         if seconds > 0:
             self.cache.put(key, found, seconds)
         return found
 
     def _read(self, read, game: bool = False) -> dict:
-        """``read(tokens, saved)``, with a refused token traded for a new one once."""
+        """``read(tokens, saved)``。断られたトークンは 1 回だけ新しいものと交換する。"""
         for renew in (False, True):
             tokens, saved = self._tokens(renew, game)
             try:
@@ -829,15 +829,15 @@ class Riot:
             except RiotError as error:
                 if error.kind != "expired":
                     raise
-                if renew:  # a token just made is refused too: not the cookie's fault
+                if renew:  # 作ったばかりのトークンも断られる: cookie のせいではない
                     raise RiotError("down", error.detail) from None
-        raise RiotError("down")  # not reached
+        raise RiotError("down")  # ここには来ない
 
-    # -- tokens ---------------------------------------------------------------------------------------
+    # -- トークン ------------------------------------------------------------------------------------
 
     def _tokens(self, renew: bool = False, game: bool = False) -> tuple[dict, dict]:
-        """The hour's tokens (the Riot Client's on this PC, else saved or traded for with the cookies) and what is
-        saved (with the client's account)."""
+        """1 時間のトークン（この PC の Riot Client のもの、無ければ保存したもの、それも無ければ cookie と交換）と、
+        保存しているもの（クライアントのアカウントつき）。"""
         found = self._client(renew, game)
         if found is not None:
             tokens, account = found
@@ -851,30 +851,30 @@ class Riot:
                 not renew
                 and token.get("access")
                 and token.get("entitlements")
-                and _number(token.get("until")) > self.clock()
+                and to_float(token.get("until")) > self.clock()
             ):
                 return token, saved
             cookies = saved.get("cookies") if isinstance(saved.get("cookies"), dict) else {}
-            if not cookies:  # an hour's address, now over
+            if not cookies:  # 1 時間のアドレスで、もう過ぎた
                 self.store.save(token=None, signed_out=True)
                 raise RiotError("signedout")
             try:
                 token, cookies = self._authorize(cookies)
                 token["entitlements"] = self._entitlements(token["access"])
             except RiotError as error:
-                # the cookies are kept: a refusal may pass (and they are what the owner would paste again anyway)
+                # cookie は残す: 断られたのは一時的かもしれない（それに持ち主がまた貼るのも同じもの）
                 self.store.save(token=None, signed_out=True if error.kind == "signedout" else None)
                 raise
             self.store.save(cookies=cookies, token=token, signed_out=None)
             return token, {**saved, "cookies": cookies, "token": token}
 
     def _authorize(self, cookies: dict) -> tuple[dict, dict]:
-        """The cookies -> (the hour's tokens, the cookies as Riot renewed them)."""
+        """cookie -> （1 時間のトークン, Riot が更新した cookie）。"""
         header = "; ".join(f"{name}={value}" for name, value in cookies.items())
         status, headers, _ = self.send("GET", AUTHORIZE, {"Cookie": header, "User-Agent": self._agent()}, None)
         _check(status, "auth")
         tokens = _tokens_in(_header(headers, "location"), self.clock())
-        if not tokens:  # sent to the sign-in page instead
+        if not tokens:  # 代わりにサインインページに送られた
             raise RiotError("signedout", f"auth {status}")
         return tokens, _renewed(cookies, headers)
 
@@ -894,13 +894,13 @@ class Riot:
         return token
 
     def _account(self, tokens: dict) -> dict:
-        """``{"puuid", "name", "tag", "shard"}`` of the signed-in account."""
+        """サインインしているアカウントの ``{"puuid", "name", "tag", "shard"}``。"""
         bearer = {"Authorization": f"Bearer {tokens['access']}", "User-Agent": self._agent()}
         status, _, body = self.send("GET", USERINFO, bearer, None)
         if status in (400, 401, 403):
             raise RiotError("signedout", f"userinfo {status}")
         info = _json(body) if status == 200 else {}
-        puuid = str(info.get("sub") or _claims(tokens["access"]).get("sub") or "").lower()
+        puuid = str(info.get("sub") or token_claims(tokens["access"]).get("sub") or "").lower()
         if not puuid:
             raise RiotError("down", f"userinfo {status}")
         acct = info.get("acct") if isinstance(info.get("acct"), dict) else {}
@@ -919,14 +919,14 @@ class Riot:
             "puuid": puuid,
             "name": str(acct.get("game_name") or ""),
             "tag": str(acct.get("tag_line") or ""),
-            "shard": shard or "ap",  # the owner plays in Japan: Asia-Pacific when Riot does not say
+            "shard": shard or "ap",  # 持ち主は日本で遊ぶ: Riot が言わなければアジア太平洋
         }
 
     def _agent(self) -> str:
         build = str((self.version() or {}).get("riotClientBuild") or "99.0.0.0000000.0000000")
         return f"RiotClient/{build} rso-auth (Windows;10;;Professional, x64)"
 
-    # -- PD ---------------------------------------------------------------------------------------------
+    # -- PD -------------------------------------------------------------------------------------------
 
     def _headers(self, tokens: dict) -> dict:
         return {
@@ -944,12 +944,11 @@ class Riot:
         return PD.format(shard=shard if shard in SHARDS.values() else "ap")
 
     def _storefront(self, tokens: dict, saved: dict) -> dict:
-        """The store (PD's storefront: today's four skins, the bundles, the night market, the accessories) and
-        the wallet, side by side."""
+        """ストア（PD の storefront: 今日の 4 スキン、バンドル、ナイトマーケット、アクセサリー）とウォレットを同時に。"""
         base, puuid, headers = self._base(saved), str(saved["puuid"]), self._headers(tokens)
         with ThreadPoolExecutor(2, thread_name_prefix="riot") as pool:
             asked = {
-                # v3 is a POST since 2024 (v2's GET was turned off)
+                # v3 は 2024 年から POST（v2 の GET は止められた）
                 "storefront": pool.submit(
                     self._pd,
                     "storefront",
@@ -1008,7 +1007,7 @@ class Riot:
                 if isinstance(item, dict) and item.get("ItemID"):
                     key = str(item["ItemID"]).lower()
                     counts[key] = counts.get(key, 0) + 1
-                    if kind == "buddies" and item.get("InstanceID"):  # each copy is one weapon's (CharmInstanceID)
+                    if kind == "buddies" and item.get("InstanceID"):  # コピーごとに 1 つの武器のもの（CharmInstanceID）
                         instances.setdefault(key, []).append(str(item["InstanceID"]).lower())
             owned[kind] = counts
         wallet = _wallet(answers.get("wallet"))
@@ -1024,7 +1023,7 @@ class Riot:
         }
 
     def _loadout(self, base: str, puuid: str, headers: dict) -> tuple[dict, str]:
-        """PD's playerloadout of the owner and the address it came from (LOADOUTS: the next when one is not there)."""
+        """持ち主の PD の playerloadout と、その出どころのアドレス（LOADOUTS: 無ければ次のもの）。"""
         for number, path in enumerate(LOADOUTS):
             url = base + path.format(puuid=puuid)
             try:
@@ -1033,7 +1032,7 @@ class Riot:
                 gone = error.kind == "down" and " 404" in f" {error.detail}"
                 if not gone or number == len(LOADOUTS) - 1:
                     raise
-        raise RiotError("down", "loadout")  # not reached
+        raise RiotError("down", "loadout")  # ここには来ない
 
     def _pd(self, key: str, url: str, headers: dict, method: str = "GET", body: bytes | None = None) -> dict:
         status, _, body = self.send(method, url, headers, body)
@@ -1048,7 +1047,7 @@ class Riot:
 
 
 def _others(saved: dict) -> dict:
-    """The linked accounts that are not the one in use: ``{puuid: what riot.json keeps of each}``."""
+    """使用中でない連携アカウント: ``{puuid: riot.json がそれぞれについて持つもの}``。"""
     others = saved.get("others")
     return {
         str(puuid).lower(): item
@@ -1058,13 +1057,13 @@ def _others(saved: dict) -> dict:
 
 
 def _kept_of(saved: dict) -> dict:
-    """What riot.json keeps of the account in use, to put among the others."""
+    """ほかのものの中に入れるための、riot.json が使用中のアカウントについて持つもの。"""
     return {key: saved[key] for key in ACCOUNT_KEYS if saved.get(key) not in ("", None)}
 
 
 def _swap(saved: dict, others: dict, puuid: str) -> dict:
-    """What to save so that ``puuid`` (one of ``others``) is the account in use, and the one in use until now
-    (``saved``'s, when there is one) is among the others."""
+    """``puuid``（``others`` の 1 つ）を使用中にし、今まで使っていたもの（あれば ``saved`` のもの）
+    をほかのものに入れるために保存するもの。"""
     rest = {key: value for key, value in others.items() if key != puuid}
     if saved.get("puuid"):
         rest[str(saved["puuid"]).lower()] = _kept_of(saved)
@@ -1081,14 +1080,14 @@ def _row(account: dict) -> dict:
 
 
 def _subjects(match: dict, phase: str) -> set[str]:
-    """The players of GLZ's agent select (the owner's team) or match."""
+    """GLZ のエージェント選択（持ち主のチーム）か試合のプレイヤー。"""
     team = match.get("AllyTeam") if isinstance(match.get("AllyTeam"), dict) else {}
     players = (team.get("Players") if phase == "pregame" else match.get("Players")) or []
     return {str(item.get("Subject") or "").lower() for item in players if isinstance(item, dict)}
 
 
 def _wallet(answer) -> dict | None:
-    """PD's wallet -> ``{currency uuid: amount}`` (None without one)."""
+    """PD のウォレット -> ``{通貨 uuid: 量}``（無ければ None）。"""
     balances = (answer or {}).get("Balances") if isinstance(answer, dict) else None
     if not isinstance(balances, dict):
         return None
@@ -1096,8 +1095,8 @@ def _wallet(answer) -> dict | None:
 
 
 def _board(answer: dict, now: float) -> dict:
-    """PD's leaderboard -> henrik.Henrik.leaderboard's shape. A hidden player keeps only their place, rank, RR and
-    wins (no name, puuid or card), as the game shows them."""
+    """PD のランキング -> henrik.Henrik.leaderboard の形。隠しているプレイヤーは、ゲームと同じく順位・ランク・RR・
+    勝利数だけ（名前・puuid・カード無し）。"""
     if not isinstance(answer.get("Players"), list):
         raise RiotError("down", "leaderboard: no players")
     players = []
@@ -1107,36 +1106,36 @@ def _board(answer: dict, now: float) -> dict:
         hidden = bool(item.get("IsAnonymized")) or not item.get("gameName")
         players.append(
             {
-                "rank": int(_number(item.get("leaderboardRank"))),
+                "rank": int(to_float(item.get("leaderboardRank"))),
                 "name": "" if hidden else str(item.get("gameName") or ""),
                 "tag": "" if hidden else str(item.get("tagLine") or ""),
                 "puuid": "" if hidden else str(item.get("puuid") or "").lower(),
                 "card": "" if hidden else str(item.get("PlayerCardID") or "").lower(),
-                "tier": int(_number(item.get("competitiveTier"))),
-                "rr": int(_number(item.get("rankedRating"))),
-                "wins": int(_number(item.get("numberOfWins"))),
+                "tier": int(to_float(item.get("competitiveTier"))),
+                "rr": int(to_float(item.get("rankedRating"))),
+                "wins": int(to_float(item.get("numberOfWins"))),
                 "hidden": hidden,
             }
         )
     details = answer.get("tierDetails") if isinstance(answer.get("tierDetails"), dict) else {}
     details = {
-        int(_number(tier)): info for tier, info in details.items() if isinstance(info, dict) and _number(tier) > 2
+        int(to_float(tier)): info for tier, info in details.items() if isinstance(info, dict) and to_float(tier) > 2
     }
-    # the top rank starts at the first place; a lower one that Riot gives no place to (0) is not on the list
+    # 最上位のランクは 1 位から始まる。Riot が順位を付けない（0）下のランクは一覧に無い
     thresholds = [
         {
             "tier": tier,
-            "rr": int(_number(info.get("rankedRatingThreshold"))),
-            "from": int(_number(info.get("startingIndex"))) + 1,
+            "rr": int(to_float(info.get("rankedRatingThreshold"))),
+            "from": int(to_float(info.get("startingIndex"))) + 1,
         }
         for tier, info in details.items()
-        if tier == max(details) or _number(info.get("startingIndex")) > 0
+        if tier == max(details) or to_float(info.get("startingIndex")) > 0
     ]
     return {
         "players": players,
         "thresholds": sorted(thresholds, key=lambda item: -item["tier"]),
-        "total": int(_number(answer.get("totalPlayers"))),
-        "updated": datetime.fromtimestamp(now, UTC).isoformat(),  # Riot does not say: when it was read
+        "total": int(to_float(answer.get("totalPlayers"))),
+        "updated": datetime.fromtimestamp(now, UTC).isoformat(),  # Riot が言わない: 読んだ時刻
     }
 
 
@@ -1147,17 +1146,9 @@ def _check(status: int, what: str) -> None:
         raise RiotError("down", f"{what} {status or 'no answer'}")
 
 
-def _number(value) -> float:
-    try:
-        return float(value or 0)
-    except (TypeError, ValueError):
-        return 0.0
-
-
 def wearing(loadout: dict) -> tuple:
-    """What a playerloadout wears, to tell whether PD kept a change: each weapon's skin, level, variant and buddy, the
-    wheel (v3's ActiveExpressions or v2's Sprays), the card and the title (collection.py: whether a saved set is what is
-    worn)."""
+    """PD が変更を残したかを見るための、playerloadout が着けているもの: 各武器のスキン・レベル・バリアント・ガンバディ、
+    ホイール（v3 の ActiveExpressions か v2 の Sprays）、カード、称号（collection.py: 保存セットが今の装備と同じか）。"""
 
     def low(value) -> str:
         return str(value or "").lower()
@@ -1193,7 +1184,7 @@ def _header(headers: list, name: str) -> str:
 
 
 def _tokens_in(address: str, now: float) -> dict | None:
-    """The address Riot's sign-in sends the browser to -> ``{"access", "id", "until"}`` (None without a token)."""
+    """Riot のサインインがブラウザーを送るアドレス -> ``{"access", "id", "until"}``（トークンが無ければ None）。"""
     parts = urlsplit(str(address or "").strip())
     found = parse_qs(parts.fragment) or parse_qs(parts.query)
     access = (found.get("access_token") or [""])[0]
@@ -1208,8 +1199,8 @@ def _tokens_in(address: str, now: float) -> dict | None:
 
 
 def _pasted_cookies(text: str) -> dict:
-    """``ssid`` alone (its value), ``ssid=...``, or a whole Cookie header (``Cookie: a=1; ssid=...``)."""
-    text = re.sub(r"^\s*cookie\s*:\s*", "", text.strip(), flags=re.I).strip().strip("\"'")
+    """``ssid`` だけ（その値）、``ssid=...``、または Cookie ヘッダーまるごと（``Cookie: a=1; ssid=...``）。"""
+    text = re.sub(r"^\s*cookie\s*:\s*", "", text.strip(), flags=re.IGNORECASE).strip().strip("\"'")
     if "=" not in text:
         return {"ssid": text} if _COOKIE_VALUE.match(text) else {}
     found = {}
@@ -1222,7 +1213,7 @@ def _pasted_cookies(text: str) -> dict:
 
 
 def _renewed(cookies: dict, headers: list) -> dict:
-    """The cookies with Riot's Set-Cookie answers applied (a new ssid each time; a removed one goes)."""
+    """Riot の Set-Cookie の答えを当てた cookie（毎回新しい ssid。消されたものは消す）。"""
     found = dict(cookies)
     for key, value in headers:
         if str(key).lower() != "set-cookie":
@@ -1237,12 +1228,3 @@ def _renewed(cookies: dict, headers: list) -> dict:
         elif _COOKIE_VALUE.match(content):
             found[name] = content
     return dict(list(found.items())[:30])
-
-
-def _claims(token: str) -> dict:
-    """What our own access token says (its puuid), unchecked: Riot checks it, we only read it."""
-    try:
-        middle = token.split(".")[1]
-        return _json(base64.urlsafe_b64decode(middle + "=" * (-len(middle) % 4)))
-    except (IndexError, ValueError):
-        return {}

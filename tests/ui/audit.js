@@ -1,10 +1,9 @@
-// Looks for broken layout on the site's pages: anything wider than the screen, text over text, text cut off,
-// header tabs and buttons that wrap, tap targets too small on a phone, pictures that did not load, script or CSP
-// errors, a page that says it could not load, and for screen readers and eyes: links and fields without a name,
-// headings that skip, the same id twice, text too faint for its background (WCAG AA, a faded parent counted too),
-// pictures drawn for a dark screen shown on paper (a white sign on white), and the edges of fields and buttons too
-// faint to see where they are (WCAG 1.4.11). Every page in every language
-// at the widths the site is designed for (docs/CONVENTIONS.md).
+// サイトのページの崩れを探す: 画面より広いもの、文字の重なり、切れた文字、折り返したヘッダーのタブとボタン、
+// スマホで小さすぎるタップ領域、読み込めなかった絵、スクリプトや CSP のエラー、読み込めなかったと言うページ。
+// スクリーンリーダーと目のために: 名前の無いリンクと入力欄、飛んでいる見出し、同じ id が 2 つ、
+// 背景に対して薄すぎる文字（WCAG AA、薄くした親も数える）、紙の上に出した暗い画面向けの絵（白地に白い印）、
+// 場所がわからないほど薄い入力欄やボタンの縁（WCAG 1.4.11）。全ページを全言語で、
+// サイトが想定している幅で（docs/CONVENTIONS.md）。
 //
 //   node tests/ui/audit.js <base, e.g. http://127.0.0.1:5077> [--live] [--quick] [--desktop]
 //
@@ -20,12 +19,12 @@ const [base, ...flags] = process.argv.slice(2);
 const live = flags.includes("--live");
 const quick = flags.includes("--quick");
 const desktop = flags.includes("--desktop");
-// The PC app's own pages: the friends, the checkup, its settings, and where they are linked from.
+// PC アプリ専用のページ: フレンド、チェックアップ、設定と、そのリンク元。
 const DESKTOP_PAGES = ["/friends", "/checkup", "/settings", "/help", "/"];
 const WIDTHS = [360, 760, 1000, 1440];
 const LANGS = quick ? ["ja", "en-GB"] : ["ja", "ko", "en-GB", "zh-TW"];
 const THEMES = live || quick ? ["light"] : ["light", "dark"];
-// Each language's visitor in its usual clock (the servers page counts hours in the visitor's own).
+// 各言語の訪問者をいつもの時計で（サーバーのページは訪問者自身の時計で時間を数える）。
 const ZONES = { "ja": "Asia/Tokyo", "ko": "Asia/Seoul", "en-GB": "Europe/London", "zh-TW": "Asia/Taipei" };
 const PAGES = [
   "/",
@@ -51,7 +50,7 @@ const PAGES = [
   "/search?q=Tester%20JP1",
   "/p/nobody-here/0000",
 ];
-// With the tests' made-up answers (tests/ui/serve.py): their player, match and agent.
+// テストの作りものの答え（tests/ui/serve.py）で: そのプレイヤー、試合、エージェント。
 const MADE_UP = [
   "/p/Tester/JP1?full=1",
   "/p/Tester/JP1?span=all&full=1",
@@ -82,16 +81,16 @@ const MADE_UP = [
   "/collection?show=flex",
   "/collection?show=sets",
   "/collection?weapon=29a0cfab-485b-f5d5-779a-b59f85e204a8",
-  // what is worn could not be read from Riot (tests/ui/serve.py: the made-up PD has no loadout)
+  // 装備を Riot から読めなかった（tests/ui/serve.py: 作りものの PD にはロードアウトが無い）
   "/collection?weapon=9c82e19d-4575-0200-1a81-3eacf00cf872&loadout=none",
   "/compare?a=Tester%23JP1&b=Other%23KR1",
   "/leaderboard?q=RiotTop%23AP1&full=1",
   "/agents/stats?queue=competitive",
 ];
-// Found before the pages are looked at (the real site's skin video): added to the problems at the end.
+// ページを見る前に見つけたもの（本番のスキン動画）: 最後に問題に足す。
 const early = [];
 
-// Runs in the page: every problem as {kind, where, text}.
+// ページの中で動く: 問題ごとに {kind, where, text}。
 function inspect() {
   const width = document.documentElement.clientWidth;
   const found = [];
@@ -117,8 +116,8 @@ function inspect() {
     const box = el.getBoundingClientRect();
     return style.visibility !== "hidden" && style.display !== "none" && box.width > 0 && box.height > 0;
   };
-  // Whether an ancestor scrolls or clips it (or it is in the fixed bar), and whether it is fixed or sticky: kept
-  // per element, as the answer of its parent and its own style.
+  // 祖先がスクロールかクリップしているか（または固定バーの中か）と、fixed か sticky か: 要素ごとに、
+  // 親の答えと自分のスタイルから求めて持つ。
   const kept = new Map();
   const up = (el) => {
     const whole = { left: -Infinity, top: -Infinity, right: Infinity, bottom: Infinity };
@@ -141,13 +140,13 @@ function inspect() {
       kept.set(el, {
         clips: parent.clips || style.overflowX !== "visible" || pinned,
         fixed: parent.fixed || pinned,
-        box, // the part of the page its ancestors let it show in
+        box, // 祖先が見せてくれるページの部分
       });
     }
     return kept.get(el);
   };
-  // The part of an element that can be seen (what its ancestors clip is not).
-  // An inline element that runs over two lines is one box per line: its whole box would cover the next words.
+  // 要素の見える部分（祖先がクリップする部分は除く）。
+  // 2 行にまたがるインライン要素は 1 行に 1 つの箱: 全体の箱だと次の言葉を覆ってしまう。
   const seen = (el) => {
     const room = up(el.parentElement).box;
     const parts = css(el).display === "inline" ? [...el.getClientRects()] : [el.getBoundingClientRect()];
@@ -160,7 +159,7 @@ function inspect() {
   };
   const clipped = (el) => up(el.parentElement).clips;
   const fixed = (el) => up(el).fixed;
-  // Inside a closed <details> (not its summary): not on the screen, though it still has a box.
+  // 閉じた <details> の中（summary 以外）: 箱はあるが画面には無い。
   const folded = (el) => {
     const details = el.closest("details:not([open])");
     return Boolean(details) && !el.closest("summary");
@@ -189,12 +188,12 @@ function inspect() {
       const cutX = style.overflowX !== "visible" && el.scrollWidth > el.clientWidth + 1;
       const cutY =
         style.overflowY !== "visible" && el.scrollHeight > el.clientHeight + 2 && !/auto|scroll/.test(style.overflowY);
-      const tiny = el.clientWidth <= 1 || el.clientHeight <= 1; // a word kept for screen readers only
+      const tiny = el.clientWidth <= 1 || el.clientHeight <= 1; // スクリーンリーダー専用の言葉
       if (((cutX && !/auto|scroll/.test(style.overflowX)) || cutY) && !tiny)
         found.push({ kind: "text cut off", where: path(el), text: words(el) });
     }
   }
-  // Text over text (not the fixed tab bar over the page, which is meant).
+  // 文字の上の文字（ページの上の固定タブバーは意図したものなので除く）。
   const texts = all
     .filter((el) => own(el) && !fixed(el))
     .flatMap((el) => seen(el).map((box) => ({ el, box })))
@@ -216,8 +215,8 @@ function inspect() {
       }
     }
   }
-  // One-line things that wrapped: the header, tabs, buttons, chips. Lines are counted from where the text's
-  // letters are (a button stretched taller by its row is not wrapped).
+  // 折り返した 1 行もの: ヘッダー、タブ、ボタン、チップ。
+  // 行は文字のある位置で数える（行に合わせて高くなったボタンは折り返しではない）。
   const lines = (el) => {
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
     const boxes = [];
@@ -247,7 +246,7 @@ function inspect() {
       "button, .button, select, input:not([type=hidden]), summary, nav a, .tabbar a",
     )) {
       if (!shown(el) || el.closest("[hidden]") || folded(el)) continue;
-      // a check box or radio button is tapped through its label too (WCAG: the label is part of the target)
+      // チェックボックスやラジオボタンはラベルでも押せる（WCAG: ラベルもターゲットの一部）
       const target = (el.matches("input[type=radio], input[type=checkbox]") && el.closest("label")) || el;
       const box = target.getBoundingClientRect();
       if (box.width < 24 || box.height < 24)
@@ -258,7 +257,7 @@ function inspect() {
         });
     }
   }
-  // For screen readers and keyboards: names, labels, headings, ids.
+  // スクリーンリーダーとキーボード用: 名前、ラベル、見出し、id。
   const named = (el) =>
     Boolean(
       (el.textContent || "").trim() ||
@@ -296,7 +295,7 @@ function inspect() {
     if (+headings[i].tagName[1] > +headings[i - 1].tagName[1] + 1)
       found.push({ kind: "heading skips a level", where: path(headings[i]), text: words(headings[i]) });
   }
-  // Text too faint to read against what is behind it (WCAG AA: 4.5, or 3 for large text).
+  // 後ろのものに対して薄すぎて読めない文字（WCAG AA: 4.5、大きい文字は 3）。
   const canvas = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
   const colors = new Map();
   const rgba = (value) => {
@@ -315,7 +314,7 @@ function inspect() {
     const layers = [];
     for (let node = el; node; node = node.parentElement) {
       const style = css(node);
-      if (style.backgroundImage !== "none") return null; // a picture or gradient: cannot tell
+      if (style.backgroundImage !== "none") return null; // 絵かグラデーション: わからない
       const color = rgba(style.backgroundColor);
       if (color[3] > 0) layers.push(color);
       if (color[3] >= 1) break;
@@ -331,7 +330,7 @@ function inspect() {
     });
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   };
-  // how much of an element shows through its own and its parents' opacity
+  // 自分と親の opacity を通して要素がどれだけ見えるか
   const faded = (el) => {
     let shown = 1;
     for (let node = el; node; node = node.parentElement) shown *= +css(node).opacity;
@@ -351,8 +350,8 @@ function inspect() {
     if (ratio < (large ? 3 : 4.5))
       found.push({ kind: "text too faint", where: path(el), text: `${ratio.toFixed(2)} ${words(el)}` });
   }
-  // A sign or icon (a picture with see-through parts) against what is behind it: the mean colour of its drawn
-  // pixels, through its CSS filter. Photos and cards bring their own background and are not measured.
+  // 後ろのものに対する印やアイコン（透ける部分のある絵）: 描かれたピクセルの平均色を CSS の filter を通して。
+  // 写真とカードは自分の背景を持つので測らない。
   const sample = document.createElement("canvas");
   sample.width = sample.height = 24;
   const draw = sample.getContext("2d", { willReadFrequently: true });
@@ -370,7 +369,7 @@ function inspect() {
       draw.drawImage(img, 0, 0, 24, 24);
       data = draw.getImageData(0, 0, 24, 24).data;
     } catch {
-      continue; // another site's picture: cannot be read
+      continue; // ほかのサイトの絵: 読めない
     }
     draw.filter = "none";
     let solid = 0;
@@ -391,7 +390,7 @@ function inspect() {
         text: `${ratio.toFixed(2)} ${(img.alt || img.getAttribute("src") || "").slice(-40)}`,
       });
   }
-  // Where a field, a select or a bordered button is: its edge or its fill has to stand out from the page.
+  // 入力欄・セレクト・枠付きボタンの場所: 縁か塗りがページから浮いて見えないといけない。
   for (const el of document.querySelectorAll(
     "input:not([type=hidden], [type=radio], [type=checkbox], [type=range], [type=color]), select, textarea, button, .button, nav.modes a",
   )) {
@@ -399,7 +398,7 @@ function inspect() {
     const style = css(el);
     const field = el.matches("input, select, textarea");
     const edged = parseFloat(style.borderTopWidth) > 0 && rgba(style.borderTopColor)[3] > 0;
-    if (!field && !edged) continue; // a word or an icon that is pressed: its own colour is measured above
+    if (!field && !edged) continue; // 押す文字やアイコン: その色は上で測っている
     const back = behind(el.parentElement);
     if (!back) continue;
     const fill = over(rgba(style.backgroundColor), back);
@@ -420,12 +419,12 @@ function inspect() {
 
 async function main() {
   const browser = await chromium.launch();
-  const problems = new Map(); // "kind | page | where" -> {text, seen: Set of "lang width theme"}
+  const problems = new Map(); // "kind | page | where" -> {text, seen: "lang width theme" の Set}
   const add = (kind, page, where, text, at) => {
     const key = `${kind} | ${page} | ${where}`;
     if (!problems.has(key)) {
       problems.set(key, { text, seen: new Set() });
-      // at once too, so a run that is cut short (a time limit) still tells what it found
+      // すぐにも出す: 途中で切られた実行（時間制限）でも見つけたものを伝える
       console.log(`found: ${key}${text ? "  “" + text + "”" : ""}  (${at})`);
     }
     problems.get(key).seen.add(at);
@@ -454,16 +453,16 @@ async function main() {
         process.stderr.write(`${theme} ${lang} ${width}px\n`);
         for (const where of pages) {
           errors.length = 0;
-          // the PC app's pages wait for the Riot Client's next event (/live/next stays open for 25 s): they are
-          // looked at once loaded, not once the network is quiet
+          // PC アプリのページは Riot Client の次のイベントを待つ（/live/next は 25 秒開いたまま）
+          // : ネットが静かになるのを待たず、読み込んだら見る
           await page
             .goto(base + where, { waitUntil: desktop ? "load" : "networkidle", timeout: 60000 })
             .catch((error) => errors.push(String(error).slice(0, 120)));
           await page.waitForTimeout(desktop ? 700 : live ? 400 : 200);
           for (const item of await page.evaluate(inspect))
             add(item.kind, where, item.where, item.text, `${lang} ${width} ${theme}`);
-          // a page that should work but says it could not (only the made-up nobody's page, the searches
-          // without a tag and the collection without a loadout are meant to)
+          // 動くはずなのに動かないと言うページ（そう言ってよいのは作りものの誰もいないページ、タグ無しの検索、
+          // ロードアウトの無いコレクションだけ）
           const failed = await page
             .$eval(".problem, main [role=alert]", (el) => el.innerText.trim().slice(0, 60))
             .catch(() => "");
@@ -471,9 +470,9 @@ async function main() {
             where.startsWith("/p/nobody-here/") || where.startsWith("/search?") || where.includes("loadout=none");
           if (failed && !meant) add("page shows an error", where, "", failed, `${lang} ${width} ${theme}`);
           for (const error of errors) {
-            // the nobody's page answers 404 on purpose (and the browser says so in the console)
+            // 誰もいないページはわざと 404 を返す（ブラウザーもコンソールでそう言う）
             if (where.startsWith("/p/nobody-here/") && error.includes("404")) continue;
-            if (where.startsWith("/search?") && error.includes("400")) continue; // a search without a tag, too
+            if (where.startsWith("/search?") && error.includes("400")) continue; // タグ無しの検索も
             add("error", where, error, "", `${lang} ${width} ${theme}`);
           }
         }
@@ -495,9 +494,9 @@ async function main() {
   process.exitCode = problems.size ? 1 : 0;
 }
 
-// /live is read again every few seconds, and its buttons are sent, without reloading the page (the owner lost
-// the place in the agents each time): the page stays the same document through the timer and a pick, and the
-// agents' pictures stay the same elements, not made and fetched again at each look (the owner saw them load again).
+// /live はページを再読み込みせずに数秒ごとに読み直し、ボタンも送る（持ち主は毎回エージェントの中の位置を見失っていた）
+// : タイマーとピックの間もページは同じ文書のまま、エージェントの絵は同じ要素のままで、
+// 確認のたびに作り直して取り直さない（持ち主にはまた読み込むのが見えていた）。
 async function livePage(browser) {
   const page = await browser.newPage({ viewport: { width: 390, height: 800 } });
   let loads = 0;
@@ -512,16 +511,16 @@ async function livePage(browser) {
   let pictures = 0;
   const counting = (request) => request.url().includes("/media/") && pictures++;
   page.on("request", counting);
-  await page.waitForTimeout(6500); // the timer: every 2 s at agent select, and the made-up timer counts down
+  await page.waitForTimeout(6500); // タイマー: エージェント選択では 2 秒ごと。作りもののタイマーは減っていく
   page.off("request", counting);
-  const looked = (await timer()) !== before; // the made-up timer moved: the page was read again and put in place
+  const looked = (await timer()) !== before; // 作りもののタイマーが動いた: ページを読み直して差し込んだ
   const remade = await page.evaluate(
     () => [...document.querySelectorAll(".pick-grid img, .seats img")].filter((img) => !img.auditKept).length,
   );
   if (!looked) early.push(["/live not updated", "/live?phase=pregame", "", before]);
   if (remade || pictures)
     early.push(["pictures made again", "/live?phase=pregame", "", `${remade} remade, ${pictures} fetched`]);
-  // the made-up game's one agent is a mate's: pressed anyway (the made-up Riot takes it)
+  // 作りもののゲームのエージェント 1 つは味方のもの: それでも押す（作りものの Riot は受け付ける）
   const sent = page
     .waitForResponse((answer) => answer.url().includes("/live/act"), { timeout: 15000 })
     .then(() => true)
@@ -543,11 +542,11 @@ async function livePage(browser) {
   await page.close();
 }
 
-// The real site: a real player (the leaderboard's first shown one), their latest match, an agent.
+// 本番のサイト: 本物のプレイヤー（ランキングに最初に出る人）、その最新の試合、エージェント。
 async function follow(page) {
   const more = [];
   await page.goto(base + "/leaderboard?full=1", { waitUntil: "networkidle", timeout: 60000 });
-  // where the leaderboard came from: Riot's own (the owner's Riot account) or HenrikDev's
+  // ランキングの出どころ: Riot 自身のもの（持ち主の Riot アカウント）か HenrikDev のもの
   const source = await page.$eval("table.board", (table) => table.dataset.source).catch(() => "none");
   console.log("leaderboard from: " + source);
   const player = await page
@@ -556,7 +555,7 @@ async function follow(page) {
   if (player) {
     const at = player.replace(new URL(base).pathname.replace(/\/$/, ""), "");
     more.push(at + "?full=1");
-    // that player looked up on the leaderboard by their Riot ID
+    // そのプレイヤーを Riot ID でランキングから探す
     const id = decodeURIComponent(at.split("/").slice(2, 4).join("#"));
     more.push("/leaderboard?q=" + encodeURIComponent(id) + "&full=1");
     await page.goto(base + at + "?full=1", { waitUntil: "networkidle", timeout: 90000 });
@@ -566,7 +565,7 @@ async function follow(page) {
   await page.goto(base + "/agents", { waitUntil: "networkidle", timeout: 60000 });
   const agent = await page.$eval("a[href*='/agents/']", (a) => a.getAttribute("href")).catch(() => null);
   if (agent) more.push(agent.replace(new URL(base).pathname.replace(/\/$/, ""), ""));
-  // the skin library's first skin (the best tier of the Vandal: variants, levels, videos), and that its video plays
+  // スキン図鑑の最初のスキン（ヴァンダルの最上位ティア: バリアント、レベル、動画）と、その動画が再生されること
   await page.goto(base + "/skins", { waitUntil: "networkidle", timeout: 60000 });
   const skin = await page.$eval("a.skin-link", (a) => a.getAttribute("href")).catch(() => null);
   if (skin) {

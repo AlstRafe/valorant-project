@@ -1,27 +1,28 @@
-"""VALORANT's crosshair codes (Settings -> Crosshair -> Import profile code): read into their settings and drawn as
-SVG, here on the server, so a code can be seen and checked before it is pasted into the game.
+"""VALORANT のクロスヘアコード（設定 -> クロスヘア -> プロファイルコードをインポート）: 設定に読み直し、
+サーバー側で SVG に描く。ゲームに貼る前にコードを見て確かめられるように。
 
-A code is ``0;P;c;5;h;0;0l;4;...``: a version, then ``P`` (primary), ``A`` (aim down sights) and ``S`` (sniper
-scope) sections of key;value pairs. A key that is not given keeps the game's default; one we do not know is kept
-and listed as it is. Lines are in the game's pixels at 1080p.
+コードは ``0;P;c;5;h;0;0l;4;...``: バージョンのあとに ``P``（プライマリー）、``A``（ADS）、 ``S``（スナイパースコープ）
+の区切りが続き、中は key;value の組。書かれていないキーはゲームの既定値、知らないキーは残してそのまま一覧に出す。
+線の長さは 1080p でのゲームのピクセル。
 
-The drawing is the crosshair at rest (standing still, not firing). What makes it move in the game is read too and
-told in the page's table: each ring's movement error (``0m``, ``1m``) and firing error (``0f``, ``1f``) with their
-multipliers (``0s``, ``0e``, ``1s``, ``1e``), the fade while firing (``f``), the firing error's offset taken from
-the crosshair's (``m``) and whether a watched player's crosshair is shown (``s``).
-"""
+絵は止まっているとき（動かず撃たず）のクロスヘア。
+ゲームで動かす設定も読んでページの表に書く: 各リングの移動エラー（``0m``、``1m``）と射撃エラー（``0f``、 ``1f``）
+とその倍率（``0s``、``0e``、``1s``、``1e``）、射撃中のフェード（``f``）、
+射撃エラーのオフセットをクロスヘアのものにするか（``m``）、観戦中のプレイヤーのクロスヘアを出すか（``s``）。"""
 
 from __future__ import annotations
 
 import re
 
-#: The game's colour choices (``c``); 8 is the custom colour given by ``u`` (RRGGBBAA).
+from valtracker.util import to_int
+
+#: ゲームの色の選択肢（``c``）。8 は ``u``（RRGGBBAA）で指定するカスタム色。
 COLOURS = ("#ffffff", "#00ff00", "#7fff00", "#dfff00", "#ffff00", "#00ffff", "#ff00ff", "#ff0000")
-#: Their names, translated in locale.py.
+#: その名前（訳は locale.py）。
 COLOUR_NAMES = ("白", "緑", "黄緑", "緑黄", "黄", "シアン", "ピンク", "赤", "カスタム")
-#: A code has only these characters, and is at most this long.
+#: コードに使える文字と最大の長さ。
 CODE = re.compile(r"^[0-9A-Za-z;.\-]{1,600}$")
-#: The game's defaults (a crosshair given as "0" is the default one).
+#: ゲームの既定値（"0" のクロスヘアは既定のもの）。
 PRIMARY = {
     "c": 0,
     "u": "",
@@ -59,7 +60,7 @@ PRIMARY = {
 }
 SNIPER = {"c": 7, "u": "", "d": 1, "s": 1.0, "o": 0.75}
 SECTIONS = {"P": "primary", "A": "ads", "S": "sniper"}
-#: How far the drawing reaches from the centre (pixels): every line fits, however long.
+#: 絵の中心からの広さ（ピクセル）: どんなに長い線でも収まる。
 REACH = 50
 
 
@@ -72,8 +73,8 @@ def _value(text: str):
 
 
 def parse(code: str) -> dict | None:
-    """``{"primary": settings, "ads": settings or None (the primary's), "sniper": settings, "unknown": [keys]}``,
-    or None for what is not a crosshair code."""
+    """``{"primary": 設定, "ads": 設定か None（プライマリーと同じ）, "sniper": 設定, "unknown": [キー]}``。
+    クロスヘアコードでなければ None。"""
     code = re.sub(r"\s+", "", str(code or ""))
     if not CODE.match(code):
         return None
@@ -91,7 +92,7 @@ def parse(code: str) -> dict | None:
             index += 1
             continue
         if index + 1 >= len(rest):
-            return None  # a key without its value
+            return None  # 値の無いキー
         found[section][key] = _value(rest[index + 1])
         index += 2
     unknown = sorted(
@@ -103,7 +104,7 @@ def parse(code: str) -> dict | None:
         }
         | {f"S:{key}" for key in found["sniper"] if key not in SNIPER}
     )
-    # the ADS profile is the primary unless it was set on its own ("p;0" in the general part, or an A section)
+    # ADS のプロファイルは、別に設定していなければプライマリーと同じ（全般の "p;0"、または A の区切り）
     own_ads = bool(found["ads"]) or str(found["general"].get("p", 1)) == "0"
     return {
         "primary": PRIMARY | found["primary"],
@@ -114,19 +115,12 @@ def parse(code: str) -> dict | None:
 
 
 def colour(settings: dict) -> str:
-    """The crosshair's colour as #rrggbb."""
-    index = _int(settings.get("c"))
+    """クロスヘアの色を #rrggbb で。"""
+    index = to_int(settings.get("c"))
     custom = str(settings.get("u") or "")
     if index == 8 and re.fullmatch(r"[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?", custom):
         return "#" + custom[:6].lower()
     return COLOURS[index] if 0 <= index < len(COLOURS) else COLOURS[0]
-
-
-def _int(value, default: int = 0) -> int:
-    try:
-        return int(float(value))
-    except (TypeError, ValueError):
-        return default
 
 
 def _float(value, default: float = 0.0) -> float:
@@ -144,21 +138,21 @@ def _size(value, low: int = 0, high: int = 40) -> float:
 
 
 def shapes(settings: dict) -> list[dict]:
-    """The crosshair as rectangles around the centre (0, 0): ``[{"x", "y", "w", "h", "fill", "opacity"}]``,
-    outlines first (they are drawn under the lines)."""
+    """中心 (0, 0) のまわりの四角形としてのクロスヘア: ``[{"x", "y", "w", "h", "fill", "opacity"}]``。
+    アウトラインを先に（線の下に描く）。"""
     fill = colour(settings)
-    outline = _size(settings.get("t"), 0, 6) if _int(settings.get("h")) else 0
+    outline = _size(settings.get("t"), 0, 6) if to_int(settings.get("h")) else 0
     outline_opacity = _float(settings.get("o"), 0.5)
     lines: list[tuple[dict, float]] = []
-    if _int(settings.get("d")):
+    if to_int(settings.get("d")):
         dot = _size(settings.get("z"), 1, 6)
         lines.append(({"x": -dot / 2, "y": -dot / 2, "w": dot, "h": dot}, _float(settings.get("a"), 1.0)))
     for ring in ("0", "1"):
-        if not _int(settings.get(ring + "b")):
+        if not to_int(settings.get(ring + "b")):
             continue
         thick = _size(settings.get(ring + "t"), 0, 10)
         length = _size(settings.get(ring + "l"), 0, 20)
-        tall = _size(settings.get(ring + "v"), 0, 20) if _int(settings.get(ring + "g")) else length
+        tall = _size(settings.get(ring + "v"), 0, 20) if to_int(settings.get(ring + "g")) else length
         gap = _size(settings.get(ring + "o"), 0, 20)
         opacity = _float(settings.get(ring + "a"), 1.0)
         if not thick or not (length or tall):
@@ -188,8 +182,8 @@ def shapes(settings: dict) -> list[dict]:
 
 
 def sniper_shapes(settings: dict) -> list[dict]:
-    """The scope's centre dot, when it is on."""
-    if not _int(settings.get("d")):
+    """スコープの中心の点（オンのとき）。"""
+    if not to_int(settings.get("d")):
         return []
     size = 2 * _size(settings.get("s"), 0, 4) or 1
     return [
@@ -205,35 +199,35 @@ def sniper_shapes(settings: dict) -> list[dict]:
 
 
 def describe(settings: dict) -> dict:
-    """What the settings page of the game would show, for the page's table."""
-    index = _int(settings.get("c"))
+    """ゲームの設定画面に出るもの（ページの表用）。"""
+    index = to_int(settings.get("c"))
     return {
         "colour": colour(settings),
         "colour_name": COLOUR_NAMES[index] if 0 <= index < len(COLOUR_NAMES) else COLOUR_NAMES[0],
-        "outlines": (_int(settings.get("h")), _size(settings.get("t"), 0, 6), _float(settings.get("o"), 0.5)),
-        "dot": (_int(settings.get("d")), _size(settings.get("z"), 1, 6), _float(settings.get("a"), 1.0)),
+        "outlines": (to_int(settings.get("h")), _size(settings.get("t"), 0, 6), _float(settings.get("o"), 0.5)),
+        "dot": (to_int(settings.get("d")), _size(settings.get("z"), 1, 6), _float(settings.get("a"), 1.0)),
         "inner": _ring(settings, "0"),
         "outer": _ring(settings, "1"),
-        "fade": bool(_int(settings.get("f"))),
+        "fade": bool(to_int(settings.get("f"))),
     }
 
 
 def _ring(settings: dict, ring: str) -> dict:
     return {
-        "on": bool(_int(settings.get(ring + "b"))),
+        "on": bool(to_int(settings.get(ring + "b"))),
         "opacity": _float(settings.get(ring + "a"), 1.0),
         "length": _size(settings.get(ring + "l"), 0, 20),
-        "vertical": _size(settings.get(ring + "v"), 0, 20) if _int(settings.get(ring + "g")) else None,
+        "vertical": _size(settings.get(ring + "v"), 0, 20) if to_int(settings.get(ring + "g")) else None,
         "thickness": _size(settings.get(ring + "t"), 0, 10),
         "offset": _size(settings.get(ring + "o"), 0, 20),
-        # whether the lines move apart in the game: while walking, and while firing
-        "moving": bool(_int(settings.get(ring + "m"))),
-        "firing": bool(_int(settings.get(ring + "f"))),
+        # ゲームで線が開くか: 歩いているときと、撃っているとき
+        "moving": bool(to_int(settings.get(ring + "m"))),
+        "firing": bool(to_int(settings.get(ring + "f"))),
     }
 
 
 def code(settings: dict) -> str:
-    """The primary crosshair as a code again (only what differs from the default), e.g. for a preset."""
+    """プライマリーのクロスヘアをまたコードに（既定と違うところだけ）。プリセット用など。"""
     parts = ["0", "P"]
     for key, default in PRIMARY.items():
         value = settings.get(key, default)
@@ -242,7 +236,7 @@ def code(settings: dict) -> str:
     return ";".join(parts)
 
 
-#: A few starting points (not anyone's own crosshair): name -> primary settings.
+#: 出発点になるいくつか（誰かのクロスヘアではない）: 名前 -> プライマリーの設定。
 PRESETS = {
     "ドット": {"c": 5, "h": 1, "t": 1, "o": 1, "d": 1, "z": 3, "0b": 0, "1b": 0},
     "小さい十字": {"c": 1, "h": 0, "0l": 3, "0t": 2, "0o": 2, "0a": 1, "1b": 0},
