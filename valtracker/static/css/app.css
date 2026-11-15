@@ -5883,3 +5883,49 @@ form.row {
 .locked-agent .badge {
   position: static;
 }
+
+/* A match's line: the rank (its picture) and RR the player had when it was played */
+.match .score .then {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  margin-top: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.match .score .then img {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+/* The guess at a second account (smurf.py): amber for "likely", grey for "maybe", green for a main account */
+.smurf {
+  display: inline-block;
+  margin-left: 0.3rem;
+  padding: 0 0.45rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+  vertical-align: 0.05em;
+  cursor: help;
+}
+.smurf.likely {
+  color: #8a5300;
+}
+.smurf.maybe {
+  color: var(--soft);
+}
+.smurf.main {
+  color: var(--win);
+}
+:root[data-theme="dark"] .smurf.likely {
+  color: #f0b44c;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .smurf.likely {
+    color: #f0b44c;
+  }
+}

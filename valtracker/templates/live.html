@@ -8,7 +8,7 @@
 {%- if row.agent %}{% set _ = parts.append(t('{agent}（選択中）', agent=row.agent) if row.state == 'selected' else t('{agent}（確定）', agent=row.agent) if row.state == 'locked' else row.agent) %}{% elif phase != 'menus' %}{% set _ = parts.append(t('未選択')) %}{% endif -%}
 {%- if row.title %}{% set _ = parts.append(row.title) %}{% endif -%}
 {%- if row.level %}{% set _ = parts.append(t('レベル {level}', level=row.level)) %}{% endif %}
-{% if parts %}<small>{{ parts|join(' · ') }}</small>{% endif %}
+{% if parts or row.smurf %}<small>{{ parts|join(' · ') }}{% if row.smurf and row.smurf.kind != 'main' %} {% with guess=row.smurf %}{% include "_smurf.html" %}{% endwith %}{% endif %}</small>{% endif %}
 {% if row.record %}<small class="seat-record">{{ t('今アクト {wins}勝 / {games}試合（{rate}%）', wins=row.record.wins, games=row.record.games, rate=row.record.win_rate) }}</small>{% endif %}
 </span>
 {% if row.rank or row.act_peak or row.peak %}<span class="seat-ranks">
@@ -62,6 +62,7 @@
 {% elif row.result.won is none %}<strong>–</strong>
 {% else %}<strong>{% if outcome == 'win' %}{{ t('勝利') }}{% else %}{{ t('敗北') }}{% endif %}</strong>{% endif %}
 <small>{% if not row.result.rounds and row.result.won is none %}{{ t('{count}人中', count=row.placing.of) }}{% elif row.result.rounds %}{% if outcome == 'win' %}{{ t('勝利') }}{% elif outcome == 'loss' %}{{ t('敗北') }}{% else %}{{ t('引き分け') }}{% endif %}{% endif %}{% if row.rr is not none %}{% if row.result.rounds %} · {% endif %}<span class="{{ 'up' if row.rr > 0 else ('down' if row.rr < 0 else '') }}">{{ '%+d'|format(row.rr) }} RR</span>{% endif %}</small>
+{% if row.then %}<small class="then" title="{{ t('この試合時点のランク') }}">{% if row.then.rank.icon %}<img src="{{ media(row.then.rank.icon) }}" alt="{{ row.then.rank.name }}" width="22" height="22" loading="lazy">{% else %}{{ row.then.rank.name }}{% endif %}{% if row.then.rr is not none %}<span>{{ row.then.rr }} RR</span>{% endif %}</small>{% endif %}
 </span>
 <span class="cells">
 <span class="cell"><small>K / D / A</small><strong>{{ row.line.kills }} / {{ row.line.deaths }} / {{ row.line.assists }}</strong></span>
