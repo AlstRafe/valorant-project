@@ -296,12 +296,12 @@ def _site(site: str):
     return _latest(site)
 
 
-def run(app, far: bool, lang: str = "ja", ask_site=None) -> list[dict]:
+def run(app, far: bool, lang: str = "ja") -> list[dict]:
     """ページのグループ: ``[{"key", "name", "items": [...]}]``。
     ``far``: Riot のサーバーとほかの出どころも確かめる（でなければ省く）。"""
     groups = [("local", local_items(app.config["VAL_LOCAL"]))]
     if far:
-        groups += [("riot", riot_items(app.config["VAL_RIOT"])), ("others", other_items(app, lang, ask_site or _site))]
+        groups += [("riot", riot_items(app.config["VAL_RIOT"])), ("others", other_items(app, lang, _site))]
     groups.append(("app", app_items(app)))
     return [{"key": key, "name": GROUPS[key], "items": items} for key, items in groups]
 

@@ -36,7 +36,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 from valtracker import net, pdmatch
 from valtracker.cache import TTLCache
 from valtracker.settings import Settings
-from valtracker.util import to_float, token_claims
+from valtracker.util import lower_id, to_float, token_claims
 
 AUTHORIZE = (
     "https://auth.riotgames.com/authorize?redirect_uri=https%3A%2F%2Fplayvalorant.com%2Fopt_in"
@@ -407,13 +407,14 @@ class Riot:
         resting = self.boards.get(("resting", region))
         if resting:
             raise RiotError(resting, "leaderboard: asked again later")
-        key = ("board", region, season, max(0, int(start)), int(size), query.casefold())
+        start = max(0, int(start))
+        key = _board_key(region, season, start, size, query)
         kept = self.boards.get(key)
         if kept is not None:
             return kept
 
         def read(tokens: dict, saved: dict) -> dict:
-            asked = {"startIndex": max(0, int(start)), "size": int(size)} | ({"query": query} if query else {})
+            asked = {"startIndex": start, "size": int(size)} | ({"query": query} if query else {})
             url = (
                 f"{PD.format(shard=BOARD_REGIONS[region])}/mmr/v1/leaderboards/affinity/{region}"
                 f"/queue/competitive/season/{season}?{urlencode(asked)}"
@@ -431,8 +432,7 @@ class Riot:
 
     def has_board(self, region: str, season: str, start: int = 0, size: int = 50, query: str = "") -> bool:
         """そのページを持っているか（あれば呼び出しは要らない）。"""
-        key = ("board", region, season, max(0, int(start)), int(size), query.casefold())
-        return self.boards.get(key) is not None
+        return self.boards.get(_board_key(region, season, start, size, query)) is not None
 
     def history(self, region: str, puuid: str, start: int = 0) -> dict:
         """ゲーム自身のサーバー（PD）からの、任意のプレイヤーの試合履歴の 1 ページ（新しい順）
@@ -542,7 +542,6 @@ class Riot:
                 raise RiotError("notsaved", "equip: PD answered 200 with another loadout")
             return {"loadout": answer, "missing": [], "problem": ""}
 
-        self.cache = TTLCache(8)
         try:
             return self._kept("equip", send, 0)
         finally:
@@ -562,7 +561,6 @@ class Riot:
         glz, puuid, headers = self._glz(saved), str(saved["puuid"]), self._headers(tokens)
         # ゲームのセッションで、開いているかとどこにいるか（メニュー、エージェント選択、試合）がわかる。
         # デスクトップアプリでは Riot Client がもう知らせているので（イベント）GLZ には聞かない
-        running, loop = None, ""
         seen = self.local.presence() if self.local is not None else None
         if seen is not None and not seen["running"]:
             self.where = {}
@@ -745,12 +743,7 @@ class Riot:
                     continue
                 match = self._pd(phase, f"{glz}{path}/matches/{match_id}", headers)
                 self.where[phase] = match_id
-            team = match.get("AllyTeam") if isinstance(match.get("AllyTeam"), dict) else {}
-            players = [
-                item
-                for item in (team.get("Players") if phase == "pregame" else match.get("Players")) or []
-                if isinstance(item, dict)
-            ]
+            players = _players(match, phase)
             mates = self._mates(glz, puuid, headers, match_id, players)
             names, problem = self._open_names(saved, headers, players, mates)
             ranks = self._ranks(
@@ -1007,15 +1000,7 @@ class Riot:
                 ),
                 "wallet": pool.submit(self._pd, "wallet", f"{base}/store/v1/wallet/{puuid}", headers),
             }
-        answers, missing, problems = {}, [], []
-        for key, future in asked.items():
-            try:
-                answers[key] = future.result()
-            except RiotError as error:
-                if error.kind == "expired":
-                    raise
-                missing.append(key)
-                problems.append(error.detail or error.kind)
+        answers, missing, problems = _gather(asked)
         if "storefront" not in answers:
             raise RiotError("down", problems[0] if problems else "")
         return {
@@ -1035,15 +1020,7 @@ class Riot:
         with ThreadPoolExecutor(4, thread_name_prefix="riot") as pool:
             asked = {"loadout": pool.submit(lambda: self._loadout(base, puuid, headers)[0])}
             asked |= {key: pool.submit(self._pd, key, base + path, headers) for key, path in asks.items()}
-        answers, missing, problems = {}, [], []
-        for key, future in asked.items():
-            try:
-                answers[key] = future.result()
-            except RiotError as error:
-                if error.kind == "expired":
-                    raise
-                missing.append(key)
-                problems.append(error.detail or error.kind)
+        answers, missing, problems = _gather(asked)
         if not answers:
             raise RiotError("down", problems[0] if problems else "")
         owned, instances = {}, {}
@@ -1127,11 +1104,37 @@ def _row(account: dict) -> dict:
     }
 
 
-def _subjects(match: dict, phase: str) -> set[str]:
+def _players(match: dict, phase: str) -> list[dict]:
     """GLZ のエージェント選択（持ち主のチーム）か試合のプレイヤー。"""
     team = match.get("AllyTeam") if isinstance(match.get("AllyTeam"), dict) else {}
-    players = (team.get("Players") if phase == "pregame" else match.get("Players")) or []
-    return {str(item.get("Subject") or "").lower() for item in players if isinstance(item, dict)}
+    return [
+        item
+        for item in (team.get("Players") if phase == "pregame" else match.get("Players")) or []
+        if isinstance(item, dict)
+    ]
+
+
+def _subjects(match: dict, phase: str) -> set[str]:
+    return {lower_id(item.get("Subject")) for item in _players(match, phase)}
+
+
+def _board_key(region: str, season: str, start: int, size: int, query: str) -> tuple:
+    """ランキングの 1 ページのキャッシュのキー。"""
+    return ("board", region, season, max(0, int(start)), int(size), query.casefold())
+
+
+def _gather(asked: dict) -> tuple[dict, list[str], list[str]]:
+    """同時に頼んだ PD の答え（キー → future）を集める: (答え, 来なかったキー, 理由)。トークン切れはそのまま上げる。"""
+    answers, missing, problems = {}, [], []
+    for key, future in asked.items():
+        try:
+            answers[key] = future.result()
+        except RiotError as error:
+            if error.kind == "expired":
+                raise
+            missing.append(key)
+            problems.append(error.detail or error.kind)
+    return answers, missing, problems
 
 
 def _wallet(answer) -> dict | None:

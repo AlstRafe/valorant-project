@@ -31,6 +31,7 @@ from pathlib import Path
 from valtracker import pdmatch, stats
 from valtracker.henrik import slim_match
 from valtracker.riot import RiotError
+from valtracker.util import to_int
 
 #: コレクターが回るリージョン（HenrikDev の名前）。
 REGIONS = ("ap", "kr", "eu", "na", "latam", "br")
@@ -98,6 +99,21 @@ def band(tier: int) -> str:
     return ""
 
 
+def _tier(player: dict) -> int:
+    """HenrikDev のプレイヤーの tier（番号か {"id": 番号}）。"""
+    tier = player.get("tier")
+    return to_int(tier.get("id") if isinstance(tier, dict) else tier)
+
+
+def _teams(match: dict) -> dict[str, bool]:
+    """チーム ID → 勝ったか。"""
+    return {
+        str(team.get("team_id") or ""): bool(team.get("won"))
+        for team in match.get("teams") or []
+        if isinstance(team, dict) and team.get("team_id")
+    }
+
+
 def _facts(match: dict) -> dict | None:
     """（小さくした）試合から行に残すもの: 開始かサーバーの無いものは None。"""
     metadata = match.get("metadata") or {}
@@ -106,15 +122,7 @@ def _facts(match: dict) -> dict | None:
     match_id = str(metadata.get("match_id") or "")
     if not started or not match_id:
         return None
-    tiers = []
-    for player in match.get("players") or []:
-        tier = player.get("tier") if isinstance(player, dict) else None
-        number = tier.get("id") if isinstance(tier, dict) else tier
-        try:
-            if int(number or 0) > 2:
-                tiers.append(int(number))
-        except (TypeError, ValueError):
-            pass
+    tiers = [tier for player in match.get("players") or [] if isinstance(player, dict) and (tier := _tier(player)) > 2]
     return {
         "id": match_id,
         "region": str(metadata.get("region") or "").lower(),
@@ -131,11 +139,7 @@ def _picks(match: dict) -> list[tuple]:
     そのチームが勝ったか: ``(match, team, agent, won, queue, tier, map, started)``。プレイヤーは残さず、
     エージェントとチームだけ。"""
     facts = _facts(match)
-    teams = {
-        str(team.get("team_id") or ""): bool(team.get("won"))
-        for team in match.get("teams") or []
-        if isinstance(team, dict) and team.get("team_id")
-    }
+    teams = _teams(match)
     if not facts or len(teams) != 2 or not any(teams.values()):
         return []  # デスマッチか引き分け: 数えるものが無い
     place = (match.get("metadata") or {}).get("map")
@@ -169,22 +173,13 @@ def _lines(match: dict) -> list[tuple]:
     rounds = stats.rounds_played(match)
     if rounds < 5:  # 途中で終わった（リメイク）: 試合 1 つ分の数値にならない
         return []
-    teams = {
-        str(team.get("team_id") or ""): bool(team.get("won"))
-        for team in match.get("teams") or []
-        if isinstance(team, dict) and team.get("team_id")
-    }
+    teams = _teams(match)
     draw = len(teams) == 2 and not any(teams.values())
     rows = []
     for slot, player in enumerate(match.get("players") or []):
         if not isinstance(player, dict) or not player.get("stats"):
             continue
-        tier = player.get("tier")
-        number = tier.get("id") if isinstance(tier, dict) else tier
-        try:
-            number = int(number or 0)
-        except (TypeError, ValueError):
-            number = 0
+        number = _tier(player)
         found = stats.line(player, rounds, stats.advanced(match, player))
         won = 0.5 if draw else float(teams.get(str(player.get("team_id") or ""), False))
         rows.append(
@@ -338,13 +333,7 @@ class Activity:
             for player in (match or {}).get("players") or []:
                 if not isinstance(player, dict) or not player.get("puuid"):
                     continue
-                tier = player.get("tier")
-                number = tier.get("id") if isinstance(tier, dict) else tier
-                try:
-                    number = int(number or 0)
-                except (TypeError, ValueError):
-                    number = 0
-                self.candidates.append((region, str(player["puuid"]), number))
+                self.candidates.append((region, str(player["puuid"]), _tier(player)))
         del self.candidates[:-CANDIDATES]
 
     def _prune(self, db: sqlite3.Connection) -> None:
@@ -386,7 +375,7 @@ class Activity:
                     (region, since),
                 ).fetchall()
                 waits = db.execute(
-                    "SELECT queue, tier, seconds, at FROM gaps WHERE region = ? AND at >= ?", (region, since)
+                    "SELECT queue, tier, seconds FROM gaps WHERE region = ? AND at >= ?", (region, since)
                 ).fetchall()
         except sqlite3.Error:
             matches, waits, lengths = [], [], []
@@ -418,7 +407,7 @@ class Activity:
             )
         servers.sort(key=lambda server: -server["matches"])
         grouped: dict[tuple[str, str], list[int]] = {}
-        for queue, tier, seconds, _ in waits:
+        for queue, tier, seconds in waits:
             grouped.setdefault((queue, ""), []).append(seconds)
             if queue == "competitive" and band(tier):
                 grouped.setdefault((queue, band(tier)), []).append(seconds)

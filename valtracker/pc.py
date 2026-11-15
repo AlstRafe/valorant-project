@@ -186,10 +186,8 @@ class Alert:
             if front == mine or is_game(title, kind):
                 break
         if turn == self._lit:
-            try:
+            with contextlib.suppress(Exception):  # __call__ を参照
                 self.windows.flash(mine, False)
-            except Exception:  # __call__ を参照
-                pass
 
 
 class Autostart:

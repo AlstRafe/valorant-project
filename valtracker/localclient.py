@@ -361,10 +361,10 @@ class LocalClient:
         except LocalError:
             return None
         found = {
-            "friends": [item for item in (listed or {}).get("friends") or [] if isinstance(item, dict)]
+            "friends": [item for item in listed.get("friends") or [] if isinstance(item, dict)]
             if isinstance(listed, dict)
             else [],
-            "presences": [item for item in (present or {}).get("presences") or [] if isinstance(item, dict)]
+            "presences": [item for item in present.get("presences") or [] if isinstance(item, dict)]
             if isinstance(present, dict)
             else [],
             "me": me,
@@ -505,7 +505,7 @@ class LocalClient:
             found = self._get(door, "/chat/v4/presences")
         except LocalError:
             return None
-        return self._mine((found or {}).get("presences") if isinstance(found, dict) else None, puuid)
+        return self._mine(found.get("presences") if isinstance(found, dict) else None, puuid)
 
     @staticmethod
     def _mine(presences, puuid: str) -> dict | None:

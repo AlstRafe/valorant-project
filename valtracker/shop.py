@@ -6,13 +6,11 @@ from __future__ import annotations
 
 import math
 
-from valtracker.collection import tier_info, wallet_info
+from valtracker.collection import KINGDOM, VP, tier_info, wallet_info
 from valtracker.content import Content
 from valtracker.riot import ITEM_TYPES
 from valtracker.util import lower_id, to_int
 
-VP = "85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741"
-KINGDOM = "85ca954a-41f2-ce94-9b45-8ca3dd39a00d"
 #: PD のアイテムタイプ -> こちらの種類（riot.ITEM_TYPES の逆）。
 KINDS = {uuid: kind for kind, uuid in ITEM_TYPES.items()}
 #: HenrikDev のおすすめバンドル内の種類の名前 -> こちらの種類。
@@ -69,17 +67,13 @@ def item(kind: str, uuid: str, content: Content, lang: str, said: dict | None = 
     return {"kind": kind, "name": said.get("name") or "", "image": said.get("image") or None, "tier": None}
 
 
-def _reward(offer: dict) -> tuple[str, str, int]:
-    """オファーの最初の報酬: （こちらの種類, uuid, 数）。"""
+def _reward(offer: dict) -> tuple[str, str]:
+    """オファーの最初の報酬: （こちらの種類, uuid）。"""
     rewards = [reward for reward in (offer or {}).get("Rewards") or [] if isinstance(reward, dict)]
     if not rewards:
-        return "", "", 0
+        return "", ""
     first = rewards[0]
-    return (
-        KINDS.get(lower_id(first.get("ItemTypeID")), ""),
-        lower_id(first.get("ItemID")),
-        to_int(first.get("Quantity")) or 1,
-    )
+    return KINDS.get(lower_id(first.get("ItemTypeID")), ""), lower_id(first.get("ItemID"))
 
 
 def _owned(kind: str, uuid: str, owned: dict) -> bool:
@@ -105,7 +99,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
     daily = []
     offers = [offer for offer in panel.get("SingleItemStoreOffers") or [] if isinstance(offer, dict)]
     for offer in offers:
-        kind, uuid, _ = _reward(offer)
+        kind, uuid = _reward(offer)
         daily.append(item(kind or "skins", uuid, content, lang) | {"price": to_int((offer.get("Cost") or {}).get(VP))})
     if not offers:  # 古い形の答え: 値段なしのスキン uuid
         daily = [item("skins", uuid, content, lang) | {"price": 0} for uuid in panel.get("SingleItemOffers") or []]
@@ -116,7 +110,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
         for offer in bonus.get("BonusStoreOffers") or []:
             if not isinstance(offer, dict):
                 continue
-            kind, uuid, _ = _reward(offer.get("Offer"))
+            kind, uuid = _reward(offer.get("Offer"))
             night.append(
                 item(kind or "skins", uuid, content, lang)
                 | {
@@ -165,7 +159,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
     for offer in store.get("AccessoryStoreOffers") or []:
         if not isinstance(offer, dict):
             continue
-        kind, uuid, _ = _reward(offer.get("Offer"))
+        kind, uuid = _reward(offer.get("Offer"))
         if kind:
             accessories.append(
                 item(kind, uuid, content, lang)

@@ -489,10 +489,8 @@ def register(app: Flask) -> None:
         security.owner_only()
         riot = current_app.config["VAL_RIOT"]
         claim(riot.me())
-        try:
+        with contextlib.suppress(RiotError):  # その間に解除されたアカウント: ページは今あるものを出す
             riot.switch(request.form.get("account", "")[:36])
-        except RiotError:
-            pass  # その間に解除されたアカウント: ページは今あるものを出す
         return redirect(own_page(request.form.get("next", "")[:400]), 303)
 
     @app.get("/friends")

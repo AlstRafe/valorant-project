@@ -131,7 +131,6 @@ def drawing(drawn: dict, spots: list[dict], lines: bool = False, most: int | Non
         "dots": dots[:most] if most else dots,
         "kills": sum(dot["kind"] == "k" for dot in dots),
         "deaths": sum(dot["kind"] == "d" for dot in dots),
-        "drawn": min(len(dots), most or len(dots)),
         "sides": bool({dot["side"] for dot in dots} - {""}),
         "places": busiest[:PLACES_SHOWN],
         # プレイヤーが撃ち合いに一番負ける場所: 角度を変えるか、先にユーティリティを使う価値がある

@@ -265,8 +265,8 @@ def _best_agent(rows: list[dict]) -> dict | None:
     ranked = []
     for found in picked.values():
         totals = _totals(found)
-        ranked.append((totals["win_rate"], totals["games"], totals["acs"] or 0, found[0], totals))
-    win_rate, games, acs, row, totals = max(ranked, key=lambda item: item[:3])
+        ranked.append((totals["win_rate"], totals["games"], totals["acs"] or 0, found[0]))
+    win_rate, games, acs, row = max(ranked, key=lambda item: item[:3])
     return {"name": row["agent_name"], "icon": row.get("agent_icon"), "games": games, "win_rate": win_rate, "acs": acs}
 
 
@@ -376,7 +376,7 @@ def summary(rows: list[dict]) -> dict:
         "win_rate": totals["win_rate"],
         "kills": round(kills / count, 1),
         "deaths": round(deaths / count, 1),
-        "assists": round(sum(row["line"]["assists"] for row in played) / count, 1),
+        "assists": round(assists / count, 1),
         "kd": totals["kd"],
         "kills_total": kills,
         "deaths_total": deaths,
@@ -386,15 +386,9 @@ def summary(rows: list[dict]) -> dict:
         # ACS、ADR、DDΔ はラウンドあたり: ラウンドの無いモードには無い
         "acs": totals["acs"],
         "adr": totals["adr"],
-        "dd": round(sum(row["line"].get("damage", 0) - row["line"].get("taken", 0) for row in with_rounds) / rounds)
-        if rounds
-        else None,
+        "dd": totals["dd"],
         "hs": totals["hs"],
-        "kast": (
-            round(100 * sum(row["adv"]["kast"] for row in detailed) / sum(row["adv"]["rounds"] for row in detailed))
-            if detailed and sum(row["adv"]["rounds"] for row in detailed)
-            else None
-        ),
+        "kast": totals["kast"],
         "fk": sum(row["adv"]["fk"] for row in detailed) if detailed else None,
         "fd": sum(row["adv"]["fd"] for row in detailed) if detailed else None,
         # プレイヤーがファーストキルを取った（取られた）ラウンドの割合

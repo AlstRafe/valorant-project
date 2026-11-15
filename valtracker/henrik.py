@@ -744,7 +744,6 @@ def _slim_featured(data) -> list:
                 "uuid": str(bundle["bundle_uuid"]).lower(),
                 "price": to_int(bundle.get("bundle_price")),
                 "until": time.time() + to_int(bundle.get("seconds_remaining")),  # しばらく持つ: 終わるときまで
-                "whole": bool(bundle.get("whole_sale_only")),
                 "items": items,
             }
         )

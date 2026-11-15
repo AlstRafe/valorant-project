@@ -45,7 +45,9 @@ def numbers(matches: list[dict]) -> dict:
         "losses": losses,
         "win_rate": round(100 * wins / games) if games else 0,
         "kd": round(total["kills"] / deaths, 2) if deaths else float(total["kills"]),
-        "kda": round((total["kills"] + total["assists"]) / deaths, 2) if deaths else float(total["kills"]),
+        "kda": round((total["kills"] + total["assists"]) / deaths, 2)
+        if deaths
+        else float(total["kills"] + total["assists"]),
         "kills": round(total["kills"] / games, 1) if games else 0,
         "hs": round(100 * total["head"] / shots, 1) if shots else None,
         "adr": round(total["made"] / rounds) if rounds else None,
