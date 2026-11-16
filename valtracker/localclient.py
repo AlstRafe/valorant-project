@@ -28,7 +28,7 @@ import threading
 import time
 from pathlib import Path
 
-from valtracker.util import token_claims
+from valtracker.util import as_list, to_float, token_claims
 
 _HOME = Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local")
 #: Riot Client が動いている間に書くもの: ``name:pid:port:password:protocol``。
@@ -61,7 +61,7 @@ FRIENDS_KEEP = 5.0
 #: 通知先（``listen``）に知らせる持ち主のゲームの瞬間: 試合成立（ゲームの 5 秒カウント）、
 #: それを取りこぼしたらエージェント選択。
 TOLD = ("found", "pregame")
-_UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 _GLZ = re.compile(rb"https://glz-([a-z]+)-1\.([a-z]+)\.a\.pvp\.net")
 _SHARDS = ("ap", "kr", "eu", "na", "pbe")
 
@@ -181,7 +181,7 @@ def where(item: dict) -> dict:
     party_id = str(party.get("partyId") or data.get("partyId") or "").lower()
     return {
         "loop": str(match.get("sessionLoopState") or data.get("sessionLoopState") or "").upper(),
-        "party": party_id if _UUID.match(party_id) else "",
+        "party": party_id if _UUID.fullmatch(party_id) else "",
         "party_state": str(party.get("partyState") or data.get("partyState") or "").upper(),
         "queue": str(match.get("queueId") or data.get("queueId") or "").lower(),
     }
@@ -211,7 +211,7 @@ def launched(sessions) -> dict:
         if not isinstance(session, dict) or str(session.get("productId") or "").lower() != "valorant":
             continue
         config = session.get("launchConfiguration") if isinstance(session.get("launchConfiguration"), dict) else {}
-        arguments = " ".join(str(item) for item in config.get("arguments") or [] if isinstance(item, str))
+        arguments = " ".join(str(item) for item in as_list(config.get("arguments")) if isinstance(item, str))
         found = re.search(r"-ares-deployment=([a-z]+)", arguments) or re.search(
             r"shared\.([a-z]+)\.a\.pvp\.net", arguments
         )
@@ -361,10 +361,10 @@ class LocalClient:
         except LocalError:
             return None
         found = {
-            "friends": [item for item in listed.get("friends") or [] if isinstance(item, dict)]
+            "friends": [item for item in as_list(listed.get("friends")) if isinstance(item, dict)]
             if isinstance(listed, dict)
             else [],
-            "presences": [item for item in present.get("presences") or [] if isinstance(item, dict)]
+            "presences": [item for item in as_list(present.get("presences")) if isinstance(item, dict)]
             if isinstance(present, dict)
             else [],
             "me": me,
@@ -389,7 +389,7 @@ class LocalClient:
             "status": status,
             "access": bool(value.get("accessToken")),
             "entitlements": bool(value.get("token")),
-            "subject": bool(_UUID.match(puuid)),
+            "subject": bool(_UUID.fullmatch(puuid)),
         }
         status, value = self.ask(door, "/chat/v1/session")
         value = value if isinstance(value, dict) else {}
@@ -456,9 +456,10 @@ class LocalClient:
         found = found if isinstance(found, dict) else {}
         access, entitlements = str(found.get("accessToken") or ""), str(found.get("token") or "")
         puuid = str(found.get("subject") or token_claims(access).get("sub") or "").lower()
-        if not access or not entitlements or not _UUID.match(puuid):
+        if not access or not entitlements or not _UUID.fullmatch(puuid):
             return None  # クライアントは開いているが、まだ誰もサインインしていない
-        until = float(token_claims(access).get("exp") or self.clock() + 3600) - EARLY
+        # exp が読めない（数でない）トークンは 1 時間もつとみなす: float() で落ちてサインインが読めなくならないように
+        until = (to_float(token_claims(access).get("exp")) or self.clock() + 3600) - EARLY
         self._tokens = {"access": access, "entitlements": entitlements, "until": until, "puuid": puuid, "door": door}
         return self._tokens
 

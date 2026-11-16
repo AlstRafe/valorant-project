@@ -140,7 +140,7 @@ class Archive:
                 db.executemany("DELETE FROM todo WHERE id = ?", [(row[0],) for row in rows])
                 db.commit()
             return new
-        except sqlite3.Error:
+        except (sqlite3.Error, OverflowError):  # OverflowError: SQLite の整数に入らない数（壊れた答え）
             return 0
 
     def keep_thin(self, puuid: str, lines: list) -> None:
@@ -177,7 +177,7 @@ class Archive:
                 db = self._connect()
                 db.executemany(query, rows)
                 db.commit()
-        except sqlite3.Error:
+        except (sqlite3.Error, OverflowError):
             pass
 
     def _read(self, query: str, values: tuple = ()) -> list:
@@ -391,10 +391,13 @@ class Filler:
                 if error.kind != "down" or " 404" not in f" {error.detail}":
                     raise
                 details = {}  # Riot がもう持っていない試合: ほかは引き続き読む
-            raw = pdmatch.to_v4(details, region, self.maps(), puuid, state["name"], state["tag"])
-            if raw:
-                self.archive.keep([slim_match(raw)], "riot")
-            self.archive.drop_todo(puuid, match_id)
+            try:
+                raw = pdmatch.to_v4(details, region, self.maps(), puuid, state["name"], state["tag"])
+                if raw:
+                    self.archive.keep([slim_match(raw)], "riot")
+            finally:
+                # 読めない試合（変換で例外）も一覧から外す: 外さないと同じ試合を毎回読み直し、残りの試合が進まない
+                self.archive.drop_todo(puuid, match_id)
             return "match"
         if state["total"] < 0 or state["scanned"] < state["total"]:
             page = self.riot.history(region, puuid, state["scanned"])

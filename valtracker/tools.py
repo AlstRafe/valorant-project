@@ -308,7 +308,8 @@ def _ranks_page(region: str) -> dict:
     values = {"lines": total, "enough": total >= RANKS_ENOUGH, "rows": [], "days": WINDOW_DAYS}
     if not values["enough"]:
         return values
-    above, widest = 0, max(found["tiers"].values())
+    # サイトから来た数（_ask）が空でも 0 で割らない
+    above, widest = 0, max(found["tiers"].values(), default=0) or 1
     numbers = sorted(
         {number for number in current_app.config["VAL_CONTENT"].tiers(g.lang) if number > 2} | set(found["tiers"])
     )

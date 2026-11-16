@@ -9,7 +9,7 @@ import math
 from valtracker.collection import KINGDOM, VP, tier_info, wallet_info
 from valtracker.content import Content
 from valtracker.riot import ITEM_TYPES
-from valtracker.util import lower_id, to_int
+from valtracker.util import as_dict, as_list, lower_id, to_int
 
 #: PD のアイテムタイプ -> こちらの種類（riot.ITEM_TYPES の逆）。
 KINDS = {uuid: kind for kind, uuid in ITEM_TYPES.items()}
@@ -41,13 +41,13 @@ def item(kind: str, uuid: str, content: Content, lang: str, said: dict | None = 
         found = content.skins(lang).get(uuid)
         if found:
             _, skin = found
-            level = next((part for part in skin.get("levels") or [] if lower_id(part.get("uuid")) == uuid), {})
-            chroma = next((part for part in skin.get("chromas") or [] if lower_id(part.get("uuid")) == uuid), {})
+            level = next((part for part in as_list(skin.get("levels")) if lower_id(part.get("uuid")) == uuid), {})
+            chroma = next((part for part in as_list(skin.get("chromas")) if lower_id(part.get("uuid")) == uuid), {})
             picture = (
                 chroma.get("fullRender")
                 or skin.get("displayIcon")
                 or level.get("displayIcon")
-                or next((part.get("fullRender") for part in skin.get("chromas") or [] if part.get("fullRender")), "")
+                or next((part.get("fullRender") for part in as_list(skin.get("chromas")) if part.get("fullRender")), "")
             )
             tier = tier_info(skin, content.index("contenttiers", lang))
             return {
@@ -69,7 +69,7 @@ def item(kind: str, uuid: str, content: Content, lang: str, said: dict | None = 
 
 def _reward(offer: dict) -> tuple[str, str]:
     """オファーの最初の報酬: （こちらの種類, uuid）。"""
-    rewards = [reward for reward in (offer or {}).get("Rewards") or [] if isinstance(reward, dict)]
+    rewards = [reward for reward in as_list(as_dict(offer).get("Rewards")) if isinstance(reward, dict)]
     if not rewards:
         return "", ""
     first = rewards[0]
@@ -97,25 +97,25 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
     owned = owned or {}
     panel = front.get("SkinsPanelLayout") if isinstance(front.get("SkinsPanelLayout"), dict) else {}
     daily = []
-    offers = [offer for offer in panel.get("SingleItemStoreOffers") or [] if isinstance(offer, dict)]
+    offers = [offer for offer in as_list(panel.get("SingleItemStoreOffers")) if isinstance(offer, dict)]
     for offer in offers:
         kind, uuid = _reward(offer)
-        daily.append(item(kind or "skins", uuid, content, lang) | {"price": to_int((offer.get("Cost") or {}).get(VP))})
+        daily.append(item(kind or "skins", uuid, content, lang) | {"price": to_int(as_dict(offer.get("Cost")).get(VP))})
     if not offers:  # 古い形の答え: 値段なしのスキン uuid
-        daily = [item("skins", uuid, content, lang) | {"price": 0} for uuid in panel.get("SingleItemOffers") or []]
+        daily = [item("skins", uuid, content, lang) | {"price": 0} for uuid in as_list(panel.get("SingleItemOffers"))]
     night = None
     bonus = front.get("BonusStore") if isinstance(front.get("BonusStore"), dict) else None
     if bonus:
         night = []
-        for offer in bonus.get("BonusStoreOffers") or []:
+        for offer in as_list(bonus.get("BonusStoreOffers")):
             if not isinstance(offer, dict):
                 continue
             kind, uuid = _reward(offer.get("Offer"))
             night.append(
                 item(kind or "skins", uuid, content, lang)
                 | {
-                    "base": to_int(((offer.get("Offer") or {}).get("Cost") or {}).get(VP)),
-                    "price": to_int((offer.get("DiscountCosts") or {}).get(VP)),
+                    "base": to_int(as_dict(as_dict(offer.get("Offer")).get("Cost")).get(VP)),
+                    "price": to_int(as_dict(offer.get("DiscountCosts")).get(VP)),
                     "discount": to_int(offer.get("DiscountPercent")),
                     "seen": bool(offer.get("IsSeen")),
                     "owned": _owned(kind or "skins", uuid, owned),
@@ -130,7 +130,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
             continue
         info = known.get(lower_id(bundle.get("DataAssetID"))) or {}
         things = []
-        for entry in bundle.get("Items") or []:
+        for entry in as_list(bundle.get("Items")):
             if not isinstance(entry, dict):
                 continue
             thing = entry.get("Item") if isinstance(entry.get("Item"), dict) else {}
@@ -148,15 +148,15 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
             {
                 "name": info.get("displayName") or "",
                 "image": info.get("displayIcon2") or info.get("displayIcon"),
-                "price": to_int((bundle.get("TotalDiscountedCost") or {}).get(VP)) or sum(t["price"] for t in things),
-                "base": to_int((bundle.get("TotalBaseCost") or {}).get(VP)),
+                "price": to_int(as_dict(bundle.get("TotalDiscountedCost")).get(VP)) or sum(t["price"] for t in things),
+                "base": to_int(as_dict(bundle.get("TotalBaseCost")).get(VP)),
                 "until": _until(at, bundle.get("DurationRemainingInSeconds")),
                 "items": things,
             }
         )
     store = front.get("AccessoryStore") if isinstance(front.get("AccessoryStore"), dict) else {}
     accessories = []
-    for offer in store.get("AccessoryStoreOffers") or []:
+    for offer in as_list(store.get("AccessoryStoreOffers")):
         if not isinstance(offer, dict):
             continue
         kind, uuid = _reward(offer.get("Offer"))
@@ -164,7 +164,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
             accessories.append(
                 item(kind, uuid, content, lang)
                 | {
-                    "price": to_int(((offer.get("Offer") or {}).get("Cost") or {}).get(KINGDOM)),
+                    "price": to_int(as_dict(as_dict(offer.get("Offer")).get("Cost")).get(KINGDOM)),
                     "owned": _owned(kind, uuid, owned),
                 }
             )
@@ -197,7 +197,7 @@ def featured(bundles: list, content: Content, lang: str) -> list[dict]:
         things = [
             item(FEATURED_KINDS.get(entry.get("type"), ""), entry.get("uuid"), content, lang, entry)
             | {"price": entry.get("price") or 0, "base": entry.get("base") or 0, "amount": entry.get("amount") or 1}
-            for entry in bundle.get("items") or []
+            for entry in as_list(bundle.get("items"))
         ]
         listed.append(
             {

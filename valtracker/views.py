@@ -35,7 +35,7 @@ from valtracker.media import kind as media_kind
 from valtracker.pdmatch import MODE_TYPES
 from valtracker.riot import ACCOUNTS_MAX, AUTHORIZE, RiotError
 from valtracker.update import UpdateError
-from valtracker.util import to_int
+from valtracker.util import as_dict, to_int
 
 #: HenrikDev のキュー ID -> ゲームでの呼び名（訳は locale.py）。
 QUEUES = {
@@ -199,7 +199,7 @@ def _queue(metadata: dict) -> str:
 
 def rank_info(tier: dict | None, old: bool = False) -> dict:
     """HenrikDev の ``{"id": 21, "name": "Ascendant 1"}`` を訪問者の言語で、絵つきで。"""
-    tier = tier or {}
+    tier = tier if isinstance(tier, dict) else {"id": tier}  # 番号だけの tier も読む
     number = to_int(tier.get("id"))
     known = current_app.config["VAL_CONTENT"].tiers(g.lang, old=old).get(number) or {}
     name = str(known.get("tierName") or tier.get("name") or "")
@@ -314,7 +314,7 @@ def match_row(match: dict, player: dict, rr_changes: dict) -> dict:
         "server": cluster(metadata.get("cluster")),
         "started": moment,
         "when": i18n.when(g.lang, moment) if moment else "",
-        "length": int(metadata.get("game_length_in_ms") or 0),
+        "length": to_int(metadata.get("game_length_in_ms")),
         "agent_id": agent["id"],
         "agent_name": agent["name"],
         "agent_icon": agent["icon"],
@@ -575,7 +575,7 @@ def _next_rank(rank: dict | None, rr, rr_changes: dict) -> dict | None:
     changes = [item.get("change", 0) for item in rr_changes.values()]
     gains = [change for change in changes if change > 0]
     losses = [-change for change in changes if change < 0]
-    need = max(1, 100 - int(rr))
+    need = max(1, 100 - to_int(rr))
     gain = round(sum(gains) / len(gains)) if gains else 0
     # プレイヤー自身の勝率と平均の上がり・下がり幅での、1 試合あたりの平均 RR
     per_match = (sum(gains) - sum(losses)) / len(changes) if changes else 0
@@ -1179,7 +1179,7 @@ def _match_page(found: dict, me: str) -> dict:
         "server": cluster(metadata.get("cluster")),
         "started": moment,
         "when": i18n.when(g.lang, moment) if moment else "",
-        "minutes": int((metadata.get("game_length_in_ms") or 0) / 60000),
+        "minutes": to_int(metadata.get("game_length_in_ms")) // 60000,
         "rounds": rounds,
         "teams": teams,
         "timeline": timeline,
@@ -1220,7 +1220,7 @@ def register(app: Flask) -> None:
         if not found:
             # タグの無い名前: 足りないものを、その名前を例にして言う。"Name JP1"（# の場所に空白、たぶん。
             # 名前に空白が入ることもあるので Riot ID は候補として出すだけ）
-            name_only = query if query and "#" not in query.replace("＃", "#") and NAME.match(query) else ""
+            name_only = query if query and "#" not in query.replace("＃", "#") and NAME.fullmatch(query) else ""
             head, _, last = name_only.rpartition(" ")
             guess = split_riot_id(f"{head}#{last}") if head.strip() else None
             if name_only:
@@ -1302,12 +1302,12 @@ def register(app: Flask) -> None:
         listed = current_app.config["VAL_CONTENT"].agents(g.lang)
         roles: dict[str, dict] = {}
         for item in listed:
-            role = item.get("role") or {}
+            role = as_dict(item.get("role"))
             if role.get("uuid"):
                 roles.setdefault(str(role["uuid"]).lower(), role)
         chosen = request.args.get("role", "").lower()
         chosen = chosen if chosen in roles else ""
-        shown = [item for item in listed if not chosen or str((item.get("role") or {}).get("uuid")).lower() == chosen]
+        shown = [item for item in listed if not chosen or str(as_dict(item.get("role")).get("uuid")).lower() == chosen]
         ordered = sorted(roles.items(), key=lambda pair: str(pair[1].get("displayName") or ""))
         return render_template("agents.html", agents=shown, roles=ordered, role=chosen, every=bool(listed))
 

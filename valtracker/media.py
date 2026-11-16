@@ -18,8 +18,8 @@ from pathlib import Path
 from valtracker import content, net
 
 PATH = re.compile(
-    r"^[a-z]{3,24}(/[a-z]{3,24})?(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|/[0-9]{1,3}){1,3}"
-    r"(/abilities/[a-z0-9]{3,24})?/[a-z]{3,32}2?\.png$"
+    r"[a-z]{3,24}(/[a-z]{3,24})?(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|/[0-9]{1,3}){1,3}"
+    r"(/abilities/[a-z0-9]{3,24})?/[a-z]{3,32}2?\.png"
 )
 PNG = b"\x89PNG\r\n\x1a\n"
 MAX_BYTES = 4 * 1024 * 1024
@@ -29,18 +29,18 @@ OUTSIDE = {
         "https://cmsassets.rgpub.io/",
         "?w=960&fm=jpg&q=80",
         re.compile(
-            r"^sanity/images/[a-z0-9]{4,16}/[a-z0-9_-]{2,40}/[0-9a-f]{20,64}-[0-9]{1,5}x[0-9]{1,5}\.(jpg|png|webp)$"
+            r"sanity/images/[a-z0-9]{4,16}/[a-z0-9_-]{2,40}/[0-9a-f]{20,64}-[0-9]{1,5}x[0-9]{1,5}\.(jpg|png|webp)"
         ),
     ),
     "contentstack": (
         "https://images.contentstack.io/",
         "?width=960&format=jpg&quality=80",
-        re.compile(r"^v3/assets/blt[0-9a-f]{8,24}/blt[0-9a-f]{8,24}/[A-Za-z0-9._-]{1,120}\.(jpg|jpeg|png|webp)$"),
+        re.compile(r"v3/assets/blt[0-9a-f]{8,24}/blt[0-9a-f]{8,24}/[A-Za-z0-9._-]{1,120}\.(jpg|jpeg|png|webp)"),
     ),
     "lolesports": (
         "https://static.lolesports.com/",
         "",
-        re.compile(r"^(teams|leagues)/[A-Za-z0-9._-]{1,120}\.(png|jpg|jpeg|webp)$"),
+        re.compile(r"(teams|leagues)/[A-Za-z0-9._-]{1,120}\.(png|jpg|jpeg|webp)"),
     ),
 }
 #: 配る絵の種類（先頭のバイトで見分ける）。
@@ -59,7 +59,7 @@ def outside_path(url) -> str | None:
     """外部の絵のアドレス -> /pic/ の下のパス（OUTSIDE のものでなければ None）。"""
     url = str(url or "").split("?", 1)[0]
     for key, (base, _, shape) in OUTSIDE.items():
-        if url.startswith(base) and shape.match(url[len(base) :]):
+        if url.startswith(base) and shape.fullmatch(url[len(base) :]):
             return f"{key}/{url[len(base) :]}"
     return None
 
@@ -78,14 +78,14 @@ class Media:
 
     def file(self, path: str) -> Path | None:
         """ディスクの絵。まだ無ければ先に取る。無ければ None。"""
-        if not PATH.match(path):
+        if not PATH.fullmatch(path):
             return None
         return self._kept(path, self.folder / path, content.MEDIA + path, png_only=True)
 
     def outside(self, path: str) -> Path | None:
         """ニュース・eスポーツの絵（OUTSIDE の ``<key>/<path>``）。まだ無ければ先に取る。"""
         key, _, rest = path.partition("/")
-        if key not in OUTSIDE or ".." in rest or not OUTSIDE[key][2].match(rest):
+        if key not in OUTSIDE or ".." in rest or not OUTSIDE[key][2].fullmatch(rest):
             return None
         base, smaller, _ = OUTSIDE[key]
         return self._kept(path, self.folder / "outside" / path, base + rest + smaller, png_only=False)

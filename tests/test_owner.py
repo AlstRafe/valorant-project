@@ -260,6 +260,7 @@ class OwnerTest(unittest.TestCase):
         fresh = self.client.get("/media/agents/11111111-1111-4111-8111-111111111111/displayicon.png")
         self.assertNotIn("Cookie", fresh.headers.get("Vary", ""))
         self.assertIn("max-age=2592000", fresh.headers["Cache-Control"])
+        fresh.close()  # send_file の開いたファイルを閉じる（閉じないと ResourceWarning）
         self.assertIn("Cookie", self.client.get("/live").headers.get("Vary", ""), "the pages are the owner's")
         self.riot.phase = "ingame"
         self.state()

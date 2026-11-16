@@ -16,7 +16,7 @@ from urllib.parse import urlencode
 from valtracker import net
 from valtracker.cache import TTLCache
 from valtracker.henrik import https_only, known_region, slim_status
-from valtracker.util import to_int
+from valtracker.util import as_list, to_int
 
 SITE = "https://playvalorant.com"
 NEWS = (
@@ -119,7 +119,7 @@ def _news_url(locale: str, limit: int, tag: str = "") -> str:
 
 def _slim_news(data: dict) -> list:
     articles = []
-    for item in data.get("data") or []:
+    for item in as_list(data.get("data")):
         if not isinstance(item, dict) or not item.get("title"):
             continue
         action = item.get("action") if isinstance(item.get("action"), dict) else {}
@@ -127,7 +127,7 @@ def _slim_news(data: dict) -> list:
         url = str(payload.get("url") or "")
         if url.startswith("/") and not url.startswith("//"):
             url = SITE + url
-        tags = {str(tag.get("machineName") or "") for tag in item.get("tags") or [] if isinstance(tag, dict)}
+        tags = {str(tag.get("machineName") or "") for tag in as_list(item.get("tags")) if isinstance(tag, dict)}
         category = item.get("category") if isinstance(item.get("category"), dict) else {}
         media = item.get("media") if isinstance(item.get("media"), dict) else {}
         if media.get("type") != "image":
@@ -166,7 +166,7 @@ def _slim_schedule(page: str) -> list:
             found[str(item["id"])] = item
     games = []
     for item in found.values():
-        teams = [team for team in item.get("matchTeams") or [] if isinstance(team, dict) and team.get("name")]
+        teams = [team for team in as_list(item.get("matchTeams")) if isinstance(team, dict) and team.get("name")]
         if item.get("type") != "match" or len(teams) != 2:
             continue
         league = item.get("league") if isinstance(item.get("league"), dict) else {}

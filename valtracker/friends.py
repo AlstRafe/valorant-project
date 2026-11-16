@@ -15,7 +15,7 @@ import re
 from datetime import UTC, datetime
 
 from valtracker.localclient import decode_private
-from valtracker.util import to_int
+from valtracker.util import as_list, to_int
 
 #: private の中で項目が入りうる部分（一番上の次に見る）。
 PARTS = ("matchPresenceData", "partyPresenceData", "playerPresenceData", "premierPresenceData")
@@ -40,7 +40,7 @@ WORDS = {
 }
 #: VALORANT にいるフレンドの順: 試合中、試合に入るところ、メニュー、離席。
 ORDER = ("ingame", "pregame", "found", "queue", "custom", "range", "menus", "away")
-_UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
 
 def _field(data: dict, key: str):
@@ -56,7 +56,7 @@ def _field(data: dict, key: str):
 
 def _id(value) -> str:
     text = str(value or "").lower()
-    return text if _UUID.match(text) else ""
+    return text if _UUID.fullmatch(text) else ""
 
 
 def place(data: dict, away: bool) -> str:
@@ -132,12 +132,12 @@ def rows(found: dict, look: dict, now: float, when) -> dict:
     ``look``: ページの言語での ``{"tiers", "maps", "queue_name"}``。``when(datetime)``: ページの時刻表記。"""
     me = str(found.get("me") or "").lower()
     presences: dict[str, list[dict]] = {}
-    for item in found.get("presences") or []:
+    for item in as_list(found.get("presences")):
         presences.setdefault(str(item.get("puuid") or "").lower(), []).append(item)
     mine = next((item for item in presences.get(me, []) if str(item.get("product") or "").lower() == "valorant"), None)
     my_party = _id(_field(decode_private(mine.get("private")), "partyId")) if mine else ""
     playing, online, offline, seen = [], [], [], set()
-    for friend in found.get("friends") or []:
+    for friend in as_list(found.get("friends")):
         puuid = str(friend.get("puuid") or "").lower()
         name, tag = str(friend.get("game_name") or ""), str(friend.get("game_tag") or "")
         if not puuid or puuid == me or puuid in seen or not name:

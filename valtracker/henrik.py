@@ -17,7 +17,7 @@ from urllib.parse import quote, urlencode
 
 from valtracker import net, rounds
 from valtracker.cache import Budget, TTLCache
-from valtracker.util import to_int
+from valtracker.util import LAST_MOMENT, as_dict, as_list, to_int
 
 BASE = "https://api.henrikdev.xyz"
 PLATFORM = "pc"
@@ -59,15 +59,15 @@ DOWN_WAIT = 60
 #: ランキング 1 ページの人数。
 BOARD_PAGE = 50
 #: Riot ID: 名前（3〜16 文字、空白可）とタグ（英数字 3〜5 文字）。
-NAME = re.compile(r"^[^#/\\?<>\x00-\x1f]{1,16}$")
-TAG = re.compile(r"^[^\W_]{2,5}$")
+NAME = re.compile(r"[^#/\\?<>\x00-\x1f]{1,16}")
+TAG = re.compile(r"[^\W_]{2,5}")
 #: 全角の ０-９、Ａ-Ｚ、ａ-ｚ -> 半角。
 HALF_WIDTH = {
     code: code - 0xFEE0
     for start, end in ((0xFF10, 0xFF19), (0xFF21, 0xFF3A), (0xFF41, 0xFF5A))
     for code in range(start, end + 1)
 }
-MATCH_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+MATCH_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 REGIONS = ("ap", "br", "eu", "kr", "latam", "na")
 #: プレイヤーページに並べる試合数: ゲーム自身のキャリアページと同じ。
 RECENT = 15
@@ -117,7 +117,7 @@ def split_riot_id(text: str) -> tuple[str, str] | None:
     で入れたタグも同じタグ: Riot のタグは半角。"""
     name, mark, tag = text.strip().replace("＃", "#").rpartition("#")
     name, tag = name.strip(), tag.strip().translate(HALF_WIDTH)
-    if not mark or not NAME.match(name) or not TAG.match(tag):
+    if not mark or not NAME.fullmatch(name) or not TAG.fullmatch(tag):
         return None
     return name, tag
 
@@ -141,7 +141,7 @@ class Henrik:
     def account(self, name: str, tag: str) -> dict:
         """``{"puuid", "region", "account_level", "name", "tag", "card", "title"}``。"""
         path = f"/valorant/v2/account/{_part(name)}/{_part(tag)}"
-        return self._get(("account", name.lower(), tag.lower()), path, KEEP["account"])
+        return self._get(("account", name.lower(), tag.lower()), path, KEEP["account"], _slim_account)
 
     def mmr(self, region: str, name: str, tag: str) -> dict:
         """``{"current": {"tier": {"id", "name"}, "rr", "last_change", "games_needed_for_rating", "leaderboard_placement", ...}, "peak": ..., "seasons": プレイした全アクト、新しい順（_slim_act）
@@ -172,7 +172,7 @@ class Henrik:
             if match_id in seen:  # 古い方の部分が新しい方と同じものを返してきた
                 continue
             seen.add(match_id)
-            if wanted and str((metadata.get("queue") or {}).get("id") or "").lower() != wanted:
+            if wanted and str(as_dict(metadata.get("queue")).get("id") or "").lower() != wanted:
                 continue
             if match_id and metadata.get("is_completed", True):  # どれもまるごとの試合: 開いても呼び出しは要らない
                 self.cache.put(("match", match_id), match, KEEP["match"])
@@ -248,7 +248,7 @@ class Henrik:
 
     def match(self, region: str, match_id: str) -> dict:
         """``{"metadata", "players", "teams", "rounds", "kills", ...}``。"""
-        if not MATCH_ID.match(match_id):
+        if not MATCH_ID.fullmatch(match_id):
             raise HenrikError("notfound")
         kept = self.cache.get(("match", match_id))
         if kept is not None:
@@ -450,9 +450,10 @@ def shows_rr(mode: str) -> bool:
 
 def _slim_mmr(data) -> dict:
     slim = _pick(data, ("current", "peak"))
+    data = data if isinstance(data, dict) else {}
     if isinstance(slim.get("peak"), dict):  # 今までの最高ランク: アセンダント以前のアクトのもの。その頃の番号で
         slim["peak"] = slim["peak"] | {"old": _old_ranks(slim["peak"])}
-    seasons = [_slim_act(season) for season in (data or {}).get("seasonal") or [] if isinstance(season, dict)]
+    seasons = [_slim_act(season) for season in as_list(data.get("seasonal")) if isinstance(season, dict)]
     slim["seasons"] = sorted(
         (act for act in seasons if act["games"]), key=lambda act: _act_order(act["short"]), reverse=True
     )
@@ -469,9 +470,9 @@ def _slim_act(season: dict) -> dict:
     def tier(value) -> int:
         return to_int(value.get("id") if isinstance(value, dict) else value)
 
-    short = str((season.get("season") or {}).get("short") or "") if isinstance(season.get("season"), dict) else ""
+    short = str(as_dict(season.get("season")).get("short") or "") if isinstance(season.get("season"), dict) else ""
     board = season.get("leaderboard_placement")
-    wins = sorted((tier(win) for win in season.get("act_wins") or []), reverse=True)
+    wins = sorted((tier(win) for win in as_list(season.get("act_wins"))), reverse=True)
     return {
         "short": short.lower(),
         "games": to_int(season.get("games")),
@@ -505,7 +506,7 @@ def _slim_rr(data) -> dict:
             continue
         change = item.get("mmr_change_to_last_game", item.get("last_change"))
         tier = item.get(
-            "currenttier", (item.get("tier") or {}).get("id") if isinstance(item.get("tier"), dict) else None
+            "currenttier", as_dict(item.get("tier")).get("id") if isinstance(item.get("tier"), dict) else None
         )
         try:
             found[str(item["match_id"])] = {
@@ -515,19 +516,22 @@ def _slim_rr(data) -> dict:
                 "elo": int(item.get("elo") or 0),
                 "at": _moment(item.get("date_raw") or item.get("date")),
             }
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):  # OverflowError: JSON の Infinity
             continue
     return found
 
 
 def _moment(value) -> int:
-    """数（v1 の date_raw）か ISO 時刻（v2 の date）からの unix 秒。どちらでもなければ 0。"""
+    """数（v1 の date_raw）か ISO 時刻（v2 の date）からの unix 秒。どちらでもないか、1970〜3000 年の外なら 0
+    （ページで日付にすると OverflowError）。"""
     if isinstance(value, int | float):
-        return int(value)
-    try:
-        return int(datetime.fromisoformat(str(value)).timestamp())
-    except ValueError:
-        return 0
+        number = to_int(value)
+    else:
+        try:
+            number = int(datetime.fromisoformat(str(value)).timestamp())
+        except (ValueError, OverflowError, OSError):  # 範囲外の年（Windows の timestamp() は OSError）
+            return 0
+    return number if 0 <= number <= LAST_MOMENT else 0
 
 
 def _slim_stored(matches) -> list:
@@ -586,7 +590,7 @@ def _slim_board(data) -> dict:
     if not isinstance(data, dict):
         raise HenrikError("down")
     players = []
-    for item in data.get("players") or []:
+    for item in as_list(data.get("players")):
         if not isinstance(item, dict):
             continue
         tier = item.get("tier", item.get("competitiveTier"))
@@ -604,7 +608,7 @@ def _slim_board(data) -> dict:
             }
         )
     thresholds = []
-    for item in data.get("thresholds") or []:
+    for item in as_list(data.get("thresholds")):
         if isinstance(item, dict):
             tier = item.get("tier")
             thresholds.append(
@@ -655,7 +659,7 @@ def _slim_esports(data) -> list:
         if not isinstance(item, dict):
             continue
         match = item.get("match") if isinstance(item.get("match"), dict) else {}
-        teams = [team for team in match.get("teams") or [] if isinstance(team, dict) and team.get("name")]
+        teams = [team for team in as_list(match.get("teams")) if isinstance(team, dict) and team.get("name")]
         if len(teams) != 2:
             continue
         league = item.get("league") if isinstance(item.get("league"), dict) else {}
@@ -672,7 +676,8 @@ def _slim_esports(data) -> list:
                     "icon": https_only(league.get("icon")),
                 },
                 "tournament": str(tournament.get("name") or ""),
-                "best_of": int(kind.get("count") or 0) if str(kind.get("count") or "").isdigit() else 0,
+                # isdigit() は "²" も通す（int() で落ちる）: to_int で読む
+                "best_of": max(0, to_int(kind.get("count"))),
                 "vod": https_only(item.get("vod")),
                 "teams": [
                     {
@@ -680,7 +685,7 @@ def _slim_esports(data) -> list:
                         "code": str(team.get("code") or "")[:8],
                         "icon": https_only(team.get("icon")),
                         "won": bool(team.get("has_won")),
-                        "wins": int(team.get("game_wins") or 0) if str(team.get("game_wins") or 0).isdigit() else 0,
+                        "wins": max(0, to_int(team.get("game_wins"))),
                     }
                     for team in teams
                 ],
@@ -697,19 +702,19 @@ def slim_status(data) -> dict:
     def words(items) -> dict:
         return {
             str(item.get("locale") or "").replace("-", "_").lower(): str(item.get("content") or "")
-            for item in items or []
+            for item in as_list(items)
             if isinstance(item, dict) and item.get("content")
         }
 
     found = {}
     for kind in ("maintenances", "incidents"):
         notices = []
-        for item in data.get(kind) or [] if isinstance(data, dict) else []:
+        for item in as_list(data.get(kind)) if isinstance(data, dict) else []:
             if not isinstance(item, dict):
                 continue
             updates = [
                 {"at": str(update.get("created_at") or ""), "words": words(update.get("translations"))}
-                for update in item.get("updates") or []
+                for update in as_list(item.get("updates"))
                 if isinstance(update, dict)
             ]
             notices.append(
@@ -720,7 +725,7 @@ def slim_status(data) -> dict:
                     "titles": words(item.get("titles")),
                     "updates": sorted(updates, key=lambda update: update["at"], reverse=True)[:3],
                     "at": str(item.get("created_at") or ""),
-                    "platforms": [str(name).lower() for name in item.get("platforms") or []],
+                    "platforms": [str(name).lower() for name in as_list(item.get("platforms"))],
                 }
             )
         found[kind] = notices
@@ -744,7 +749,7 @@ def _slim_featured(data) -> list:
                 "price": to_int(item.get("discounted_price", item.get("base_price"))),
                 "base": to_int(item.get("base_price")),
             }
-            for item in bundle.get("items") or []
+            for item in as_list(bundle.get("items"))
             if isinstance(item, dict)
         ]
         found.append(
@@ -762,8 +767,30 @@ def _matches_key(region: str, name: str, tag: str, mode: str, start: int) -> tup
     return ("matches", region, name.lower(), tag.lower(), mode if mode in MODES else "", start)
 
 
+#: 試合の部分（METADATA、PLAYER、TEAM）の型。違う型のもの（壊れた答え）は None にする:
+#: ページは None を「無い」として読む（``or {}``）が、文字列や数の .get、辞書の dict キーでは落ちる。
+SHAPES = {
+    **dict.fromkeys(("map", "queue", "season", "agent", "stats", "economy", "rounds", "current", "peak"), dict),
+    **dict.fromkeys(
+        ("match_id", "started_at", "region", "cluster", "puuid", "name", "tag", "team_id", "party_id"), str
+    ),
+}
+
+
 def _pick(item, keys) -> dict:
-    return {key: item.get(key) for key in keys} if isinstance(item, dict) else {}
+    if not isinstance(item, dict):
+        return {}
+    picked = {key: item.get(key) for key in keys}
+    return {
+        key: None if key in SHAPES and not isinstance(value, SHAPES[key]) else value for key, value in picked.items()
+    }
+
+
+def _slim_account(data) -> dict:
+    """v2 の account は辞書のはず: ほかのもの（壊れた答え）は「答えが読めない」に。"""
+    if not isinstance(data, dict):
+        raise HenrikError("down", "account: not an object")
+    return data
 
 
 def slim_match(match) -> dict:
@@ -773,8 +800,8 @@ def slim_match(match) -> dict:
     return {
         "metadata": _pick(match["metadata"], METADATA),
         # 試合自身の一覧の順で: ダイジェストはその中の位置でプレイヤーを指す
-        "players": [_pick(player, PLAYER) for player in match.get("players") or [] if isinstance(player, dict)],
-        "teams": [_pick(team, TEAM) for team in match.get("teams") or [] if isinstance(team, dict)],
+        "players": [_pick(player, PLAYER) for player in as_list(match.get("players")) if isinstance(player, dict)],
+        "teams": [_pick(team, TEAM) for team in as_list(match.get("teams")) if isinstance(team, dict)],
         "digest": rounds.digest(match),
     }
 
@@ -787,11 +814,13 @@ def _slim_collected(matches) -> list:
             "metadata": _pick(match["metadata"], METADATA),
             "players": [
                 _pick(player, ("puuid", "tier", "team_id", "agent"))
-                for player in match.get("players") or []
+                for player in as_list(match.get("players"))
                 if isinstance(player, dict)
             ],
             # どのチームが勝ったか: エージェントの勝率（activity.py）
-            "teams": [_pick(team, ("team_id", "won")) for team in match.get("teams") or [] if isinstance(team, dict)],
+            "teams": [
+                _pick(team, ("team_id", "won")) for team in as_list(match.get("teams")) if isinstance(team, dict)
+            ],
         }
         for match in matches
         if isinstance(match, dict) and isinstance(match.get("metadata"), dict)
@@ -801,7 +830,10 @@ def _slim_collected(matches) -> list:
 def _slim_matches(matches) -> list:
     if not isinstance(matches, list):
         raise HenrikError("down")
-    return [slim_match(match) for match in matches if isinstance(match, dict) and match.get("metadata")]
+    # metadata が辞書でない試合は飛ばす（slim_match は HenrikError: 1 試合のせいで一覧全体が出なくなる）
+    return [
+        slim_match(match) for match in matches if isinstance(match, dict) and isinstance(match.get("metadata"), dict)
+    ]
 
 
 def _part(text: str) -> str:

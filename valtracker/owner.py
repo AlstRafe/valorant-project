@@ -46,7 +46,7 @@ LAST_PLAYED_EVERY = 120
 #: Riot からの最後の試合の結果（_last_result）: 最大 RESULT_TRIES 回、
 #: RESULT_EVERY 秒に 1 回まで聞く（試合が終わって数秒で出る。射撃場には無い）。少しあとに書かれる RR も同じ。
 RESULT_EVERY, RESULT_TRIES = 12.0, 8
-_MATCH_ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+_MATCH_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 IDENTITY = {"cards": "PlayerCardID", "titles": "PlayerTitleID"}
 #: /live のボタンを押した後の文: （文, うまくいったか）。
 LIVE_SAID = {
@@ -108,7 +108,7 @@ def _last_match(found: dict) -> str:
     終わったら /live からリンクする: その ID、または ""（プレイ中か、最近は無し）。"""
     match = found.get("match") if isinstance(found.get("match"), dict) else {}
     playing = str(match.get("MatchID") or match.get("ID") or "").lower()
-    if found.get("phase") == "ingame" and _MATCH_ID.match(playing):
+    if found.get("phase") == "ingame" and _MATCH_ID.fullmatch(playing):
         kept = session.get("live_match")
         # 新しい試合のときと、時々だけ書く: 見るたびにセッション cookie が変わると、
         # ブラウザーが cookie ごとに持っているものを取り直してしまう
@@ -120,7 +120,7 @@ def _last_match(found: dict) -> str:
     kept = session.get("live_match")
     if isinstance(kept, list) and len(kept) == 2:
         match_id, when = str(kept[0]), float(kept[1] or 0)
-        if _MATCH_ID.match(match_id) and time.time() - when < LAST_MATCH_KEPT:
+        if _MATCH_ID.fullmatch(match_id) and time.time() - when < LAST_MATCH_KEPT:
             return match_id
     return _last_played()
 
@@ -143,7 +143,7 @@ def _last_played() -> str:
             matches = []
         if matches:
             kept |= {"id": matches[0]["id"], "at": matches[0]["at"]}
-    fresh = _MATCH_ID.match(str(kept.get("id") or "")) and now - float(kept.get("at") or 0) < LAST_MATCH_KEPT
+    fresh = _MATCH_ID.fullmatch(str(kept.get("id") or "")) and now - float(kept.get("at") or 0) < LAST_MATCH_KEPT
     return kept["id"] if fresh else ""
 
 

@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import base64
 import json
+import math
+
+#: 時刻として読む unix 秒の上限（西暦 3000 年）: これより先の数は壊れた値（日付にすると OverflowError）。
+LAST_MOMENT = 32_503_680_000
 
 
 def to_int(value, default: int = 0) -> int:
@@ -19,11 +23,22 @@ def to_int(value, default: int = 0) -> int:
 
 
 def to_float(value, default: float = 0.0) -> float:
-    """小数に。読めないものは ``default``。"""
+    """小数に。読めないもの（nan・inf も: そのあとの int() や round() で落ちる）は ``default``。"""
     try:
-        return float(value)
-    except (TypeError, ValueError):
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
         return default
+    return number if math.isfinite(number) else default
+
+
+def as_list(value) -> list:
+    """API の答えの一覧。null や型の違うもの（文字列、数、辞書）は空の一覧に（for で落ちないように）。"""
+    return value if isinstance(value, list) else []
+
+
+def as_dict(value) -> dict:
+    """API の答えの辞書。null や型の違うものは空の辞書に（.get で落ちないように）。"""
+    return value if isinstance(value, dict) else {}
 
 
 def lower_id(value) -> str:

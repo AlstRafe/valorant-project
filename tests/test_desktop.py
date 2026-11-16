@@ -2,6 +2,7 @@
 
 import base64
 import contextlib
+import http.client
 import io
 import json
 import os
@@ -578,6 +579,19 @@ class UpdateTest(unittest.TestCase):
         self.assertFalse(app.config["VAL_UPDATE_LOOKED"], "not yet 「最新です」: looked at again soon")
         app = self.looked(OSError("no network"), self.NOW)
         self.assertIsNone(app.config["VAL_UPDATE"])
+
+    def test_a_cut_off_answer_does_not_stop_the_looking(self):
+        """途中で切れた答え（http.client の例外、OSError ではない）でスレッドが止まると、もう二度と確かめなかった。"""
+        made, real = [], threading.Thread
+
+        def thread(*args, **kwargs):
+            made.append(real(*args, **kwargs))
+            return made[-1]
+
+        with mock.patch.object(desktop.threading, "Thread", side_effect=thread):
+            app = self.looked(http.client.IncompleteRead(b"half"), self.NOW)
+        self.assertIsNone(app.config["VAL_UPDATE"])
+        self.assertTrue(made[0].is_alive(), "still looking: again after LOOK_AGAIN")
 
     def test_only_the_site_is_asked(self):
         with self.assertRaises(ValueError):

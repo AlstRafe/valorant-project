@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from valtracker.util import lower_id, to_int
+from valtracker.util import LAST_MOMENT, as_list, lower_id, to_int
 
 #: PD のキュー ID -> 試合の種類（HenrikDev の ``mode_type``）。ほかはラウンド制（"Standard"）。
 MODE_TYPES = {
@@ -76,7 +76,7 @@ def history(answer) -> dict:
             "at": to_int(item.get("GameStartTime")) // 1000,
             "queue": lower_id(item.get("QueueID")),
         }
-        for item in answer.get("History") or []
+        for item in as_list(answer.get("History"))
         if isinstance(item, dict) and item.get("MatchID")
     ]
     return {"total": to_int(answer.get("Total"), len(found)), "matches": found}
@@ -87,7 +87,7 @@ def rr_updates(answer) -> dict:
     が動かない配置試合は前の tier が無いので省く）。"""
     answer = answer if isinstance(answer, dict) else {}
     found = {}
-    for item in answer.get("Matches") or []:
+    for item in as_list(answer.get("Matches")):
         if not isinstance(item, dict) or not item.get("MatchID"):
             continue
         tier = to_int(item.get("TierAfterUpdate"))
@@ -119,9 +119,11 @@ def to_v4(details, region: str, maps: dict, puuid: str = "", name: str = "", tag
     address = str(info.get("mapId") or "").rsplit("/", 1)[-1].lower()
     known = maps.get(address) or {}
     start = to_int(info.get("gameStartMillis"))
-    players_raw = [item for item in details.get("players") or [] if isinstance(item, dict) and item.get("subject")]
+    if not 0 < start <= LAST_MOMENT * 1000:  # 壊れた時刻（日付にすると OverflowError）は無いことにする
+        start = 0
+    players_raw = [item for item in as_list(details.get("players")) if isinstance(item, dict) and item.get("subject")]
     players_raw = [item for item in players_raw if not item.get("isObserver")]
-    rounds_raw = [item for item in details.get("roundResults") or [] if isinstance(item, dict)]
+    rounds_raw = [item for item in as_list(details.get("roundResults")) if isinstance(item, dict)]
     shots, dealt, taken, spent = _from_rounds(rounds_raw)
     players = []
     for item in players_raw:
@@ -154,7 +156,7 @@ def to_v4(details, region: str, maps: dict, puuid: str = "", name: str = "", tag
             }
         )
     teams = []
-    for item in details.get("teams") or []:
+    for item in as_list(details.get("teams")):
         if not isinstance(item, dict) or not item.get("teamId"):
             continue
         won, played = to_int(item.get("roundsWon")), to_int(item.get("roundsPlayed"))
@@ -193,13 +195,13 @@ def _from_rounds(rounds_raw: list) -> tuple[dict, dict, dict, dict]:
     taken: dict[str, int] = {}
     spent: dict[str, int] = {}
     for item in rounds_raw:
-        for line in item.get("playerStats") or []:
+        for line in as_list(item.get("playerStats")):
             if not isinstance(line, dict):
                 continue
             subject = lower_id(line.get("subject"))
             economy = line.get("economy") if isinstance(line.get("economy"), dict) else {}
             spent[subject] = spent.get(subject, 0) + to_int(economy.get("spent"))
-            for hit in line.get("damage") or []:
+            for hit in as_list(line.get("damage")):
                 if not isinstance(hit, dict):
                     continue
                 head, body, leg = shots.get(subject, (0, 0, 0))
@@ -232,7 +234,7 @@ def _round(item: dict) -> dict:
                     else 0
                 },
             }
-            for line in item.get("playerStats") or []
+            for line in as_list(item.get("playerStats"))
             if isinstance(line, dict)
         ],
     }
@@ -240,17 +242,17 @@ def _round(item: dict) -> dict:
 
 def _shots(line: dict) -> dict:
     """1 ラウンドの命中を部位ごとに（PD は当てた相手ごとに数える）。"""
-    hit = [item for item in line.get("damage") or [] if isinstance(item, dict)]
+    hit = [item for item in as_list(line.get("damage")) if isinstance(item, dict)]
     return {name: sum(to_int(item.get(name)) for item in hit) for name in ("headshots", "bodyshots", "legshots")}
 
 
 def _kills(details: dict, rounds_raw: list) -> list:
     """全キル（試合の一覧、無ければラウンドごとのもの）を v4 の形で。"""
-    raw = [item for item in details.get("kills") or [] if isinstance(item, dict)]
+    raw = [item for item in as_list(details.get("kills")) if isinstance(item, dict)]
     if not raw:
         for number, item in enumerate(rounds_raw):
-            for line in item.get("playerStats") or []:
-                for kill in (line.get("kills") or []) if isinstance(line, dict) else []:
+            for line in as_list(item.get("playerStats")):
+                for kill in as_list(line.get("kills")) if isinstance(line, dict) else []:
                     if isinstance(kill, dict):
                         raw.append(dict(kill, round=kill.get("round", number)))
     found = []
@@ -263,13 +265,13 @@ def _kills(details: dict, rounds_raw: list) -> list:
                 "time_in_round_in_ms": to_int(kill.get("roundTime")),
                 "killer": {"puuid": lower_id(kill.get("killer"))},
                 "victim": {"puuid": lower_id(kill.get("victim"))},
-                "assistants": [{"puuid": lower_id(helper)} for helper in kill.get("assistants") or []],
+                "assistants": [{"puuid": lower_id(helper)} for helper in as_list(kill.get("assistants"))],
                 # 武器の uuid。アビリティはスロット（"Ultimate"）で、valorant-api.com の武器一覧には無い
                 "weapon": {"id": item.lower(), "name": "" if damage.get("damageType") == "Weapon" else item},
                 "location": kill.get("victimLocation"),
                 "player_locations": [
                     {"player": {"puuid": lower_id(spot.get("subject"))}, "location": spot.get("location")}
-                    for spot in kill.get("playerLocations") or []
+                    for spot in as_list(kill.get("playerLocations"))
                     if isinstance(spot, dict)
                 ],
             }

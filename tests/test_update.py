@@ -207,6 +207,16 @@ class ReplaceTest(unittest.TestCase):
         self.assertEqual((self.app / "VALTracker.exe").read_bytes(), b"old exe")
         self.assertIn("the old build is back", said[0])
 
+    def test_when_even_the_old_app_cannot_be_opened(self):
+        said = []
+        with (
+            mock.patch("shutil.copytree", side_effect=OSError("disk full")),
+            mock.patch.object(update, "wait_for", return_value=True),
+        ):
+            code = update.install_over(self.app, 0, self.new, mock.Mock(side_effect=OSError("gone")), said.append)
+        self.assertEqual(code, 1)
+        self.assertIn("could not start the app", said[-1])
+
     def test_a_folder_that_is_not_the_apps_is_left_alone(self):
         started = []
         other = self.folder / "Documents"

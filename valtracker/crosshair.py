@@ -21,7 +21,7 @@ COLOURS = ("#ffffff", "#00ff00", "#7fff00", "#dfff00", "#ffff00", "#00ffff", "#f
 #: その名前（訳は locale.py）。
 COLOUR_NAMES = ("白", "緑", "黄緑", "緑黄", "黄", "シアン", "ピンク", "赤", "カスタム")
 #: コードに使える文字と最大の長さ。
-CODE = re.compile(r"^[0-9A-Za-z;.\-]{1,600}$")
+CODE = re.compile(r"[0-9A-Za-z;.\-]{1,600}")
 #: ゲームの既定値（"0" のクロスヘアは既定のもの）。
 PRIMARY = {
     "c": 0,
@@ -74,7 +74,7 @@ def parse(code: str) -> dict | None:
     """``{"primary": 設定, "ads": 設定か None（プライマリーと同じ）, "sniper": 設定, "unknown": [キー]}``。
     クロスヘアコードでなければ None。"""
     code = re.sub(r"\s+", "", str(code or ""))
-    if not CODE.match(code):
+    if not CODE.fullmatch(code):
         return None
     parts = code.split(";")
     if not re.fullmatch(r"\d+", parts[0]):
