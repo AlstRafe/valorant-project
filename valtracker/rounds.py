@@ -10,8 +10,10 @@ HenrikDev の古い答え（v2）は名前が違う。どちらも読み、無�
 
 from __future__ import annotations
 
-from valtracker.util import to_int
+from valtracker.util import as_dict, as_list, to_int
 
+#: 場所の座標の上限（ゲームの単位、センチメートル）。マップは端から端まで 1 万ほど: これより遠いものは壊れた値。
+SPOT_LIMIT = 1_000_000
 #: 味方がこの時間内に倒した相手を倒せば、デスはトレードされたことになる。
 TRADE_MS = 5000
 #: ラウンドの終わり方 -> ページで使う短い名前。
@@ -49,14 +51,14 @@ def _kill(raw: dict, place: dict) -> list | None:
     key = str(weapon.get("id") or raw.get("damage_weapon_id") or "").lower()
     name = str(weapon.get("name") or raw.get("damage_weapon_name") or "")
     helpers = []
-    for helper in raw.get("assistants") or []:
+    for helper in as_list(raw.get("assistants")):
         found = place.get(_puuid(helper))
         if found is not None and found != killer:
             helpers.append(found)
     moment = raw.get("time_in_round_in_ms", raw.get("kill_time_in_round"))
     victim_at = _spot(raw.get("location") if "location" in raw else raw.get("victim_death_location"))
     killer_at = None
-    for item in raw.get("player_locations") or raw.get("player_locations_on_kill") or []:
+    for item in as_list(raw.get("player_locations") or raw.get("player_locations_on_kill")):
         if isinstance(item, dict) and killer_id and _puuid(item.get("player") or item.get("player_puuid")) == killer_id:
             killer_at = _spot(item.get("location"))
             break
@@ -80,6 +82,9 @@ def _spot(where) -> list | None:
     x, y = where.get("x"), where.get("y")
     if isinstance(x, bool) or isinstance(y, bool) or not isinstance(x, int | float) or not isinstance(y, int | float):
         return None
+    # nan・inf（round() で落ちる）や、どのマップにもあり得ない遠さ（距離の計算で桁あふれ）は不明とする
+    if not (abs(x) <= SPOT_LIMIT and abs(y) <= SPOT_LIMIT):
+        return None
     return None if x == 0 and y == 0 else [round(x), round(y)]
 
 
@@ -101,7 +106,7 @@ def _round(raw: dict, place: dict, team: list) -> dict:
     defuser = place.get(_puuid(defuse.get("player") or defuse.get("defused_by")), -1) if defuse else -1
     loadout: dict[str, int] = {}
     shots = []
-    for line in raw.get("stats") or raw.get("player_stats") or []:
+    for line in as_list(raw.get("stats") or raw.get("player_stats")):
         if not isinstance(line, dict):
             continue
         who = place.get(_puuid(line.get("player") or line.get("player_puuid")))
@@ -152,19 +157,23 @@ def _sides(rounds: list, team: list, queue: str) -> None:
 
 def digest(match: dict) -> dict:
     """ページが使うラウンドとキルの情報（モジュールの説明を参照）。試合に無ければ {}。"""
-    players = [player for player in match.get("players") or [] if isinstance(player, dict)]
+    players = [player for player in as_list(match.get("players")) if isinstance(player, dict)]
     ids = [_puuid(player) for player in players]
     place = {puuid: number for number, puuid in enumerate(ids) if puuid}
     team = [str(player.get("team_id") or "") for player in players]
     metadata = match.get("metadata") if isinstance(match.get("metadata"), dict) else {}
     queue = (
-        str((metadata.get("queue") or {}).get("id") or "").lower() if isinstance(metadata.get("queue"), dict) else ""
+        str(as_dict(metadata.get("queue")).get("id") or "").lower() if isinstance(metadata.get("queue"), dict) else ""
     )
-    raw_rounds = [item for item in match.get("rounds") or [] if isinstance(item, dict)]
+    raw_rounds = [item for item in as_list(match.get("rounds")) if isinstance(item, dict)]
     rounds = [_round(item, place, team) for item in raw_rounds]
     rounds = rounds if any(item["w"] for item in rounds) else []
     kills = [
-        found for item in match.get("kills") or [] if isinstance(item, dict) for found in [_kill(item, place)] if found
+        found
+        for item in as_list(match.get("kills"))
+        if isinstance(item, dict)
+        for found in [_kill(item, place)]
+        if found
     ]
     kills.sort(key=lambda kill: (kill[0], kill[1]))
     if not rounds and not kills:
@@ -255,8 +264,8 @@ def extras(match: dict, me: int) -> dict:
     : ``{"flawless": 誰も失わずに取ったラウンド, "clutch": {相手の人数: [勝ち, 挑戦]}（チーム最後の 1 人になった時点、相手 1〜5）, "far": {武器のキー: [メートル, キル, 最長]}（両方の場所がわかるキル）
     }``。ラウンドとキルが無ければ {}。"""
     digest = match.get("digest") if isinstance(match.get("digest"), dict) else {}
-    played, kills = digest.get("rounds") or [], digest.get("kills") or []
-    players = [player for player in match.get("players") or [] if isinstance(player, dict)]
+    played, kills = as_list(digest.get("rounds")), as_list(digest.get("kills"))
+    players = [player for player in as_list(match.get("players")) if isinstance(player, dict)]
     if not played or not kills or not 0 <= me < len(players):
         return {}
     team = [str(player.get("team_id") or "") for player in players]

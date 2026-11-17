@@ -36,7 +36,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 from valtracker import net, pdmatch
 from valtracker.cache import TTLCache
 from valtracker.settings import Settings
-from valtracker.util import lower_id, to_float, token_claims
+from valtracker.util import as_dict, as_list, lower_id, to_float, to_int, token_claims
 
 AUTHORIZE = (
     "https://auth.riotgames.com/authorize?redirect_uri=https%3A%2F%2Fplayvalorant.com%2Fopt_in"
@@ -81,8 +81,8 @@ BOARD_KEEP = 300
 BOARD_RESTING = 600
 #: ランキングのリージョン（ゲームの名前）-> それを持つ PD サーバー。
 BOARD_REGIONS = {"ap": "ap", "kr": "kr", "eu": "eu", "na": "na", "latam": "na", "br": "na"}
-_QUEUE_ID = re.compile(r"^[a-z0-9_-]{2,40}$")
-_UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+_QUEUE_ID = re.compile(r"[a-z0-9_-]{2,40}")
+_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 #: アカウントのリージョン（Riot の geo の答え）-> そのアイテムを持つ PD サーバー。
 SHARDS = {"na": "na", "latam": "na", "br": "na", "eu": "eu", "ap": "ap", "kr": "kr", "pbe": "pbe"}
 #: プレイヤーの履歴の 1 回の呼び出しで頼む試合（または RR の変化）の数: ゲームのクライアントと同じ。
@@ -123,9 +123,9 @@ ACCOUNTS_MAX = 8
 EARLY = 300
 #: 貼られたものから読む最大の長さ（Cookie ヘッダーまるごとで数 kB）。
 MAX_PASTE = 8000
-_COOKIE_NAME = re.compile(r"^[A-Za-z0-9_.\-]{1,64}$")
-_COOKIE_VALUE = re.compile(r"^[\x21-\x7e]{1,4096}$")
-_TOKEN = re.compile(r"^[A-Za-z0-9._\-]{20,8192}$")
+_COOKIE_NAME = re.compile(r"[A-Za-z0-9_.\-]{1,64}")
+_COOKIE_VALUE = re.compile(r"[\x21-\x7e]{1,4096}")
+_TOKEN = re.compile(r"[A-Za-z0-9._\-]{20,8192}")
 
 
 class RiotError(Exception):
@@ -376,7 +376,7 @@ class Riot:
             answer = self._pd("agents", url, self._headers(tokens))
             owned = [
                 str(item["ItemID"]).lower()
-                for item in answer.get("Entitlements") or []
+                for item in as_list(answer.get("Entitlements"))
                 if isinstance(item, dict) and item.get("ItemID")
             ]
             return {"agents": owned, "missing": [], "problem": ""}
@@ -402,7 +402,7 @@ class Riot:
         "updated"}``。全プレイヤーで同じなので公開ページで出してよい。
         名前を隠しているプレイヤー（Riot の ``IsAnonymized``）は名前無し。``query``: 探す名前。
         Riot が出さなければ RiotError（そのリージョンはしばらく休む）。"""
-        if region not in BOARD_REGIONS or not _UUID.match(season):
+        if region not in BOARD_REGIONS or not _UUID.fullmatch(season):
             raise RiotError("down", "leaderboard: no such region or act")
         resting = self.boards.get(("resting", region))
         if resting:
@@ -437,7 +437,7 @@ class Riot:
     def history(self, region: str, puuid: str, start: int = 0) -> dict:
         """ゲーム自身のサーバー（PD）からの、任意のプレイヤーの試合履歴の 1 ページ（新しい順）
         : ``{"total", "matches": [{"id", "at", "queue"}]}``（pdmatch.history）。無ければ RiotError。"""
-        if not _UUID.match(puuid):
+        if not _UUID.fullmatch(puuid):
             raise RiotError("down", "history: not a puuid")
         asked = urlencode({"startIndex": max(0, int(start)), "endIndex": max(0, int(start)) + HISTORY_PAGE})
 
@@ -449,7 +449,7 @@ class Riot:
 
     def match_details(self, region: str, match_id: str) -> dict:
         """ゲーム自身のサーバーが持つ形の終わった試合（PD の match-details。pdmatch.to_v4 が読む）。"""
-        if not _UUID.match(match_id):
+        if not _UUID.fullmatch(match_id):
             raise RiotError("down", "match: not a match id")
 
         def read(tokens: dict, saved: dict) -> dict:
@@ -461,7 +461,7 @@ class Riot:
     def rr_updates(self, region: str, puuid: str, start: int = 0) -> dict:
         """任意のプレイヤーのコンペティティブの試合と、それぞれの RR の動きの 1 ページ（PD の competitiveupdates）、
         新しい順: ``{"changes": {試合 ID: {"change", "tier", "rr", "elo", "at"}}, "count": ページの試合数}``。"""
-        if not _UUID.match(puuid):
+        if not _UUID.fullmatch(puuid):
             raise RiotError("down", "rr: not a puuid")
         start = max(0, int(start))
         asked = urlencode({"startIndex": start, "endIndex": start + HISTORY_PAGE, "queue": "competitive"})
@@ -483,8 +483,8 @@ class Riot:
         value = str(value or "").strip().lower()
         if (
             action not in ACTIONS
-            or (action == "start" and not _QUEUE_ID.match(value))
-            or (action in ("select", "lock") and not _UUID.match(value))
+            or (action == "start" and not _QUEUE_ID.fullmatch(value))
+            or (action in ("select", "lock") and not _UUID.fullmatch(value))
         ):
             raise RiotError("unknown")
 
@@ -521,7 +521,7 @@ class Riot:
             if error.kind == "down" and " 404" in f" {error.detail}":
                 raise RiotError("notnow", error.detail) from None
             raise
-        if not _UUID.match(found):
+        if not _UUID.fullmatch(found):
             raise RiotError("notnow", f"{key}: no {field}")
         return found
 
@@ -578,7 +578,7 @@ class Riot:
             }
         if seen is not None:
             running, loop = True, seen["loop"]
-            if _UUID.match(seen.get("party") or ""):
+            if _UUID.fullmatch(seen.get("party") or ""):
                 # すぐ聞く（そして確かめる: 持ち主がそこにいるはず）。試合中も: パーティーの仲間を知るため
                 self.where["party"] = seen["party"]
         else:
@@ -589,7 +589,7 @@ class Riot:
                 self.where.pop(phase, None)
         if loop == "MENUS":
             found = self._menus(glz, puuid, headers, saved, quick=True)
-            state = str((found.get("party") or {}).get("State") or "").upper()
+            state = str(as_dict(found.get("party")).get("State") or "").upper()
             if "STARTING" in state:
                 # 試合が見つかった（ゲームの 5 秒カウント）: セッションが言う前にエージェント選択がある
                 early = self._match(glz, puuid, headers, saved, ("pregame",))
@@ -635,7 +635,9 @@ class Riot:
         if quick and self.where.get("party"):
             party = self._remembered("party", f"{glz}/parties/v1/parties/{self.where['party']}", headers)
             members = party.get("Members") if isinstance(party, dict) else None
-            if not any(isinstance(item, dict) and str(item.get("Subject")).lower() == puuid for item in members or []):
+            if not any(
+                isinstance(item, dict) and str(item.get("Subject")).lower() == puuid for item in as_list(members)
+            ):
                 party = None  # そのパーティーを離れた
         if party is None:
             self.where.pop("party", None)
@@ -647,7 +649,7 @@ class Riot:
                 return empty | {"running": False, "missing": [], "problem": ""}
             party = self._pd("party", f"{glz}/parties/v1/parties/{party_id}", headers)
             self.where["party"] = party_id
-        members = [item for item in party.get("Members") or [] if isinstance(item, dict)]
+        members = [item for item in as_list(party.get("Members")) if isinstance(item, dict)]
         mates = {str(item.get("Subject") or "").lower() for item in members} - {"", puuid}
         names, problem = self._open_names(saved, headers, members, mates)
         return empty | {
@@ -677,7 +679,7 @@ class Riot:
             for item in players
             if isinstance(item, dict)
             and item.get("Subject")
-            and (not (item.get("PlayerIdentity") or {}).get("Incognito") or str(item.get("Subject")).lower() in mates)
+            and (not as_dict(item.get("PlayerIdentity")).get("Incognito") or str(item.get("Subject")).lower() in mates)
         ]
         try:
             return self._names(saved, headers, open_names), ""
@@ -694,19 +696,22 @@ class Riot:
             kept = self.ranks.get(subject)
             if kept is not None:
                 found[subject] = kept
-            elif _UUID.match(subject):
+            elif _UUID.fullmatch(subject):
                 wanted.append(subject)
         base = self._base(saved)
 
         def ask(subject: str) -> dict:
             try:
-                answer = self._pd("rank", f"{base}/mmr/v1/players/{subject}", headers)
-            except RiotError:
-                answer = {}  # この試合ではもう聞かない: ページは GLZ のバッジにする
-            self.ranks.put(subject, answer, RANK_KEEP)
-            with self._asking_lock:
-                self._asking.discard(subject)
-            return answer
+                try:
+                    answer = self._pd("rank", f"{base}/mmr/v1/players/{subject}", headers)
+                except RiotError:
+                    answer = {}  # この試合ではもう聞かない: ページは GLZ のバッジにする
+                self.ranks.put(subject, answer, RANK_KEEP)
+                return answer
+            finally:
+                # 思わぬ例外でも外す: 残ると、このプレイヤーのランクはアプリを再起動するまで二度と聞かれない
+                with self._asking_lock:
+                    self._asking.discard(subject)
 
         asked = {}
         with self._asking_lock:
@@ -739,7 +744,7 @@ class Riot:
                         continue  # この段階にはいない
                     raise
                 match_id = str(player.get("MatchID") or "").lower()
-                if not _UUID.match(match_id):
+                if not _UUID.fullmatch(match_id):
                     continue
                 match = self._pd(phase, f"{glz}{path}/matches/{match_id}", headers)
                 self.where[phase] = match_id
@@ -791,14 +796,16 @@ class Riot:
             party = None
             if self.where.get("party"):
                 party = self._remembered("party", f"{glz}/parties/v1/parties/{self.where['party']}", headers)
-            members = (party or {}).get("Members") if isinstance(party, dict) else None
-            subjects = {str(item.get("Subject") or "").lower() for item in members or [] if isinstance(item, dict)}
+            members = party.get("Members") if isinstance(party, dict) else None
+            subjects = {str(item.get("Subject") or "").lower() for item in as_list(members) if isinstance(item, dict)}
             if puuid not in subjects:  # 覚えたパーティーを離れた、またはまだ知らない: 今のパーティーを聞く
                 party_id = self._now("party", f"{glz}/parties/v1/players/{puuid}", headers, "CurrentPartyID")
                 party = self._pd("party", f"{glz}/parties/v1/parties/{party_id}", headers)
                 self.where["party"] = party_id
                 members = party.get("Members") if isinstance(party, dict) else None
-                subjects = {str(item.get("Subject") or "").lower() for item in members or [] if isinstance(item, dict)}
+                subjects = {
+                    str(item.get("Subject") or "").lower() for item in as_list(members) if isinstance(item, dict)
+                }
         except RiotError as error:
             if error.kind == "expired":
                 raise
@@ -930,7 +937,7 @@ class Riot:
             raise RiotError("signedout", f"entitlements {status}")
         _check(status, "entitlements")
         token = str(_json(body).get("entitlements_token") or "")
-        if not _TOKEN.match(token):
+        if not _TOKEN.fullmatch(token):
             raise RiotError("down", "entitlements: no token")
         return token
 
@@ -1028,7 +1035,7 @@ class Riot:
             if kind not in answers:
                 continue
             counts: dict[str, int] = {}
-            for item in answers[kind].get("Entitlements") or []:
+            for item in as_list(answers[kind].get("Entitlements")):
                 if isinstance(item, dict) and item.get("ItemID"):
                     key = str(item["ItemID"]).lower()
                     counts[key] = counts.get(key, 0) + 1
@@ -1139,10 +1146,10 @@ def _gather(asked: dict) -> tuple[dict, list[str], list[str]]:
 
 def _wallet(answer) -> dict | None:
     """PD のウォレット -> ``{通貨 uuid: 量}``（無ければ None）。"""
-    balances = (answer or {}).get("Balances") if isinstance(answer, dict) else None
+    balances = answer.get("Balances") if isinstance(answer, dict) else None
     if not isinstance(balances, dict):
         return None
-    return {str(key).lower(): int(value) for key, value in balances.items() if isinstance(value, int | float)}
+    return {str(key).lower(): to_int(value) for key, value in balances.items() if isinstance(value, int | float)}
 
 
 def _board(answer: dict, now: float) -> dict:
@@ -1157,27 +1164,25 @@ def _board(answer: dict, now: float) -> dict:
         hidden = bool(item.get("IsAnonymized")) or not item.get("gameName")
         players.append(
             {
-                "rank": int(to_float(item.get("leaderboardRank"))),
+                "rank": to_int(item.get("leaderboardRank")),
                 "name": "" if hidden else str(item.get("gameName") or ""),
                 "tag": "" if hidden else str(item.get("tagLine") or ""),
                 "puuid": "" if hidden else str(item.get("puuid") or "").lower(),
                 "card": "" if hidden else str(item.get("PlayerCardID") or "").lower(),
-                "tier": int(to_float(item.get("competitiveTier"))),
-                "rr": int(to_float(item.get("rankedRating"))),
-                "wins": int(to_float(item.get("numberOfWins"))),
+                "tier": to_int(item.get("competitiveTier")),
+                "rr": to_int(item.get("rankedRating")),
+                "wins": to_int(item.get("numberOfWins")),
                 "hidden": hidden,
             }
         )
     details = answer.get("tierDetails") if isinstance(answer.get("tierDetails"), dict) else {}
-    details = {
-        int(to_float(tier)): info for tier, info in details.items() if isinstance(info, dict) and to_float(tier) > 2
-    }
+    details = {to_int(tier): info for tier, info in details.items() if isinstance(info, dict) and to_float(tier) > 2}
     # 最上位のランクは 1 位から始まる。Riot が順位を付けない（0）下のランクは一覧に無い
     thresholds = [
         {
             "tier": tier,
-            "rr": int(to_float(info.get("rankedRatingThreshold"))),
-            "from": int(to_float(info.get("startingIndex"))) + 1,
+            "rr": to_int(info.get("rankedRatingThreshold")),
+            "from": to_int(info.get("startingIndex")) + 1,
         }
         for tier, info in details.items()
         if tier == max(details) or to_float(info.get("startingIndex")) > 0
@@ -1185,7 +1190,7 @@ def _board(answer: dict, now: float) -> dict:
     return {
         "players": players,
         "thresholds": sorted(thresholds, key=lambda item: -item["tier"]),
-        "total": int(to_float(answer.get("totalPlayers"))),
+        "total": to_int(answer.get("totalPlayers")),
         "updated": datetime.fromtimestamp(now, UTC).isoformat(),  # Riot が言わない: 読んだ時刻
     }
 
@@ -1206,14 +1211,14 @@ def wearing(loadout: dict) -> tuple:
 
     guns = {
         low(gun.get("ID")): tuple(low(gun.get(key)) for key in ("SkinID", "SkinLevelID", "ChromaID", "CharmID"))
-        for gun in loadout.get("Guns") or []
+        for gun in as_list(loadout.get("Guns"))
         if isinstance(gun, dict)
     }
     places = loadout.get("ActiveExpressions") if isinstance(loadout.get("ActiveExpressions"), list) else None
     if places is None:
         wheel = [
             (low(item.get("EquipSlotID")), low(item.get("SprayID")))
-            for item in loadout.get("Sprays") or []
+            for item in as_list(loadout.get("Sprays"))
             if isinstance(item, dict)
         ]
     else:
@@ -1239,26 +1244,26 @@ def _tokens_in(address: str, now: float) -> dict | None:
     parts = urlsplit(str(address or "").strip())
     found = parse_qs(parts.fragment) or parse_qs(parts.query)
     access = (found.get("access_token") or [""])[0]
-    if not _TOKEN.match(access):
+    if not _TOKEN.fullmatch(access):
         return None
     try:
         seconds = int((found.get("expires_in") or ["3600"])[0])
     except ValueError:
         seconds = 3600
     id_token = (found.get("id_token") or [""])[0]
-    return {"access": access, "id": id_token if _TOKEN.match(id_token) else "", "until": now + seconds - EARLY}
+    return {"access": access, "id": id_token if _TOKEN.fullmatch(id_token) else "", "until": now + seconds - EARLY}
 
 
 def _pasted_cookies(text: str) -> dict:
     """``ssid`` だけ（その値）、``ssid=...``、または Cookie ヘッダーまるごと（``Cookie: a=1; ssid=...``）。"""
     text = re.sub(r"^\s*cookie\s*:\s*", "", text.strip(), flags=re.IGNORECASE).strip().strip("\"'")
     if "=" not in text:
-        return {"ssid": text} if _COOKIE_VALUE.match(text) else {}
+        return {"ssid": text} if _COOKIE_VALUE.fullmatch(text) else {}
     found = {}
     for part in text.split(";"):
         name, _, value = part.strip().partition("=")
         value = value.strip().strip('"')
-        if _COOKIE_NAME.match(name) and _COOKIE_VALUE.match(value):
+        if _COOKIE_NAME.fullmatch(name) and _COOKIE_VALUE.fullmatch(value):
             found[name] = value
     return dict(list(found.items())[:30])
 
@@ -1271,11 +1276,11 @@ def _renewed(cookies: dict, headers: list) -> dict:
             continue
         first, *rest = str(value).split(";")
         name, _, content = first.strip().partition("=")
-        if not _COOKIE_NAME.match(name):
+        if not _COOKIE_NAME.fullmatch(name):
             continue
         gone = not content or any(item.strip().lower() == "max-age=0" for item in rest)
         if gone:
             found.pop(name, None)
-        elif _COOKIE_VALUE.match(content):
+        elif _COOKIE_VALUE.fullmatch(content):
             found[name] = content
     return dict(list(found.items())[:30])

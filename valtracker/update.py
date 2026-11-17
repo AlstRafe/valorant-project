@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import contextlib
 import ctypes
+import http.client
 import os
 import shutil
 import subprocess
@@ -97,7 +98,7 @@ def fetch(url: str, target: Path, told, opener=urllib.request.urlopen) -> None:
                     told(done, total)
             if total and done != total:
                 raise UpdateError("network", "cut off")
-    except (OSError, ValueError) as error:
+    except (OSError, ValueError, http.client.HTTPException) as error:
         raise UpdateError("network", type(error).__name__) from error
 
 
@@ -185,7 +186,7 @@ class Updater:
         サイトに聞けなければ UpdateError（network）。"""
         try:
             told = self.ask(self.app.config["VAL_PUBLIC"])
-        except (OSError, ValueError) as error:
+        except (OSError, ValueError, http.client.HTTPException) as error:
             raise UpdateError("network", type(error).__name__) from error
         found = release.newer(self.app.config.get("VAL_BUILD"), told, time.time())
         self.app.config["VAL_UPDATE_LOOKED"] = time.time()
@@ -353,7 +354,11 @@ def install_over(target: Path, pid: int, source: Path | None = None, start=_star
         start([str(target / EXE), UPDATED, *os.environ.get("VAL_UPDATE_THEN", "").split()])
     except OSError as error:
         log(f"update: failed ({type(error).__name__}: {error}); the old build is back")
-        start([str(target / EXE)])
+        try:
+            start([str(target / EXE)])
+        except OSError as again:  # 古いアプリも起動できない: 例外で落ちずにログに残す
+            log(f"update: could not start the app ({type(again).__name__}: {again})")
+            return 1
     return 0
 
 

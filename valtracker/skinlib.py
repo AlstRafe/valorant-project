@@ -37,8 +37,8 @@ LEVEL_ITEMS = {
 #: 1 ページに並べるスキンの最大数（全武器の検索ではもっと見つかることがあり、そのときは絞るようページに出す）。
 SHOWN = 160
 VOTER_COOKIE = "val_voter"
-_VOTER = re.compile(r"^[A-Za-z0-9_-]{20,64}$")
-_UUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+_VOTER = re.compile(r"[A-Za-z0-9_-]{20,64}")
+_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
 
 def _words(value) -> str:
@@ -223,7 +223,7 @@ def _skin_page(content: Content, lang: str, uuid: str) -> dict | None:
 
 def _voter_cookie() -> str:
     value = request.cookies.get(VOTER_COOKIE, "")
-    return value if _VOTER.match(value) else ""
+    return value if _VOTER.fullmatch(value) else ""
 
 
 def register(app: Flask) -> None:
@@ -234,7 +234,7 @@ def register(app: Flask) -> None:
     @app.get("/skins/<uuid>")
     def skin(uuid: str):
         uuid = uuid.lower()
-        values = _skin_page(current_app.config["VAL_CONTENT"], g.lang, uuid) if _UUID.match(uuid) else None
+        values = _skin_page(current_app.config["VAL_CONTENT"], g.lang, uuid) if _UUID.fullmatch(uuid) else None
         if values is None:
             abort(404)
         return render_template("skin.html", **values)
@@ -244,7 +244,7 @@ def register(app: Flask) -> None:
         """持ち主のほしい物リスト（diary.py）: ストアに出たら印を付ける。"""
         security.owner_only()
         uuid = uuid.lower()
-        if not _UUID.match(uuid) or _known_skin(current_app.config["VAL_CONTENT"], g.lang, uuid) is None:
+        if not _UUID.fullmatch(uuid) or _known_skin(current_app.config["VAL_CONTENT"], g.lang, uuid) is None:
             abort(404)
         current_app.config["VAL_DIARY"].want(uuid, request.form.get("on") == "1")
         return redirect(url_for("skin", uuid=uuid) + "#want", 303)
@@ -253,7 +253,7 @@ def register(app: Flask) -> None:
     def rate_skin(uuid: str):
         uuid = uuid.lower()
         content = current_app.config["VAL_CONTENT"]
-        if not _UUID.match(uuid) or _known_skin(content, g.lang, uuid) is None:
+        if not _UUID.fullmatch(uuid) or _known_skin(content, g.lang, uuid) is None:
             abort(404)
         try:
             stars = int(request.form.get("stars", ""))

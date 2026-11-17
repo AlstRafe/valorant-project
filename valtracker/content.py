@@ -16,6 +16,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from valtracker import i18n, net
+from valtracker.util import as_list, to_int
 
 BASE = "https://valorant-api.com/v1"
 MEDIA = "https://media.valorant-api.com/"
@@ -122,7 +123,7 @@ class Content:
             value = json.loads(self._file(kind, code).read_text(encoding="utf-8"))
             fresh = value.get("shape", 1) == SHAPES.get(kind, 1)
             return (float(value["saved"]) if fresh else 0.0), list(value["data"])
-        except (OSError, ValueError, KeyError, TypeError):
+        except (OSError, ValueError, KeyError, TypeError, AttributeError):  # AttributeError: 辞書でない JSON
             return None
 
     def _write(self, kind: str, code: str, now: float, data: list) -> None:
@@ -169,7 +170,12 @@ class Content:
         tables = []
         for item in self._list("competitivetiers", lang):
             if isinstance(item, dict):
-                table = {int(tier["tier"]): tier for tier in item.get("tiers") or [] if isinstance(tier, dict)}
+                # 番号の無い・読めないランクは飛ばす（1 つのせいでランクの絵が全部消えないように）
+                table = {
+                    to_int(tier.get("tier"), -1): tier
+                    for tier in as_list(item.get("tiers"))
+                    if isinstance(tier, dict) and to_int(tier.get("tier"), -1) >= 0
+                }
                 if table:
                     tables.append(table)
         if not tables:
@@ -256,11 +262,12 @@ class Content:
 
 
 def _keep(item: dict, keys) -> dict:
-    return {key: item.get(key) for key in keys if item.get(key) not in (None, "")}
+    """残す項目はどれも文字列（名前、uuid、絵のアドレス）: ほかの型のもの（壊れた答え）は無いことにする。"""
+    return {key: item[key] for key in keys if isinstance(item.get(key), str) and item[key]}
 
 
 def _parts(item: dict, kind: str, keys) -> list:
-    return [_keep(part, keys) for part in item.get(kind) or [] if isinstance(part, dict) and part.get("uuid")]
+    return [_keep(part, keys) for part in as_list(item.get(kind)) if isinstance(part, dict) and part.get("uuid")]
 
 
 def _video(parts: list) -> list:
@@ -275,7 +282,8 @@ def _slim_weapon(weapon: dict) -> dict:
     """コレクションとスキン図鑑が出す部分だけの武器: valorant-api.com の /weapons は数 MB（性能、
     全レベルのアセットパス）あり、言語ごとに持つと小さな VM のメモリが埋まる。"""
     kept = _keep(weapon, ("uuid", "displayName", "category", "displayIcon", "defaultSkinUuid"))
-    kept["cost"] = int(((weapon.get("shopData") or {}).get("cost")) or 0)
+    shop = weapon.get("shopData") if isinstance(weapon.get("shopData"), dict) else {}
+    kept["cost"] = to_int(shop.get("cost"))
     kept["skins"] = [
         {
             **_keep(skin, ("uuid", "displayName", "contentTierUuid", "themeUuid", "displayIcon")),
@@ -286,7 +294,7 @@ def _slim_weapon(weapon: dict) -> dict:
                 _parts(skin, "chromas", ("uuid", "displayName", "displayIcon", "fullRender", "swatch", "streamedVideo"))
             ),
         }
-        for skin in weapon.get("skins") or []
+        for skin in as_list(weapon.get("skins"))
         if isinstance(skin, dict) and skin.get("uuid")
     ]
     return kept
@@ -296,12 +304,12 @@ def _slim_contract(item: dict) -> dict:
     """コントラクト（バトルパス、イベントのパス、エージェントのもの）: 種類、何のものか、各レベルの XP。"""
     about = item.get("content") if isinstance(item.get("content"), dict) else {}
     levels, epilogue = [], 0
-    for chapter in about.get("chapters") or []:
+    for chapter in as_list(about.get("chapters")):
         if not isinstance(chapter, dict):
             continue
-        for level in chapter.get("levels") or []:
+        for level in as_list(chapter.get("levels")):
             if isinstance(level, dict):
-                levels.append(int(level.get("xp") or 0))
+                levels.append(max(0, to_int(level.get("xp"))))
                 epilogue += bool(chapter.get("isEpilogue"))
     return {
         **_keep(item, ("uuid", "displayName", "displayIcon")),

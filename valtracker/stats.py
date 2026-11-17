@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta, timezone
 
-from valtracker.util import to_int
+from valtracker.util import as_dict, as_list, to_int
 
 JST = timezone(timedelta(hours=9))
 
 
 def rounds_played(match: dict) -> int:
-    teams = [team for team in match.get("teams") or [] if isinstance(team, dict)]
+    teams = [team for team in as_list(match.get("teams")) if isinstance(team, dict)]
     if teams:
         rounds = teams[0].get("rounds") or {}
         return to_int(rounds.get("won")) + to_int(rounds.get("lost"))
@@ -19,7 +19,7 @@ def rounds_played(match: dict) -> int:
 
 def started(match: dict) -> datetime | None:
     """試合の開始時刻（日本時間）。"""
-    raw = str((match.get("metadata") or {}).get("started_at") or "")
+    raw = str(as_dict(match.get("metadata")).get("started_at") or "")
     try:
         moment = datetime.fromisoformat(raw)
     except ValueError:
@@ -33,7 +33,7 @@ def advanced(match: dict, player: dict) -> dict:
     """試合のラウンドとキルからのプレイヤーの数値（``digest``、rounds.py）。無ければ {}。"""
     digest = match.get("digest") or {}
     each = digest.get("players") or []
-    players = [other for other in match.get("players") or [] if isinstance(other, dict)]
+    players = [other for other in as_list(match.get("players")) if isinstance(other, dict)]
     for number, other in enumerate(players):
         if other is player or (player.get("puuid") and other.get("puuid") == player.get("puuid")):
             return each[number] if number < len(each) and isinstance(each[number], dict) else {}
@@ -47,9 +47,9 @@ def line(player: dict, rounds: int, adv: dict | None = None) -> dict:
     stats = player.get("stats") or {}
     kills, deaths, assists = to_int(stats.get("kills")), to_int(stats.get("deaths")), to_int(stats.get("assists"))
     shots = to_int(stats.get("headshots")) + to_int(stats.get("bodyshots")) + to_int(stats.get("legshots"))
-    damage = to_int((stats.get("damage") or {}).get("dealt"))
-    taken = to_int((stats.get("damage") or {}).get("received"))
-    spent = to_int(((player.get("economy") or {}).get("spent") or {}).get("overall"))
+    damage = to_int(as_dict(stats.get("damage")).get("dealt"))
+    taken = to_int(as_dict(stats.get("damage")).get("received"))
+    spent = to_int(as_dict(as_dict(player.get("economy")).get("spent")).get("overall"))
     adv = adv or {}
     played = to_int(adv.get("rounds"))
     return {
@@ -81,7 +81,7 @@ def line(player: dict, rounds: int, adv: dict | None = None) -> dict:
 def lobby(match: dict, player: dict, rounds: int) -> dict | None:
     """試合でのほかのプレイヤーの平均（プレイヤー自身の物差し）: ACS、ADR、HS%、K/D、KAST、
     ラウンドあたりのファーストキル・デス。ラウンドかほかの人がいなければ None。"""
-    others = [other for other in match.get("players") or [] if isinstance(other, dict) and other is not player]
+    others = [other for other in as_list(match.get("players")) if isinstance(other, dict) and other is not player]
     others = [other for other in others if other.get("puuid") != player.get("puuid")]
     if not rounds or not others:
         return None
@@ -108,7 +108,7 @@ def mates(match: dict, player: dict) -> list[dict]:
             "name": str(other.get("name") or ""),
             "tag": str(other.get("tag") or ""),
         }
-        for other in match.get("players") or []
+        for other in as_list(match.get("players"))
         if isinstance(other, dict) and other.get("party_id") == party and other.get("puuid") != player.get("puuid")
     ]
 
@@ -116,7 +116,7 @@ def mates(match: dict, player: dict) -> list[dict]:
 def team_result(match: dict, team_id: str) -> dict:
     """``{"won": True/False/None（引き分けかチーム無し）, "us": 取ったラウンド, "them": 取られたラウンド, "rounds":
     モードにラウンドがあるか}``。チームデスマッチとエスカレーションにはラウンドが無く、勝敗だけ。"""
-    for team in match.get("teams") or []:
+    for team in as_list(match.get("teams")):
         if isinstance(team, dict) and str(team.get("team_id")) == str(team_id):
             rounds = team.get("rounds") or {}
             us, them = to_int(rounds.get("won")), to_int(rounds.get("lost"))
@@ -130,12 +130,12 @@ def team_result(match: dict, team_id: str) -> dict:
 def placing(match: dict, player: dict) -> dict:
     """全員の中での順位: ``{"place": 1.., "of": 人数, "mvp": "match" / "team" / ""}``。チームの無い試合（デスマッチ）
     はキル数、ほかはコンバットスコアで順位。 MVP（ゲームのバッジ）はラウンドのある試合だけ。"""
-    players = [other for other in match.get("players") or [] if isinstance(other, dict)]
+    players = [other for other in as_list(match.get("players")) if isinstance(other, dict)]
     teams = bool(team_result(match, str(player.get("team_id") or ""))["rounds"])
     measure = "score" if teams else "kills"
 
     def value(other: dict) -> int:
-        return to_int((other.get("stats") or {}).get(measure))
+        return to_int(as_dict(other.get("stats")).get(measure))
 
     mine = value(player)
     place = 1 + sum(1 for other in players if value(other) > mine)
@@ -149,7 +149,7 @@ def placing(match: dict, player: dict) -> dict:
 
 
 def find_player(match: dict, puuid: str = "", name: str = "", tag: str = "") -> dict | None:
-    for player in match.get("players") or []:
+    for player in as_list(match.get("players")):
         if not isinstance(player, dict):
             continue
         if puuid and player.get("puuid") == puuid:
@@ -181,7 +181,7 @@ def _per_agent(played: list[dict]) -> list[dict]:
                 "id": row["agent_id"],
                 "name": row["agent_name"],
                 "icon": row.get("agent_icon"),
-                "role": (row.get("role") or {}).get("name") or "",
+                "role": as_dict(row.get("role")).get("name") or "",
                 "rows": [],
             },
         )
@@ -241,7 +241,7 @@ def _per_role(played: list[dict]) -> list[dict]:
 def _per_map(played: list[dict]) -> list[dict]:
     maps: dict[str, list] = {}
     for row in played:
-        name = (row.get("map") or {}).get("name") or ""
+        name = as_dict(row.get("map")).get("name") or ""
         if name and row.get("rounds"):
             maps.setdefault(name, []).append(row)
     table = []
@@ -275,7 +275,7 @@ def _sides(rows: list[dict]) -> dict:
     found = {"atk": [0, 0], "def": [0, 0]}
     for row in rows:
         for side in ("atk", "def"):
-            won, played = (row.get("side") or {}).get(side) or (0, 0)
+            won, played = as_dict(row.get("side")).get(side) or (0, 0)
             found[side][0] += won
             found[side][1] += played
     return found | {"atk_rate": _rate(*found["atk"]), "def_rate": _rate(*found["def"])}
@@ -317,7 +317,7 @@ def _mates(rows: list[dict]) -> list[dict]:
     """一番よく一緒に並んだ人と、その試合の結果。"""
     found: dict[str, dict] = {}
     for row in rows:
-        for mate in row.get("mates") or []:
+        for mate in as_list(row.get("mates")):
             seen = found.setdefault(mate["puuid"] or mate["name"], dict(mate, games=0, wins=0, losses=0))
             seen["games"] += 1
             seen["wins"] += 1 if row["result"]["won"] is True else 0
@@ -347,7 +347,7 @@ def summary(rows: list[dict]) -> dict:
     shots = heads + bodies + legs
     weapons: dict[str, int] = {}
     for row in played:
-        for key, number in (row.get("weapons") or {}).items():
+        for key, number in as_dict(row.get("weapons")).items():
             weapons[key] = weapons.get(key, 0) + number
     weapon_kills = sum(weapons.values())
     multi = [sum((row["adv"].get("mk") or [0, 0, 0, 0])[index] for row in detailed) for index in range(4)]
@@ -358,10 +358,10 @@ def summary(rows: list[dict]) -> dict:
     clutch = {against: [0, 0] for against in range(1, 6)}
     far: dict[str, list] = {}
     for found in extra:
-        for against, (won, tried) in (found.get("clutch") or {}).items():
+        for against, (won, tried) in as_dict(found.get("clutch")).items():
             clutch[int(against)][0] += won
             clutch[int(against)][1] += tried
-        for key, (metres, measured, longest) in (found.get("far") or {}).items():
+        for key, (metres, measured, longest) in as_dict(found.get("far")).items():
             seen = far.setdefault(key, [0.0, 0, 0.0])
             seen[0] += metres
             seen[1] += measured
@@ -418,7 +418,7 @@ def summary(rows: list[dict]) -> dict:
             "assists": best["line"]["assists"],
             "id": best.get("id"),
             "region": best.get("region"),
-            "map": (best.get("map") or {}).get("name") or "",
+            "map": as_dict(best.get("map")).get("name") or "",
             "agent": best.get("agent_name") or "",
             "when": best.get("when") or "",
         },

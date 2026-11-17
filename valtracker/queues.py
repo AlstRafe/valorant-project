@@ -9,7 +9,7 @@ Riot の名前: ``Queues[].MapWeights``（``"<map>:<weight>"``、weight 0 は出
 
 from __future__ import annotations
 
-from valtracker.util import to_int
+from valtracker.util import as_dict, as_list, to_int
 
 #: ページに並べるモード（ゲームの順、QueueID）。
 ORDER = ("competitive", "unrated", "swiftplay", "spikerush", "deathmatch", "ggteam", "hurm", "premier")
@@ -20,8 +20,8 @@ IRON = 3
 def _maps(queue: dict, index: dict) -> list[dict]:
     """キューの今のマップ: ``[{"name", "image"}]``（valorant-api.com の名前）。"""
     found = []
-    for entry in queue.get("MapWeights") or []:
-        text = ":".join(entry) if isinstance(entry, list) else str(entry)
+    for entry in as_list(queue.get("MapWeights")):
+        text = ":".join(str(part) for part in entry) if isinstance(entry, list) else str(entry)
         where, _, weight = text.rpartition(":")
         where = where or text
         if weight and to_int(weight, 1) <= 0:
@@ -51,7 +51,7 @@ def settings(config: dict, map_index: dict) -> dict:
                 "id": key,
                 "maps": maps,
                 "party": (to_int(queue.get("MinPartySize"), 1), to_int(queue.get("MaxPartySize"), 5)),
-                "invalid": sorted(to_int(size) for size in queue.get("InvalidPartySizes") or []),
+                "invalid": sorted(to_int(size) for size in as_list(queue.get("InvalidPartySizes"))),
             }
         )
     competitive = queues.get("competitive")
@@ -61,7 +61,7 @@ def settings(config: dict, map_index: dict) -> dict:
 def rules(queue: dict) -> dict:
     ceilings = {
         to_int(tier): to_int(top)
-        for tier, top in (queue.get("PartySkillDisparityCompetitiveTiersCeilings") or {}).items()
+        for tier, top in as_dict(queue.get("PartySkillDisparityCompetitiveTiersCeilings")).items()
     }
     return {
         "ceilings": {tier: top for tier, top in sorted(ceilings.items()) if tier >= IRON},
@@ -69,7 +69,7 @@ def rules(queue: dict) -> dict:
         "high_size": to_int(queue.get("MaxPartySizeHighSkill")),
         "bypass": bool(queue.get("AllowFullPartyBypassSkillRestrictions")),
         "max": to_int(queue.get("MaxPartySize"), 5),
-        "invalid": sorted(to_int(size) for size in queue.get("InvalidPartySizes") or []),
+        "invalid": sorted(to_int(size) for size in as_list(queue.get("InvalidPartySizes"))),
     }
 
 

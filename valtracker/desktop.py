@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import ctypes
+import http.client
 import json
 import os
 import sys
@@ -389,7 +390,8 @@ def look_for_updates(app, stop: threading.Event, read=_latest) -> None:
             wait = LOOK_EVERY
             try:
                 found = release.newer(build, read(app.config["VAL_PUBLIC"]), time.time())
-            except (OSError, ValueError):
+            except (OSError, ValueError, http.client.HTTPException):
+                # HTTPException も: 途中で切れた答えでこのスレッドが止まると、もう二度と確かめない
                 wait = LOOK_AGAIN  # ネット無し、またはサイトが落ちている: 30 分後に
                 continue
             if found and not found["ready"]:
@@ -618,7 +620,10 @@ def check(base: str) -> int:
 def _output(folder: Path) -> None:
     """コンソールが無い（.exe）ときは、出力するものをアプリのフォルダーの desktop.log に書く。"""
     if sys.stdout is None or sys.stderr is None or getattr(sys, "frozen", False):
-        log = open(folder / "desktop.log", "w", encoding="utf-8", buffering=1)
+        try:
+            log = open(folder / "desktop.log", "w", encoding="utf-8", buffering=1)
+        except OSError:  # 書けないフォルダー・空きの無いディスク: ログ無しで起動する（起動できないよりよい）
+            log = open(os.devnull, "w", encoding="utf-8")
         sys.stdout = sys.stderr = log
 
 

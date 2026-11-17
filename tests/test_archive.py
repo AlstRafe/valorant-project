@@ -193,6 +193,18 @@ class FillerTest(unittest.TestCase):
         self.assertTrue(any("/v1/stored-matches/ap/Pd%20Player/PD1" in url for url in self.fetch.henrik_calls()))
         self.assertFalse(any("/v4/matches/" in url for url in self.fetch.henrik_calls()), "Riot has the matches")
 
+    def test_a_match_that_cannot_be_read_is_not_read_forever(self):
+        """変換で例外になる試合も読む一覧から外す: 残ると 2.5 秒ごとに同じ試合を読み直し、残りが進まなかった。"""
+        self.link()
+        self.filler.want("ap", PLAYER, "Pd Player", "PD1")
+        self.assertEqual(self.filler.step(), "history")
+        with mock.patch.object(archive_module.pdmatch, "to_v4", side_effect=TypeError("broken")):
+            with self.assertRaises(TypeError):
+                self.filler.step()
+        self.assertEqual(self.archive.todo_count(PLAYER), 1, "the other match is still to read")
+        self.assertEqual(self.filler.step(), "match")
+        self.assertEqual(self.archive.todo_count(PLAYER), 0)
+
     def test_new_matches_only_when_asked_again(self):
         self.link()
         self.filler.want("ap", PLAYER, "Pd Player", "PD1")

@@ -11,6 +11,11 @@ rounds.py はやられた側と倒した側のものをゲームの単位で残�
 
 from __future__ import annotations
 
+import math
+
+from valtracker.rounds import SPOT_LIMIT
+from valtracker.util import as_list
+
 #: キルとデスがこの数以上あるマップだけ描く。
 ENOUGH = 5
 #: マップの下に並べる場所の数（多い順）。
@@ -29,14 +34,16 @@ def plan(item) -> dict | None:
         numbers = tuple(float(item[key]) for key in NUMBERS)
     except (KeyError, TypeError, ValueError):
         return None
-    if not numbers[0] or not numbers[1]:
+    if not numbers[0] or not numbers[1] or not all(math.isfinite(number) for number in numbers):
         return None
     callouts = []
-    for callout in item.get("callouts") or []:
+    for callout in as_list(item.get("callouts")):
         where = callout.get("location") if isinstance(callout, dict) else None
         try:
             x, y = float(where["x"]), float(where["y"])
         except (KeyError, TypeError, ValueError):
+            continue
+        if not (abs(x) <= SPOT_LIMIT and abs(y) <= SPOT_LIMIT):  # nan・inf・壊れた遠さ: 距離の計算で落ちる
             continue
         parts = (str(callout.get("superRegionName") or ""), str(callout.get("regionName") or ""))
         name = " ".join(part for part in parts if part)

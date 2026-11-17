@@ -14,6 +14,7 @@ from valtracker.activity import BANDS, FEW, WINDOW_DAYS
 from valtracker.henrik import HenrikError
 from valtracker.riotweb import RiotWebError
 from valtracker.tools import moment_info
+from valtracker.util import as_dict
 from valtracker.views import QUEUES, band_name, failure_info, tr
 
 #: こちらの言語ごとの Riot ニュースサイトの言語。
@@ -64,7 +65,7 @@ def _agent_stats() -> dict:
                 | {
                     "name": agent.get("displayName") or "",
                     "icon": agent.get("displayIcon") or "",
-                    "role": (agent.get("role") or {}).get("displayName") or "",
+                    "role": as_dict(agent.get("role")).get("displayName") or "",
                     "uuid": item["agent"],
                     "few": item["picks"] < FEW,
                 }

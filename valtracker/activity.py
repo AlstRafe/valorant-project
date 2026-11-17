@@ -129,7 +129,7 @@ def _facts(match: dict) -> dict | None:
         "cluster": str(metadata.get("cluster") or ""),
         "queue": str(queue.get("id") or "").lower(),
         "started": started,
-        "length": int(int(metadata.get("game_length_in_ms") or 0) / 1000),
+        "length": to_int(metadata.get("game_length_in_ms")) // 1000,
         "tier": round(sum(tiers) / len(tiers)) if tiers else 0,
     }
 
@@ -321,7 +321,7 @@ class Activity:
                     self._yardsticks.clear()
                 self._prune(db)
                 db.commit()
-        except sqlite3.Error:
+        except (sqlite3.Error, OverflowError):  # OverflowError: SQLite の整数に入らない数（壊れた答え）
             return 0  # 数字はおまけ: ディスクがいっぱい・ロック中でもページを壊さない
         if new:
             self._summary.clear()

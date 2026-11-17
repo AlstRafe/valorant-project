@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import http.client
 import ssl
 import urllib.error
 import urllib.request
@@ -44,7 +45,8 @@ def fetch(url: str, headers: dict | None = None) -> tuple[int, bytes]:
         except OSError:
             body = b""
         return error.code, body
-    except (OSError, ValueError):
+    except (OSError, ValueError, http.client.HTTPException):
+        # HTTPException: 途中で切れた答え（IncompleteRead）や壊れた答え（BadStatusLine）。OSError ではない
         return 0, b""
 
 
@@ -73,5 +75,5 @@ def send(method: str, url: str, headers: dict | None = None, body: bytes | None 
         except OSError:
             content = b""
         return error.code, list(error.headers.items()) if error.headers else [], content
-    except (OSError, ValueError):
+    except (OSError, ValueError, http.client.HTTPException):
         return 0, [], b""

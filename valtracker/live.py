@@ -14,7 +14,7 @@ from datetime import datetime
 from valtracker import i18n, smurf
 from valtracker.activity import FEW
 from valtracker.content import Content, todays_tier
-from valtracker.util import lower_id, to_int
+from valtracker.util import as_dict, as_list, lower_id, to_int
 
 #: valorant-api.com のロールを、チームがふつう埋める順で: まずスモーク、次に情報、センチネル、エントリー。
 CONTROLLER = "4ee40330-ecdd-4f2f-98a8-eb1243428373"
@@ -42,7 +42,7 @@ def icon(agent: dict) -> str:
 def _seasons(mmr) -> dict:
     """PD の mmr の答えのコンペティティブのアクトごとの情報（アクト ID → 情報）。"""
     skills = (
-        ((mmr.get("QueueSkills") or {}).get("competitive") or {}).get("SeasonalInfoBySeasonID") or {}
+        as_dict(as_dict(mmr.get("QueueSkills")).get("competitive")).get("SeasonalInfoBySeasonID")
         if isinstance(mmr, dict)
         else {}
     )
@@ -158,7 +158,7 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
         "agent": agent.get("displayName") or "",
         "agent_icon": icon(agent),
         "agent_id": lower_id(item.get("CharacterID")),
-        "role": lower_id((agent.get("role") or {}).get("uuid")),
+        "role": lower_id(as_dict(agent.get("role")).get("uuid")),
         "state": str(item.get("CharacterSelectionState") or ""),
         "name": name[0] if name else "",
         "tag": name[1] if name else "",
@@ -195,12 +195,12 @@ def _seconds_since(value, now: float) -> int | None:
 
 def _party(party: dict, look: dict, me: str, queue_name, now: float) -> dict:
     members = [
-        _player(item, look, me, "CompetitiveTier") for item in party.get("Members") or [] if isinstance(item, dict)
+        _player(item, look, me, "CompetitiveTier") for item in as_list(party.get("Members")) if isinstance(item, dict)
     ]
     making = party.get("MatchmakingData") if isinstance(party.get("MatchmakingData"), dict) else {}
     state = str(party.get("State") or "")
     current = lower_id(making.get("QueueID"))
-    eligible = [lower_id(queue) for queue in party.get("EligibleQueues") or [] if isinstance(queue, str) and queue]
+    eligible = [lower_id(queue) for queue in as_list(party.get("EligibleQueues")) if isinstance(queue, str) and queue]
     if current and current not in eligible:
         eligible.insert(0, current)
     return {
@@ -231,7 +231,7 @@ def page(
         "titles": content.index("playertitles", lang),
         "names": found.get("names") or {},
         "ranks": found.get("ranks") or {},
-        "mates": {lower_id(subject) for subject in found.get("mates") or []},
+        "mates": {lower_id(subject) for subject in as_list(found.get("mates"))},
         "act": (act or {}).get("uuid") or "",
         "old_acts": content.old_acts(lang),
     }
@@ -260,7 +260,9 @@ def page(
     if phase == "pregame":
         team = match.get("AllyTeam") if isinstance(match.get("AllyTeam"), dict) else {}
         rows = [
-            _player(item, look, me, "CompetitiveTier") for item in team.get("Players") or [] if isinstance(item, dict)
+            _player(item, look, me, "CompetitiveTier")
+            for item in as_list(team.get("Players"))
+            if isinstance(item, dict)
         ]
         values["players"] = rows
         values["average"] = average(rows, look)
@@ -269,15 +271,15 @@ def page(
         values["enemy_locked"] = to_int(match.get("EnemyTeamLockCount"))
         values["enemy_size"] = to_int(match.get("EnemyTeamSize")) or 5
         picked = {row["role"] for row in rows if row["state"] in ("selected", "locked") and not row["me"]}
-        taken = {lower_id(item.get("CharacterID")) for item in team.get("Players") or [] if isinstance(item, dict)}
-        roles = {lower_id((agent.get("role") or {}).get("uuid")): agent.get("role") for agent in agents.values()}
+        taken = {lower_id(item.get("CharacterID")) for item in as_list(team.get("Players")) if isinstance(item, dict)}
+        roles = {lower_id(as_dict(agent.get("role")).get("uuid")): agent.get("role") for agent in agents.values()}
         for role in ROLES:
             if role in picked or role not in roles:
                 continue
             choices = [
                 {"name": agent.get("displayName") or "", "icon": icon(agent)}
                 for uuid, agent in sorted(agents.items(), key=lambda pair: str(pair[1].get("displayName") or ""))
-                if lower_id((agent.get("role") or {}).get("uuid")) == role
+                if lower_id(as_dict(agent.get("role")).get("uuid")) == role
                 and uuid not in taken
                 and (owned_agents is None or uuid in owned_agents)
             ]
@@ -308,7 +310,7 @@ def page(
                         "id": uuid,
                         "name": agent.get("displayName") or "",
                         "icon": icon(agent),
-                        "role": ((agent.get("role") or {}).get("displayName")) or "",
+                        "role": (as_dict(agent.get("role")).get("displayName")) or "",
                         "taken": uuid in locked,
                         "win": here[uuid]["win"] if uuid in here else None,
                     }
@@ -323,7 +325,7 @@ def page(
     elif phase == "ingame":
         rows = [
             _player(item, look, me, "")
-            for item in match.get("Players") or []
+            for item in as_list(match.get("Players"))
             if isinstance(item, dict) and not item.get("IsCoach")
         ]
         mine = next((row["team"] for row in rows if row["me"]), "")
