@@ -65,9 +65,12 @@ QUEUEING = ("MATCHMAKING", "STARTING")
 AGENTS_KEEP = 1800
 #: パーティーと試合でのプレイヤーの名前を持つ秒数: 数秒ごとではなく 1 回だけ聞く。
 NAME_KEEP = 3600
-#: エージェント選択を見るときにプレイヤーのランクを待つ秒数: それまでに読めなかったものは次の確認で来て、
-#: その間ページはゲーム自身のバッジを出す。
+#: エージェント選択と試合を見るときにプレイヤーのランクを待つ秒数（名前とパーティーを読む間も数える）
+#: : それまでに読めなかったものは次の確認で来て（ページはすぐまた見る: live.SOON）、その間ページはゲーム自身のバッジを出す。
 RANK_WAIT = 0.8
+#: エージェント選択が終わってからの、ロード画面の秒数の目安: この間はセッションがまだエージェント選択と言っても
+#: 試合（GLZ の core-game）を先に聞き、試合がまだ読めなければ確定したピックを出したままにする（「起動中」に戻さない）。
+BETWEEN = 60
 #: 持ち主が /live で押せるもの（Riot.act）: キューの開始（キュー ID）、離脱、エージェントのピック・ロック（uuid）。
 ACTIONS = ("start", "leave", "select", "lock")
 #: プレイヤーのランク（PD の mmr）を聞くのは 1 試合 1 回まで: 試合が終わったときにしか変わらない。
@@ -163,6 +166,11 @@ class Riot:
         self._asking: set[str] = set()
         self._asking_lock = threading.Lock()
         self._ranker = ThreadPoolExecutor(5, thread_name_prefix="riot-rank")
+        #: 最後のエージェント選択の答え: (時刻, 試合の ID, 答え)。ロード画面で試合がまだ読めない間に出す。
+        self._pregame: tuple[float, str, dict] | None = None
+        #: 終わったエージェント選択のあとの試合を見つけた: (エージェント選択の試合の ID, 時刻)
+        #: 。セッションがまだエージェント選択と言っている間も、その試合を直接聞く。
+        self._ahead: tuple[str, float] | None = None
         #: ランキングのページと、失敗して休んでいるリージョン。
         self.boards = TTLCache(64)
         self._lock = threading.Lock()
@@ -282,6 +290,7 @@ class Riot:
         """今まで表示していたアカウントで読んだものは、次のアカウントでは出さない。"""
         self.cache = TTLCache(8)
         self.where = {}
+        self._pregame = self._ahead = None
 
     def sign_in(self, pasted: str) -> dict:
         """持ち主が貼ったものでアカウントを連携する（モジュールの説明を参照）。うまくいかなければ RiotError。"""
@@ -386,7 +395,8 @@ class Riot:
     def live(self) -> dict:
         """今の持ち主のゲームの状態（GLZ）
         : ``{"running": VALORANT が開いているか（None: わからない）, "phase": "menus"、"pregame"（エージェント選択）、"ingame"、""（プレイしていない）, "match": GLZ の試合か None, "party": GLZ のパーティー（メニュー）
-        か None, "names": {puuid: [name, tag]}, "ranks": {puuid: PD の mmr}, "mates": 持ち主と同じパーティーのプレイヤー（puuid）,
+        か None, "names": {puuid: [name, tag]}, "ranks": {puuid: PD の mmr}, "waiting": まだ来ていないランクの数,
+        "mates": 持ち主と同じパーティーのプレイヤー（puuid）,
         "parties": エージェント選択と試合での {puuid: パーティーの ID}（わかる人だけ。_parties）, "at", "missing", "problem"}``。
         名前は隠していない（``Incognito`` でない）プレイヤーと、持ち主と同じパーティーのプレイヤーのものだけ聞く
         （ゲームも「パーティー外のプレイヤーに名前を隠す」: パーティーの仲間には名前を見せる）。"""
@@ -584,9 +594,13 @@ class Riot:
                 self.where["party"] = seen["party"]
         else:
             running, loop = self._session(glz, puuid, headers)
+        now = self.clock()
+        ahead = self._ahead if self._ahead and now - self._ahead[1] < BETWEEN else None
+        # ロード画面: セッションはまだエージェント選択だが、前の確認でそのあとの試合を見つけた
+        loading = loop == "PREGAME" and ahead is not None and ahead[0] == self.where.get("pregame")
         # 前の確認で覚えた試合が持ち主のものなのは、セッションがまだその段階にいる間だけ
         for phase in ("pregame", "ingame"):
-            if LOOPS.get(loop) != phase:
+            if LOOPS.get(loop) != phase and not (loading and phase == "ingame"):
                 self.where.pop(phase, None)
         if loop == "MENUS":
             found = self._menus(glz, puuid, headers, saved, quick=True)
@@ -599,10 +613,18 @@ class Riot:
             if any(word in state for word in QUEUEING):
                 self._read_agents_ahead()
             return found
-        first = LOOPS.get(loop, "pregame")
+        first = "ingame" if loading else LOOPS.get(loop, "pregame")
         found = self._match(glz, puuid, headers, saved, sorted(dict(PHASES), key=lambda phase: phase != first))
+        if loading and found["phase"] == "ingame" and ahead is not None:
+            self._ahead = (ahead[0], now)
         if found["phase"]:
             return found | {"running": True}
+        kept = self._pregame
+        if loop in LOOPS and kept is not None and now - kept[0] < BETWEEN:
+            # エージェント選択が終わり、試合がまだ読めない（ロード画面の初め）: 確定したピックを出したまま、
+            # エージェント選択と同じ間隔ですぐまた見る（「起動中」と 20 秒後ではなく）
+            match = as_dict(kept[2].get("match"))
+            return kept[2] | {"running": True, "match": match | {"PhaseTimeRemainingNS": 0}, "at": now}
         if running is None:  # セッションが読めなかった: パーティーでゲームが開いているかわかる
             return self._menus(glz, puuid, headers, saved)
         return found | {"running": running}
@@ -701,6 +723,11 @@ class Riot:
     def _ranks(self, saved: dict, headers: dict, subjects: list[str]) -> dict:
         """各プレイヤーの PD の mmr（ゲーム自身のスコアボードと同じランク）。RANK_KEEP 持つ。
         まだ無いランクは同時に読み、最大 RANK_WAIT 待つ: 残りはあとの確認で来る。"""
+        return self._ask_ranks(saved, headers, subjects)()[0]
+
+    def _ask_ranks(self, saved: dict, headers: dict, subjects: list[str]):
+        """まだ無いランクを今すぐ聞き始め、答えを集める関数を返す: それを呼ぶと、聞き始めてから RANK_WAIT
+        になるまで待ち、``(ランク, まだ来ていない人数)`` を返す。名前とパーティーを読む間もランクは裏で来る。"""
         found, wanted = {}, []
         for subject in subjects:
             kept = self.ranks.get(subject)
@@ -729,60 +756,45 @@ class Riot:
                 if subject not in self._asking:
                     self._asking.add(subject)
                     asked[subject] = self._ranker.submit(ask, subject)
-        if asked:
-            done, _ = wait(asked.values(), timeout=RANK_WAIT)
-            found |= {subject: future.result() for subject, future in asked.items() if future in done}
-        return found
+        until = time.monotonic() + RANK_WAIT
+
+        def collect() -> tuple[dict, int]:
+            if asked:
+                done, _ = wait(asked.values(), timeout=max(0.0, until - time.monotonic()))
+                found.update({subject: future.result() for subject, future in asked.items() if future in done})
+            # ほかの確認が聞いている途中だったものも: その答えはもう来ているかもしれない
+            for subject in wanted:
+                kept = self.ranks.get(subject) if subject not in found else None
+                if kept is not None:
+                    found[subject] = kept
+            return found, sum(subject not in found for subject in wanted)
+
+        return collect
 
     def _match(self, glz: str, puuid: str, headers: dict, saved: dict, phases=("pregame", "ingame")) -> dict:
         """持ち主がいるエージェント選択か試合（どちらでもなければ ``phase`` は ""）。GLZ には ``phases`` の順で聞く。
-        前回の確認の試合はすぐ聞く（2 回ではなく 1 回の呼び出し）。"""
-        paths = dict(PHASES)
+        前回の確認の試合はすぐ聞く（2 回ではなく 1 回の呼び出し）。エージェント選択が終わっていれば（ロード画面）、
+        セッションがまだエージェント選択と言っても、そのあとの試合があればそれを出す: 相手の構成がすぐ出る。"""
+        tried = set()
         for phase in phases:
-            path = paths[phase]
-            match, match_id = None, self.where.get(phase, "")
-            if match_id:
-                match = self._remembered(phase, f"{glz}{path}/matches/{match_id}", headers)
-                if match is not None and puuid not in _subjects(match, phase):
-                    match = None
+            tried.add(phase)
+            match, match_id = self._located(glz, puuid, headers, phase)
             if match is None:
-                self.where.pop(phase, None)
-                try:
-                    player = self._pd(phase, f"{glz}{path}/players/{puuid}", headers)
-                except RiotError as error:
-                    if error.kind == "down" and " 404" in f" {error.detail}":
-                        continue  # この段階にはいない
-                    raise
-                match_id = str(player.get("MatchID") or "").lower()
-                if not _UUID.fullmatch(match_id):
-                    continue
-                match = self._pd(phase, f"{glz}{path}/matches/{match_id}", headers)
-                self.where[phase] = match_id
-            players = _players(match, phase)
-            mates = self._mates(glz, puuid, headers, match_id, players)
-            parties = self._parties(puuid, players, mates)
-            names, problem = self._open_names(saved, headers, players, mates)
-            ranks = self._ranks(
-                saved, headers, [str(item.get("Subject") or "").lower() for item in players if not item.get("IsCoach")]
-            )
-            return {
-                "phase": phase,
-                "match": match,
-                "party": None,
-                "names": names,
-                "ranks": ranks,
-                "mates": sorted(mates),
-                "parties": parties,
-                "at": self.clock(),
-                "missing": ["names"] if problem else [],
-                "problem": problem,
-            }
+                continue
+            if phase == "pregame" and _finished(match) and "ingame" not in tried:
+                tried.add("ingame")
+                later, later_id = self._located(glz, puuid, headers, "ingame")
+                if later is not None:
+                    self._ahead = (match_id, self.clock())
+                    phase, match, match_id = "ingame", later, later_id
+            return self._seats(glz, puuid, headers, saved, phase, match, match_id)
         return {
             "phase": "",
             "match": None,
             "party": None,
             "names": {},
             "ranks": {},
+            "waiting": 0,
             "mates": [],
             "parties": {},
             "at": self.clock(),
@@ -790,12 +802,70 @@ class Riot:
             "problem": "",
         }
 
+    def _located(self, glz: str, puuid: str, headers: dict, phase: str) -> tuple[dict | None, str]:
+        """持ち主のその段階（"pregame"、"ingame"）の GLZ の試合と ID。その段階にいなければ (None, "")。"""
+        path = dict(PHASES)[phase]
+        match_id = self.where.get(phase, "")
+        if match_id:
+            match = self._remembered(phase, f"{glz}{path}/matches/{match_id}", headers)
+            if match is not None and puuid in _subjects(match, phase):
+                return match, match_id
+        self.where.pop(phase, None)
+        try:
+            player = self._pd(phase, f"{glz}{path}/players/{puuid}", headers)
+        except RiotError as error:
+            if error.kind == "down" and " 404" in f" {error.detail}":
+                return None, ""  # この段階にはいない
+            raise
+        match_id = str(player.get("MatchID") or "").lower()
+        if not _UUID.fullmatch(match_id):
+            return None, ""
+        match = self._pd(phase, f"{glz}{path}/matches/{match_id}", headers)
+        self.where[phase] = match_id
+        return match, match_id
+
+    def _seats(self, glz: str, puuid: str, headers: dict, saved: dict, phase: str, match: dict, match_id: str) -> dict:
+        """試合の席に出すもの: 名前、ランク、パーティー。ランクは最初に聞き始め、パーティーと名前を読む間に裏で来る
+        （順に読むと、ロード画面で相手が出るまでそれぞれの往復を足した分かかった）。"""
+        players = _players(match, phase)
+        ranks = self._ask_ranks(
+            saved, headers, [str(item.get("Subject") or "").lower() for item in players if not item.get("IsCoach")]
+        )
+        mates = self._mates(glz, puuid, headers, match_id, players)
+        parties = self._parties(puuid, players, mates)
+        names, problem = self._open_names(saved, headers, players, mates)
+        known, waiting = ranks()
+        found = {
+            "phase": phase,
+            "match": match,
+            "party": None,
+            "names": names,
+            "ranks": known,
+            #: まだ来ていないランクの数: ページはすぐまた見る（live.SOON）
+            "waiting": waiting,
+            "mates": sorted(mates),
+            "parties": parties,
+            "at": self.clock(),
+            "missing": ["names"] if problem else [],
+            "problem": problem,
+        }
+        if phase == "pregame":
+            self._pregame = (self.clock(), match_id, found)
+        return found
+
     def _mates(self, glz: str, puuid: str, headers: dict, match_id: str, players: list) -> set[str]:
         """試合（エージェント選択、対戦中）で持ち主と同じパーティーにいるプレイヤー（持ち主を除く）。
         推測ではなく Riot 自身の GLZ のパーティーのメンバーで決める。GLZ の試合にはパーティーが無いので、
-        持ち主のパーティーを試合ごとに 1 回だけ読む（MATES_KEEP）。読めなければ空: 名前は隠したまま。"""
+        持ち主のパーティーを試合ごとに 1 回だけ読む（MATES_KEEP）。読めなければ空: 名前は隠したまま。
+        エージェント選択のすぐあとの試合では、エージェント選択で読んだものを使う（パーティーは変わらない）。"""
         key = (puuid, match_id)
         members = self.mates.get(key)
+        before = self._pregame
+        if members is None and before is not None and self.clock() - before[0] < BETWEEN:
+            kept = self.mates.get((puuid, before[1]))
+            if kept and puuid in kept:  # 読めたもの（読めなかったときは空）
+                members = kept
+                self.mates.put(key, members, MATES_KEEP)
         if members is None:
             found = self._party_members(glz, puuid, headers)
             members = found if found is not None else frozenset()
@@ -1152,6 +1222,14 @@ def _players(match: dict, phase: str) -> list[dict]:
         for item in (team.get("Players") if phase == "pregame" else match.get("Players")) or []
         if isinstance(item, dict)
     ]
+
+
+def _finished(match: dict) -> bool:
+    """GLZ のエージェント選択が終わった（Riot が試合を用意した、または残り時間が 0）: ロード画面にいる。"""
+    state = str(match.get("PregameState") or "").lower()
+    if state and state != "character_select_active":
+        return True
+    return "PhaseTimeRemainingNS" in match and to_int(match.get("PhaseTimeRemainingNS")) <= 0
 
 
 def _subjects(match: dict, phase: str) -> set[str]:

@@ -32,6 +32,9 @@ BEST_SHOWN = 3
 #: 何も変わりそうにないときはたまに。1 回見るごとに Riot に聞くのは 1〜2 回（riot.Riot.live）、
 #: このサーバーから: 持ち主の PC では何も動かさない。
 EVERY = {"": (20, 30), "menus": (5, 8), "queue": (2, 2), "found": (1, 1), "pregame": (2, 4), "ingame": (10, 15)}
+#: 席のランクがまだ来ていない（riot.Riot.live の waiting）ときに /live が次に見るまでの秒数: ロード画面で
+#: 相手のエージェントと名前を先に出し、ランクと戦績は来たらすぐ足す（試合中の 10 秒を待たない）。
+SOON = 2
 
 
 def icon(agent: dict) -> str:
@@ -277,7 +280,7 @@ def page(
         #: 試合のパーティーの人数（番号の順）。どれかあれば、ページは番号の意味を書く
         "parties": [],
         "hidden_names": False,
-        "every": EVERY[where(found)][0],
+        "every": min(EVERY[where(found)][0], SOON) if to_int(found.get("waiting")) > 0 else EVERY[where(found)][0],
         # エージェントの絵はマッチング中にブラウザーが取る: エージェント選択ですぐ出る
         "warm": icons(content, lang) if where(found) in ("queue", "found") else [],
     }

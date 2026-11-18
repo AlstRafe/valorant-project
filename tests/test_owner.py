@@ -3,6 +3,7 @@
 import json
 import os
 import re
+import threading
 import time
 import unittest
 from datetime import UTC, datetime
@@ -611,6 +612,79 @@ class OwnerTest(unittest.TestCase):
         self.app.config["VAL_RIOT"].cache = type(self.app.config["VAL_RIOT"].cache)(8)
         self.page("/live")
         self.assertEqual(sum("/mmr/v1/players/" in url for _, url, _, _ in self.riot.asked), ranks, "asked once")
+
+    def test_the_loading_screen_shows_the_other_team_at_once(self):
+        """エージェント選択が終わった（ロード画面）: セッションがまだエージェント選択と言っても、相手の構成をすぐ出す。"""
+        self.link()
+        reader = self.app.config["VAL_RIOT"]
+        self.riot.phase = "pregame"
+        self.assertIn("ピック", self.page("/live"))
+        parties = sum("/parties/v1/" in url for _, url, _, _ in self.riot.asked)
+        # Riot は試合を用意した。エージェント選択の試合はまだ答え、セッションはまだ PREGAME
+        self.riot.pd["pregame"]["PregameState"] = "provisioned"
+        self.riot.phase, self.riot.loop = "ingame", "PREGAME"
+        reader.cache.put("live", None, 0)
+        text = self.page("/live")
+        self.assertIn("相手", text)
+        self.assertIn("対戦中", text)
+        self.assertEqual(
+            sum("/parties/v1/" in url for _, url, _, _ in self.riot.asked), parties, "the party read in agent select"
+        )
+        # 次の確認はその試合を直接聞く: エージェント選択と持ち主の居場所は聞かない
+        asked = len(self.riot.asked)
+        reader.cache.put("live", None, 0)
+        self.assertIn("相手", self.page("/live"))
+        urls = [url for _, url, _, _ in self.riot.asked[asked:] if "/v1/" in url and "glz-" in url]
+        self.assertEqual([url.split("/v1/")[0].rsplit("/", 1)[-1] for url in urls], ["session", "core-game"], urls)
+        self.assertNotIn("/players/", urls[1])
+
+    def test_agent_select_stays_until_the_match_can_be_read(self):
+        """ロード画面の初め、エージェント選択も試合も GLZ に無い間: 「起動中」に戻さず確定したピックを出し、すぐまた見る。"""
+        self.link()
+        reader = self.app.config["VAL_RIOT"]
+        self.riot.phase = "pregame"
+        self.page("/live")
+        self.riot.phase, self.riot.loop = "loading", "INGAME"  # どちらの /players も 404
+        reader.cache.put("live", None, 0)
+        text = self.page("/live")
+        self.assertIn("味方", text)
+        self.assertNotIn("起動中", text)
+        self.assertNotIn("残り", text, "agent select is over")
+        self.assertIn('data-refresh="2"', text)
+        self.riot.phase, self.riot.loop = "ingame", None
+        reader.cache.put("live", None, 0)
+        self.assertIn("相手", self.page("/live"))
+        # ずっと前のエージェント選択は出さない（試合が終わってセッションがまだ INGAME の間など）
+        self.riot.phase, self.riot.loop = "loading", "INGAME"
+        reader.cache.put("live", None, 0)
+        reader.where.pop("ingame")  # 終わった試合は GLZ にもう無い
+        with mock.patch.object(reader, "clock", return_value=time.time() + 3600):
+            text = self.page("/live")
+        self.assertNotIn("味方", text)
+        self.assertIn("起動中", text)
+
+    def test_the_ranks_fill_in_soon_after_the_seats(self):
+        """ランクが遅い: エージェントと名前を先に出し、ランクは試合中の 10 秒を待たずにすぐ足す。"""
+        self.link()
+        self.solo()
+        reader = self.app.config["VAL_RIOT"]
+        self.riot.phase = "ingame"
+        self.riot.slow_ranks = threading.Event()
+        self.addCleanup(self.riot.slow_ranks.set)
+        text = self.page("/live")
+        self.assertIn("相手", text)
+        self.assertIn('href="/p/Teammate/0001"', text, "the names first")
+        self.assertNotIn("47 RR", text, "the rank is not here yet")
+        self.assertIn('data-refresh="2"', text, "looked at again soon")
+        self.riot.slow_ranks.set()
+        for _ in range(100):
+            if not reader._asking:
+                break
+            time.sleep(0.02)
+        reader.cache.put("live", None, 0)
+        text = self.page("/live")
+        self.assertIn("47 RR", text)
+        self.assertIn('data-refresh="10"', text, "every rank is in: as slow as a match")
 
     def test_party_members_are_named_in_agent_select_and_the_match(self):
         """ゲームの「パーティー外のプレイヤーに名前を隠す」: 同じパーティーの人には名前が見える。
