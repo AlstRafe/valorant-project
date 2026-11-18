@@ -142,6 +142,10 @@ class FakeRiot:
         #: パーティーの試合が見つかった時点でエージェント選択になる（State MATCHMADE_GAME_STARTING、
         #: ゲームの 5 秒カウント）。セッションはまだ MENUS。
         self.early_pregame = False
+        #: GLZ のセッションの loopState（None: ``phase`` のもの）。ロード画面でセッションが遅れるときのため。
+        self.loop: str | None = None
+        #: これがある間、PD のランク（mmr）は答える前にそれが立つまで待つ（最大 5 秒）: 遅いランク。
+        self.slow_ranks = None
         #: GLZ が受けた持ち主のボタン操作: （何を, 値）。
         self.pressed: list[tuple[str, str]] = []
         #: 送り返したロードアウト（PUT playerloadout）。
@@ -206,7 +210,7 @@ class FakeRiot:
                 return 500, [], b"{}"
             if not self.phase:
                 return missing
-            loop = {"menus": "MENUS", "pregame": "PREGAME", "ingame": "INGAME"}[self.phase]
+            loop = self.loop or {"menus": "MENUS", "pregame": "PREGAME", "ingame": "INGAME"}[self.phase]
             return self._answer("session", {"subject": PUUID, "cxnState": "CONNECTED", "loopState": loop})
         party = self.pd["party"]
         if url == f"{glz}/parties/v1/players/{PUUID}":
@@ -248,6 +252,8 @@ class FakeRiot:
         if f"/mmr/v1/players/{self.pd['player']}/competitiveupdates?" in url:
             return self._answer("rr", self.pd["updates"])
         if "/mmr/v1/players/" in url:
+            if self.slow_ranks is not None:
+                self.slow_ranks.wait(5)
             found = self.pd["mmr"].get(url.rsplit("/", 1)[-1])
             return self._answer("rank", found) if found else missing
         for phase, path, match in (
