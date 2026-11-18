@@ -294,6 +294,9 @@ class PagesTest(unittest.TestCase):
         self.addCleanup(self.env.stop)
         self.app, self.fetch, self.folder = make_app()
         self.addCleanup(self.app._test_folder.cleanup)
+        # 集計は直近 14 日だけ: 時計を試合の日（fixtures の 2026-11-04）に止める。実際の今日だと、
+        # 試合が古くなった日（2026-11-18）からテストが落ちていた
+        self.app.config["VAL_ACTIVITY"].clock = lambda: NOON + 3600
         self.client = self.app.test_client()
         self.client.set_cookie("lang", "ja")
 

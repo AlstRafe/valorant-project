@@ -125,7 +125,7 @@
 
 {% if summary %}
 <nav class="jump" aria-label="{{ t('ページ内リンク') }}">
-<a href="#sum-title">{{ t('概要') }}</a><a href="#m-title">{{ t('試合') }}</a>{% if summary.agent_table %}<a href="#ag-title">{{ t('エージェント') }}</a>{% endif %}{% if summary.maps %}<a href="#map-title">{{ t('マップ') }}</a>{% endif %}{% if summary.weapons %}<a href="#wp-title">{{ t('武器') }}</a>{% endif %}{% if summary.mates %}<a href="#mate-title">{{ t('パーティ') }}</a>{% endif %}
+<a href="#sum-title">{{ t('概要') }}</a><a href="#m-title">{{ t('試合') }}</a>{% if summary.agent_table %}<a href="#ag-title">{{ t('エージェント') }}</a>{% endif %}{% if summary.maps %}<a href="#map-title">{{ t('マップ') }}</a>{% endif %}{% if summary.weapons %}<a href="#wp-title">{{ t('武器') }}</a>{% endif %}{% if summary.mates %}<a href="#mate-title">{{ t('パーティー') }}</a>{% endif %}
 </nav>
 <section class="summary" aria-labelledby="sum-title">
 <h2 id="sum-title">{% if span == 'act' %}{{ t('{act} · {count} 試合', act=window.name, count='{:,}'.format(summary.games)) }}{% elif span %}{{ t('通算 {count} 試合', count='{:,}'.format(summary.games)) }}{% else %}{{ t('直近 {count} 試合', count=summary.games) }}{% endif %}{% if summary.left_out and not mode %} <small>{{ t('デスマッチなどは除く') }}</small>{% endif %}</h2>

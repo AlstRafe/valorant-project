@@ -19,7 +19,7 @@ from helpers import PUUID, make_app
 from test_desktop import FRIEND, PARTY, FakeClient, event, presence
 
 from valtracker import checkup, friends, pc
-from valtracker.localclient import PRESENCES, LocalClient, moment, read_lockfile
+from valtracker.localclient import PARTIES_KEEP, PRESENCES, LocalClient, moment, read_lockfile
 from valtracker.settings import Settings
 
 ASCENT = "/Game/Maps/Ascent/Ascent"
@@ -204,6 +204,26 @@ class ClientTest(unittest.TestCase):
     def test_no_friends_while_the_client_is_closed(self):
         self.lockfile.unlink()
         self.assertIsNone(self.client.friends())
+
+    def test_the_parties_of_the_presences(self):
+        """``parties``: VALORANT のプレゼンスの partyId（両方の形）だけ。ほかのゲームと壊れたものは入れない。
+        PARTIES_KEEP の間はクライアントに聞き直さない。"""
+        flat = base64.b64encode(json.dumps({"partyId": PARTY.upper(), "sessionLoopState": "INGAME"}).encode()).decode()
+        self.api.presences = [
+            presence("INGAME"),
+            {"puuid": FRIEND, "product": "valorant", "private": flat},
+            presence("INGAME", puuid="0e0e0e0e-1111-4222-8333-444444444444", product="league_of_legends"),
+            {"puuid": "not-a-puuid", "product": "valorant", "private": flat},
+            {"puuid": "0f0f0f0f-1111-4222-8333-444444444444", "product": "valorant", "private": "broken"},
+        ]
+        self.assertEqual(self.client.parties(), {PUUID: PARTY, FRIEND: PARTY})
+        self.api.presences = []
+        self.now += 5
+        self.assertEqual(self.client.parties(), {PUUID: PARTY, FRIEND: PARTY}, "kept")
+        self.now += PARTIES_KEEP
+        self.assertEqual(self.client.parties(), {}, "read again")
+        self.lockfile.unlink()
+        self.assertIsNone(self.client.parties(), "the client closed")
 
     def test_a_match_found_is_told_once(self):
         told = []
