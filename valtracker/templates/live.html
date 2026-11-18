@@ -3,7 +3,7 @@
 <li class="seat{% if row.me %} me{% endif %}{% if row.state %} {{ row.state }}{% endif %}">
 {% if row.agent_icon %}<img src="{{ media(row.agent_icon) }}" alt="" width="40" height="40">{% elif row.card %}<img src="{{ media(row.card) }}" alt="" width="40" height="40">{% else %}<span class="no-agent" aria-hidden="true">?</span>{% endif %}
 <span class="seat-text">
-<strong>{% if row.name %}<a href="{{ url_for('player', name=row.name, tag=row.tag) }}">{{ row.name }}<span class="tag">#{{ row.tag }}</span></a>{% elif row.me %}{{ t('あなた') }}{% else %}<span class="hidden-name">{{ t('非公開') }}</span>{% endif %}{% if row.owner %} <span class="badge">{{ t('リーダー') }}</span>{% endif %}{% if row.mate and phase != 'menus' %} <span class="badge mate">{{ t('パーティー') }}</span>{% endif %}</strong>
+<strong>{% if row.name %}<a href="{{ url_for('player', name=row.name, tag=row.tag) }}">{{ row.name }}<span class="tag">#{{ row.tag }}</span></a>{% elif row.me %}{{ t('あなた') }}{% else %}<span class="hidden-name">{{ t('非公開') }}</span>{% endif %}{% if row.owner %} <span class="badge">{{ t('リーダー') }}</span>{% endif %}{% if row.party and phase != 'menus' %} <span class="party p{{ (row.party - 1) % 5 + 1 }}" title="{{ t('パーティー {number}', number=row.party) }}"><span aria-hidden="true">{{ row.party }}</span><span class="sr">{{ t('パーティー {number}', number=row.party) }}</span></span>{% endif %}</strong>
 {%- set parts = [] -%}
 {%- if row.agent %}{% set _ = parts.append(t('{agent}（選択中）', agent=row.agent) if row.state == 'selected' else t('{agent}（確定）', agent=row.agent) if row.state == 'locked' else row.agent) %}{% elif phase != 'menus' %}{% set _ = parts.append(t('未選択')) %}{% endif -%}
 {%- if row.title %}{% set _ = parts.append(row.title) %}{% endif -%}
@@ -124,7 +124,7 @@
 {% if phase == 'pregame' %}
 <div class="live-cols pregame-cols">
 <section class="live-ally" aria-labelledby="ally-title">
-<h2 id="ally-title">{{ t('味方') }}{% if average %} <small class="team-average">{{ t('平均 {rank}', rank=average.name) }}</small>{% endif %}</h2>
+<h2 id="ally-title">{{ t('味方') }}{% if average %} <small class="team-average">{{ t('平均 {rank}', rank=average.name) }}</small>{% endif %}{% for size in parties|sort(reverse=true) %} <small class="team-party">{{ t('パーティー {count}人', count=size) }}</small>{% endfor %}</h2>
 <ul class="seats">{% for row in players %}{{ person(row) }}{% endfor %}</ul>
 {% if enemy_size %}<p class="note">{{ t('相手は {locked} / {size} 人が確定', locked=enemy_locked, size=enemy_size) }}</p>{% endif %}
 </section>
@@ -160,7 +160,7 @@
 <div class="live-cols">
 {% for team in teams %}
 <section aria-labelledby="team-{{ loop.index }}">
-<h2 id="team-{{ loop.index }}">{{ t('味方') if team.ours else t('相手') }}{% if team.average %} <small class="team-average">{{ t('平均 {rank}', rank=team.average.name) }}</small>{% endif %}</h2>
+<h2 id="team-{{ loop.index }}">{{ t('味方') if team.ours else t('相手') }}{% if team.average %} <small class="team-average">{{ t('平均 {rank}', rank=team.average.name) }}</small>{% endif %}{% for size in team.parties %} <small class="team-party">{{ t('パーティー {count}人', count=size) }}</small>{% endfor %}</h2>
 <ul class="seats">{% for row in team.players %}{{ person(row) }}{% endfor %}</ul>
 </section>
 {% endfor %}
@@ -168,7 +168,8 @@
 {% endif %}
 {% endif %}
 {% if names_missing %}<p class="note">{{ t('名前を読み込めませんでした。') }}</p>{% endif %}
-{% if hidden_names %}<p class="note">{{ t('パーティー外の非公開プレイヤーは名前・カード・称号を表示しません。') }}</p>{% endif %}
+{% if parties and playing %}<p class="note">{{ t('同じ番号の人は同じパーティーです。') }}{% if not desktop %} {{ t('ほかの人のパーティーは PC アプリで表示されます。') }}{% endif %}</p>{% endif %}
+{% if hidden_names %}<p class="note">{{ t('パーティー外の非公開プレイヤーは名前を表示しません。') }}</p>{% endif %}
 {% if phase == 'menus' %}{{ steps() }}{% endif %}
 {% if not playing %}<p class="note">{% if desktop %}{{ t('ゲームの状態に合わせて自動で更新されます。') }}{% else %}{{ t('数秒ごとに自動で更新されます。') }}{% endif %}</p>{% endif %}
 {% endif %}

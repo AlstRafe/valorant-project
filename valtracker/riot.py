@@ -387,7 +387,7 @@ class Riot:
         """今の持ち主のゲームの状態（GLZ）
         : ``{"running": VALORANT が開いているか（None: わからない）, "phase": "menus"、"pregame"（エージェント選択）、"ingame"、""（プレイしていない）, "match": GLZ の試合か None, "party": GLZ のパーティー（メニュー）
         か None, "names": {puuid: [name, tag]}, "ranks": {puuid: PD の mmr}, "mates": 持ち主と同じパーティーのプレイヤー（puuid）,
-        "at", "missing", "problem"}``。
+        "parties": エージェント選択と試合での {puuid: パーティーの ID}（わかる人だけ。_parties）, "at", "missing", "problem"}``。
         名前は隠していない（``Incognito`` でない）プレイヤーと、持ち主と同じパーティーのプレイヤーのものだけ聞く
         （ゲームも「パーティー外のプレイヤーに名前を隠す」: パーティーの仲間には名前を見せる）。"""
         if self.local is not None and self.local.version != self._local_version:
@@ -572,6 +572,7 @@ class Riot:
                 "names": {},
                 "ranks": {},
                 "mates": [],
+                "parties": {},
                 "at": self.clock(),
                 "missing": [],
                 "problem": "",
@@ -630,7 +631,16 @@ class Riot:
     def _menus(self, glz: str, puuid: str, headers: dict, saved: dict, quick: bool = False) -> dict:
         """メニューで: 持ち主のパーティー（キュー、マッチング中か、メンバー）。
         ``quick``: セッションが持ち主はメニューにいると言うので、前回の確認のパーティーをすぐ聞く。"""
-        empty = {"phase": "", "match": None, "party": None, "names": {}, "ranks": {}, "mates": [], "at": self.clock()}
+        empty = {
+            "phase": "",
+            "match": None,
+            "party": None,
+            "names": {},
+            "ranks": {},
+            "mates": [],
+            "parties": {},
+            "at": self.clock(),
+        }
         party = None
         if quick and self.where.get("party"):
             party = self._remembered("party", f"{glz}/parties/v1/parties/{self.where['party']}", headers)
@@ -750,6 +760,7 @@ class Riot:
                 self.where[phase] = match_id
             players = _players(match, phase)
             mates = self._mates(glz, puuid, headers, match_id, players)
+            parties = self._parties(puuid, players, mates)
             names, problem = self._open_names(saved, headers, players, mates)
             ranks = self._ranks(
                 saved, headers, [str(item.get("Subject") or "").lower() for item in players if not item.get("IsCoach")]
@@ -761,6 +772,7 @@ class Riot:
                 "names": names,
                 "ranks": ranks,
                 "mates": sorted(mates),
+                "parties": parties,
                 "at": self.clock(),
                 "missing": ["names"] if problem else [],
                 "problem": problem,
@@ -772,6 +784,7 @@ class Riot:
             "names": {},
             "ranks": {},
             "mates": [],
+            "parties": {},
             "at": self.clock(),
             "missing": [],
             "problem": "",
@@ -789,6 +802,26 @@ class Riot:
             self.mates.put(key, members, MATES_KEEP if found is not None else MATES_RETRY)
         in_match = {str(item.get("Subject") or "").lower() for item in players if not item.get("IsCoach")}
         return (members & in_match) - {puuid}
+
+    def _parties(self, puuid: str, players: list, mates: set[str]) -> dict[str, str]:
+        """試合（エージェント選択、対戦中）の各プレイヤーのパーティー: ``{puuid: パーティーの ID}``。
+        GLZ の試合にはパーティーが無いので、Riot 自身のデータから: 持ち主のパーティーは GLZ のメンバー（``mates``）、
+        ほかの人は PC アプリならクライアントのプレゼンスの partyId（localclient.LocalClient.parties: 試合中は
+        同じ試合の人のものも来る）。わからない人は入れない（推測しない）。サイトにはクライアントが無いので、
+        わかるのは持ち主のパーティーだけ。"""
+        in_match = {str(item.get("Subject") or "").lower() for item in players if not item.get("IsCoach")}
+        found: dict[str, str] = {}
+        if self.local is not None:
+            try:
+                seen = self.local.parties() or {}
+            except Exception:  # クライアントの思わぬ答えでライブを止めない: パーティーが出ないだけ
+                seen = {}
+            found = {subject: party for subject, party in seen.items() if subject in in_match}
+        if mates:
+            # 持ち主のパーティーは GLZ の答えが正: プレゼンスが古くても仲間はまとめる
+            own = self.where.get("party") or found.get(puuid) or puuid
+            found |= dict.fromkeys(mates | {puuid}, own)
+        return found
 
     def _party_members(self, glz: str, puuid: str, headers: dict) -> frozenset[str] | None:
         """持ち主の今の GLZ のパーティーのメンバー（puuid）。読めなければ None。"""

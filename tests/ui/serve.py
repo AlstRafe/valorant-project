@@ -662,6 +662,20 @@ def made_up_friends(app, local, now: float) -> None:
     client.friends, client.presences = friends, presences
 
 
+def lobby_parties(local) -> None:
+    """PC アプリの作りものの Riot Client に、試合のほかの人のプレゼンス（パーティーの ID だけ）: 味方の 2 人と、
+    相手の 2 人（名前を隠している人も）がそれぞれ組んでいる。/live の番号（パーティー 2 と 3）とチームの人数を見る。"""
+    from test_desktop import in_party
+
+    pairs = {
+        "9c000000-0000-4000-8000-000000000001": (0, 1),
+        "9c000000-0000-4000-8000-000000000002": (3, 4),
+    }
+    for party, numbers in pairs.items():
+        for number in numbers:
+            local.ask.presences.append(in_party(f"b2222222-0000-4000-8000-{number:012d}", party))
+
+
 def made_up_update(app, folder: Path) -> None:
     """作りもののアプリ自身の更新（update.py）: このアプリはビルドしたもので、
     新しいビルドが出ている（どのアドレスでも ``?update=1`` でお知らせが出る）。ダウンロードに数秒かかり、
@@ -750,6 +764,7 @@ def main() -> None:
     last_match(app)
     if local is not None:
         made_up_friends(app, local, time.time())
+        lobby_parties(local)
         made_up_update(app, Path(client_folder.name))
     if "--real" in flags:
         four_offers(app)

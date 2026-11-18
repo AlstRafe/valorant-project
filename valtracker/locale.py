@@ -197,7 +197,6 @@ TEXTS = {
     "概要": {"ko": "개요", "en-GB": "Overview", "zh-TW": "概覽"},
     "マップ": {"ko": "맵", "en-GB": "Maps", "zh-TW": "地圖"},
     "武器": {"ko": "무기", "en-GB": "Weapons", "zh-TW": "武器"},
-    "パーティ": {"ko": "파티", "en-GB": "Party", "zh-TW": "隊伍"},
     "キル・アシスト・生存・トレードがあったラウンドの割合": {
         "ko": "킬·어시스트·생존·트레이드가 있었던 라운드 비율",
         "en-GB": "Rounds with a kill, assist, survival or trade",
@@ -267,7 +266,7 @@ TEXTS = {
     "ファーストキル": {"ko": "퍼스트 킬", "en-GB": "First kills", "zh-TW": "首殺"},
     "ファーストデス": {"ko": "퍼스트 데스", "en-GB": "First deaths", "zh-TW": "首死"},
     "3 キル以上のラウンド": {"ko": "3킬 이상 라운드", "en-GB": "Rounds of 3 kills or more", "zh-TW": "3 殺以上的回合"},
-    "パーティ {number}": {"ko": "파티 {number}", "en-GB": "Party {number}", "zh-TW": "隊伍 {number}"},
+    "パーティー {number}": {"ko": "파티 {number}", "en-GB": "Party {number}", "zh-TW": "隊伍 {number}"},
     "同じ番号は同じパーティです。": {
         "ko": "같은 번호는 같은 파티입니다.",
         "en-GB": "Same number, same party.",
@@ -1587,10 +1586,10 @@ TEXTS = {
         "en-GB": "Ranks are cached for 5 minutes and matches for 3. 'Refresh' on a player's page reloads them at once (once a minute).",
         "zh-TW": "牌位快取 5 分鐘，對戰快取 3 分鐘。玩家頁面的「更新資料」可立即重新取得（每分鐘一次）。",
     },
-    "ゲームの設定で名前を非公開にしているプレイヤーは、名前・カード・戦績を表示しません。ランキングでも名前では検索できません。": {
-        "ko": "게임 설정에서 이름을 비공개로 한 플레이어는 이름·카드·전적을 표시하지 않습니다. 리더보드에서도 이름으로 검색할 수 없습니다.",
-        "en-GB": "Players who hide their name in the game's settings have no name, card or stats shown here, and can't be found by name on the leaderboard.",
-        "zh-TW": "在遊戲設定中隱藏名稱的玩家，本站不會顯示其名稱、卡面與戰績，在排行榜上也無法用名稱搜尋。",
+    "ゲームの設定で名前を非公開にしているプレイヤーは、名前を表示しません（ランクや成績は名前なしで表示します）。ランキングでも名前では検索できません。": {
+        "ko": "게임 설정에서 이름을 비공개로 한 플레이어는 이름을 표시하지 않습니다(랭크와 성적은 이름 없이 표시합니다). 리더보드에서도 이름으로 검색할 수 없습니다.",
+        "en-GB": "Players who hide their name in the game's settings have no name shown here (their rank and stats still show, without the name), and can't be found by name on the leaderboard.",
+        "zh-TW": "在遊戲設定中隱藏名稱的玩家，本站不會顯示其名稱（牌位與戰績會以不具名方式顯示），在排行榜上也無法用名稱搜尋。",
     },
     "ニュース・パッチノート・サーバー状況：Riot Games の公式サイト": {
         "ko": "뉴스·패치 노트·서버 상태: Riot Games 공식 사이트",
@@ -2010,10 +2009,20 @@ TEXTS = {
         "en-GB": "The names could not be loaded.",
         "zh-TW": "無法載入名稱。",
     },
-    "パーティー外の非公開プレイヤーは名前・カード・称号を表示しません。": {
-        "ko": "파티 밖의 비공개 플레이어는 이름·카드·칭호를 표시하지 않습니다.",
-        "en-GB": "Names, cards and titles of hidden players outside your party aren't shown.",
-        "zh-TW": "隊伍外的未公開玩家不會顯示名稱、卡面與稱號。",
+    "パーティー外の非公開プレイヤーは名前を表示しません。": {
+        "ko": "파티 밖의 비공개 플레이어는 이름을 표시하지 않습니다.",
+        "en-GB": "Names of hidden players outside your party aren't shown.",
+        "zh-TW": "隊伍外的未公開玩家不會顯示名稱。",
+    },
+    "同じ番号の人は同じパーティーです。": {
+        "ko": "같은 번호는 같은 파티입니다.",
+        "en-GB": "Players with the same number are in the same party.",
+        "zh-TW": "號碼相同的玩家在同一個隊伍。",
+    },
+    "ほかの人のパーティーは PC アプリで表示されます。": {
+        "ko": "다른 플레이어의 파티는 PC 앱에서 표시됩니다.",
+        "en-GB": "The PC app also shows other players' parties.",
+        "zh-TW": "其他玩家的隊伍會顯示在 PC 應用程式中。",
     },
     "数秒ごとに自動で更新されます。": {
         "ko": "몇 초마다 자동으로 갱신됩니다.",

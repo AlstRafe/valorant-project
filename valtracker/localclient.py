@@ -58,6 +58,9 @@ EARLY = 300
 LOG_BYTES = 2 * 1024 * 1024
 #: フレンドリストを持つ秒数: 開いている間、ページは数秒ごとに聞き直す。
 FRIENDS_KEEP = 5.0
+#: 試合のパーティー（プレゼンスの partyId）を持つ秒数: パーティーは試合中に変わらないので、
+#: エージェント選択（2 秒ごとの確認）でもクライアントに聞くのはこの間隔で 1 回。
+PARTIES_KEEP = 20.0
 #: 通知先（``listen``）に知らせる持ち主のゲームの瞬間: 試合成立（ゲームの 5 秒カウント）、
 #: それを取りこぼしたらエージェント選択。
 TOLD = ("found", "pregame")
@@ -267,6 +270,8 @@ class LocalClient:
         self._listeners: list = []
         #: 最後に読んだフレンド: （時刻, 扉, {"friends", "presences"}）。
         self._friends: tuple[float, tuple[int, str], dict] | None = None
+        #: 最後に読んだプレゼンスのパーティー: （時刻, 扉, {puuid: パーティーの ID}）。
+        self._parties: tuple[float, tuple[int, str], dict[str, str]] | None = None
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -371,6 +376,33 @@ class LocalClient:
         }
         with self._lock:
             self._friends = (self.clock(), door, found)
+        return found
+
+    def parties(self) -> dict[str, str] | None:
+        """クライアントが持つ VALORANT のプレゼンスのパーティー: ``{puuid: パーティーの ID}``（private の partyId）。
+        試合中はフレンドでない同じ試合のプレイヤーのプレゼンスも来るので、誰と誰が組んでいるかがわかる
+        （ほかのトラッカーと同じ読み方）。名前は読まない: 名前を隠している人の名前も来ることがあるが、使わない。
+        クライアントが閉じているか答えなければ None。ローカルの読み込み 1 回で、PARTIES_KEEP 秒持つ。"""
+        door = read_lockfile(self.lockfile)
+        if door is None:
+            return None
+        with self._lock:
+            kept = self._parties
+            if kept is not None and kept[1] == door and self.clock() - kept[0] < PARTIES_KEEP:
+                return kept[2]
+        try:
+            present = self._get(door, "/chat/v4/presences")
+        except LocalError:
+            return None
+        found = {}
+        for item in as_list(present.get("presences")) if isinstance(present, dict) else []:
+            if not isinstance(item, dict) or str(item.get("product") or "").lower() != "valorant":
+                continue
+            puuid, party = str(item.get("puuid") or "").lower(), where(item)["party"]
+            if _UUID.fullmatch(puuid) and party:
+                found[puuid] = party
+        with self._lock:
+            self._parties = (self.clock(), door, found)
         return found
 
     def examine(self) -> dict:
@@ -635,6 +667,6 @@ class LocalClient:
         with self._lock:
             was = self._listening or self._game is not None
             self._listening, self._game, self._seen, self._server = False, None, None, None
-            self._friends = None
+            self._friends = self._parties = None
         if was:
             self._changed_now()

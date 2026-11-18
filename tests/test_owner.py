@@ -97,7 +97,7 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("ルーキー", text, "and their title")
         self.assertIn("cc000000-0000-4000-8000-000000000002", text, "and their card")
         self.assertNotIn("非公開", text)
-        self.assertNotIn('class="badge mate"', text, "in the menus everyone is in the party: no mark")
+        self.assertNotIn('class="party p', text, "in the menus everyone is in the party: no number")
         self.assertIn('<option value="unrated" selected>アンレート</option>', text)
         self.assertIn('<option value="competitive">コンペティティブ</option>', text)
         answer = self.client.post("/live/act", data={"csrf": self.token(), "do": "start", "value": "competitive"})
@@ -325,7 +325,7 @@ class OwnerTest(unittest.TestCase):
             r'<span class="rank-label">通算最高</span>.*?<span>Tier 24</span>',
             "a player who shows their name: this act's best, and the best of every act (the act before)",
         )
-        self.assertNotIn("7勝 / 9試合", text, "nothing about a player who hides who they are")
+        self.assertIn("今アクト 7勝 / 9試合（78%）", text, "a player who hides their name: all but the name")
         self.assertIn('味方 <small class="team-average">平均 Tier 17</small>', text, "(18 + 21 + 12) / 3")
         self.riot.phase = "ingame"
         self.app.config["VAL_RIOT"].cache.put("live", None, 0)
@@ -500,7 +500,7 @@ class OwnerTest(unittest.TestCase):
         self.link()
         self.solo()
         self.riot.phase = "ingame"
-        note = "パーティー外の非公開プレイヤーは名前・カード・称号を表示しません"
+        note = "パーティー外の非公開プレイヤーは名前を表示しません"
         self.assertIn(note, self.page("/live"))
         for player in self.riot.pd["coregame"]["Players"]:
             player["PlayerIdentity"]["Incognito"] = False
@@ -602,7 +602,11 @@ class OwnerTest(unittest.TestCase):
         self.assertIn("47 RR", text, "the rank this act, from PD")
         self.assertIn("5 RR", text, "a hidden player's rank shows, as in the game")
         self.assertIn("ゴッド", text)
-        self.assertNotIn("ルーキー", text, "a hidden player's title does not")
+        # 名前を隠している人も名前以外は出す（持ち主の頼み、2026-11-17）: 称号、カード、今アクトの戦績
+        self.assertIn("ルーキー", text, "a hidden player's title")
+        self.assertEqual(text.count('class="seat-record"'), 2, "everyone's act record, the hidden player's too")
+        self.assertNotIn('class="party p', text, "the owner alone: no party numbers")
+        self.assertNotIn("同じ番号の人は同じパーティーです", text)
         ranks = sum("/mmr/v1/players/" in url for _, url, _, _ in self.riot.asked)
         self.app.config["VAL_RIOT"].cache = type(self.app.config["VAL_RIOT"].cache)(8)
         self.page("/live")
@@ -617,10 +621,13 @@ class OwnerTest(unittest.TestCase):
         stranger["PlayerIdentity"]["Incognito"] = True  # パーティー外で名前を隠している
         text = self.page("/live")
         self.assertIn('Secret<span class="tag">#9999</span>', text, "a party member who hides their name")
-        self.assertIn('<span class="badge mate">パーティー</span>', text)
-        self.assertEqual(text.count('class="badge mate"'), 1, "only the party member, not the owner")
+        # 持ち主と仲間に同じ番号（1）: サイトでわかるのは持ち主のパーティーだけ
+        self.assertEqual(text.count('<span class="party p1" title="パーティー 1">'), 2, "the owner and the member")
+        self.assertIn('<small class="team-party">パーティー 2人</small>', text)
+        self.assertIn("同じ番号の人は同じパーティーです。", text)
+        self.assertIn("ほかの人のパーティーは PC アプリで表示されます。", text, "the site knows only the owner's")
         self.assertNotIn("Teammate", text, "someone outside the party who hides their name")
-        self.assertIn("パーティー外の非公開プレイヤーは名前・カード・称号を表示しません", text)
+        self.assertIn("パーティー外の非公開プレイヤーは名前を表示しません", text)
         asked = b"".join(body or b"" for _, url, _, body in self.riot.asked if url.endswith("/name-service/v2/players"))
         self.assertIn(b"a1111111-0000-4000-8000-000000000002", asked)
         self.assertNotIn(b"a1111111-0000-4000-8000-000000000001", asked, "a hidden stranger's name is never asked")
@@ -634,6 +641,9 @@ class OwnerTest(unittest.TestCase):
         text = self.page("/live")
         self.assertIn('Secret<span class="tag">#9999</span>', text)
         self.assertIn("ルーキー", text, "a party member's title")
+        # フィクスチャの試合で持ち主（Red）と Secret（Blue）は別のチーム: 番号は付けても、各チームでは 1 人
+        self.assertEqual(text.count('class="party p1"'), 2)
+        self.assertNotIn('class="team-party"', text, "one of the party on each team is no party of a team")
 
     def test_party_members_stay_hidden_when_the_party_cannot_be_read(self):
         self.link()

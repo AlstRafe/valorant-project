@@ -410,7 +410,7 @@ class PagesTest(unittest.TestCase):
         self.assertIn(
             '<th scope="col"><abbr title="キル・アシスト・生存・トレードがあったラウンドの割合">KAST</abbr></th>', text
         )
-        self.assertIn('<span class="party p1" title="パーティ 1">1</span>', text)
+        self.assertIn('<span class="party p1" title="パーティー 1">1</span>', text)
         self.assertEqual(text.count('class="party '), 2, "only parties of two or more")
         self.assertIn("Tester の対面成績", text)
         self.assertIn('<span class="up" title="キル">12</span>', text)  # Tester が Foe を

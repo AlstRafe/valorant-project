@@ -4,3 +4,7 @@ __pycache__/
 instance/
 node_modules/
 valtracker/BUILD
+# PC アプリの zip をこのフォルダーの直下に展開したもの: Windows では zip の VALTracker\ と valtracker\ が同じフォルダー
+# になり、アプリがソースに混ざる（2026-11-18 に起きた）。アプリはリリースで配るので、コミットしない
+valtracker/VALTracker.exe
+valtracker/_internal/

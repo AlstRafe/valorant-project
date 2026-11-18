@@ -1,11 +1,12 @@
 """持ち主の今のゲーム（/live）。GLZ から（riot.Riot.live）: VALORANT が開いているか。メニューでは、パーティー、キュー、
 マッチングの開始・停止ボタン。エージェント選択では、チームのピック、まだ足りないロール、
 持ち主のエージェントのピックとロック。試合では、全員のエージェント・カード・称号・レベル・ランク、各チームの平均ランク、
-名前を出しているプレイヤーのアクトの戦績。
+全員のアクトの戦績、誰と誰が同じパーティーか（番号: 持ち主のパーティーと、PC アプリならほかの人のものも）。
 
 名前はゲームで隠していない（``Incognito`` でない）プレイヤーと、持ち主と同じパーティーのプレイヤー（ゲームの設定も
 「パーティー外のプレイヤーに名前を隠す」: 仲間には見える）だけ、レベルは隠していない（``HideAccountLevel`` でない）
-ときだけ出す: このページはゲーム自身の画面以上のことを言わない。"""
+ときだけ出す。名前を隠している人も名前以外（カード・称号・戦績・ランク・パーティー）は出す: ゲームが隠すのは名前だけで、
+試合のページ（スコアボード）とほかのトラッカーも同じ（持ち主の頼み、2026-11-17）。"""
 
 from __future__ import annotations
 
@@ -93,8 +94,7 @@ def act_best(mmr, act: str) -> int:
 
 
 def _smurf(tier: int, level: int | None, mmr, act: str) -> dict | None:
-    """レベル、ランク戦のアクト、名前を出しているプレイヤー（``act``）
-    なら今のアクトの戦績からのサブ垢の推測（smurf.guess）: 名前を隠している人は戦績無しで推測する。"""
+    """レベル、ランク戦のアクト、今のアクト（``act``）の戦績からのサブ垢の推測（smurf.guess）。"""
     skills = _seasons(mmr)
     acts = (
         sum(1 for info in skills.values() if isinstance(info, dict) and to_int(info.get("NumberOfGames")) > 0)
@@ -142,6 +142,7 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
     subject = lower_id(item.get("Subject"))
     # 同じパーティーの仲間（Riot のパーティーのメンバー、riot.Riot.live）にはゲームも名前を見せる
     mate = subject in look["mates"] and subject != me
+    # 隠すのは名前だけ（riot.Riot は隠している人の名前をそもそも聞かない）
     hidden = bool(identity.get("Incognito")) and not mate
     name = look["names"].get(subject) if not hidden else None
     badge = item.get("SeasonalBadgeInfo") if isinstance(item.get("SeasonalBadgeInfo"), dict) else {}
@@ -152,7 +153,6 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
     level = None if identity.get("HideAccountLevel") else to_int(identity.get("AccountLevel")) or None
     card = lower_id(identity.get("PlayerCardID"))
     title = look["titles"].get(lower_id(identity.get("PlayerTitleID"))) or {}
-    shown = bool(name) or subject == me
     return {
         "me": subject == me,
         "agent": agent.get("displayName") or "",
@@ -163,24 +163,48 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
         "name": name[0] if name else "",
         "tag": name[1] if name else "",
         "mate": mate,
-        # 隠しているプレイヤーはカードと称号も出さない: 誰かわかってしまうことがある
-        "card": f"https://media.valorant-api.com/playercards/{card}/smallart.png"
-        if card and not hidden and len(card) == 36
-        else "",
-        "title": "" if hidden else str(title.get("titleText") or ""),
+        "card": f"https://media.valorant-api.com/playercards/{card}/smallart.png" if len(card) == 36 else "",
+        "title": str(title.get("titleText") or ""),
         "level": level,
         "rank": {**rank, "rr": rr} if rank else None,
         "tier": tier if tier > 2 else 0,
-        # アクトの戦績は持ち主と名前が出ているプレイヤー（パーティーの仲間も）だけ: このサイトのその人のページと同じ公開度。
-        # 3 つのランク（今、アクト最高、通算最高）は全員: 持ち主が名前を隠している人にも出すよう頼んだ（2026-11-15）。
-        # ランクでは誰かわからない
-        "record": _record(look["ranks"].get(subject), look["act"]) if shown else None,
+        # アクトの戦績と 3 つのランク（今、アクト最高、通算最高）は全員: 名前を隠している人にも（2026-11-15、11-17）
+        "record": _record(look["ranks"].get(subject), look["act"]),
         "peak": _rank_of(best_ever(look["ranks"].get(subject), look.get("old_acts") or frozenset()), look),
         "act_peak": _rank_of(act_best(look["ranks"].get(subject), look["act"]), look),
-        "smurf": _smurf(tier, level, look["ranks"].get(subject), look["act"] if shown else ""),
+        "smurf": _smurf(tier, level, look["ranks"].get(subject), look["act"]),
         "team": str(item.get("TeamID") or ""),
         "owner": bool(item.get("IsOwner")),
+        "subject": subject,
+        #: 同じパーティーの番号（1 から。_number_parties）。0: 1 人か、わからない
+        "party": 0,
     }
+
+
+def _number_parties(rows: list[dict], parties: dict) -> list[int]:
+    """試合の席（``rows``、ページの順）に、同じパーティーの人どうしで同じ番号（``party``: 1 から）を付ける。
+    ``parties``: {puuid: パーティーの ID}（riot.Riot._parties）。番号は持ち主のパーティーが 1、あとは席の順。
+    2 人以上いるパーティーだけ（1 人ならソロと同じ）。答え: 番号ごとの人数（番号の順）。"""
+    members: dict[str, list[dict]] = {}
+    for row in rows:
+        party = parties.get(row["subject"]) if row["subject"] else None
+        if party:
+            members.setdefault(party, []).append(row)
+    groups = [group for group in members.values() if len(group) >= 2]
+    groups.sort(key=lambda group: not any(row["me"] for row in group))  # 持ち主のパーティーを先に（安定ソート）
+    for number, group in enumerate(groups, 1):
+        for row in group:
+            row["party"] = number
+    return [len(group) for group in groups]
+
+
+def _team_parties(rows: list[dict]) -> list[int]:
+    """チームの席にいるパーティーの人数（大きい順。2 人以上）: 見出しに「パーティー 3人」のように出す。"""
+    sizes: dict[int, int] = {}
+    for row in rows:
+        if row["party"]:
+            sizes[row["party"]] = sizes.get(row["party"], 0) + 1
+    return sorted((size for size in sizes.values() if size >= 2), reverse=True)
 
 
 def _seconds_since(value, now: float) -> int | None:
@@ -250,6 +274,8 @@ def page(
         "party": None,
         "picker": None,
         "average": None,
+        #: 試合のパーティーの人数（番号の順）。どれかあれば、ページは番号の意味を書く
+        "parties": [],
         "hidden_names": False,
         "every": EVERY[where(found)][0],
         # エージェントの絵はマッチング中にブラウザーが取る: エージェント選択ですぐ出る
@@ -266,6 +292,7 @@ def page(
         ]
         values["players"] = rows
         values["average"] = average(rows, look)
+        values["parties"] = _number_parties(rows, found.get("parties") or {})
         values["queue"] = queue_name(str(match.get("QueueID") or ""))
         values["left"] = to_int(match.get("PhaseTimeRemainingNS")) // 1_000_000_000 or None
         values["enemy_locked"] = to_int(match.get("EnemyTeamLockCount"))
@@ -332,9 +359,19 @@ def page(
         groups: dict[str, list] = {}
         for row in rows:
             groups.setdefault(row["team"], []).append(row)
+        ordered = sorted(groups.items(), key=lambda pair: pair[0] != mine)
+        # 番号は味方の席から: 持ち主のパーティーが 1、次に味方、最後に相手
+        values["parties"] = _number_parties(
+            [row for _, players in ordered for row in players], found.get("parties") or {}
+        )
         values["teams"] = [
-            {"ours": team == mine, "players": players, "average": average(players, look)}
-            for team, players in sorted(groups.items(), key=lambda pair: pair[0] != mine)
+            {
+                "ours": team == mine,
+                "players": players,
+                "average": average(players, look),
+                "parties": _team_parties(players),
+            }
+            for team, players in ordered
         ]
         making = match.get("MatchmakingData") if isinstance(match.get("MatchmakingData"), dict) else {}
         values["queue"] = queue_name(str(making.get("QueueID") or ""))

@@ -43,6 +43,12 @@ def presence(loop: str, party_state: str = "DEFAULT", puuid: str = PUUID, produc
     return {"puuid": puuid, "product": product, "private": private(loop, party_state)}
 
 
+def in_party(puuid: str, party: str) -> dict:
+    """同じ試合のほかのプレイヤーのプレゼンス（パーティーの ID だけ違う）。"""
+    data = {"isValid": True, "partyPresenceData": {"partyId": party, "partySize": 2}}
+    return {"puuid": puuid, "product": "valorant", "private": base64.b64encode(json.dumps(data).encode()).decode()}
+
+
 def event(name: str, data: dict, uri: str = "") -> str:
     return json.dumps([8, name, {"data": data, "eventType": "Update", "uri": uri}])
 
@@ -330,6 +336,40 @@ class DesktopAppTest(unittest.TestCase):
         self.assertFalse([url for url in asked if "/parties/v1/players/" in url], asked)
         self.assertIn(f"/parties/v1/parties/{PARTY}", " ".join(asked))
         self.assertIn('Secret<span class="tag">#9999</span>', self.client.get("/live").get_data(as_text=True))
+
+    def test_the_client_tells_who_is_in_a_party_with_whom(self):
+        """試合中はフレンドでない同じ試合の人のプレゼンスも来る: その partyId で全員のパーティーに番号を付ける
+        （持ち主のパーティーが 1）。プレゼンスの名前は使わない: 名前を隠している人は隠したまま。"""
+        self.listening()
+        self.riot.phase = "ingame"
+        strangers = ["b2222222-0000-4000-8000-000000000001", "b2222222-0000-4000-8000-000000000002"]
+        for subject in strangers:
+            self.riot.pd["coregame"]["Players"].append(
+                {
+                    "Subject": subject,
+                    "TeamID": "Red",
+                    "CharacterID": "11111111-1111-4111-8111-111111111111",
+                    "PlayerIdentity": {"AccountLevel": 80, "Incognito": True},
+                    "SeasonalBadgeInfo": {"Rank": 15},
+                }
+            )
+        theirs = "9b000000-0000-4000-8000-000000000002"
+        self.api.presences = [presence("INGAME")] + [
+            in_party(subject, theirs) | {"game_name": "Leak", "game_tag": "0000"} for subject in strangers
+        ]
+        self.api.presences.append(in_party("b2222222-0000-4000-8000-000000000009", theirs))  # この試合にいない
+        self.local.handle(read_lockfile(self.lockfile), event(EVENTS[0], {"presences": [presence("INGAME")]}))
+        self.look()
+        text = self.client.get("/live").get_data(as_text=True)
+        self.assertEqual(text.count('<span class="party p1" title="パーティー 1">'), 2, "the owner's party first")
+        self.assertEqual(text.count('<span class="party p2" title="パーティー 2">'), 2, "two strangers together")
+        self.assertIn('<small class="team-party">パーティー 2人</small>', text)
+        self.assertIn("同じ番号の人は同じパーティーです。", text)
+        self.assertNotIn("PC アプリで表示されます", text, "this is the app")
+        self.assertNotIn("Leak", text, "never the name a presence carries")
+        asked = self.api.asked.count("/chat/v4/presences")
+        self.look()
+        self.assertEqual(self.api.asked.count("/chat/v4/presences"), asked, "kept a while: the parties do not change")
 
     def test_an_event_reads_the_game_at_once(self):
         self.listening()
