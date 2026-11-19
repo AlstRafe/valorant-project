@@ -46,6 +46,26 @@ def _side(asked: str, mode: str, span: str = "") -> dict:
     return {"asked": f"{values['name']}#{values['tag']}", "found": values, "problem": "", "status": 200}
 
 
+def _life_notes(sides: list[dict]) -> list[dict]:
+    """通算（とアクト）で、数値が全部の試合のものでない人: まだ裏で読んでいる（``reading``、archive.progress）か、
+    一部が簡易データ（``thin``、``whole``）。ページは人ごとに 1 行ずつ言う。でないと片方だけ数が少ない・
+    KAST などの元が違う理由がわからない。"""
+    notes = []
+    for side in sides:
+        life = (side["found"] or {}).get("life") or {}
+        reading = life.get("reading") or {}
+        if reading.get("busy") or life.get("thin"):
+            notes.append(
+                {
+                    "name": side["asked"],
+                    "reading": reading if reading.get("busy") else None,
+                    "thin": life.get("thin", 0),
+                    "whole": life.get("whole", 0),
+                }
+            )
+    return notes
+
+
 def _number(value):
     return value if isinstance(value, int | float) and not isinstance(value, bool) else None
 
@@ -126,10 +146,18 @@ def page() -> tuple[dict, int]:
     for row in rows:
         if row["best"] is not None:
             wins[row["best"]] += 1
+    link = {
+        "a": sides[0]["asked"],
+        "b": sides[1]["asked"],
+        "mode": mode if mode != "competitive" else None,
+        "span": span or None,
+    }
     return {
         "sides": sides,
         "rows": rows,
         "wins": wins,
+        "life_notes": _life_notes(sides) if both and span else [],
+        "again_url": url_for("compare", **link) if both else "",
         "recent": RECENT,
         "mode": mode,
         "modes": [{"key": key, "name": tr(QUEUES[HENRIK_MODES[key]])} for key in MODES],
@@ -139,15 +167,7 @@ def page() -> tuple[dict, int]:
             {"key": "act", "name": tr("今のアクト")},
             {"key": "all", "name": tr("通算")},
         ],
-        "swap_url": url_for(
-            "compare",
-            a=sides[1]["asked"],
-            b=sides[0]["asked"],
-            mode=mode if mode != "competitive" else None,
-            span=span or None,
-        )
-        if both
-        else "",
+        "swap_url": url_for("compare", **link | {"a": link["b"], "b": link["a"]}) if both else "",
     }, status
 
 

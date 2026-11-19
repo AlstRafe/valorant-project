@@ -38,6 +38,10 @@ HENRIK_ROOM = 12
 REST = 120
 #: 最後まで読んだプレイヤーは、この時間が過ぎてから通算を開かれたら読み直す（新しい試合だけ）。
 AGAIN = 20 * 60
+#: これだけの秒数のうちに続けて求められた人（比較ページの 2 人）は、1 回ずつ順番に読む。
+TOGETHER = 30
+#: 裏が一度に見る、読み終えていないプレイヤーの数（最近求められた順）。
+LOOK_AT = 8
 #: 保存済み試合（HenrikDev v1）はこの時間が過ぎたら読み直す。
 STORED_AGAIN = 6 * 3600
 #: 試合の出どころ: HenrikDev は全プレイヤーの名前を出すので、1 人しか名前の無い Riot のものより優先して残す。
@@ -283,6 +287,7 @@ class Archive:
         """訪問者がプレイヤーの通算を開いた: 履歴を読む（最後まで読んだのが AGAIN より前なら、新しい試合だけ読み直す）。"""
         now = self.clock()
         state = self.player(puuid)
+        fresh = state is None
         if state is None:
             # older: 次に読む HenrikDev の古いページ（-2: 始めていない、-1: 最後まで読んだ）
             state = dict.fromkeys(self.FIELDS, 0) | {"puuid": puuid, "total": -1, "older": -2, "via": "", "problem": ""}
@@ -290,22 +295,38 @@ class Archive:
             # また Riot から（その後アカウントを連携したかもしれない）。新しいページだけ
             state |= {"scanned": 0, "total": -1, "rr_scanned": 0, "rr_done": 0, "finished": 0, "again": 1}
             state |= {"via": "", "older": -2, "problem": ""}
+            fresh = True
         state |= {"region": region, "name": name, "tag": tag, "wanted": now}
-        self.save(state)
+        if fresh:
+            self.save(state)
+        # 読み途中の人は求められた時刻と名前だけ: 裏がこの間に進めたところ（scanned など）を古い値で戻さない
+        self._write(
+            "UPDATE players SET region = ?, name = ?, tag = ?, wanted = ? WHERE puuid = ?",
+            [(region, name, tag, now, puuid)],
+        )
         return state
 
     def save(self, state: dict) -> None:
+        """どこまで読んだか。求められた時刻（``wanted``）は want だけが変える: 裏が読んでいる間に
+        訪問者がまた開いても、その順番を古い値で戻さない。"""
+        updates = ", ".join(f"{key} = excluded.{key}" for key in self.FIELDS if key not in ("puuid", "wanted"))
         self._write(
-            f"INSERT OR REPLACE INTO players VALUES ({', '.join('?' * len(self.FIELDS))})",
+            f"INSERT INTO players VALUES ({', '.join('?' * len(self.FIELDS))}) "
+            f"ON CONFLICT (puuid) DO UPDATE SET {updates}",
             [tuple(state.get(key) for key in self.FIELDS)],
         )
 
     def busy(self) -> dict | None:
         """一番最近求められた、履歴を最後まで読んでいないプレイヤー。無ければ None。"""
+        found = self.unfinished(1)
+        return found[0] if found else None
+
+    def unfinished(self, most: int = LOOK_AT) -> list[dict]:
+        """履歴を最後まで読んでいないプレイヤー、最近求められた順（最大 ``most`` 人）。"""
         found = self._read(
-            f"SELECT {', '.join(self.FIELDS)} FROM players WHERE finished = 0 ORDER BY wanted DESC LIMIT 1"
+            f"SELECT {', '.join(self.FIELDS)} FROM players WHERE finished = 0 ORDER BY wanted DESC LIMIT ?", (most,)
         )
-        return dict(zip(self.FIELDS, found[0], strict=True)) if found else None
+        return [dict(zip(self.FIELDS, row, strict=True)) for row in found]
 
     def add_todo(self, puuid: str, matches: list[dict]) -> None:
         """これから読むプレイヤーの履歴の試合（pdmatch.history の ``{"id", "at"}``）。"""
@@ -337,6 +358,9 @@ class Filler:
         self._wake = threading.Event()
         self._henrik_at = 0.0
         self.resting_until = 0.0
+        #: 同時に求められた人の順番: プレイヤーごとの、最後に読んだ回の番号。
+        self._turns: dict[str, int] = {}
+        self._turn = 0
 
     def want(self, region: str, puuid: str, name: str, tag: str) -> dict:
         state = self.archive.want(puuid.lower(), region, name, tag)
@@ -363,13 +387,32 @@ class Filler:
                 self._wake.clear()
 
     def step(self) -> str:
-        """一番最近求められたプレイヤーのための 1 回の呼び出し: 何をしたか（することが無ければ ""）。"""
-        state = self.archive.busy()
-        if state is None:
+        """一番最近求められたプレイヤーのための 1 回の呼び出し: 何をしたか（することが無ければ ""）。
+        同時に求められた人たち（比較ページの 2 人、TOGETHER）は順番に 1 回ずつ: 後に開いた方だけを最後まで読むと、
+        もう一方はそれまで止まっていた。今は待つしかない人（HenrikDev の間隔や残り回数、Riot の休み）は飛ばして次の人。"""
+        states = self.archive.unfinished()
+        if not states:
             return ""
-        if self.clock() < self.resting_until:
-            return "rest"
+        newest = float(states[0]["wanted"] or 0)
+        together = [state for state in states if float(state["wanted"] or 0) >= newest - TOGETHER]
+        together.sort(key=lambda state: self._turns.get(state["puuid"], 0))  # 一番長く読んでいない人から
+        did = ""
+        for state in together + states[len(together) :]:
+            did = self._one(state)
+            if did not in ("wait", "rest"):
+                self._turn += 1
+                self._turns[state["puuid"]] = self._turn
+                if len(self._turns) > 4 * LOOK_AT:
+                    known = {item["puuid"] for item in states}
+                    self._turns = {key: value for key, value in self._turns.items() if key in known}
+                return did
+        return did
+
+    def _one(self, state: dict) -> str:
+        """1 人のための 1 回の呼び出し（step を参照）。"""
         if state["via"] != "henrik":
+            if self.clock() < self.resting_until:
+                return "rest"
             try:
                 return self._riot(state)
             except RiotError as error:

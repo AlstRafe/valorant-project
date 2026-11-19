@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 import unittest
 from datetime import datetime
 from unittest import mock
@@ -262,6 +263,68 @@ class FillerTest(unittest.TestCase):
         with mock.patch.object(archive_module, "HENRIK_SECONDS", 0):
             self.assertEqual(self.filler.step(), "wait")
         self.assertEqual(len(list(self.archive.matches("puuid-me"))), 0)
+
+    def test_two_players_wanted_together_take_turns(self):
+        """比較ページの 2 人（同時に求められる）: 後に開いた右側だけを最後まで読み、左側はそれまで止まっていた。"""
+        left, right = "aaaa1111-0000-4000-8000-000000000001", "bbbb2222-0000-4000-8000-000000000002"
+
+        class Pages:
+            """どのプレイヤーにも 6 試合の履歴を出す Riot（1 回に 2 試合）。読んだ人を ``asked`` に。"""
+
+            def __init__(self):
+                self.asked: list[str] = []
+
+            def history(self, region, puuid, start):
+                self.asked.append(puuid)
+                found = [
+                    {"id": f"{puuid[:8]}-1111-4111-8111-{number:012d}", "at": 1_762_400_000 - number}
+                    for number in range(start, min(start + 2, 6))
+                ]
+                return {"total": 6, "matches": found}
+
+            def match_details(self, region, match_id):
+                self.asked.append(next(puuid for puuid in (left, right) if puuid[:8] == match_id[:8]))
+                return {}
+
+            def rr_updates(self, region, puuid, start=0):
+                self.asked.append(puuid)
+                return {"changes": {}, "count": 0}
+
+        pages = Pages()
+        with mock.patch.object(self.filler, "riot", pages):
+            self.filler.want("ap", left, "Left", "L1")
+            self.filler.want("ap", right, "Right", "R1")
+            self.steps(4)
+            self.assertEqual(pages.asked, [right, left, right, left], "one call each, in turn")
+            self.steps(40)
+        self.assertEqual(pages.asked.count(left), pages.asked.count(right))
+        self.assertTrue(all(self.archive.player(puuid)["finished"] for puuid in (left, right)))
+
+    def test_one_waiting_on_henrikdev_does_not_stop_the_other(self):
+        """右側が HenrikDev の間隔待ち（15 秒に 1 回）でも、Riot から読める左側は進む。"""
+        self.link()
+        self.filler.want("ap", PLAYER, "Pd Player", "PD1")
+        self.filler.want("ap", "puuid-me", "Tester", "JP1")
+        self.archive.save(self.archive.player("puuid-me") | {"via": "henrik", "problem": "down"})
+        self.filler._henrik_at = time.time()
+        self.assertEqual(self.filler.step(), "history")
+        self.assertEqual(self.archive.player(PLAYER)["scanned"], 2)
+        self.assertEqual(self.archive.player("puuid-me")["older"], -2, "still waiting its turn at HenrikDev")
+
+    def test_opening_again_keeps_what_the_background_read(self):
+        """訪問者がまた開いても（裏が読む間に読んだ古い状態で）、裏が進めたところを戻さない。逆に裏の保存は
+        求められた時刻を戻さない。"""
+        self.link()
+        self.filler.want("ap", PLAYER, "Pd Player", "PD1")
+        before = self.archive.player(PLAYER)
+        self.assertEqual(self.filler.step(), "history")
+        with mock.patch.object(self.archive, "player", return_value=dict(before)):
+            self.filler.want("ap", PLAYER, "Pd Player", "PD1")
+        state = self.archive.player(PLAYER)
+        self.assertEqual((state["scanned"], state["total"]), (2, 2))
+        self.assertGreater(state["wanted"], before["wanted"])
+        self.archive.save(before)
+        self.assertEqual(self.archive.player(PLAYER)["wanted"], state["wanted"])
 
 
 class LifetimePageTest(unittest.TestCase):
