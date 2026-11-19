@@ -446,6 +446,8 @@ async function main() {
         const context = await browser.newContext({
           viewport: { width, height: 800 },
           colorScheme: theme,
+          // 動き終わった見た目を測る（開いたときの本文のフェードの途中だと文字が薄く見える）
+          reducedMotion: "reduce",
           locale: lang,
           timezoneId: ZONES[lang],
         });
@@ -515,7 +517,7 @@ async function main() {
 // : タイマーとピックの間もページは同じ文書のまま、エージェントの絵は同じ要素のままで、
 // 確認のたびに作り直して取り直さない（持ち主にはまた読み込むのが見えていた）。
 async function livePage(browser) {
-  const page = await browser.newPage({ viewport: { width: 390, height: 800 } });
+  const page = await browser.newPage({ viewport: { width: 390, height: 800 }, reducedMotion: "reduce" });
   let loads = 0;
   page.on("load", () => loads++);
   await page.goto(base + "/live?phase=pregame", { waitUntil: "networkidle", timeout: 60000 });

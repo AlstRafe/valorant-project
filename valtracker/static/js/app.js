@@ -715,22 +715,22 @@
     canvas.height = 630;
     var c = canvas.getContext("2d");
     var font = 'system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Noto Sans KR", sans-serif';
-    c.fillStyle = "#161513";
+    c.fillStyle = "#141413";
     c.fillRect(0, 0, 1200, 630);
     if (images.wide) {
       c.globalAlpha = 0.35;
       c.drawImage(images.wide, 0, 0, 1200, 340);
       c.globalAlpha = 1;
       var fade = c.createLinearGradient(0, 120, 0, 340);
-      fade.addColorStop(0, "rgba(22,21,19,0)");
-      fade.addColorStop(1, "#161513");
+      fade.addColorStop(0, "rgba(20,20,19,0)");
+      fade.addColorStop(1, "#141413");
       c.fillStyle = fade;
       c.fillRect(0, 0, 1200, 340);
     }
     c.fillStyle = "#ff4655";
     c.fillRect(0, 0, 12, 630);
     c.textBaseline = "alphabetic";
-    c.fillStyle = "#f6f4ef";
+    c.fillStyle = "#e9e6df";
     c.font = "700 64px " + font;
     var name = fitted(c, card.name, 760);
     c.fillText(name, 64, 120);
@@ -743,7 +743,7 @@
       c.drawImage(images.rank, 64, 150, 88, 88);
       left = 172;
     }
-    c.fillStyle = "#f6f4ef";
+    c.fillStyle = "#e9e6df";
     c.font = "700 40px " + font;
     c.fillText(fitted(c, card.rank, 600), left, 196);
     c.fillStyle = "#b9b4aa";
@@ -760,7 +760,7 @@
       c.fillStyle = "#b9b4aa";
       c.font = "500 24px " + font;
       c.fillText(stat[0], x + 20, y + 34);
-      c.fillStyle = "#f6f4ef";
+      c.fillStyle = "#e9e6df";
       c.font = "700 40px " + font;
       c.fillText(String(stat[1]), x + 20, y + 80);
     });
@@ -771,7 +771,7 @@
         c.drawImage(image, x, 560, 44, 44);
         x += 54;
       }
-      c.fillStyle = "#f6f4ef";
+      c.fillStyle = "#e9e6df";
       c.font = "600 26px " + font;
       var said = fitted(c, agent.name, 220);
       c.fillText(said, x, 592);

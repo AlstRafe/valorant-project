@@ -1,20 +1,39 @@
-/* VAL Tracker。紙とインクの色はほかのサイト（Home Page の portal.css）と同じなので、
-   一覧とこのサイトを行き来してもページの色は変わらない。アクセントは VALORANT の赤で、
-   紙の上では文字が読めるよう暗めにする。 */
+/* VAL Tracker。紙・インク・角丸・影はこのホストの全サイトと同じ共通トークン（Home Page の docs/CONVENTIONS.md
+   「デザインの共通トークン」）なので、一覧とこのサイトを行き来してもページの色と手触りは変わらない。
+   アクセントは VALORANT の赤で、紙の上では文字が読めるよう暗め、ダークでは光らないよう柔らかめにする。
+   背景はごく薄い色の光（body::before）、カードはその上の半透明の面（--surface）。目に痛い原色や真っ白は使わない。 */
 :root {
-  --paper: #f6f4ef;
-  --card: #fffdf8;
-  --ink: #1d1c1a;
-  --soft: #5f5c56;
-  --rule: #d9d5cc;
+  --paper: #f5f3ef;
+  --card: #fffdf9;
+  /* 背景の光の上のカード: 少し透けて、ページ全体の色がなじむ */
+  --surface: rgb(255 253 249 / 0.74);
+  --ink: #1e1d1b;
+  --soft: #5c5952;
+  --rule: #dcd7cd;
   /* 押せる・入力できるものの縁: ページに対して 3:1（WCAG 1.4.11）。線には --rule を使う */
   --edge: #8a857b;
+  /* カードの上辺の 1px の光（inset の影） */
+  --line-hi: rgb(255 255 255 / 0.75);
   --accent: #b8202f;
   --on-a: #fff;
   --win: #17704f;
   --loss: #b8202f;
-  --draw: #6b6760;
-  --blue: #2a6fbf;
+  --draw: #64605a;
+  --blue: #245fb0;
+  /* 背景の光の色（ページの角に置く。文字は一番濃いところでも AA） */
+  --wash-a: color-mix(in srgb, var(--accent) 8%, transparent);
+  --wash-b: color-mix(in srgb, var(--blue) 8%, transparent);
+  --wash-c: color-mix(in srgb, var(--win) 6%, transparent);
+  --r-s: 10px;
+  --r-m: 14px;
+  --r-l: 20px;
+  --r-pill: 999px;
+  --shadow-1: 0 1px 2px rgb(40 30 20 / 0.05), 0 12px 32px -16px rgb(40 30 20 / 0.16), inset 0 1px 0 var(--line-hi);
+  --shadow-2: 0 2px 4px rgb(40 30 20 / 0.06), 0 22px 48px -20px rgb(40 30 20 / 0.24), inset 0 1px 0 var(--line-hi);
+  --shadow-pop: 0 16px 40px -12px rgb(40 30 20 / 0.22);
+  --btn-glow: color-mix(in srgb, var(--accent) 70%, transparent);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t: 180ms;
   --sans: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
   --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
   --tabbar: 0px;
@@ -22,33 +41,51 @@
 /* ダーク: 訪問者がヘッダーのボタンで選ぶまで端末の設定（<html data-theme>、ページのスクリプトが設定）。 */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #161513;
-    --card: #201f1c;
-    --ink: #ebe7df;
-    --soft: #a8a49b;
-    --rule: #3a3833;
+    --paper: #141413;
+    --card: #1e1d1b;
+    --surface: rgb(30 29 27 / 0.7);
+    --ink: #e9e6df;
+    --soft: #a7a39b;
+    --rule: #353330;
     --edge: #78736a;
-    --accent: #ff5f6b;
+    --line-hi: rgb(255 255 255 / 0.06);
+    --accent: #f0707a;
     --on-a: #141310;
     --win: #4cc79a;
-    --loss: #ff6b76;
+    --loss: #f0707a;
     --draw: #a8a49b;
     --blue: #6aa8f0;
+    --wash-a: color-mix(in srgb, var(--accent) 10%, transparent);
+    --wash-b: color-mix(in srgb, var(--blue) 10%, transparent);
+    --wash-c: color-mix(in srgb, var(--win) 6%, transparent);
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 32px -16px rgb(0 0 0 / 0.55), inset 0 1px 0 var(--line-hi);
+    --shadow-2: 0 2px 4px rgb(0 0 0 / 0.4), 0 22px 48px -20px rgb(0 0 0 / 0.65), inset 0 1px 0 var(--line-hi);
+    --shadow-pop: 0 16px 40px -12px rgb(0 0 0 / 0.6);
+    --btn-glow: color-mix(in srgb, var(--accent) 40%, transparent);
   }
 }
 :root[data-theme="dark"] {
-  --paper: #161513;
-  --card: #201f1c;
-  --ink: #ebe7df;
-  --soft: #a8a49b;
-  --rule: #3a3833;
+  --paper: #141413;
+  --card: #1e1d1b;
+  --surface: rgb(30 29 27 / 0.7);
+  --ink: #e9e6df;
+  --soft: #a7a39b;
+  --rule: #353330;
   --edge: #78736a;
-  --accent: #ff5f6b;
+  --line-hi: rgb(255 255 255 / 0.06);
+  --accent: #f0707a;
   --on-a: #141310;
   --win: #4cc79a;
-  --loss: #ff6b76;
+  --loss: #f0707a;
   --draw: #a8a49b;
   --blue: #6aa8f0;
+  --wash-a: color-mix(in srgb, var(--accent) 10%, transparent);
+  --wash-b: color-mix(in srgb, var(--blue) 10%, transparent);
+  --wash-c: color-mix(in srgb, var(--win) 6%, transparent);
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 32px -16px rgb(0 0 0 / 0.55), inset 0 1px 0 var(--line-hi);
+  --shadow-2: 0 2px 4px rgb(0 0 0 / 0.4), 0 22px 48px -20px rgb(0 0 0 / 0.65), inset 0 1px 0 var(--line-hi);
+  --shadow-pop: 0 16px 40px -12px rgb(0 0 0 / 0.6);
+  --btn-glow: color-mix(in srgb, var(--accent) 40%, transparent);
   color-scheme: dark;
 }
 :root[data-theme="light"] {
@@ -76,16 +113,61 @@ html {
   background: var(--paper);
   color: var(--ink);
   -webkit-text-size-adjust: 100%;
+  scrollbar-color: color-mix(in srgb, var(--soft) 45%, transparent) transparent;
+  accent-color: var(--accent);
 }
+/* body には背景を付けない: 後ろの固定レイヤー（下）が見えるように。文字の色の確認（tests/ui/audit.js）は
+   html の紙の色で測る。光は一番濃い角でも文字が AA のまま（上の --wash-*）。 */
 body {
   margin: 0 auto;
   max-width: 62rem;
   padding: 0 1rem calc(2rem + var(--tabbar));
   font: 16px/1.65 var(--sans);
-  background: var(--paper);
+}
+/* 背景: ページの角に置いた大きな色の光と、右上から差すアクセントの斜めの光（VALORANT の角ばった形）。
+   画面に固定（スクロールで動かない）。絵は使わない（CSP は img-src 'self'）。 */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  pointer-events: none;
+}
+body::before {
+  inset: 0;
+  background:
+    radial-gradient(56rem 38rem at 6% -8%, var(--wash-a), transparent 70%),
+    radial-gradient(50rem 34rem at 100% 6%, var(--wash-b), transparent 70%),
+    radial-gradient(64rem 40rem at 46% 112%, var(--wash-c), transparent 70%);
+}
+body::after {
+  top: 0;
+  right: 0;
+  width: min(80vw, 64rem);
+  height: min(80vh, 40rem);
+  background:
+    linear-gradient(118deg, transparent 38%, var(--wash-a) 50%, transparent 62%),
+    linear-gradient(118deg, transparent 58%, var(--wash-b) 66%, transparent 74%);
+  -webkit-mask-image: radial-gradient(farthest-side at 100% 0, #000, transparent);
+  mask-image: radial-gradient(farthest-side at 100% 0, #000, transparent);
 }
 a {
   color: var(--accent);
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: from-font;
+}
+a,
+button,
+.button,
+summary,
+input,
+select {
+  transition:
+    color var(--t) var(--ease),
+    background-color var(--t) var(--ease),
+    border-color var(--t) var(--ease),
+    box-shadow var(--t) var(--ease),
+    transform var(--t) var(--ease);
 }
 a:focus-visible,
 button:focus-visible,
@@ -95,7 +177,9 @@ textarea:focus-visible,
 summary:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
-  border-radius: 4px;
+}
+::selection {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 img {
   max-width: 100%;
@@ -104,15 +188,63 @@ h1,
 h2,
 h3 {
   line-height: 1.3;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  font-feature-settings: "palt";
+  text-wrap: balance;
+}
+:lang(ja) :is(h1, h2, h3, .lead) {
+  word-break: auto-phrase;
+}
+p {
+  text-wrap: pretty;
 }
 h1 {
   margin: 0;
-  font-size: 1.9rem;
+  font-size: clamp(1.75rem, 1.45rem + 1.2vw, 2.15rem);
+  font-weight: 800;
+  letter-spacing: 0.005em;
 }
 h2 {
-  margin: 2rem 0 0.8rem;
-  font-size: 1.15rem;
+  margin: 2.2rem 0 0.8rem;
+  font-size: 1.18rem;
+  font-weight: 750;
+}
+/* 見出しの前の小さな斜めの印（ゲームの UI の刻み）: 赤から青へ。 */
+main h2::before {
+  content: "";
+  display: inline-block;
+  width: 0.3rem;
+  height: 0.92em;
+  margin-right: 0.55rem;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 35%, var(--blue)));
+  transform: skewX(-14deg);
+  vertical-align: -0.08em;
+}
+/* 横に並べる見出し（チーム、ストア、シーズン）: 印は並びの最初の 1 つ。間は見出しの gap から引く */
+.team h2::before,
+.shelf h2::before,
+.season-card h2::before {
+  align-self: center;
+  margin-right: calc(0.55rem - 0.8rem);
+}
+.team h2::before {
+  margin-right: calc(0.55rem - 0.6rem);
+}
+.season-card h2::before {
+  margin-right: calc(0.55rem - 0.7rem);
+}
+/* ページを開いたとき本文がそっと浮かぶ（動きを減らす設定では無し）。 */
+@media (prefers-reduced-motion: no-preference) {
+  main {
+    animation: rise 0.32s var(--ease) both;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 }
 .sr {
   position: absolute;
@@ -128,7 +260,7 @@ h2 {
   top: -3rem;
   z-index: 20;
   padding: 0.5rem 0.9rem;
-  border-radius: 6px;
+  border-radius: var(--r-pill);
   background: var(--accent);
   color: var(--on-a);
 }
@@ -137,16 +269,28 @@ h2 {
 }
 
 /* ヘッダー: 名前、ページ、テーマと言語。折り返さない: 狭い画面ではページが下のタブバーに移り、
-   ボタンは文字を無くす（一番長い英語で測った）。 */
+   ボタンは文字を無くす（一番長い英語で測った）。ページの上に浮かぶすりガラスの帯。
+   バーの中の幅は前と同じ（外へ 0.6rem 広げて内に 0.6rem）なので、測った幅はそのまま。 */
 .top {
   position: sticky;
-  top: 0;
+  top: 0.5rem;
   z-index: 10;
-  margin: 0 -1rem 1.4rem;
-  padding: 0 1rem;
-  /* 普通の背景: ここで backdrop-filter を使うと、スマホの固定タブバーがヘッダーの中に入ってしまう。 */
-  background: var(--paper);
-  border-bottom: 1px solid var(--rule);
+  margin: 0.5rem -0.6rem 1.6rem;
+  padding: 0 0.6rem;
+  border-radius: var(--r-l);
+}
+/* すりガラスは ::before に: ヘッダー自身に backdrop-filter を付けると、スマホの固定タブバーがヘッダーの中に入ってしまう。 */
+.top::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border: 1px solid color-mix(in srgb, var(--rule) 80%, transparent);
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+  box-shadow: var(--shadow-1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  backdrop-filter: blur(16px) saturate(1.3);
 }
 .bar {
   display: flex;
@@ -180,7 +324,7 @@ h2 {
   align-items: center;
   gap: 0.35rem;
   padding: 0.4rem 0.6rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   color: var(--soft);
   font-size: 0.92rem;
   text-decoration: none;
@@ -226,8 +370,8 @@ h2 {
   min-height: 2.25rem;
   padding: 0;
   border: 1px solid var(--edge);
-  border-radius: 999px;
-  background: var(--card);
+  border-radius: var(--r-pill);
+  background: var(--surface);
   color: var(--ink);
   cursor: pointer;
 }
@@ -302,8 +446,8 @@ h2 {
   margin: 1rem 0 0;
   padding: 0.7rem 0.9rem;
   border: 1px solid var(--accent);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
 }
 .first-key {
   margin: 0.4rem 0 1rem;
@@ -345,8 +489,8 @@ h2 {
   min-height: 2.25rem;
   padding: 0 0.8rem;
   border: 1px solid var(--edge);
-  border-radius: 999px;
-  background: var(--card);
+  border-radius: var(--r-pill);
+  background: var(--surface);
   color: var(--ink);
   font: inherit;
   font-size: 0.85rem;
@@ -384,8 +528,8 @@ h2 {
   min-height: 2.25rem;
   padding: 0 0.8rem;
   border: 1px solid var(--edge);
-  border-radius: 999px;
-  background: var(--card);
+  border-radius: var(--r-pill);
+  background: var(--surface);
   color: var(--ink);
   cursor: pointer;
   list-style: none;
@@ -417,8 +561,8 @@ h2 {
   list-style: none;
   background: var(--card);
   border: 1px solid var(--rule);
-  border-radius: 10px;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+  border-radius: var(--r-s);
+  box-shadow: var(--shadow-pop);
 }
 .lang a {
   display: flex;
@@ -482,19 +626,24 @@ h2 {
 
 /* スマホ: ページは下のタブバー（入力中、キーボードが出ている間は隠す）。 */
 @media (max-width: 760px) {
+  /* 下のタブバーも画面の端から少し離して浮かべる（すりガラス、ホームバーの分は下に空ける）。 */
   :root {
-    --tabbar: calc(3.6rem + env(safe-area-inset-bottom));
+    --tabbar: calc(4.3rem + env(safe-area-inset-bottom));
   }
   .tabs {
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: calc(0.5rem + env(safe-area-inset-bottom));
     z-index: 10;
     justify-content: space-around;
-    padding: 0.3rem 0.5rem calc(0.3rem + env(safe-area-inset-bottom));
-    background: var(--card);
-    border-top: 1px solid var(--rule);
+    padding: 0.3rem 0.4rem;
+    border: 1px solid color-mix(in srgb, var(--rule) 80%, transparent);
+    border-radius: var(--r-l);
+    background: color-mix(in srgb, var(--card) 78%, transparent);
+    box-shadow: var(--shadow-pop);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    backdrop-filter: blur(18px) saturate(1.3);
   }
   .tabs a {
     flex-direction: column;
@@ -502,7 +651,7 @@ h2 {
     flex: 1;
     max-width: 8rem;
     padding: 0.3rem 0.4rem;
-    border-radius: 10px;
+    border-radius: var(--r-m);
     font-size: 0.72rem;
   }
   .tabs svg {
@@ -608,6 +757,15 @@ h2 {
 .hero {
   padding: 1rem 0 0.5rem;
 }
+/* ページの題: インクからアクセントへ少しだけ色が移る（どこでも AA の濃さ）。 */
+.hero h1 {
+  width: fit-content;
+  max-width: 100%;
+  background: linear-gradient(100deg, var(--ink) 30%, color-mix(in srgb, var(--accent) 55%, var(--ink)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 .lead {
   max-width: 40rem;
   margin: 0.6rem 0 0;
@@ -631,7 +789,7 @@ h2 {
   min-height: 2.9rem;
   padding: 0 0.9rem;
   border: 1px solid var(--edge);
-  border-radius: 10px;
+  border-radius: var(--r-s);
   background: var(--card);
   color: var(--ink);
   font: inherit;
@@ -648,13 +806,25 @@ button,
   min-height: 2.9rem;
   padding: 0 1.2rem;
   border: 0;
-  border-radius: 10px;
-  background: var(--accent);
+  border-radius: var(--r-pill);
+  /* 塗りの色は --fill から: マウスを乗せると少し濃く（ダークでは明るく）なる。背景を自分で決めるボタンには効かない */
+  --fill: var(--accent);
+  background: var(--fill);
   color: var(--on-a);
   font: inherit;
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
+}
+:where(button, .button):hover {
+  --fill: color-mix(in srgb, var(--accent) 86%, var(--ink));
+}
+:where(button, .button):active:not(:disabled) {
+  transform: translateY(1px);
+}
+/* 送信の塗りのボタン（検索など）とリンクのボタン: アクセントの色の柔らかい影 */
+:where(button[type="submit"]:not([class]), .button:not(.quiet)) {
+  box-shadow: 0 8px 18px -10px var(--btn-glow);
 }
 button.quiet {
   background: transparent;
@@ -718,14 +888,32 @@ button.quiet {
   gap: 0.1rem;
   padding: 0.75rem 0.9rem;
   border: 1px solid var(--rule);
-  border-radius: 10px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
   color: var(--ink);
   text-decoration: none;
   overflow: hidden;
+  box-shadow: var(--shadow-1);
 }
 .person:hover {
   border-color: var(--accent);
+}
+/* 押せるカード: マウスを乗せると少し浮く（2px まで、動きを減らす設定では浮かない）。 */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .person:hover,
+  .match a:hover,
+  .agent-grid a:hover,
+  .tool-grid a:hover,
+  .me-links a:hover,
+  .news a:hover,
+  .chromas a:hover,
+  .guns a:hover,
+  .compare-who a:hover,
+  .gun-grid a:hover,
+  .map-grid a:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-2);
+  }
 }
 .person .prank {
   flex: none;
@@ -762,10 +950,11 @@ button.quiet {
   gap: 1rem;
   min-height: 7rem;
   padding: 1rem;
-  border-radius: 14px;
-  background: var(--card);
+  border-radius: var(--r-l);
+  background: var(--surface);
   border: 1px solid var(--rule);
   overflow: hidden;
+  box-shadow: var(--shadow-1);
 }
 .banner .wide {
   position: absolute;
@@ -782,7 +971,7 @@ button.quiet {
   flex: none;
   width: 4rem;
   height: 4rem;
-  border-radius: 10px;
+  border-radius: var(--r-s);
 }
 .who {
   flex: 1;
@@ -796,7 +985,7 @@ button.quiet {
   width: 2.9rem;
   padding: 0;
   border: 1px solid var(--edge);
-  background: var(--card);
+  background: var(--surface);
   color: var(--soft);
 }
 .fav svg {
@@ -831,7 +1020,7 @@ button.quiet {
   margin-left: 0.4rem;
   padding: 0;
   border: 1px solid var(--edge);
-  border-radius: 8px;
+  border-radius: var(--r-s);
   background: transparent;
   color: var(--soft);
   vertical-align: 0.15rem;
@@ -867,8 +1056,9 @@ button.quiet {
 .rank {
   padding: 0.8rem 1rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .rank p {
   margin: 0;
@@ -904,7 +1094,7 @@ button.quiet {
   height: 0.4rem;
   margin-top: 0.45rem;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   overflow: hidden;
   appearance: none;
   background: var(--rule);
@@ -915,11 +1105,11 @@ button.quiet {
 }
 .rr-bar::-webkit-progress-value {
   background: var(--accent);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 .rr-bar::-moz-progress-bar {
   background: var(--accent);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 .up {
   color: var(--win);
@@ -944,7 +1134,7 @@ button.quiet {
 .acts-head select {
   padding: 0.35rem 0.6rem;
   border: 1px solid var(--edge);
-  border-radius: 8px;
+  border-radius: var(--r-s);
   background: var(--card);
   color: var(--ink);
   font: inherit;
@@ -961,8 +1151,9 @@ button.quiet {
   margin-top: 0.6rem;
   padding: 1rem 1.2rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .act[hidden] {
   display: none;
@@ -1042,8 +1233,8 @@ span.tri.down {
   min-height: 2.25rem;
   padding: 0 0.8rem;
   border: 1px solid var(--rule);
-  border-radius: 999px;
-  background: var(--card);
+  border-radius: var(--r-pill);
+  background: var(--surface);
   color: var(--ink);
   font-size: 0.88rem;
   text-decoration: none;
@@ -1081,8 +1272,8 @@ span.tri.down {
   flex: none;
   padding: 0.35rem 0.8rem;
   border: 1px solid var(--edge);
-  border-radius: 999px;
-  background: var(--card);
+  border-radius: var(--r-pill);
+  background: var(--surface);
   color: var(--soft);
   font-size: 0.9rem;
   text-decoration: none;
@@ -1102,8 +1293,8 @@ span.tri.down {
   display: inline-flex;
   margin: 1.5rem 0 0;
   border: 1px solid var(--edge);
-  border-radius: 10px;
-  background: var(--card);
+  border-radius: var(--r-s);
+  background: var(--surface);
   overflow: hidden;
 }
 .spans a {
@@ -1173,8 +1364,9 @@ span.tri.down {
 .numbers div {
   padding: 0.7rem 0.9rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .numbers dt {
   color: var(--soft);
@@ -1239,8 +1431,9 @@ span.tri.down {
   align-items: center;
   padding: 0.4rem 0.8rem 0.4rem 0.4rem;
   border: 1px solid var(--rule);
-  border-radius: 999px;
-  background: var(--card);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .mains img {
   grid-row: span 2;
@@ -1267,10 +1460,11 @@ span.tri.down {
   padding: 0.55rem 0.9rem 0.55rem 0.55rem;
   border: 1px solid var(--rule);
   border-left: 5px solid var(--draw);
-  border-radius: 10px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
   color: var(--ink);
   text-decoration: none;
+  box-shadow: var(--shadow-1);
 }
 .match a:hover {
   border-color: var(--accent);
@@ -1306,7 +1500,7 @@ span.tri.down {
 .match .agent {
   width: 2.75rem;
   height: 2.75rem;
-  border-radius: 8px;
+  border-radius: var(--r-s);
   display: grid;
   place-items: center;
   background: var(--paper);
@@ -1359,7 +1553,7 @@ span.tri.down {
 .jump a {
   flex: none;
   padding: 0.25rem 0.7rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   color: var(--soft);
   text-decoration: none;
 }
@@ -1386,8 +1580,9 @@ abbr[title] {
 .chart {
   padding: 0.6rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .chart svg {
   display: block;
@@ -1431,8 +1626,9 @@ abbr[title] {
 .split > section {
   padding: 0.8rem 1rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .split h3 {
   margin: 0 0 0.3rem;
@@ -1481,7 +1677,7 @@ abbr[title] {
   display: inline-block;
   margin-left: 0.25rem;
   padding: 0 0.45rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 0.7rem;
   font-weight: 700;
   line-height: 1.6;
@@ -1581,9 +1777,10 @@ meter {
   position: relative;
   min-height: 5.2rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
+  border-radius: var(--r-m);
   overflow: hidden;
-  background: var(--card);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .map-cards img {
   position: absolute;
@@ -1641,8 +1838,9 @@ meter {
   gap: 0.8rem;
   padding: 0.45rem 0.9rem;
   border: 1px solid var(--rule);
-  border-radius: 10px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .wpic img {
   display: block;
@@ -1690,7 +1888,7 @@ meter {
 }
 :root:not([data-theme="dark"]) .items:not(.skins) .item:not(:has(> .skin-link)) > img {
   padding: 0.3rem;
-  border-radius: 8px;
+  border-radius: var(--r-s);
   background-color: #34312b;
 }
 :root:not([data-theme="dark"]) .items .item > .skin-link > img,
@@ -1782,10 +1980,11 @@ meter {
   min-height: 7.5rem;
   margin-top: 0.6rem;
   padding: 1rem;
-  border-radius: 14px;
+  border-radius: var(--r-l);
   overflow: hidden;
-  background: var(--card);
+  background: var(--surface);
   border: 1px solid var(--rule);
+  box-shadow: var(--shadow-1);
 }
 .match-head .map {
   position: absolute;
@@ -1819,8 +2018,9 @@ meter {
 .table-wrap {
   overflow-x: auto;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .board {
   width: 100%;
@@ -1931,7 +2131,7 @@ meter {
   justify-items: center;
   gap: 0.05rem;
   padding: 0.3rem 0 0.35rem;
-  border-radius: 8px;
+  border-radius: var(--r-s);
   background: color-mix(in srgb, var(--draw) 16%, var(--card));
   color: var(--soft);
   cursor: default;
@@ -2081,8 +2281,9 @@ meter {
   gap: 0.5rem;
   padding: 0.45rem 0.8rem 0.45rem 0.45rem;
   border: 1px solid var(--rule);
-  border-radius: 10px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .duel-list img {
   width: 2rem;
@@ -2106,8 +2307,9 @@ meter {
   scroll-margin-top: 4.5rem;
   border: 1px solid var(--rule);
   border-left: 4px solid var(--draw);
-  border-radius: 10px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .round-feed.win {
   border-left-color: var(--win);
@@ -2202,11 +2404,12 @@ meter {
   gap: 0.15rem;
   padding: 0.8rem 0.5rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
   color: var(--ink);
   text-decoration: none;
   text-align: center;
+  box-shadow: var(--shadow-1);
 }
 .agent-grid a:hover {
   border-color: var(--accent);
@@ -2214,7 +2417,7 @@ meter {
 .agent-grid img {
   width: 4.5rem;
   height: 4.5rem;
-  border-radius: 10px;
+  border-radius: var(--r-s);
   background: var(--paper);
 }
 .agent-grid small {
@@ -2267,15 +2470,16 @@ meter {
   gap: 0.9rem;
   padding: 0.9rem 1rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .abilities img {
   flex: none;
   width: 2.5rem;
   height: 2.5rem;
   padding: 0.3rem;
-  border-radius: 8px;
+  border-radius: var(--r-s);
   background: #2a2926;
 }
 .abilities h3 {
@@ -2308,8 +2512,9 @@ meter {
   gap: 0.4rem;
   padding: 0.3rem 0.8rem 0.3rem 0.5rem;
   border: 1px solid var(--rule);
-  border-radius: 999px;
-  background: var(--card);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .wallet img {
   width: 1.4rem;
@@ -2328,7 +2533,7 @@ meter {
   min-height: 2.6rem;
   padding: 0 0.9rem;
   border: 1px solid var(--edge);
-  border-radius: 10px;
+  border-radius: var(--r-s);
   background: var(--card);
   color: var(--ink);
   font: inherit;
@@ -2363,9 +2568,10 @@ meter {
   gap: 0.2rem;
   padding: 0.8rem 0.6rem 0.7rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
   text-align: center;
+  box-shadow: var(--shadow-1);
 }
 .items [hidden],
 .weapon[hidden] {
@@ -2381,7 +2587,7 @@ meter {
   height: 4.5rem;
 }
 .cards .item > img {
-  border-radius: 8px;
+  border-radius: var(--r-s);
 }
 .iname {
   font-weight: 700;
@@ -2403,7 +2609,7 @@ meter {
 .titles .item {
   flex-direction: row;
   padding: 0.4rem 0.9rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 .item.on {
   border-color: var(--accent);
@@ -2414,7 +2620,7 @@ meter {
   top: 0.4rem;
   right: 0.4rem;
   padding: 0 0.45rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--accent);
   color: var(--on-a);
   font-size: 0.7rem;
@@ -2473,8 +2679,9 @@ meter {
   padding: 0.2rem 1.2rem 1.2rem;
   overflow-wrap: anywhere;
   border: 1px solid var(--rule);
-  border-radius: 14px;
-  background: var(--card);
+  border-radius: var(--r-l);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .stack {
   display: grid;
@@ -2498,10 +2705,12 @@ code {
   padding: 0;
   list-style: none;
 }
+/* 下の注意書き: 両端が消えていく細い線の下に。 */
 .foot {
-  margin-top: 3rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--rule);
+  margin-top: 3.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid transparent;
+  border-image: linear-gradient(90deg, transparent, var(--rule) 18%, var(--rule) 82%, transparent) 1;
   color: var(--soft);
   font-size: 0.8rem;
 }
@@ -2528,10 +2737,11 @@ code {
   height: 100%;
   padding: 1rem;
   border: 1px solid var(--rule);
-  border-radius: 14px;
-  background: var(--card);
+  border-radius: var(--r-l);
+  background: var(--surface);
   color: var(--ink);
   text-decoration: none;
+  box-shadow: var(--shadow-1);
 }
 .tool-grid a:hover {
   border-color: var(--accent);
@@ -2570,10 +2780,11 @@ code {
   height: 100%;
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
   color: var(--ink);
   text-decoration: none;
+  box-shadow: var(--shadow-1);
 }
 .me-links a:hover {
   border-color: var(--accent);
@@ -2609,7 +2820,7 @@ code {
     align-content: start;
     gap: 0.2rem;
     padding: 0.6rem 0.65rem 0.7rem;
-    border-radius: 12px;
+    border-radius: var(--r-m);
   }
   .tool-grid svg {
     grid-row: auto;
@@ -2641,8 +2852,9 @@ code {
   gap: 0.5rem;
   padding: 0.4rem 0.9rem 0.4rem 0.5rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .thresholds img {
   width: 2rem;
@@ -2714,8 +2926,9 @@ code {
   padding: 0.8rem 1rem;
   border: 1px solid var(--rule);
   border-left: 4px solid var(--draw);
-  border-radius: 10px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .notice.incident {
   border-left-color: var(--loss);
@@ -2767,7 +2980,7 @@ code {
   display: block;
   max-width: calc((100vw - 2.5rem) / 2);
   height: auto;
-  border-radius: 8px;
+  border-radius: var(--r-s);
   image-rendering: pixelated;
 }
 .xhair figcaption {
@@ -2810,8 +3023,9 @@ code {
 .presets li {
   padding: 0.8rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .presets code {
   display: block;
@@ -2904,15 +3118,16 @@ code {
   margin-top: 0.8rem;
   padding: 0.8rem;
   border: 1px solid var(--rule);
-  border-radius: 14px;
-  background: var(--card);
+  border-radius: var(--r-l);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .bundle-art {
   display: block;
   width: 100%;
   max-height: 14rem;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: var(--r-s);
 }
 .bundle-head {
   display: flex;
@@ -2966,8 +3181,9 @@ code {
 .server {
   padding: 0.8rem 0.9rem 0.6rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .server-head {
   display: flex;
@@ -3054,7 +3270,7 @@ code {
   min-height: 2.9rem;
   padding: 0 0.6rem;
   border: 1px solid var(--edge);
-  border-radius: 10px;
+  border-radius: var(--r-s);
   background: var(--card);
   color: var(--ink);
   font: inherit;
@@ -3112,8 +3328,9 @@ code {
   overflow: hidden;
   min-height: 2.6rem;
   border: 1px solid var(--rule);
-  border-radius: 8px;
-  background: var(--card);
+  border-radius: var(--r-s);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .maps img {
   display: block;
@@ -3180,8 +3397,9 @@ code {
   padding: 0.7rem 0.9rem;
   border: 1px solid var(--rule);
   border-left: 4px solid var(--accent);
-  border-radius: 10px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .patch-now a {
   font-weight: 700;
@@ -3204,10 +3422,11 @@ code {
   height: 100%;
   overflow: hidden;
   border: 1px solid var(--rule);
-  border-radius: 14px;
-  background: var(--card);
+  border-radius: var(--r-l);
+  background: var(--surface);
   color: var(--ink);
   text-decoration: none;
+  box-shadow: var(--shadow-1);
 }
 .news a:hover {
   border-color: var(--accent);
@@ -3257,8 +3476,9 @@ code {
 .game {
   padding: 0.7rem 0.9rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .game.fav {
   border-color: #c99a2e;
@@ -3450,10 +3670,11 @@ code {
   min-height: 2.75rem;
   padding: 0.3rem 0.8rem 0.3rem 0.35rem;
   border: 1px solid var(--rule);
-  border-radius: 999px;
-  background: var(--card);
+  border-radius: var(--r-pill);
+  background: var(--surface);
   color: var(--ink);
   text-decoration: none;
+  box-shadow: var(--shadow-1);
 }
 .chromas a[aria-current] {
   border-color: var(--accent);
@@ -3478,7 +3699,7 @@ code {
   height: auto;
   aspect-ratio: 16 / 9;
   margin-top: 0.8rem;
-  border-radius: 10px;
+  border-radius: var(--r-s);
   background: #000;
 }
 .levels {
@@ -3491,8 +3712,9 @@ code {
 .levels li {
   padding: 0.7rem 0.9rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .level-head {
   display: flex;
@@ -3548,8 +3770,8 @@ code {
   min-height: 2.75rem;
   padding: 0 0.8rem;
   border: 1px solid var(--edge);
-  border-radius: 999px;
-  background: var(--card);
+  border-radius: var(--r-pill);
+  background: var(--surface);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -3637,8 +3859,9 @@ code {
   gap: 0.8rem;
   padding: 0.7rem 0.9rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .contract > img,
 .seat > img,
@@ -3646,7 +3869,7 @@ code {
   flex: none;
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 8px;
+  border-radius: var(--r-s);
   object-fit: cover;
 }
 .no-agent {
@@ -3820,9 +4043,10 @@ code {
   gap: 0.2rem;
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--rule);
-  border-radius: 10px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
   counter-increment: live-step;
+  box-shadow: var(--shadow-1);
 }
 .live-steps strong::before {
   content: counter(live-step) ". ";
@@ -3855,9 +4079,9 @@ code {
   padding: 0.75rem 0.9rem;
   border: 1px solid var(--rule);
   border-left: 4px solid var(--accent);
-  border-radius: 10px;
+  border-radius: var(--r-s);
   background: var(--card);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-pop);
   transform: translateX(-50%);
 }
 .live-alert p {
@@ -3881,7 +4105,7 @@ code {
   min-height: 2.9rem;
   padding: 0 0.7rem;
   border: 1px solid var(--edge);
-  border-radius: 10px;
+  border-radius: var(--r-s);
   background: var(--card);
   color: var(--ink);
   font: inherit;
@@ -3914,8 +4138,8 @@ code {
   min-height: 0;
   padding: 0.45rem 0.3rem;
   border: 1px solid var(--edge);
-  border-radius: 10px;
-  background: var(--card);
+  border-radius: var(--r-s);
+  background: var(--surface);
   color: var(--ink);
   font-size: 0.78rem;
   font-weight: 400;
@@ -3923,7 +4147,7 @@ code {
 .pick-grid .pick img {
   width: 3rem;
   height: 3rem;
-  border-radius: 8px;
+  border-radius: var(--r-s);
 }
 .pick-grid .pick span {
   max-width: 100%;
@@ -4075,7 +4299,7 @@ code {
   width: 10rem;
   max-width: 40%;
   height: 3.5rem;
-  border-radius: 8px;
+  border-radius: var(--r-s);
   object-fit: cover;
 }
 .roles li {
@@ -4084,7 +4308,7 @@ code {
   padding: 0.6rem 0.9rem;
   border-left: 4px solid var(--draw);
   border-radius: 6px;
-  background: var(--card);
+  background: var(--surface);
 }
 .role-agents {
   display: flex;
@@ -4116,7 +4340,7 @@ code {
   min-height: 2.4rem;
   padding: 0 0.4rem;
   border: 1px solid var(--edge);
-  border-radius: 8px;
+  border-radius: var(--r-s);
   background: var(--card);
   color: var(--ink);
   font: inherit;
@@ -4155,11 +4379,12 @@ code {
   height: 100%;
   padding: 0.5rem 0.45rem 0.45rem;
   border: 1px solid var(--rule);
-  border-radius: 10px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
   color: inherit;
   text-align: center;
   text-decoration: none;
+  box-shadow: var(--shadow-1);
 }
 .guns a:hover {
   border-color: var(--edge);
@@ -4274,7 +4499,7 @@ code {
   min-height: 0;
   padding: 0;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--r-s);
   background: none;
   color: inherit;
   font: inherit;
@@ -4296,7 +4521,7 @@ code {
     color-mix(in srgb, var(--win) 9%, transparent),
     color-mix(in srgb, var(--win) 9%, transparent)
   );
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-pop);
   transform: translateX(-50%);
 }
 .verdict.equip-said.no {
@@ -4468,7 +4693,7 @@ code {
   min-height: 2.6rem;
   padding: 0 0.6rem;
   border: 1px solid var(--edge);
-  border-radius: 10px;
+  border-radius: var(--r-s);
   background: var(--card);
   color: var(--ink);
   font: inherit;
@@ -4500,16 +4725,17 @@ code {
   height: 100%;
   padding: 0.7rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
   color: var(--ink);
   text-decoration: none;
+  box-shadow: var(--shadow-1);
 }
 .compare-who img {
   flex: none;
   width: 3rem;
   height: 3rem;
-  border-radius: 8px;
+  border-radius: var(--r-s);
 }
 .compare-who span {
   display: grid;
@@ -4587,8 +4813,9 @@ code {
   min-width: 0;
   padding: 0.8rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .xh-saved p {
   display: flex;
@@ -4681,8 +4908,9 @@ html.leaving::after {
   padding: 0.8rem 1rem;
   border: 1px solid var(--rule);
   border-left: 5px solid var(--grade);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .score-big {
   display: flex;
@@ -4820,8 +5048,8 @@ html.leaving::after {
   min-height: 2.75rem;
   padding: 0 0.8rem;
   border: 1px solid var(--edge);
-  border-radius: 999px;
-  background: var(--card);
+  border-radius: var(--r-pill);
+  background: var(--surface);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -4852,7 +5080,7 @@ html.leaving::after {
 }
 .heat-figure {
   padding: 0.5rem;
-  border-radius: 10px;
+  border-radius: var(--r-s);
   background: #181715;
 }
 .heat-svg {
@@ -4900,8 +5128,9 @@ html.leaving::after {
 .heat-panel {
   margin: 0.6rem 0;
   border: 1px solid var(--rule);
-  border-radius: 10px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .heat-panel summary {
   display: flex;
@@ -4947,8 +5176,9 @@ html.leaving::after {
   min-width: 0;
   padding: 0.9rem 1rem;
   border: 1px solid var(--rule);
-  border-radius: 10px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .season-card.all {
   border-style: dashed;
@@ -5072,8 +5302,9 @@ html.leaving::after {
 .glossary dl div {
   padding: 0.45rem 0.65rem;
   border: 1px solid var(--rule);
-  border-radius: 8px;
-  background: var(--card);
+  border-radius: var(--r-s);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .glossary dt {
   font-weight: 700;
@@ -5143,7 +5374,7 @@ html.leaving::after {
   border-radius: 50%;
   background: var(--card);
   color: var(--ink);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+  box-shadow: var(--shadow-pop);
 }
 .to-top svg {
   width: 1.25rem;
@@ -5173,8 +5404,9 @@ html.leaving::after {
   padding: 0.8rem 1rem;
   border: 1px solid var(--rule);
   border-left: 5px solid var(--tier);
-  border-radius: 10px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .worn-now.tier-select {
   --tier: #5a9fe2;
@@ -5278,7 +5510,7 @@ html.leaving::after {
   min-height: 2.4rem;
   padding: 0 0.6rem;
   border: 1px solid var(--edge);
-  border-radius: 8px;
+  border-radius: var(--r-s);
   background: var(--card);
   color: var(--ink);
   font: inherit;
@@ -5302,8 +5534,9 @@ html.leaving::after {
   align-items: start;
   padding: 0.7rem 0.9rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .set.on {
   border-color: var(--accent);
@@ -5364,8 +5597,9 @@ html.leaving::after {
   min-height: 2.25rem;
   padding: 0 0.8rem;
   border: 1px solid var(--edge);
-  border-radius: 999px;
-  background: var(--card);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  box-shadow: none;
   color: var(--soft);
   font: inherit;
   font-weight: 400;
@@ -5406,7 +5640,7 @@ html.leaving::after {
   gap: 0.4rem 0.6rem;
   padding: 0.5rem 0.8rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
+  border-radius: var(--r-m);
 }
 .account-list li.now {
   border-color: var(--accent);
@@ -5657,8 +5891,9 @@ html.leaving::after {
   gap: 0.6rem;
   padding: 0.6rem 0.8rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .role-cards img {
   flex: none;
@@ -5827,7 +6062,7 @@ form.row {
   padding: 0.7rem 0.9rem;
   overflow: auto;
   border: 1px solid var(--rule);
-  border-radius: 10px;
+  border-radius: var(--r-s);
   background: var(--paper);
   font-size: 0.8rem;
   white-space: pre-wrap;
@@ -5855,8 +6090,8 @@ form.row {
   gap: 1rem;
   padding: 0.6rem 1rem;
   border: 1px solid var(--accent);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
 }
 .locked-agent img {
   flex: none;
@@ -5903,7 +6138,7 @@ form.row {
   margin-left: 0.3rem;
   padding: 0 0.45rem;
   border: 1px solid currentColor;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-size: 0.72rem;
   font-weight: 700;
   line-height: 1.5;
@@ -5964,10 +6199,11 @@ form.row {
   height: 100%;
   padding: 0.8rem 0.9rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
   color: var(--ink);
   text-decoration: none;
+  box-shadow: var(--shadow-1);
 }
 .gun-grid a:hover {
   border-color: var(--accent);
@@ -6074,10 +6310,11 @@ form.row {
   height: 100%;
   overflow: hidden;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
   color: var(--ink);
   text-decoration: none;
+  box-shadow: var(--shadow-1);
 }
 .map-grid a:hover {
   border-color: var(--accent);
@@ -6106,7 +6343,7 @@ form.row {
   width: 100%;
   max-height: 8rem;
   margin-top: 0.6rem;
-  border-radius: 12px;
+  border-radius: var(--r-m);
   object-fit: cover;
 }
 .map-head h1 {
@@ -6140,7 +6377,7 @@ form.row {
 .callout-map {
   overflow-x: auto;
   padding: 0.5rem;
-  border-radius: 10px;
+  border-radius: var(--r-s);
   background: #181715;
 }
 .callout-svg {
@@ -6208,8 +6445,9 @@ form.row {
   gap: 0.4rem 0.8rem;
   padding: 0.5rem 0.7rem;
   border: 1px solid var(--rule);
-  border-radius: 12px;
-  background: var(--card);
+  border-radius: var(--r-m);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
 }
 .comp-agents {
   display: flex;
@@ -6219,7 +6457,7 @@ form.row {
   display: block;
   width: 2.25rem;
   height: 2.25rem;
-  border-radius: 8px;
+  border-radius: var(--r-s);
   background: var(--paper);
 }
 .comp-numbers {
