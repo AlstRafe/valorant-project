@@ -1,10 +1,12 @@
 import base64
 import hashlib
+import json
 import os
 import re
 import unittest
 from unittest import mock
 
+import helpers
 from helpers import make_app
 
 from valtracker import theme
@@ -423,6 +425,27 @@ class PagesTest(unittest.TestCase):
         self.assertIn('<li class="red"', plain)
         self.assertNotIn("対面成績", plain)
         self.assertNotIn("ラウンドごとの推移", plain)
+
+    def test_marks_of_rounds_in_a_row_go_above_and_below(self):
+        # 続けて印のあるラウンドは印を上と下に交互に（横に並ぶと重なる: 本番で CLUTCH と TEAM ACE が重なった）
+        real = helpers.fixture
+
+        def fixture(name):
+            if name != "henrik_matches.json":
+                return real(name)
+            data = json.loads(real(name))
+            marks = ("CeremonyAce", "CeremonyTeamAce", "CeremonyFlawless", "CeremonyThrifty")
+            for item, mark in zip(data["data"][0]["rounds"][1:], marks):  # ラウンド 1 は CLUTCH
+                item["ceremony"] = mark
+            return json.dumps(data).encode()
+
+        with mock.patch.object(helpers, "fixture", fixture):
+            text = self.get(f"/m/ap/{MATCH}").get_data(as_text=True)
+        marks = re.findall(r'<span class="(cer(?: low)?)">([A-Z ]+)</span>', text)
+        self.assertEqual(
+            marks,
+            [("cer", "CLUTCH"), ("cer low", "ACE"), ("cer", "TEAM ACE"), ("cer low", "FLAWLESS"), ("cer", "THRIFTY")],
+        )
 
     def test_a_match_without_its_rounds(self):
         text = self.get("/m/ap/aaaaaaaa-0000-4000-8000-000000000002").get_data(as_text=True)
