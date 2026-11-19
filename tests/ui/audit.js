@@ -469,8 +469,15 @@ async function main() {
             .goto(base + where, { waitUntil: desktop ? "load" : "networkidle", timeout: 60000 })
             .catch((error) => errors.push(String(error).slice(0, 120)));
           await page.waitForTimeout(desktop ? 700 : live ? 400 : 200);
-          for (const item of await page.evaluate(inspect))
-            add(item.kind, where, item.where, item.text, `${lang} ${width} ${theme}`);
+          // 遅い本番では読み込みが 60 秒を過ぎてから次の文書に移ることがある: 移り終わるのを待ってもう一度だけ見る
+          const found = await page.evaluate(inspect).catch(async (error) => {
+            await page.waitForLoadState("load", { timeout: 30000 }).catch(() => {});
+            return page.evaluate(inspect).catch(() => {
+              errors.push(String(error).split("\n")[0].slice(0, 120));
+              return [];
+            });
+          });
+          for (const item of found) add(item.kind, where, item.where, item.text, `${lang} ${width} ${theme}`);
           // 動くはずなのに動かないと言うページ（そう言ってよいのは作りものの誰もいないページ、タグ無しの検索、
           // ロードアウトの無いコレクションだけ）
           const failed = await page
@@ -595,5 +602,6 @@ async function follow(page) {
 
 main().catch((error) => {
   console.error(error);
-  process.exitCode = 2;
+  // 開いたままのブラウザーで node が終わらず、ジョブが 40 分の時間切れまで止まっていた
+  process.exit(2);
 });
