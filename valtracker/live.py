@@ -201,6 +201,11 @@ def _number_parties(rows: list[dict], parties: dict) -> list[int]:
     return [len(group) for group in groups]
 
 
+def _party_count(rows: list[dict], parties: dict) -> tuple[int, int]:
+    """（パーティーのわかった席の数, 席の数）: PC アプリは、まだクライアントから届いていない人がいる間それを書く。"""
+    return sum(bool(row["subject"] and parties.get(row["subject"])) for row in rows), len(rows)
+
+
 def _team_parties(rows: list[dict]) -> list[int]:
     """チームの席にいるパーティーの人数（大きい順。2 人以上）: 見出しに「パーティー 3人」のように出す。"""
     sizes: dict[int, int] = {}
@@ -279,6 +284,9 @@ def page(
         "average": None,
         #: 試合のパーティーの人数（番号の順）。どれかあれば、ページは番号の意味を書く
         "parties": [],
+        #: パーティーのわかった席の数と席の数（_party_count）
+        "party_known": 0,
+        "party_total": 0,
         "hidden_names": False,
         "every": min(EVERY[where(found)][0], SOON) if to_int(found.get("waiting")) > 0 else EVERY[where(found)][0],
         # エージェントの絵はマッチング中にブラウザーが取る: エージェント選択ですぐ出る
@@ -296,6 +304,7 @@ def page(
         values["players"] = rows
         values["average"] = average(rows, look)
         values["parties"] = _number_parties(rows, found.get("parties") or {})
+        values["party_known"], values["party_total"] = _party_count(rows, found.get("parties") or {})
         values["queue"] = queue_name(str(match.get("QueueID") or ""))
         values["left"] = to_int(match.get("PhaseTimeRemainingNS")) // 1_000_000_000 or None
         values["enemy_locked"] = to_int(match.get("EnemyTeamLockCount"))
@@ -364,9 +373,9 @@ def page(
             groups.setdefault(row["team"], []).append(row)
         ordered = sorted(groups.items(), key=lambda pair: pair[0] != mine)
         # 番号は味方の席から: 持ち主のパーティーが 1、次に味方、最後に相手
-        values["parties"] = _number_parties(
-            [row for _, players in ordered for row in players], found.get("parties") or {}
-        )
+        seats = [row for _, players in ordered for row in players]
+        values["parties"] = _number_parties(seats, found.get("parties") or {})
+        values["party_known"], values["party_total"] = _party_count(seats, found.get("parties") or {})
         values["teams"] = [
             {
                 "ours": team == mine,

@@ -59,8 +59,15 @@ LOG_BYTES = 2 * 1024 * 1024
 #: フレンドリストを持つ秒数: 開いている間、ページは数秒ごとに聞き直す。
 FRIENDS_KEEP = 5.0
 #: 試合のパーティー（プレゼンスの partyId）を持つ秒数: パーティーは試合中に変わらないので、
-#: エージェント選択（2 秒ごとの確認）でもクライアントに聞くのはこの間隔で 1 回。
+#: 同じ試合の全員のものがあれば、エージェント選択（2 秒ごとの確認）でもクライアントに聞くのはこの間隔で 1 回。
 PARTIES_KEEP = 20.0
+#: 同じ試合にまだパーティーのわからない人がいる間に、プレゼンス全部を読み直す間隔（秒）。相手チームのプレゼンスは
+#: 対戦が始まってから（ロード画面で）届くので、20 秒待つと試合中に出るのが遅れた。読むのはこの PC の Riot Client
+#: の小さな答えだけ（Riot のサーバーにもゲームにも触らない）。
+PARTIES_RETRY = 2.0
+#: 同じ試合の人のパーティーがイベントで届いたとき、/live に読み直させる最短の間隔（秒）。10 人分が続けて届いても、
+#: ページ（と GLZ の試合の読み込み）はこの間隔に 1 回まで。間に届いたものは間隔のあとにまとめて 1 回。
+PARTY_NEWS_GAP = 2.0
 #: 通知先（``listen``）に知らせる持ち主のゲームの瞬間: 試合成立（ゲームの 5 秒カウント）、
 #: それを取りこぼしたらエージェント選択。
 TOLD = ("found", "pregame")
@@ -172,12 +179,36 @@ def decode_private(value) -> dict:
     return {}
 
 
+def private_of(item: dict) -> dict:
+    """プレゼンスの VALORANT の中身: ``private``。それが空なら ``privateJwt``（JWT の中身。その中に private
+    があればそれ）: クライアントは予告なく形を変える（ほかのトラッカーも空の private に備えた）。無ければ {}。"""
+    data = decode_private(item.get("private"))
+    if data:
+        return data
+    claims = token_claims(str(item.get("privateJwt") or ""))
+    inner = claims.get("private")
+    return decode_private(inner) if inner else claims
+
+
+def presence_parties(presences) -> dict[str, str]:
+    """プレゼンスの一覧の VALORANT のパーティー: ``{puuid: パーティーの ID}``。ほかのゲームのものと読めないものは
+    入れない（product の無いものは VALORANT とみなす: 試合の人のものに付かない形があっても拾う）。名前は読まない。"""
+    found = {}
+    for item in as_list(presences):
+        if not isinstance(item, dict) or str(item.get("product") or "valorant").lower() != "valorant":
+            continue
+        puuid, party = str(item.get("puuid") or "").lower(), where(item)["party"]
+        if UUID.fullmatch(puuid) and party:
+            found[puuid] = party
+    return found
+
+
 def where(item: dict) -> dict:
     """持ち主のプレゼンス
     -> ``{"loop": MENUS / PREGAME / INGAME か "", "party": パーティーの ID, "party_state": MATCHMAKING や MATCHMADE_GAME_STARTING など,
     "queue"}``。ゲームが使ってきた両方の形を読む: 全部が一番上（2024 年より前）、
     または matchPresenceData / partyPresenceData の中。"""
-    data = decode_private(item.get("private"))
+    data = private_of(item)
     match = data.get("matchPresenceData") if isinstance(data.get("matchPresenceData"), dict) else data
     party = data.get("partyPresenceData") if isinstance(data.get("partyPresenceData"), dict) else data
     party_id = str(party.get("partyId") or data.get("partyId") or "").lower()
@@ -269,8 +300,18 @@ class LocalClient:
         self._listeners: list = []
         #: 最後に読んだフレンド: （時刻, 扉, {"friends", "presences"}）。
         self._friends: tuple[float, tuple[int, str], dict] | None = None
-        #: 最後に読んだプレゼンスのパーティー: （時刻, 扉, {puuid: パーティーの ID}）。
-        self._parties: tuple[float, tuple[int, str], dict[str, str]] | None = None
+        #: わかっているプレゼンスのパーティー {puuid: パーティーの ID}: 全部を読んだもの（``parties``）に、
+        #: そのあとイベントで届いたものを足す。
+        self._known: dict[str, str] = {}
+        #: 最後にプレゼンス全部を読んだ（時刻, 扉）。
+        self._known_read: tuple[float, tuple[int, str]] | None = None
+        #: 持ち主の今の試合のプレイヤー（riot.Riot が ``parties`` に渡す）: その人のパーティーが届いたら /live に知らせる。
+        self._wanted: frozenset[str] = frozenset()
+        #: パーティーの知らせ（PARTY_NEWS_GAP）: 最後に知らせた時刻と、あとでまとめて知らせるタイマー。
+        self._news_at = 0.0
+        self._news_timer: threading.Timer | None = None
+        #: チェックアップ用: 直近の試合の段階（"pregame"、"ingame"）ごとの、プレイヤーの数とパーティーのわかった人数。
+        self.match_parties: dict[str, dict[str, int]] = {}
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -377,32 +418,80 @@ class LocalClient:
             self._friends = (self.clock(), door, found)
         return found
 
-    def parties(self) -> dict[str, str] | None:
+    def parties(self, wanted=(), phase: str = "") -> dict[str, str] | None:
         """クライアントが持つ VALORANT のプレゼンスのパーティー: ``{puuid: パーティーの ID}``（private の partyId）。
-        試合中はフレンドでない同じ試合のプレイヤーのプレゼンスも来るので、誰と誰が組んでいるかがわかる
-        （ほかのトラッカーと同じ読み方）。名前は読まない: 名前を隠している人の名前も来ることがあるが、使わない。
-        クライアントが閉じているか答えなければ None。ローカルの読み込み 1 回で、PARTIES_KEEP 秒持つ。"""
+        試合ではフレンドでない同じ試合のプレイヤーのプレゼンスも来る（エージェント選択では味方、対戦が始まると相手も）
+        ので、誰と誰が組んでいるかがわかる（ほかのトラッカーと同じ読み方）。名前は読まない: 名前を隠している人の名前も
+        来ることがあるが、使わない。クライアントが閉じているか答えなければ None。
+
+        ``wanted``: 持ち主の今の試合のプレイヤー（puuid）、``phase``: その段階（チェックアップ用）。全員のパーティーが
+        わかっていれば PARTIES_KEEP 秒、わからない人がいれば PARTIES_RETRY 秒ごとにローカルで読み直す。その人たちの
+        パーティーがイベントで届けば、その時に /live に知らせる（``version``）。"""
         door = read_lockfile(self.lockfile)
         if door is None:
             return None
+        wanted = frozenset(wanted)
         with self._lock:
-            kept = self._parties
-            if kept is not None and kept[1] == door and self.clock() - kept[0] < PARTIES_KEEP:
-                return kept[2]
+            self._wanted = wanted
+            read = self._known_read
+            age = self.clock() - read[0] if read is not None and read[1] == door else None
+            missing = wanted - self._known.keys()
+            if age is not None and (age < PARTIES_RETRY or (age < PARTIES_KEEP and not missing)):
+                return self._tally(wanted, phase)
         try:
             present = self._get(door, "/chat/v4/presences")
         except LocalError:
             return None
-        found = {}
-        for item in as_list(as_dict(present).get("presences")):
-            if not isinstance(item, dict) or str(item.get("product") or "").lower() != "valorant":
-                continue
-            puuid, party = str(item.get("puuid") or "").lower(), where(item)["party"]
-            if UUID.fullmatch(puuid) and party:
-                found[puuid] = party
+        found = presence_parties(as_dict(present).get("presences"))
         with self._lock:
-            self._parties = (self.clock(), door, found)
-        return found
+            # 読んでいる間にイベントで届いた試合の人のものは残す。ほかの古いものは今のものに置き換える
+            self._known = {subject: party for subject, party in self._known.items() if subject in wanted} | found
+            self._known_read = (self.clock(), door)
+            return self._tally(wanted, phase)
+
+    def _tally(self, wanted: frozenset[str], phase: str) -> dict[str, str]:
+        """``parties`` の答え（ロックの中で）。試合の段階ごとに、何人のパーティーがわかったかを覚える
+        （チェックアップ: 試合のあとでも、相手のプレゼンスが届いたかがわかる）。"""
+        if wanted and phase in ("pregame", "ingame"):
+            if phase == "pregame" and "ingame" in self.match_parties:
+                self.match_parties = {}  # 次の試合
+            self.match_parties[phase] = {"players": len(wanted), "known": len(wanted & self._known.keys())}
+        return dict(self._known)
+
+    def _hear_parties(self, presences) -> None:
+        """イベントで届いたプレゼンスのパーティーを覚える。今の試合の人のものが新しければ /live に知らせる。"""
+        heard = presence_parties(presences)
+        if not heard:
+            return
+        with self._lock:
+            news = any(self._known.get(subject) != party for subject, party in heard.items() if subject in self._wanted)
+            self._known.update(heard)
+        if news:
+            self._party_news()
+
+    def _party_news(self) -> None:
+        """同じ試合の人のパーティーが届いた: /live に読み直させる。PARTY_NEWS_GAP に 1 回まで: 間に届いたものは、
+        間隔のあとに 1 回でまとめて知らせる。"""
+        with self._lock:
+            if self._news_timer is not None:
+                return  # もう知らせる予定がある: そのときに今のものも読まれる
+            wait = self._news_at + PARTY_NEWS_GAP - self.clock()
+            timer = None
+            if wait > 0:
+                timer = self._news_timer = threading.Timer(min(wait, PARTY_NEWS_GAP), self._party_news_late)
+                timer.daemon = True
+            else:
+                self._news_at = self.clock()
+        if timer is not None:
+            timer.start()
+        else:
+            self._changed_now()
+
+    def _party_news_late(self) -> None:
+        with self._lock:
+            self._news_timer = None
+            self._news_at = self.clock()
+        self._changed_now()
 
     def examine(self) -> dict:
         """チェックアップ用の、今クライアントが答えるもの: 読み込みごとのステータスと答えの形。トークン・名前・
@@ -448,7 +537,7 @@ class LocalClient:
             ),
             None,
         )
-        private = decode_private(mine.get("private")) if mine else {}
+        private = private_of(mine) if mine else {}
         seen = where(mine) if mine else None
         found["presence"] = {
             "status": status,
@@ -460,6 +549,22 @@ class LocalClient:
             "party_state": seen["party_state"][:40] if seen else "",
             "party": bool(seen and seen["party"]),
             "queue": seen["queue"][:40] if seen else "",
+        }
+        # ほかの人のプレゼンス（フレンドと、試合中は同じ試合の人）: 数だけ。パーティーが読める形で届いているか
+        others = [
+            item
+            for item in presences
+            if str(item.get("product") or "valorant").lower() == "valorant"
+            and str(item.get("puuid") or "").lower() != puuid
+        ]
+        with self._lock:
+            match = {phase: dict(counts) for phase, counts in self.match_parties.items()}
+        found["parties"] = {
+            "others": len(others),
+            "with_party": sum(bool(where(item)["party"]) for item in others),
+            "empty": sum(not item.get("private") for item in others),
+            "jwt": sum(bool(item.get("privateJwt")) for item in presences),
+            "match": match,
         }
         return found
 
@@ -599,6 +704,7 @@ class LocalClient:
             with self._lock:
                 puuid = (self._tokens or {}).get("puuid", "")
             self.heard["presences"] += 1
+            self._hear_parties(data.get("presences"))
             seen = self._mine(data.get("presences"), puuid) if puuid else None
             if seen is None:
                 with self._lock:
@@ -608,6 +714,8 @@ class LocalClient:
                 changed = seen != self._seen
                 was = self._seen
                 self._seen = seen
+                if seen["loop"] == "MENUS":
+                    self._wanted = frozenset()  # 試合が終わった: その人たちのパーティーはもう知らせない
             if changed:
                 self._changed_now()
                 self._tell(was, seen)
@@ -666,6 +774,6 @@ class LocalClient:
         with self._lock:
             was = self._listening or self._game is not None
             self._listening, self._game, self._seen, self._server = False, None, None, None
-            self._friends = self._parties = None
+            self._friends, self._known, self._known_read, self._wanted = None, {}, None, frozenset()
         if was:
             self._changed_now()

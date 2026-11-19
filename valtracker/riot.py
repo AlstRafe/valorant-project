@@ -826,7 +826,7 @@ class Riot:
             saved, headers, [str(item.get("Subject") or "").lower() for item in players if not item.get("IsCoach")]
         )
         mates = self._mates(glz, puuid, headers, match_id, players)
-        parties = self._parties(puuid, players, mates)
+        parties = self._parties(puuid, players, mates, phase)
         names, problem = self._open_names(saved, headers, players, mates)
         known, waiting = ranks()
         found = {
@@ -867,17 +867,17 @@ class Riot:
         in_match = {str(item.get("Subject") or "").lower() for item in players if not item.get("IsCoach")}
         return (members & in_match) - {puuid}
 
-    def _parties(self, puuid: str, players: list, mates: set[str]) -> dict[str, str]:
+    def _parties(self, puuid: str, players: list, mates: set[str], phase: str = "") -> dict[str, str]:
         """試合（エージェント選択、対戦中）の各プレイヤーのパーティー: ``{puuid: パーティーの ID}``。
         GLZ の試合にはパーティーが無いので、Riot 自身のデータから: 持ち主のパーティーは GLZ のメンバー（``mates``）、
-        ほかの人は PC アプリならクライアントのプレゼンスの partyId（localclient.LocalClient.parties: 試合中は
-        同じ試合の人のものも来る）。わからない人は入れない（推測しない）。サイトにはクライアントが無いので、
-        わかるのは持ち主のパーティーだけ。"""
+        ほかの人は PC アプリならクライアントのプレゼンスの partyId（localclient.LocalClient.parties: エージェント選択
+        では味方、対戦が始まると相手のものも来る。届いたらすぐ読み直す）。わからない人は入れない（推測しない）。
+        サイトにはクライアントが無いので、わかるのは持ち主のパーティーだけ。"""
         in_match = {str(item.get("Subject") or "").lower() for item in players if not item.get("IsCoach")}
         found: dict[str, str] = {}
         if self.local is not None:
             try:
-                seen = self.local.parties() or {}
+                seen = self.local.parties(in_match, phase) or {}
             except Exception:  # クライアントの思わぬ答えでライブを止めない: パーティーが出ないだけ
                 seen = {}
             found = {subject: party for subject, party in seen.items() if subject in in_match}

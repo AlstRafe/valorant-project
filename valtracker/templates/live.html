@@ -168,7 +168,7 @@
 {% endif %}
 {% endif %}
 {% if names_missing %}<p class="note">{{ t('名前を読み込めませんでした。') }}</p>{% endif %}
-{% if parties and playing %}<p class="note">{{ t('同じ番号の人は同じパーティーです。') }}{% if not desktop %} {{ t('ほかの人のパーティーは PC アプリで表示されます。') }}{% endif %}</p>{% endif %}
+{% if playing and (parties or not desktop or party_known < party_total) %}<p class="note">{% if parties %}{{ t('同じ番号の人は同じパーティーです。') }} {% endif %}{% if not desktop %}{{ t('相手や野良のパーティーは PC アプリだけに表示されます（サイトでわかるのは自分のパーティーだけです）。') }}{% elif party_known < party_total %}{{ t('パーティーの確認中: {total} 人中 {known} 人（Riot クライアントから届きしだい表示します）。', total=party_total, known=party_known) }}{% endif %}</p>{% endif %}
 {% if hidden_names %}<p class="note">{{ t('パーティー外の非公開プレイヤーは名前を表示しません。') }}</p>{% endif %}
 {% if phase == 'menus' %}{{ steps() }}{% endif %}
 {% if not playing %}<p class="note">{% if desktop %}{{ t('ゲームの状態に合わせて自動で更新されます。') }}{% else %}{{ t('数秒ごとに自動で更新されます。') }}{% endif %}</p>{% endif %}

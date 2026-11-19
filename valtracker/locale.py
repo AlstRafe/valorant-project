@@ -2019,10 +2019,15 @@ TEXTS = {
         "en-GB": "Players with the same number are in the same party.",
         "zh-TW": "號碼相同的玩家在同一個隊伍。",
     },
-    "ほかの人のパーティーは PC アプリで表示されます。": {
-        "ko": "다른 플레이어의 파티는 PC 앱에서 표시됩니다.",
-        "en-GB": "The PC app also shows other players' parties.",
-        "zh-TW": "其他玩家的隊伍會顯示在 PC 應用程式中。",
+    "相手や野良のパーティーは PC アプリだけに表示されます（サイトでわかるのは自分のパーティーだけです）。": {
+        "ko": "상대와 다른 플레이어의 파티는 PC 앱에서만 표시됩니다(사이트에서는 내 파티만 알 수 있습니다).",
+        "en-GB": "Only the PC app shows the other players' parties (the site only knows your own party).",
+        "zh-TW": "對手與其他玩家的隊伍只會顯示在 PC 應用程式中（網站只能得知你自己的隊伍）。",
+    },
+    "パーティーの確認中: {total} 人中 {known} 人（Riot クライアントから届きしだい表示します）。": {
+        "ko": "파티 확인 중: {total}명 중 {known}명(Riot 클라이언트에서 도착하는 대로 표시합니다).",
+        "en-GB": "Checking parties: {known} of {total} players so far (shown as soon as the Riot Client has them).",
+        "zh-TW": "正在確認隊伍：{total} 人中已知 {known} 人（Riot 用戶端一收到就會顯示）。",
     },
     "数秒ごとに自動で更新されます。": {
         "ko": "몇 초마다 자동으로 갱신됩니다.",
@@ -3212,6 +3217,26 @@ TEXTS = {
         "ko": "실행 중이 아닙니다. Riot 클라이언트나 VALORANT를 실행한 뒤 다시 점검하세요.",
         "en-GB": "Not running. Start the Riot Client or VALORANT, then check again.",
         "zh-TW": "未啟動。請開啟 Riot Client 或 VALORANT 後重新檢查。",
+    },
+    "試合のパーティー": {
+        "ko": "매치의 파티",
+        "en-GB": "Parties in the match",
+        "zh-TW": "對戰中的隊伍",
+    },
+    "直近の対戦: {total} 人中 {known} 人のパーティーがわかりました": {
+        "ko": "최근 매치: {total}명 중 {known}명의 파티를 알 수 있었습니다",
+        "en-GB": "Last match: parties known for {known} of {total} players",
+        "zh-TW": "最近一場對戰：{total} 人中得知 {known} 人的隊伍",
+    },
+    "直近のエージェント選択: 味方 {total} 人中 {known} 人（相手チームは対戦が始まってから届きます）": {
+        "ko": "최근 요원 선택: 아군 {total}명 중 {known}명(상대 팀은 매치가 시작된 뒤에 도착합니다)",
+        "en-GB": "Last agent select: {known} of {total} teammates (the other team arrives once the match starts)",
+        "zh-TW": "最近一次選角：隊友 {total} 人中 {known} 人（對手隊伍在對戰開始後才會收到）",
+    },
+    "試合中か試合のあとにチェックできます": {
+        "ko": "매치 중이나 매치 후에 점검할 수 있습니다",
+        "en-GB": "Can be checked during or after a match",
+        "zh-TW": "可在對戰中或對戰後檢查",
     },
     "起動していません（起動するとステータスとライブもチェックできます）": {
         "ko": "실행 중이 아닙니다(실행하면 상태와 라이브도 점검할 수 있습니다)",
