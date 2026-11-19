@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from valtracker.util import LAST_MOMENT, as_list, lower_id, to_int
+from valtracker.util import LAST_MOMENT, as_dict, as_list, lower_id, to_int
 
 #: PD のキュー ID -> 試合の種類（HenrikDev の ``mode_type``）。ほかはラウンド制（"Standard"）。
 MODE_TYPES = {
@@ -69,7 +69,7 @@ def city(pod) -> str:
 
 def history(answer) -> dict:
     """PD の match-history -> ``{"total", "matches": [{"id", "at"（unix 秒）, "queue"}]}``、新しい順。"""
-    answer = answer if isinstance(answer, dict) else {}
+    answer = as_dict(answer)
     found = [
         {
             "id": lower_id(item["MatchID"]),
@@ -85,7 +85,7 @@ def history(answer) -> dict:
 def rr_updates(answer) -> dict:
     """PD の competitiveupdates -> henrik._slim_rr の形: ``{試合 ID: {"change", "tier", "rr", "elo", "at"}}``（RR
     が動かない配置試合は前の tier が無いので省く）。"""
-    answer = answer if isinstance(answer, dict) else {}
+    answer = as_dict(answer)
     found = {}
     for item in as_list(answer.get("Matches")):
         if not isinstance(item, dict) or not item.get("MatchID"):
@@ -128,7 +128,7 @@ def to_v4(details, region: str, maps: dict, puuid: str = "", name: str = "", tag
     players = []
     for item in players_raw:
         subject = lower_id(item["subject"])
-        line = item.get("stats") if isinstance(item.get("stats"), dict) else {}
+        line = as_dict(item.get("stats"))
         head, body, leg = shots.get(subject, (0, 0, 0))
         mine = subject == lower_id(puuid)
         kept = subject in keep and not mine
@@ -199,7 +199,7 @@ def _from_rounds(rounds_raw: list) -> tuple[dict, dict, dict, dict]:
             if not isinstance(line, dict):
                 continue
             subject = lower_id(line.get("subject"))
-            economy = line.get("economy") if isinstance(line.get("economy"), dict) else {}
+            economy = as_dict(line.get("economy"))
             spent[subject] = spent.get(subject, 0) + to_int(economy.get("spent"))
             for hit in as_list(line.get("damage")):
                 if not isinstance(hit, dict):
@@ -252,12 +252,12 @@ def _kills(details: dict, rounds_raw: list) -> list:
     if not raw:
         for number, item in enumerate(rounds_raw):
             for line in as_list(item.get("playerStats")):
-                for kill in as_list(line.get("kills")) if isinstance(line, dict) else []:
+                for kill in as_list(as_dict(line).get("kills")):
                     if isinstance(kill, dict):
                         raw.append(dict(kill, round=kill.get("round", number)))
     found = []
     for kill in raw:
-        damage = kill.get("finishingDamage") if isinstance(kill.get("finishingDamage"), dict) else {}
+        damage = as_dict(kill.get("finishingDamage"))
         item = str(damage.get("damageItem") or "")
         found.append(
             {

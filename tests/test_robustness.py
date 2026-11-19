@@ -9,7 +9,7 @@ from unittest import mock
 from helpers import make_app
 
 from valtracker import content as content_module
-from valtracker import crosshair, henrik, net, riot, rounds
+from valtracker import crosshair, henrik, net, riot, rounds, util
 from valtracker.util import as_dict, as_list, to_float, to_int
 
 
@@ -37,7 +37,7 @@ class ShapesTest(unittest.TestCase):
             (henrik.NAME, "Tester"),
             (henrik.TAG, "JP1"),
             (henrik.MATCH_ID, uuid),
-            (riot._UUID, uuid),
+            (util.UUID, uuid),
             (riot._TOKEN, "a" * 40),
             (riot._COOKIE_VALUE, "ssid-value"),
             (riot._COOKIE_NAME, "ssid"),
@@ -156,7 +156,7 @@ class RiotRanksTest(unittest.TestCase):
             mock.patch.object(reader, "_pd", side_effect=TypeError("surprise")),
         ):
             with self.assertRaises(TypeError):
-                reader._ranks({}, {}, [subject])
+                reader._ask_ranks({}, {}, [subject])()
         self.assertNotIn(subject, reader._asking, "the next look asks again")
 
 

@@ -11,11 +11,10 @@ partyPresenceData・playerPresenceData の中。どちらも読む（``_field``�
 
 from __future__ import annotations
 
-import re
 from datetime import UTC, datetime
 
 from valtracker.localclient import decode_private
-from valtracker.util import as_list, to_int
+from valtracker.util import UUID, as_list, to_int
 
 #: private の中で項目が入りうる部分（一番上の次に見る）。
 PARTS = ("matchPresenceData", "partyPresenceData", "playerPresenceData", "premierPresenceData")
@@ -40,7 +39,6 @@ WORDS = {
 }
 #: VALORANT にいるフレンドの順: 試合中、試合に入るところ、メニュー、離席。
 ORDER = ("ingame", "pregame", "found", "queue", "custom", "range", "menus", "away")
-_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
 
 def _field(data: dict, key: str):
@@ -56,7 +54,7 @@ def _field(data: dict, key: str):
 
 def _id(value) -> str:
     text = str(value or "").lower()
-    return text if _UUID.fullmatch(text) else ""
+    return text if UUID.fullmatch(text) else ""
 
 
 def place(data: dict, away: bool) -> str:

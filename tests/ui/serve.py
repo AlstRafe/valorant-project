@@ -46,6 +46,16 @@ LONGEST = ("長い名前のプレイヤーです一二三四", "WWWWW")
 
 
 JETT, SOVA = "11111111-1111-4111-8111-111111111111", "22222222-2222-4222-8222-222222222222"
+#: マップと構成のページ用の、作りもののエージェント（フィクスチャの 2 体に足す）: 5 体の構成が組めるように。
+MORE_AGENTS = [f"3333333{number}-3333-4333-8333-33333333333{number}" for number in range(8)]
+#: 作りものの試合のチームが使う構成（同じ構成が何度も出る）とマップ（フィクスチャのアセント）。
+COMPS = (
+    (JETT, SOVA, *MORE_AGENTS[:3]),
+    (JETT, *MORE_AGENTS[3:7]),
+    (SOVA, *MORE_AGENTS[2:6]),
+    tuple(MORE_AGENTS[3:8]),
+)
+ASCENT = "7eaecc1b-4337-bbf6-6ab9-04b8f06b3319"
 #: --real: ゲームの名前と絵を本当に聞く場所。
 REAL_SITES = ("https://valorant-api.com/", "https://media.valorant-api.com/")
 #: --real: 作りもののスキン -> 代わりの本物（英語名）。
@@ -222,6 +232,13 @@ def _fixture(name: str, original=helpers.fixture) -> bytes:
     if name in MADE:
         return MADE[name]
     data = original(name)
+    if name == "content_agents.json" and not SWAP:
+        listed = json.loads(data)
+        first = listed["data"][0]
+        names = ("ブリーチ", "レイズ", "キルジョイ", "オーメン", "セージ", "フェイド", "ヴァイパー", "クローヴ")
+        for uuid, said in zip(MORE_AGENTS, names):
+            listed["data"].append(first | {"uuid": uuid, "displayName": said})
+        data = json.dumps(listed, ensure_ascii=False).encode()
     if name == "henrik_matches.json":
         longest, tag = LONGEST
         data = data.replace(b'"name": "Other"', f'"name": "{longest}"'.encode())
@@ -269,6 +286,19 @@ def _match(match_id: str, started: float, cluster: str, queue: str, tier: int, p
         "players": [{"puuid": "", "tier": {"id": tier}}],
     }
     if pick:
+        found["metadata"]["map"] = {"id": ASCENT, "name": "Ascent"}
+        comps = pick.sample(COMPS, 2)
+        # ラウンド（ダイジェストの形、rounds.digest）: 攻撃側・勝ったチーム・設置したサイト
+        found["digest"] = {
+            "rounds": [
+                {
+                    "w": "Red" if pick.random() < 0.55 else "Blue",
+                    "a": ("Red" if number < 12 else "Blue"),
+                    "s": pick.choice(("A", "A", "B", "")),
+                }
+                for number in range(22)
+            ]
+        }
         found["teams"] = [
             {"team_id": "Red", "won": True, "rounds": {"won": 13, "lost": 9}},
             {"team_id": "Blue", "won": False, "rounds": {"won": 9, "lost": 13}},
@@ -281,6 +311,7 @@ def _match(match_id: str, started: float, cluster: str, queue: str, tier: int, p
                 {
                     "puuid": "",
                     "team_id": "Red" if number < 5 else "Blue",
+                    "agent": {"id": comps[number // 5][number % 5]},
                     "tier": {"id": max(3, min(27, tier + pick.randint(-2, 2)))},
                     "stats": {
                         "kills": kills,

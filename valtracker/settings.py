@@ -10,6 +10,8 @@ import os
 import threading
 from pathlib import Path
 
+from valtracker.util import as_dict
+
 _lock = threading.Lock()
 
 
@@ -22,7 +24,7 @@ class Settings:
             value = json.loads(self.path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             return {}
-        return value if isinstance(value, dict) else {}
+        return as_dict(value)
 
     def save(self, **changes) -> None:
         with _lock:

@@ -12,7 +12,7 @@ from flask import Flask, abort, current_app, g, redirect, render_template, reque
 from valtracker import security
 from valtracker.collection import TIERS, tier_info, weapon_order
 from valtracker.content import Content, variant_name
-from valtracker.util import lower_id
+from valtracker.util import UUID, lower_id
 from valtracker.views import tr
 
 #: 訪問者が何も選んでいないときに出す武器（スキンが一番買われる武器）。
@@ -38,7 +38,6 @@ LEVEL_ITEMS = {
 SHOWN = 160
 VOTER_COOKIE = "val_voter"
 _VOTER = re.compile(r"[A-Za-z0-9_-]{20,64}")
-_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
 
 def _words(value) -> str:
@@ -234,7 +233,7 @@ def register(app: Flask) -> None:
     @app.get("/skins/<uuid>")
     def skin(uuid: str):
         uuid = uuid.lower()
-        values = _skin_page(current_app.config["VAL_CONTENT"], g.lang, uuid) if _UUID.fullmatch(uuid) else None
+        values = _skin_page(current_app.config["VAL_CONTENT"], g.lang, uuid) if UUID.fullmatch(uuid) else None
         if values is None:
             abort(404)
         return render_template("skin.html", **values)
@@ -244,7 +243,7 @@ def register(app: Flask) -> None:
         """持ち主のほしい物リスト（diary.py）: ストアに出たら印を付ける。"""
         security.owner_only()
         uuid = uuid.lower()
-        if not _UUID.fullmatch(uuid) or _known_skin(current_app.config["VAL_CONTENT"], g.lang, uuid) is None:
+        if not UUID.fullmatch(uuid) or _known_skin(current_app.config["VAL_CONTENT"], g.lang, uuid) is None:
             abort(404)
         current_app.config["VAL_DIARY"].want(uuid, request.form.get("on") == "1")
         return redirect(url_for("skin", uuid=uuid) + "#want", 303)
@@ -253,7 +252,7 @@ def register(app: Flask) -> None:
     def rate_skin(uuid: str):
         uuid = uuid.lower()
         content = current_app.config["VAL_CONTENT"]
-        if not _UUID.fullmatch(uuid) or _known_skin(content, g.lang, uuid) is None:
+        if not UUID.fullmatch(uuid) or _known_skin(content, g.lang, uuid) is None:
             abort(404)
         try:
             stars = int(request.form.get("stars", ""))

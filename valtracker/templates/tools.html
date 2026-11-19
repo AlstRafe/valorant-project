@@ -7,6 +7,8 @@
 <section class="tool-section" aria-labelledby="tools-1">
 <h2 id="tools-1">{{ t('試合の前に') }}</h2>
 <ul class="tool-grid">
+<li><a href="{{ url_for('maps') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg><strong>{{ t('マップ') }}</strong><small>{{ t('コールアウト・攻守の勝率・強い構成') }}</small></a></li>
+<li><a href="{{ url_for('weapons') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h15l3 2v2H9l-1.5 5H4l1.5-5H3z"/><path d="M12 13v2"/></svg><strong>{{ t('武器') }}</strong><small>{{ t('ダメージ・確殺数・TTK') }}</small></a></li>
 <li><a href="{{ url_for('queue_settings') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg><strong>{{ t('マップとパーティー') }}</strong><small>{{ t('マッププールとランク差の制限') }}</small></a></li>
 <li><a href="{{ url_for('servers') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V13M9 20V8M14 20v-9M19 20V5"/></svg><strong>{{ t('サーバーの混雑状況') }}</strong><small>{{ t('時間帯別の混雑と待ち時間の目安') }}</small></a></li>
 <li><a href="{{ url_for('status') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><strong>{{ t('サーバー状況') }}</strong><small>{{ t('メンテナンス・障害情報') }}</small></a></li>

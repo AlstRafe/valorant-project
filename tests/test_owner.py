@@ -424,7 +424,7 @@ class OwnerTest(unittest.TestCase):
         self.assertIn(f'<li class="match win"><a href="/m/ap/{match_id}?me=Owner%23JP1">', text)
         self.assertIn("<strong>2–1</strong>", text)
         self.assertIn('<span class="up">+18 RR</span>', text)
-        self.assertIn("<strong>3 / 1 / 1</strong>", text)
+        self.assertIn('<strong class="kda">3&thinsp;/&thinsp;1&thinsp;/&thinsp;1</strong>', text)
         self.assertIn("コンペティティブ", text)
         self.assertNotIn("直前の試合を見る", text, "the result is the link")
         for name in ("Secret Mate", "Foe One", "Pd Player"):

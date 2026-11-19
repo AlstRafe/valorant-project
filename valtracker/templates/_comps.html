@@ -1,0 +1,12 @@
+{#- 5 体の構成（activity.comps）: マップとエージェントのページ。 -#}
+{% if comps %}
+<ol class="comps">
+{% for comp in comps %}<li>
+<span class="comp-agents">{% for agent in comp.agents %}<a href="{{ url_for('agent', uuid=agent.uuid) }}" title="{{ agent.name }}">{% if agent.icon %}<img src="{{ media(agent.icon) }}" alt="{{ agent.name }}" width="36" height="36" loading="lazy">{% else %}{{ agent.name }}{% endif %}</a>{% endfor %}</span>
+<span class="comp-numbers">{% if comp.few %}<strong>—</strong>{% else %}<strong class="{{ 'win' if comp.win >= 50 else 'loss' }}">{{ comp.win }}%</strong>{% endif %}<small>{{ t('{count} 試合', count=comp.games) }}</small></span>
+</li>
+{% endfor %}</ol>
+<p class="note">{{ t('同じ 5 体で組んだチームの数と勝率。{few} 試合未満は勝率を表示しません。', few=few) }}</p>
+{% else %}
+<p class="note">{{ t('集計できる試合がまだ足りません。') }}</p>
+{% endif %}

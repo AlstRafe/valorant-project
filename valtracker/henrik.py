@@ -17,7 +17,7 @@ from urllib.parse import quote, urlencode
 
 from valtracker import net, rounds
 from valtracker.cache import Budget, TTLCache
-from valtracker.util import LAST_MOMENT, as_dict, as_list, to_int
+from valtracker.util import LAST_MOMENT, UUID, as_dict, as_list, to_int
 
 BASE = "https://api.henrikdev.xyz"
 PLATFORM = "pc"
@@ -67,7 +67,7 @@ HALF_WIDTH = {
     for start, end in ((0xFF10, 0xFF19), (0xFF21, 0xFF3A), (0xFF41, 0xFF5A))
     for code in range(start, end + 1)
 }
-MATCH_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+MATCH_ID = UUID
 REGIONS = ("ap", "br", "eu", "kr", "latam", "na")
 #: プレイヤーページに並べる試合数: ゲーム自身のキャリアページと同じ。
 RECENT = 15
@@ -450,7 +450,7 @@ def shows_rr(mode: str) -> bool:
 
 def _slim_mmr(data) -> dict:
     slim = _pick(data, ("current", "peak"))
-    data = data if isinstance(data, dict) else {}
+    data = as_dict(data)
     if isinstance(slim.get("peak"), dict):  # 今までの最高ランク: アセンダント以前のアクトのもの。その頃の番号で
         slim["peak"] = slim["peak"] | {"old": _old_ranks(slim["peak"])}
     seasons = [_slim_act(season) for season in as_list(data.get("seasonal")) if isinstance(season, dict)]
@@ -487,7 +487,7 @@ def _slim_act(season: dict) -> dict:
 def _old_ranks(item: dict) -> bool:
     """v3 mmr のアクト（または最高ランクのアクト）のランク番号がエピソード 5 より前のものか:
     アセンダントが無かったので、同じ番号でも別のランクだった。"""
-    season = item.get("season") if isinstance(item.get("season"), dict) else {}
+    season = as_dict(item.get("season"))
     episode = (_act_order(str(season.get("short") or ""))[:1] or (99,))[0]
     return str(item.get("ranking_schema") or "") == "base" or episode < 5
 
@@ -501,7 +501,7 @@ def _slim_rr(data) -> dict:
     """v1 の一覧（または v2 の ``{"history": [...]}``）-> ``{試合 ID: {"change", "tier", "rr"}}``。"""
     items = data.get("history") if isinstance(data, dict) else data
     found = {}
-    for item in items if isinstance(items, list) else []:
+    for item in as_list(items):
         if not isinstance(item, dict) or not item.get("match_id"):
             continue
         change = item.get("mmr_change_to_last_game", item.get("last_change"))
@@ -543,17 +543,15 @@ def _slim_stored(matches) -> list:
     for match in matches:
         if not isinstance(match, dict):
             continue
-        meta, line, teams = (
-            match.get(key) if isinstance(match.get(key), dict) else {} for key in ("meta", "stats", "teams")
-        )
+        meta, line, teams = (as_dict(match.get(key)) for key in ("meta", "stats", "teams"))
         side = str(line.get("team") or "").lower()
         red, blue = to_int(teams.get("red")), to_int(teams.get("blue"))
         mine, theirs = (red, blue) if side == "red" else (blue, red)
-        season = meta.get("season") if isinstance(meta.get("season"), dict) else {}
-        shots = line.get("shots") if isinstance(line.get("shots"), dict) else {}
-        damage = line.get("damage") if isinstance(line.get("damage"), dict) else {}
-        agent = line.get("character") if isinstance(line.get("character"), dict) else {}
-        place = meta.get("map") if isinstance(meta.get("map"), dict) else {}
+        season = as_dict(meta.get("season"))
+        shots = as_dict(line.get("shots"))
+        damage = as_dict(line.get("damage"))
+        agent = as_dict(line.get("character"))
+        place = as_dict(meta.get("map"))
         mode = str(meta.get("mode") or "").strip().lower()
         found.append(
             {
@@ -621,7 +619,7 @@ def _slim_board(data) -> dict:
     for tier, key in ((27, "radiant_threshold"), (26, "immortal_3_threshold"), (25, "immortal_2_threshold")):
         if not thresholds and data.get(key) is not None:  # v2
             thresholds.append({"tier": tier, "rr": to_int(data[key]), "from": 0})
-    results = data.get("results") if isinstance(data.get("results"), dict) else {}
+    results = as_dict(data.get("results"))
     return {
         "players": players,
         "thresholds": sorted(thresholds, key=lambda item: -item["tier"]),
@@ -638,7 +636,7 @@ def https_only(value) -> str:
 
 def _slim_news(data) -> list:
     articles = []
-    for item in data if isinstance(data, list) else []:
+    for item in as_list(data):
         if not isinstance(item, dict) or not item.get("title"):
             continue
         articles.append(
@@ -655,16 +653,16 @@ def _slim_news(data) -> list:
 
 def _slim_esports(data) -> list:
     games = []
-    for item in data if isinstance(data, list) else []:
+    for item in as_list(data):
         if not isinstance(item, dict):
             continue
-        match = item.get("match") if isinstance(item.get("match"), dict) else {}
+        match = as_dict(item.get("match"))
         teams = [team for team in as_list(match.get("teams")) if isinstance(team, dict) and team.get("name")]
         if len(teams) != 2:
             continue
-        league = item.get("league") if isinstance(item.get("league"), dict) else {}
-        tournament = item.get("tournament") if isinstance(item.get("tournament"), dict) else {}
-        kind = match.get("game_type") if isinstance(match.get("game_type"), dict) else {}
+        league = as_dict(item.get("league"))
+        tournament = as_dict(item.get("tournament"))
+        kind = as_dict(match.get("game_type"))
         games.append(
             {
                 "at": str(item.get("date") or ""),
@@ -709,7 +707,7 @@ def slim_status(data) -> dict:
     found = {}
     for kind in ("maintenances", "incidents"):
         notices = []
-        for item in as_list(data.get(kind)) if isinstance(data, dict) else []:
+        for item in as_list(as_dict(data).get(kind)):
             if not isinstance(item, dict):
                 continue
             updates = [
@@ -734,7 +732,7 @@ def slim_status(data) -> dict:
 
 def _slim_featured(data) -> list:
     """v2 の store-featured: 各バンドルの uuid、値段、残り時間、アイテム（uuid、種類、名前、値段）。"""
-    bundles = data if isinstance(data, list) else []
+    bundles = as_list(data)
     found = []
     for bundle in bundles:
         if not isinstance(bundle, dict) or not bundle.get("bundle_uuid"):

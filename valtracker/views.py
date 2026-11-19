@@ -210,7 +210,7 @@ def peak_info(mmr: dict | None) -> dict | None:
     """プレイヤーの全アクトでの最高ランク: v3 mmr の ``peak``、またはアクトの良い勝利と最終ランクの中のもっと高いもの。
     今の番号で: エピソード 5 より前のアクトにはアセンダントが無かった（その頃のイモータル 1 は 21、今の 24）。"""
     peak = (mmr or {}).get("peak") or {}
-    tier = peak.get("tier") if isinstance(peak.get("tier"), dict) else {}
+    tier = as_dict(peak.get("tier"))
     number = to_int(tier.get("id"))
     best = todays_tier(number, bool(peak.get("old")))
     for act in (mmr or {}).get("seasons") or []:
@@ -269,7 +269,7 @@ def _act_peak(mmr: dict | None, rank: dict | None) -> dict | None:
 def agent_info(agent: dict | None) -> dict:
     agent = agent or {}
     known = current_app.config["VAL_CONTENT"].agent_index(g.lang).get(str(agent.get("id") or "").lower()) or {}
-    role = known.get("role") if isinstance(known.get("role"), dict) else {}
+    role = as_dict(known.get("role"))
     return {
         "id": str(agent.get("id") or ""),
         "name": str(known.get("displayName") or agent.get("name") or ""),
@@ -474,7 +474,12 @@ def _score_chart(values: list[int], size: tuple[int, int] = (420, 130)) -> dict:
 def _weapon(key: str, said: str = "") -> dict:
     """訪問者の言語での武器（またはアビリティなど倒したもの）と、そのキルフィードの絵。"""
     known = current_app.config["VAL_CONTENT"].arsenal(g.lang).get(str(key).lower()) or {}
-    return {"name": str(known.get("displayName") or said or key), "icon": known.get("killStreamIcon")}
+    return {
+        "name": str(known.get("displayName") or said or key),
+        "icon": known.get("killStreamIcon"),
+        # 性能のわかる武器（weapons.py）: 武器のページへのリンク
+        "page": str(key).lower() if as_dict(known.get("stats")).get("ranges") else "",
+    }
 
 
 #: ロビー比較の行: キー -> 呼び名と、数値の書き方。
@@ -1007,6 +1012,59 @@ def _buy(loadout: int, players: int) -> str:
     return "eco" if each < 1000 else "semi-eco" if each < 2000 else "semi-buy" if each < 3900 else "full"
 
 
+#: 経済の行の購入の種類（ピストルラウンドは別に数える）。
+ECONOMY = ("pistol", "eco", "semi-eco", "semi-buy", "full")
+
+
+def _economy(rounds: list, team_sizes: dict, my_team: str, half: int) -> dict | None:
+    """ラウンドごとの各チームの購入（ロードアウトの 1 人あたり）と、購入ごとのラウンド勝率
+    : ``{"teams": [{"id", "mine", "kinds": [{"kind", "won", "played"}]}], "rounds": [{"number", "won": チーム ID,
+    "spent": {チーム: クレジット}, "buys": {チーム: 種類}}], "top"}``。ロードアウトの無い試合は None。"""
+    teams = sorted(
+        {team for item in rounds for team in as_dict(item.get("l"))}, key=lambda team: (team != my_team, team)
+    )
+    if len(teams) != 2:
+        return None
+    shown, counted = [], {team: {kind: [0, 0] for kind in ECONOMY} for team in teams}
+    for number, item in enumerate(rounds):
+        spent = as_dict(item.get("l"))
+        each = {
+            team: round(to_int(spent.get(team)) / team_sizes[team]) if team_sizes.get(team) else 0 for team in teams
+        }
+        pistol = number == 0 or (bool(half) and number == half)
+        buys = {team: "pistol" if pistol else _buy(each[team], 1) for team in teams}
+        for team in teams:
+            counted[team][buys[team]][1] += 1
+            counted[team][buys[team]][0] += item["w"] == team
+        shown.append(
+            {
+                "number": number + 1,
+                "won": item["w"],
+                "spent": each,
+                "buys": buys,
+                "turn": bool(half) and number in (half, 2 * half),
+            }
+        )
+    if not any(any(item["spent"].values()) for item in shown):
+        return None
+    return {
+        "teams": [
+            {
+                "id": team,
+                "mine": team == my_team,
+                "kinds": [
+                    {"kind": kind, "won": won, "played": played}
+                    for kind, (won, played) in counted[team].items()
+                    if played
+                ],
+            }
+            for team in teams
+        ],
+        "rounds": shown,
+        "top": max(max(item["spent"].values()) for item in shown) or 1,
+    }
+
+
 def _own_match(region: str, match_id: str) -> tuple[dict, dict] | None:
     """HenrikDev が（まだ）持っていない（試合後数分かかり、届かない試合もある）か答えないときの、
     持ち主用のゲーム自身のサーバー（PD）からの試合: （保存するもの, ページに出すもの）。 PD は全プレイヤーの名前を出すので、
@@ -1191,7 +1249,8 @@ def _match_page(found: dict, me: str) -> dict:
         "average": average,
         "me": people[mine] if mine >= 0 else None,
         "parties": bool(parties),
-        "buy_words": {key: tr(words) for key, words in BUYS.items()},
+        "buy_words": {key: tr(words) for key, words in BUYS.items()} | {"pistol": tr("ピストル")},
+        "economy": _economy(digest.get("rounds") or [], team_sizes, my_team, half),
     }
 
 
@@ -1319,7 +1378,9 @@ def register(app: Flask) -> None:
         abilities = [item for item in found.get("abilities") or [] if isinstance(item, dict)]
         order = {"Ability1": 1, "Ability2": 2, "Grenade": 0, "Ultimate": 3, "Passive": 4}
         abilities.sort(key=lambda item: order.get(str(item.get("slot")), 5))
-        return render_template("agent.html", agent=found, abilities=abilities)
+        from valtracker.world import agent_numbers
+
+        return render_template("agent.html", agent=found, abilities=abilities, **agent_numbers(uuid.lower()[:40]))
 
     @app.get("/app/latest")
     def app_latest():
@@ -1460,7 +1521,7 @@ def register(app: Flask) -> None:
             },
         )
 
-    from valtracker import compare, owner, seasons, skinlib, tools, world
+    from valtracker import compare, maps, owner, seasons, skinlib, tools, weapons, world
 
     tools.register(app)
     seasons.register(app)
@@ -1468,6 +1529,8 @@ def register(app: Flask) -> None:
     skinlib.register(app)
     owner.register(app)
     compare.register(app)
+    weapons.register(app)
+    maps.register(app)
 
     @app.errorhandler(404)
     def not_found(error):

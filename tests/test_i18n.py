@@ -5,7 +5,7 @@ import re
 import unittest
 from pathlib import Path
 
-from valtracker import checkup, crosshair, i18n, smurf
+from valtracker import checkup, crosshair, i18n, smurf, weapons
 from valtracker.collection import TABS
 from valtracker.compare import LINES
 from valtracker.live import STATE_WORDS
@@ -64,6 +64,9 @@ def used_texts() -> set[str]:
     found.update((*UPDATE_SAID.values(), *UPDATE_FAILURES.values(), *UPDATE_BUTTONS.values()))
     found.update(checkup.TEXTS)  # PC アプリのチェックアップと、フレンドの居場所（friends.WORDS）
     found.add("{state}（{map}）")
+    for words in (weapons.CATEGORY_NAMES, weapons.WALLS, weapons.ALTS, weapons.FEATURES, weapons.MODES):
+        found.update(words.values())
+    found.update(name for _, name in weapons.PARTS)
     return found
 
 

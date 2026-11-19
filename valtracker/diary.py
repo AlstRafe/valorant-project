@@ -15,6 +15,7 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from valtracker.settings import Settings
+from valtracker.util import as_dict
 
 #: 日記に残す日数。
 KEEP_DAYS = 180
@@ -40,9 +41,9 @@ class Diary:
 
     def _days(self, account: str = "") -> dict:
         saved = self.store.load()
-        more = saved.get("more") if isinstance(saved.get("more"), dict) else {}
+        more = as_dict(saved.get("more"))
         days = saved.get("days") if self._first(saved, account) else more.get(account)
-        return days if isinstance(days, dict) else {}
+        return as_dict(days)
 
     def claim(self, account: str) -> None:
         """ここまでの日付を ``account`` のものにする（別のアカウントを連携・表示する前に呼ぶ）。
@@ -66,7 +67,7 @@ class Diary:
             if self._first(saved, account):
                 self.store.save(days=kept, account=account or saved.get("account"))
             else:
-                more = saved.get("more") if isinstance(saved.get("more"), dict) else {}
+                more = as_dict(saved.get("more"))
                 self.store.save(more={**more, account: kept})
 
     def days(self, account: str = "") -> list[tuple[str, dict]]:

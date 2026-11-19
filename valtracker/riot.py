@@ -36,7 +36,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 from valtracker import net, pdmatch
 from valtracker.cache import TTLCache
 from valtracker.settings import Settings
-from valtracker.util import as_dict, as_list, lower_id, to_float, to_int, token_claims
+from valtracker.util import UUID, as_dict, as_list, lower_id, to_float, to_int, token_claims
 
 AUTHORIZE = (
     "https://auth.riotgames.com/authorize?redirect_uri=https%3A%2F%2Fplayvalorant.com%2Fopt_in"
@@ -85,7 +85,6 @@ BOARD_RESTING = 600
 #: ランキングのリージョン（ゲームの名前）-> それを持つ PD サーバー。
 BOARD_REGIONS = {"ap": "ap", "kr": "kr", "eu": "eu", "na": "na", "latam": "na", "br": "na"}
 _QUEUE_ID = re.compile(r"[a-z0-9_-]{2,40}")
-_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 #: アカウントのリージョン（Riot の geo の答え）-> そのアイテムを持つ PD サーバー。
 SHARDS = {"na": "na", "latam": "na", "br": "na", "eu": "eu", "ap": "ap", "kr": "kr", "pbe": "pbe"}
 #: プレイヤーの履歴の 1 回の呼び出しで頼む試合（または RR の変化）の数: ゲームのクライアントと同じ。
@@ -197,7 +196,7 @@ class Riot:
                 "problem": str(saved.get("problem") or ""),
                 "client": True,
             }
-        token = saved.get("token") if isinstance(saved.get("token"), dict) else {}
+        token = as_dict(saved.get("token"))
         lasting = bool(saved.get("cookies"))
         return {
             "linked": bool(saved.get("puuid")),
@@ -257,7 +256,7 @@ class Riot:
             if found and found[0]["client"] and row["puuid"] == found[0]["puuid"]:
                 found[0]["linked"] = True  # クライアントのアカウントも連携している: 1 行にまとめる
                 continue
-            token = item.get("token") if isinstance(item.get("token"), dict) else {}
+            token = as_dict(item.get("token"))
             over = not item.get("cookies") and to_float(token.get("until")) < self.clock()
             found.append({**row, "client": False, "linked": True, "signed_out": bool(item.get("signed_out")) or over})
         current = self.me()
@@ -412,7 +411,7 @@ class Riot:
         "updated"}``。全プレイヤーで同じなので公開ページで出してよい。
         名前を隠しているプレイヤー（Riot の ``IsAnonymized``）は名前無し。``query``: 探す名前。
         Riot が出さなければ RiotError（そのリージョンはしばらく休む）。"""
-        if region not in BOARD_REGIONS or not _UUID.fullmatch(season):
+        if region not in BOARD_REGIONS or not UUID.fullmatch(season):
             raise RiotError("down", "leaderboard: no such region or act")
         resting = self.boards.get(("resting", region))
         if resting:
@@ -447,7 +446,7 @@ class Riot:
     def history(self, region: str, puuid: str, start: int = 0) -> dict:
         """ゲーム自身のサーバー（PD）からの、任意のプレイヤーの試合履歴の 1 ページ（新しい順）
         : ``{"total", "matches": [{"id", "at", "queue"}]}``（pdmatch.history）。無ければ RiotError。"""
-        if not _UUID.fullmatch(puuid):
+        if not UUID.fullmatch(puuid):
             raise RiotError("down", "history: not a puuid")
         asked = urlencode({"startIndex": max(0, int(start)), "endIndex": max(0, int(start)) + HISTORY_PAGE})
 
@@ -459,7 +458,7 @@ class Riot:
 
     def match_details(self, region: str, match_id: str) -> dict:
         """ゲーム自身のサーバーが持つ形の終わった試合（PD の match-details。pdmatch.to_v4 が読む）。"""
-        if not _UUID.fullmatch(match_id):
+        if not UUID.fullmatch(match_id):
             raise RiotError("down", "match: not a match id")
 
         def read(tokens: dict, saved: dict) -> dict:
@@ -471,7 +470,7 @@ class Riot:
     def rr_updates(self, region: str, puuid: str, start: int = 0) -> dict:
         """任意のプレイヤーのコンペティティブの試合と、それぞれの RR の動きの 1 ページ（PD の competitiveupdates）、
         新しい順: ``{"changes": {試合 ID: {"change", "tier", "rr", "elo", "at"}}, "count": ページの試合数}``。"""
-        if not _UUID.fullmatch(puuid):
+        if not UUID.fullmatch(puuid):
             raise RiotError("down", "rr: not a puuid")
         start = max(0, int(start))
         asked = urlencode({"startIndex": start, "endIndex": start + HISTORY_PAGE, "queue": "competitive"})
@@ -479,7 +478,7 @@ class Riot:
         def read(tokens: dict, saved: dict) -> dict:
             url = f"{PD.format(shard=SHARDS.get(region, 'ap'))}/mmr/v1/players/{puuid}/competitiveupdates?{asked}"
             answer = self._pd("rr", url, self._headers(tokens))
-            listed = answer.get("Matches") if isinstance(answer.get("Matches"), list) else []
+            listed = as_list(answer.get("Matches"))
             return {"changes": pdmatch.rr_updates(answer), "count": len(listed)}
 
         return self._read(read)
@@ -494,7 +493,7 @@ class Riot:
         if (
             action not in ACTIONS
             or (action == "start" and not _QUEUE_ID.fullmatch(value))
-            or (action in ("select", "lock") and not _UUID.fullmatch(value))
+            or (action in ("select", "lock") and not UUID.fullmatch(value))
         ):
             raise RiotError("unknown")
 
@@ -531,7 +530,7 @@ class Riot:
             if error.kind == "down" and " 404" in f" {error.detail}":
                 raise RiotError("notnow", error.detail) from None
             raise
-        if not _UUID.fullmatch(found):
+        if not UUID.fullmatch(found):
             raise RiotError("notnow", f"{key}: no {field}")
         return found
 
@@ -589,7 +588,7 @@ class Riot:
             }
         if seen is not None:
             running, loop = True, seen["loop"]
-            if _UUID.fullmatch(seen.get("party") or ""):
+            if UUID.fullmatch(seen.get("party") or ""):
                 # すぐ聞く（そして確かめる: 持ち主がそこにいるはず）。試合中も: パーティーの仲間を知るため
                 self.where["party"] = seen["party"]
         else:
@@ -720,11 +719,6 @@ class Riot:
                 raise
             return {}, error.detail or error.kind
 
-    def _ranks(self, saved: dict, headers: dict, subjects: list[str]) -> dict:
-        """各プレイヤーの PD の mmr（ゲーム自身のスコアボードと同じランク）。RANK_KEEP 持つ。
-        まだ無いランクは同時に読み、最大 RANK_WAIT 待つ: 残りはあとの確認で来る。"""
-        return self._ask_ranks(saved, headers, subjects)()[0]
-
     def _ask_ranks(self, saved: dict, headers: dict, subjects: list[str]):
         """まだ無いランクを今すぐ聞き始め、答えを集める関数を返す: それを呼ぶと、聞き始めてから RANK_WAIT
         になるまで待ち、``(ランク, まだ来ていない人数)`` を返す。名前とパーティーを読む間もランクは裏で来る。"""
@@ -733,7 +727,7 @@ class Riot:
             kept = self.ranks.get(subject)
             if kept is not None:
                 found[subject] = kept
-            elif _UUID.fullmatch(subject):
+            elif UUID.fullmatch(subject):
                 wanted.append(subject)
         base = self._base(saved)
 
@@ -818,7 +812,7 @@ class Riot:
                 return None, ""  # この段階にはいない
             raise
         match_id = str(player.get("MatchID") or "").lower()
-        if not _UUID.fullmatch(match_id):
+        if not UUID.fullmatch(match_id):
             return None, ""
         match = self._pd(phase, f"{glz}{path}/matches/{match_id}", headers)
         self.where[phase] = match_id
@@ -941,7 +935,7 @@ class Riot:
             answer = json.loads(body.decode("utf-8"))
         except (ValueError, UnicodeDecodeError, AttributeError):
             answer = []
-        for item in answer if isinstance(answer, list) else []:
+        for item in as_list(answer):
             subject = str(item.get("Subject") or "").lower() if isinstance(item, dict) else ""
             if subject in wanted and item.get("GameName"):
                 found[subject] = [str(item["GameName"]), str(item.get("TagLine") or "")]
@@ -997,7 +991,7 @@ class Riot:
             saved = self.store.load()
             if not saved.get("puuid"):
                 raise RiotError("nologin")
-            token = saved.get("token") if isinstance(saved.get("token"), dict) else {}
+            token = as_dict(saved.get("token"))
             if (
                 not renew
                 and token.get("access")
@@ -1005,7 +999,7 @@ class Riot:
                 and to_float(token.get("until")) > self.clock()
             ):
                 return token, saved
-            cookies = saved.get("cookies") if isinstance(saved.get("cookies"), dict) else {}
+            cookies = as_dict(saved.get("cookies"))
             if not cookies:  # 1 時間のアドレスで、もう過ぎた
                 self.store.save(token=None, signed_out=True)
                 raise RiotError("signedout")
@@ -1054,7 +1048,7 @@ class Riot:
         puuid = str(info.get("sub") or token_claims(tokens["access"]).get("sub") or "").lower()
         if not puuid:
             raise RiotError("down", f"userinfo {status}")
-        acct = info.get("acct") if isinstance(info.get("acct"), dict) else {}
+        acct = as_dict(info.get("acct"))
         shard = ""
         if tokens.get("id"):
             status, _, body = self.send(
@@ -1216,7 +1210,7 @@ def _row(account: dict) -> dict:
 
 def _players(match: dict, phase: str) -> list[dict]:
     """GLZ のエージェント選択（持ち主のチーム）か試合のプレイヤー。"""
-    team = match.get("AllyTeam") if isinstance(match.get("AllyTeam"), dict) else {}
+    team = as_dict(match.get("AllyTeam"))
     return [
         item
         for item in (team.get("Players") if phase == "pregame" else match.get("Players")) or []
@@ -1286,7 +1280,7 @@ def _board(answer: dict, now: float) -> dict:
                 "hidden": hidden,
             }
         )
-    details = answer.get("tierDetails") if isinstance(answer.get("tierDetails"), dict) else {}
+    details = as_dict(answer.get("tierDetails"))
     details = {to_int(tier): info for tier, info in details.items() if isinstance(info, dict) and to_float(tier) > 2}
     # 最上位のランクは 1 位から始まる。Riot が順位を付けない（0）下のランクは一覧に無い
     thresholds = [
@@ -1334,7 +1328,7 @@ def wearing(loadout: dict) -> tuple:
         ]
     else:
         wheel = [(low(item.get("TypeID")), low(item.get("AssetID"))) for item in places if isinstance(item, dict)]
-    identity = loadout.get("Identity") if isinstance(loadout.get("Identity"), dict) else {}
+    identity = as_dict(loadout.get("Identity"))
     return guns, wheel, low(identity.get("PlayerCardID")), low(identity.get("PlayerTitleID"))
 
 
@@ -1343,7 +1337,7 @@ def _json(body: bytes) -> dict:
         value = json.loads(body.decode("utf-8"))
     except (ValueError, UnicodeDecodeError, AttributeError):
         return {}
-    return value if isinstance(value, dict) else {}
+    return as_dict(value)
 
 
 def _header(headers: list, name: str) -> str:

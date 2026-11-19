@@ -10,11 +10,49 @@
    "assetPath": "x",
    "weaponStats": {
     "fireRate": 9.75,
-    "magazineSize": 25
+    "magazineSize": 25,
+    "runSpeedMultiplier": 0.76,
+    "equipTimeSeconds": 1,
+    "reloadTimeSeconds": 2.5,
+    "firstBulletAccuracy": 0.25,
+    "shotgunPelletCount": 1,
+    "wallPenetration": "EWallPenetrationDisplayType::Medium",
+    "feature": null,
+    "fireMode": null,
+    "altFireType": "EWeaponAltFireDisplayType::ADS",
+    "adsStats": {
+     "zoomMultiplier": 1.25,
+     "fireRate": 8.775,
+     "runSpeedMultiplier": 0.76,
+     "burstCount": 1,
+     "firstBulletAccuracy": 0.157
+    },
+    "altShotgunStats": null,
+    "airBurstStats": null,
+    "damageRanges": [
+     {
+      "rangeStartMeters": 0,
+      "rangeEndMeters": 50,
+      "headDamage": 160,
+      "bodyDamage": 40,
+      "legDamage": 34
+     }
+    ]
    },
    "shopData": {
     "cost": 2900,
-    "category": "Rifles"
+    "category": "Rifles",
+    "shopOrderPriority": 0,
+    "categoryText": "ライフル",
+    "gridPosition": {
+     "row": 1,
+     "column": 2
+    },
+    "canBeTrashed": true,
+    "image": null,
+    "newImage": null,
+    "newImage2": null,
+    "assetPath": "x"
    },
    "skins": [
     {
@@ -189,7 +227,102 @@
      ],
      "themeUuid": "a1000000-0000-4000-8000-0000000000a1"
     }
-   ]
+   ],
+   "weaponStats": {
+    "fireRate": 6.75,
+    "magazineSize": 12,
+    "runSpeedMultiplier": 0.76,
+    "equipTimeSeconds": 0.75,
+    "reloadTimeSeconds": 1.75,
+    "firstBulletAccuracy": 0.4,
+    "shotgunPelletCount": 1,
+    "wallPenetration": "EWallPenetrationDisplayType::Low",
+    "feature": null,
+    "fireMode": "EWeaponFireModeDisplayType::SemiAutomatic",
+    "altFireType": "EWeaponAltFireDisplayType::AirBurst",
+    "adsStats": null,
+    "altShotgunStats": {
+     "shotgunPelletCount": 6,
+     "burstRate": 2.22
+    },
+    "airBurstStats": null,
+    "damageRanges": [
+     {
+      "rangeStartMeters": 0,
+      "rangeEndMeters": 30,
+      "headDamage": 78,
+      "bodyDamage": 26,
+      "legDamage": 22
+     },
+     {
+      "rangeStartMeters": 30,
+      "rangeEndMeters": 50,
+      "headDamage": 66,
+      "bodyDamage": 22,
+      "legDamage": 18.7
+     }
+    ]
+   }
+  },
+  {
+   "uuid": "ec845bf4-4f79-ddda-a3da-0db3774b2794",
+   "displayName": "ジャッジ",
+   "category": "EEquippableCategory::Shotgun",
+   "defaultSkinUuid": "ad000000-0000-4000-8000-000000000001",
+   "displayIcon": "https://media.valorant-api.com/weapons/ec845bf4-4f79-ddda-a3da-0db3774b2794/displayicon.png",
+   "killStreamIcon": "https://media.valorant-api.com/weapons/ec845bf4-4f79-ddda-a3da-0db3774b2794/killstreamicon.png",
+   "assetPath": "x",
+   "weaponStats": {
+    "fireRate": 3.5,
+    "magazineSize": 7,
+    "runSpeedMultiplier": 0.76,
+    "equipTimeSeconds": 1,
+    "reloadTimeSeconds": 2.2,
+    "firstBulletAccuracy": 2.25,
+    "shotgunPelletCount": 12,
+    "wallPenetration": "EWallPenetrationDisplayType::Low",
+    "feature": null,
+    "fireMode": null,
+    "altFireType": "EWeaponAltFireDisplayType::ADS",
+    "adsStats": {
+     "zoomMultiplier": 1.25,
+     "fireRate": 3.15,
+     "runSpeedMultiplier": 0.76,
+     "burstCount": 1,
+     "firstBulletAccuracy": 2.25
+    },
+    "altShotgunStats": null,
+    "airBurstStats": null,
+    "damageRanges": [
+     {
+      "rangeStartMeters": 0,
+      "rangeEndMeters": 10,
+      "headDamage": 34,
+      "bodyDamage": 17,
+      "legDamage": 14.45
+     },
+     {
+      "rangeStartMeters": 10,
+      "rangeEndMeters": 15,
+      "headDamage": 20,
+      "bodyDamage": 10,
+      "legDamage": 8.5
+     },
+     {
+      "rangeStartMeters": 15,
+      "rangeEndMeters": 50,
+      "headDamage": 14,
+      "bodyDamage": 7,
+      "legDamage": 5.95
+     }
+    ]
+   },
+   "shopData": {
+    "cost": 1850,
+    "category": "Shotguns",
+    "categoryText": "ショットガン"
+   },
+   "skins": []
   }
  ],
  "contenttiers": [

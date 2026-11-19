@@ -4,8 +4,8 @@ import js from "@eslint/js";
 import globals from "globals";
 
 export default [
-  // この PC のデータは lint しない。
-  { ignores: ["instance/"] },
+  // この PC のデータと、リポジトリの中に作った Python の仮想環境（.venv。中に werkzeug などの JS がある）は lint しない。
+  { ignores: ["instance/", ".venv/"] },
   js.configs.recommended,
   {
     rules: {

@@ -19,6 +19,7 @@ from valtracker.henrik import BOARD_PAGE, HenrikError
 from valtracker.riot import RiotError
 from valtracker.riotweb import RiotWebError
 from valtracker.stats import JST
+from valtracker.util import UUID
 from valtracker.views import (
     act_left,
     band_name,
@@ -627,6 +628,19 @@ def register(app: Flask) -> None:
             if queue not in LINE_QUEUES or (band and band not in [name for name, _, _ in BANDS]):
                 abort(404)
             found = activity.agents(queue, band, map_id)
+        elif kind in ("maps", "comps", "agent"):
+            queue = asked.get("queue", "competitive")
+            ids = [asked.get(name, "").lower() for name in ("map", "agent")]
+            if queue not in LINE_QUEUES or any(value and not UUID.fullmatch(value) for value in ids):
+                abort(404)
+            if kind == "maps":
+                found = activity.maps(queue)
+            elif kind == "comps":
+                found = activity.comps(queue, *ids)
+            elif ids[1]:
+                found = activity.agent(ids[1], queue)
+            else:
+                abort(404)
         elif kind == "ranks":
             found = activity.ranks(_numbers_region())
         elif kind == "servers":

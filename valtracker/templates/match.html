@@ -39,6 +39,36 @@
 </section>
 {% endif %}
 
+{% if economy %}
+{% macro side_name(team) -%}
+{% if my_team %}{{ t('味方') if team.mine else t('相手') }}{% elif team.id|lower == 'red' %}{{ t('レッド') }}{% elif team.id|lower == 'blue' %}{{ t('ブルー') }}{% else %}{{ team.id }}{% endif %}
+{%- endmacro %}
+{% set first, second = economy.teams[0], economy.teams[1] %}
+<section class="economy{% if not my_team %} plain-teams{% endif %}" aria-labelledby="eco-title">
+<h2 id="eco-title">{{ t('経済') }}</h2>
+<div class="eco-chart">
+<svg viewBox="0 0 {{ economy.rounds|length * 10 }} 64" preserveAspectRatio="none" role="img" aria-label="{{ t('ラウンドごとの 1 人あたりのロードアウト') }}">
+{% for item in economy.rounds %}{% set x = loop.index0 * 10 %}
+{% for team in economy.teams %}{% set height = (52 * item.spent[team.id] / economy.top)|round(1) %}<rect x="{{ x + 1 + loop.index0 * 4.2 }}" y="{{ 54 - height }}" width="3.6" height="{{ height }}" class="t{{ loop.index0 }}"><title>{{ t('ラウンド {number}', number=item.number) }} · {{ side_name(team) }}: {{ buy_words[item.buys[team.id]] }} · {{ '{:,}'.format(item.spent[team.id]) }}</title></rect>{% endfor %}
+<rect x="{{ x + 1 }}" y="58" width="8" height="4" class="w{{ 0 if item.won == first.id else (1 if item.won == second.id else 9) }}"/>
+{% endfor %}
+</svg>
+</div>
+<p class="note legend"><span class="key t0"></span>{{ side_name(first) }} <span class="key t1"></span>{{ side_name(second) }} · {{ t('下の線はラウンドを取ったチーム') }}</p>
+<div class="table-wrap"><table class="board plain eco-table">
+<thead><tr><th scope="col">{{ t('購入') }}</th><th scope="col">{{ side_name(first) }}</th><th scope="col">{{ side_name(second) }}</th></tr></thead>
+<tbody>
+{% for kind in ['pistol', 'eco', 'semi-eco', 'semi-buy', 'full'] %}
+{% set one = first.kinds|selectattr('kind', 'equalto', kind)|first %}
+{% set two = second.kinds|selectattr('kind', 'equalto', kind)|first %}
+{% if one or two %}<tr><th scope="row">{{ buy_words[kind] }}</th>
+{% for cell in [one, two] %}<td>{% if cell %}<strong>{{ cell.won }}/{{ cell.played }}</strong><small> {{ (100 * cell.won / cell.played)|round|int }}%</small>{% else %}–{% endif %}</td>{% endfor %}</tr>{% endif %}
+{% endfor %}</tbody>
+</table></div>
+<p class="note">{{ t('取ったラウンド / その購入のラウンド。1 人あたりのロードアウト（武器とアーマー）で分けます: エコ 1,000 未満・セミエコ 2,000 未満・セミバイ 3,900 未満・フルバイ。') }}</p>
+</section>
+{% endif %}
+
 {% for team in teams %}
 {% set outcome = 'draw' if not team.result else ('win' if team.result.won is sameas true else ('loss' if team.result.won is sameas false else 'draw')) %}
 <section class="team {{ outcome }}" aria-labelledby="team-{{ loop.index }}">

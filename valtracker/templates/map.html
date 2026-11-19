@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ map.name }} · {{ t('マップ') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('{map} のコールアウト、攻撃・防衛の勝率、サイトごとの設置、強いエージェントと構成。', map=map.name) }}{% endblock %}
+{% block main %}
+<p class="crumb"><a href="{{ url_for('maps', queue=queue if queue != 'competitive' else None) }}">{{ t('マップ') }}</a></p>
+<section class="map-head">
+{% if map.image %}<img src="{{ media(map.image) }}" alt="" width="452" height="128">{% endif %}
+<h1>{{ map.name }}</h1>
+<p class="meta">{{ map.sites }}{% if map.where %} · {{ map.where }}{% endif %}</p>
+</section>
+<form class="skin-form" action="{{ url_for('map_page', uuid=map.uuid) }}" method="get">
+<label><span>{{ t('モード') }}</span>
+<select name="queue">
+{% for item in queues %}<option value="{{ item.key }}"{% if item.key == queue %} selected{% endif %}>{{ item.name }}</option>
+{% endfor %}</select></label>
+<button type="submit">{{ t('表示') }}</button>
+</form>
+<p class="meta" role="status">{{ t('直近 {days} 日・{count} 試合の集計', days=days, count=matches) }}</p>
+
+<section aria-labelledby="side-title">
+<h2 id="side-title">{{ t('攻撃と防衛') }}</h2>
+{% if sides %}
+<div class="side-bars">
+<p><span>{{ t('攻撃') }}</span><svg viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><rect width="100" height="8" rx="4" class="back"/><rect width="{{ sides.atk }}" height="8" rx="4" class="atk"/></svg><strong>{{ sides.atk }}%</strong></p>
+<p><span>{{ t('防衛') }}</span><svg viewBox="0 0 100 8" preserveAspectRatio="none" aria-hidden="true"><rect width="100" height="8" rx="4" class="back"/><rect width="{{ sides.def }}" height="8" rx="4" class="def"/></svg><strong>{{ sides.def }}%</strong></p>
+</div>
+<p class="note">{{ t('ラウンド勝率（{rounds} ラウンド・{count} 試合）。', rounds='{:,}'.format(sides.rounds), count=sides.matches) }}</p>
+{% if sites %}
+<div class="table-wrap"><table class="board plain site-table">
+<thead><tr><th scope="col">{{ t('サイト') }}</th><th scope="col">{{ t('設置の割合') }}</th><th scope="col">{{ t('設置後の攻撃側勝率') }}</th></tr></thead>
+<tbody>
+{% for site in sites %}<tr><th scope="row">{{ site.site }}</th><td>{{ site.share }}%</td><td><strong class="{{ 'win' if site.won >= 50 else 'loss' }}">{{ site.won }}%</strong><small> {{ t('{count} 回', count=site.plants) }}</small></td></tr>
+{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% else %}
+<p class="note">{{ t('集計できる試合がまだ足りません。') }}</p>
+{% endif %}
+</section>
+
+{% if labels %}
+<section aria-labelledby="call-title">
+<h2 id="call-title">{{ t('コールアウト') }}</h2>
+<div class="callout-map">
+<svg class="callout-svg" viewBox="0 0 100 100" role="img" aria-label="{{ t('{map} のミニマップとコールアウト', map=map.name) }}">
+<image href="{{ media(map.minimap) }}" x="0" y="0" width="100" height="100"/>
+{% for label in labels %}<text x="{{ label.x }}" y="{{ label.y }}" class="{{ label.kind }}">{{ label.name }}</text>{% endfor %}
+</svg>
+</div>
+<ul class="callout-list">
+{% for area in areas %}<li><strong>{{ area.area }}</strong> {{ area.names|join(' · ') }}</li>
+{% endfor %}</ul>
+</section>
+{% endif %}
+
+<section aria-labelledby="pick-title">
+<h2 id="pick-title">{{ t('エージェント') }}</h2>
+{% if agents %}
+<div class="table-wrap"><table class="board plain agent-stats">
+<thead><tr><th scope="col">{{ t('エージェント') }}</th><th scope="col">{{ t('ピック率') }}</th><th scope="col">{{ t('勝率') }}</th><th scope="col">{{ t('試合') }}</th></tr></thead>
+<tbody>
+{% for row in agents %}<tr{% if row.few %} class="few"{% endif %}>
+<th scope="row"><a class="agent-cell" href="{{ url_for('agent', uuid=row.uuid) }}">{% if row.icon %}<img src="{{ media(row.icon) }}" alt="" width="28" height="28" loading="lazy">{% endif %}<span>{{ row.name }}<small>{{ row.role }}</small></span></a></th>
+<td><svg class="share-bar" viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true"><rect width="100" height="6" rx="3" class="back"/><rect width="{{ (100 * row.pick / top_pick)|round(1) if top_pick else 0 }}" height="6" rx="3"/></svg><strong>{{ row.pick }}%</strong></td>
+<td>{% if row.few %}—{% else %}<strong class="{{ 'win' if row.win >= 50 else 'loss' }}">{{ row.win }}%</strong>{% endif %}</td>
+<td>{{ row.picks }}</td>
+</tr>
+{% endfor %}</tbody>
+</table></div>
+<p class="meta"><a href="{{ stats_url }}">{{ t('すべてのエージェント') }} →</a></p>
+{% else %}
+<p class="note">{{ t('集計できる試合がまだ足りません。') }}</p>
+{% endif %}
+</section>
+
+<section aria-labelledby="comp-title">
+<h2 id="comp-title">{{ t('よく使われる構成') }}</h2>
+{% include "_comps.html" %}
+</section>
+{% endblock %}

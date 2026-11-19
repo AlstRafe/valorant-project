@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ t('マップ') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('VALORANT の各マップのコールアウト、攻撃・防衛の勝率、よく使われるエージェントと構成。') }}{% endblock %}
+{% block main %}
+{% include "_game_nav.html" %}
+<section class="hero">
+<h1>{{ t('マップ') }}</h1>
+<p class="lead">{{ t('VALORANT の各マップのコールアウト、攻撃・防衛の勝率、よく使われるエージェントと構成。') }}</p>
+</section>
+{% if not cards %}
+<p class="problem" role="alert">{{ t('マップのデータを読み込めませんでした。しばらくしてからお試しください。') }}</p>
+{% else %}
+<form class="skin-form" action="{{ url_for('maps') }}" method="get">
+<label><span>{{ t('モード') }}</span>
+<select name="queue">
+{% for item in queues %}<option value="{{ item.key }}"{% if item.key == queue %} selected{% endif %}>{{ item.name }}</option>
+{% endfor %}</select></label>
+<button type="submit">{{ t('表示') }}</button>
+</form>
+<ul class="map-grid">
+{% for card in cards %}
+<li><a href="{{ url_for('map_page', uuid=card.uuid, queue=queue if queue != 'competitive' else None) }}">
+{% if card.image %}<img src="{{ media(card.image) }}" alt="" width="452" height="128" loading="lazy">{% endif %}
+<span class="map-name"><strong>{{ card.name }}</strong>{% if card.pool %}<span class="badge">{{ t('プール') }}</span>{% endif %}</span>
+<small>{{ card.sites }}{% if card.sides %} · {{ t('攻撃側 {atk}%', atk=card.sides.atk) }}{% endif %}{% if card.games %} · {{ t('{count} 試合', count=card.games) }}{% endif %}</small>
+</a></li>
+{% endfor %}
+</ul>
+<p class="note">{{ t('「プール」は直近 {days} 日にこのモードで遊ばれたマップ（当サイト集計）。', days=days) }}</p>
+{% endif %}
+{% endblock %}

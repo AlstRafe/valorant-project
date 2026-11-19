@@ -92,10 +92,10 @@ def left(seconds: float) -> dict:
 
 def page(found: dict, content: Content, lang: str, owned: dict | None = None) -> dict:
     """shop.html に出す持ち主のストア（riot.Riot.shop）。``owned``（コレクションのもの）で所持済みに印を付ける。"""
-    front = found.get("storefront") if isinstance(found.get("storefront"), dict) else {}
+    front = as_dict(found.get("storefront"))
     at = float(found.get("at") or 0)
     owned = owned or {}
-    panel = front.get("SkinsPanelLayout") if isinstance(front.get("SkinsPanelLayout"), dict) else {}
+    panel = as_dict(front.get("SkinsPanelLayout"))
     daily = []
     offers = [offer for offer in as_list(panel.get("SingleItemStoreOffers")) if isinstance(offer, dict)]
     for offer in offers:
@@ -121,7 +121,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
                     "owned": _owned(kind or "skins", uuid, owned),
                 }
             )
-    featured = front.get("FeaturedBundle") if isinstance(front.get("FeaturedBundle"), dict) else {}
+    featured = as_dict(front.get("FeaturedBundle"))
     bundles = featured.get("Bundles") or ([featured["Bundle"]] if isinstance(featured.get("Bundle"), dict) else [])
     known = content.index("bundles", lang)
     listed = []
@@ -133,7 +133,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
         for entry in as_list(bundle.get("Items")):
             if not isinstance(entry, dict):
                 continue
-            thing = entry.get("Item") if isinstance(entry.get("Item"), dict) else {}
+            thing = as_dict(entry.get("Item"))
             kind = KINDS.get(lower_id(thing.get("ItemTypeID")), "")
             things.append(
                 item(kind, lower_id(thing.get("ItemID")), content, lang)
@@ -154,7 +154,7 @@ def page(found: dict, content: Content, lang: str, owned: dict | None = None) ->
                 "items": things,
             }
         )
-    store = front.get("AccessoryStore") if isinstance(front.get("AccessoryStore"), dict) else {}
+    store = as_dict(front.get("AccessoryStore"))
     accessories = []
     for offer in as_list(store.get("AccessoryStoreOffers")):
         if not isinstance(offer, dict):
