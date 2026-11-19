@@ -3312,6 +3312,19 @@ code {
   height: 1.75rem;
   object-fit: contain;
 }
+/* チームのロゴは公式サイトの暗い画面向け（白いものが多い）: 紙の上では暗い台に載せる */
+:root:not([data-theme="dark"]) .team-row img {
+  box-sizing: border-box;
+  padding: 0.15rem;
+  border-radius: 6px;
+  background-color: #34312b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .team-row img {
+    padding: 0;
+    background-color: transparent;
+  }
+}
 .no-logo {
   display: inline-grid;
   place-items: center;
@@ -5963,12 +5976,22 @@ form.row {
   height: 3.5rem;
 }
 .gun-pic img,
-.gun-head img {
+.weapon-head img {
   width: auto;
   max-width: 100%;
   height: 3.5rem;
   object-fit: contain;
-  filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.55));
+}
+/* 武器の絵（valorant-api.com の displayIcon）は白い影絵: 紙の上ではキルフィードの絵と同じく反転する */
+:root:not([data-theme="dark"]) .gun-pic img,
+:root:not([data-theme="dark"]) .weapon-head img {
+  filter: invert(0.85);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .gun-pic img,
+  :root:not([data-theme="light"]) .weapon-head img {
+    filter: none;
+  }
 }
 .gun-name {
   display: flex;
@@ -5994,22 +6017,22 @@ form.row {
   font-size: 0.75rem;
   font-weight: 400;
 }
-.gun-head {
+.weapon-head {
   display: grid;
   grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
   align-items: center;
   gap: 1rem;
   margin: 0.6rem 0 1rem;
 }
-.gun-head img {
+.weapon-head img {
   height: auto;
   max-height: 6rem;
 }
-.gun-head h1 {
+.weapon-head h1 {
   margin: 0;
 }
 @media (max-width: 34rem) {
-  .gun-head {
+  .weapon-head {
     grid-template-columns: 1fr;
   }
 }
