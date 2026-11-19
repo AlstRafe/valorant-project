@@ -44,6 +44,11 @@ const PAGES = [
   "/skins",
   "/skins?weapon=all&tier=ultra",
   "/agents/stats",
+  "/maps",
+  "/maps/7eaecc1b-4337-bbf6-6ab9-04b8f06b3319",
+  "/weapons",
+  "/weapons/9c82e19d-4575-0200-1a81-3eacf00cf872?vs=ec845bf4-4f79-ddda-a3da-0db3774b2794",
+  "/weapons/29a0cfab-485b-f5d5-779a-b59f85e204a8",
   "/compare",
   "/help",
   "/search?q=Tester",
@@ -239,7 +244,12 @@ function inspect() {
     "header a, header summary, header button, nav.modes a, .tabbar a, button, .button, .badge, thead th",
   )) {
     if (!shown(el) || el.closest("[hidden]") || folded(el)) continue;
-    if (lines(el) > 1) found.push({ kind: "wraps onto two lines", where: path(el), text: words(el) });
+    // 縦に積むボタン（エージェント選択のカード: 絵・名前・勝率）は、積んだ一つ一つが 1 行かを見る
+    const look = getComputedStyle(el);
+    const stacked = look.display === "grid" || (look.display === "flex" && look.flexDirection === "column");
+    const parts = stacked ? [...el.children] : [el];
+    if (Math.max(0, ...parts.map(lines)) > 1)
+      found.push({ kind: "wraps onto two lines", where: path(el), text: words(el) });
   }
   if (width <= 760) {
     for (const el of document.querySelectorAll(

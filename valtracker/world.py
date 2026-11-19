@@ -14,7 +14,7 @@ from valtracker.activity import BANDS, FEW, WINDOW_DAYS
 from valtracker.henrik import HenrikError
 from valtracker.riotweb import RiotWebError
 from valtracker.tools import moment_info
-from valtracker.util import as_dict
+from valtracker.util import as_dict, as_list
 from valtracker.views import QUEUES, band_name, failure_info, tr
 
 #: こちらの言語ごとの Riot ニュースサイトの言語。
@@ -91,6 +91,82 @@ def _agent_stats() -> dict:
         "few": FEW,
         "days": WINDOW_DAYS,
         "top_pick": max((row["pick"] for row in rows), default=0),
+    }
+
+
+def comp_rows(found: dict, agents: dict) -> list[dict]:
+    """構成の行: 5 体のエージェント（名前と絵）、試合数、勝率。"""
+    rows = []
+    for item in as_list(found.get("comps")):
+        people = [agents.get(uuid) for uuid in item.get("agents") or []]
+        if len(people) != 5 or not all(people):
+            continue
+        people.sort(
+            key=lambda agent: (as_dict(agent.get("role")).get("displayName") or "", agent.get("displayName") or "")
+        )
+        rows.append(
+            {
+                "agents": [
+                    {
+                        "uuid": agent["uuid"],
+                        "name": agent.get("displayName") or "",
+                        "icon": agent.get("displayIcon") or "",
+                    }
+                    for agent in people
+                ],
+                "games": item["games"],
+                "win": item["win"],
+                "few": item["games"] < FEW,
+            }
+        )
+    return rows
+
+
+def agent_numbers(uuid: str) -> dict:
+    """エージェントのページの集計（このサイトが見た試合）: 全体・マップ別・ランク帯別のピック率と勝率、そのエージェントの
+    入った構成。試合が無ければ ``overall`` は None。"""
+    content = current_app.config["VAL_CONTENT"]
+    activity = current_app.config["VAL_ACTIVITY"]
+    queue = request.args.get("queue", "competitive")
+    queue = queue if queue in STAT_QUEUES else "competitive"
+    found = activity.agent(uuid, queue)
+
+    def line(picks: int, wins: int, games: int) -> dict:
+        return {
+            "picks": picks,
+            "pick": round(100 * picks / (2 * games), 1) if games else 0.0,
+            "win": round(100 * wins / picks, 1) if picks else 0.0,
+            "few": picks < FEW,
+        }
+
+    known = content.map_index(g.lang)
+    maps = [
+        line(*counted) | {"name": known[key].get("displayName") or "", "uuid": key}
+        for key, counted in as_dict(found.get("maps")).items()
+        if key in known and len(counted) == 3
+    ]
+    maps.sort(key=lambda row: (row["few"], -row["win"], -row["picks"]))
+    order = [name for name, _, _ in BANDS]
+    bands = [
+        line(*counted) | {"name": band_name(key)}
+        for key, counted in sorted(
+            as_dict(found.get("bands")).items(), key=lambda pair: order.index(pair[0]) if pair[0] in order else 99
+        )
+        if len(counted) == 3
+    ]
+    agents = {key: value | {"uuid": key} for key, value in content.agent_index(g.lang).items()}
+    return {
+        "overall": line(found["picks"], found["wins"], found["matches"]) | {"matches": found["matches"]}
+        if found["matches"]
+        else None,
+        "maps": maps,
+        "bands": bands,
+        "comps": comp_rows(activity.comps(queue, "", uuid), agents),
+        "queue": queue,
+        "queue_name": tr(QUEUES[queue]),
+        "queues": [{"key": key, "name": tr(QUEUES[key])} for key in STAT_QUEUES],
+        "days": WINDOW_DAYS,
+        "few": FEW,
     }
 
 

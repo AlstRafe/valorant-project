@@ -28,7 +28,7 @@ import threading
 import time
 from pathlib import Path
 
-from valtracker.util import as_list, to_float, token_claims
+from valtracker.util import UUID, as_dict, as_list, to_float, token_claims
 
 _HOME = Path(os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local")
 #: Riot Client が動いている間に書くもの: ``name:pid:port:password:protocol``。
@@ -64,7 +64,6 @@ PARTIES_KEEP = 20.0
 #: 通知先（``listen``）に知らせる持ち主のゲームの瞬間: 試合成立（ゲームの 5 秒カウント）、
 #: それを取りこぼしたらエージェント選択。
 TOLD = ("found", "pregame")
-_UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 _GLZ = re.compile(rb"https://glz-([a-z]+)-1\.([a-z]+)\.a\.pvp\.net")
 _SHARDS = ("ap", "kr", "eu", "na", "pbe")
 
@@ -184,7 +183,7 @@ def where(item: dict) -> dict:
     party_id = str(party.get("partyId") or data.get("partyId") or "").lower()
     return {
         "loop": str(match.get("sessionLoopState") or data.get("sessionLoopState") or "").upper(),
-        "party": party_id if _UUID.fullmatch(party_id) else "",
+        "party": party_id if UUID.fullmatch(party_id) else "",
         "party_state": str(party.get("partyState") or data.get("partyState") or "").upper(),
         "queue": str(match.get("queueId") or data.get("queueId") or "").lower(),
     }
@@ -213,7 +212,7 @@ def launched(sessions) -> dict:
     for session in (sessions or {}).values() if isinstance(sessions, dict) else []:
         if not isinstance(session, dict) or str(session.get("productId") or "").lower() != "valorant":
             continue
-        config = session.get("launchConfiguration") if isinstance(session.get("launchConfiguration"), dict) else {}
+        config = as_dict(session.get("launchConfiguration"))
         arguments = " ".join(str(item) for item in as_list(config.get("arguments")) if isinstance(item, str))
         found = re.search(r"-ares-deployment=([a-z]+)", arguments) or re.search(
             r"shared\.([a-z]+)\.a\.pvp\.net", arguments
@@ -395,11 +394,11 @@ class LocalClient:
         except LocalError:
             return None
         found = {}
-        for item in as_list(present.get("presences")) if isinstance(present, dict) else []:
+        for item in as_list(as_dict(present).get("presences")):
             if not isinstance(item, dict) or str(item.get("product") or "").lower() != "valorant":
                 continue
             puuid, party = str(item.get("puuid") or "").lower(), where(item)["party"]
-            if _UUID.fullmatch(puuid) and party:
+            if UUID.fullmatch(puuid) and party:
                 found[puuid] = party
         with self._lock:
             self._parties = (self.clock(), door, found)
@@ -415,16 +414,16 @@ class LocalClient:
         if door is None:
             return found
         status, value = self.ask(door, "/entitlements/v1/token")
-        value = value if isinstance(value, dict) else {}
+        value = as_dict(value)
         puuid = str(value.get("subject") or "").lower()
         found["token"] = {
             "status": status,
             "access": bool(value.get("accessToken")),
             "entitlements": bool(value.get("token")),
-            "subject": bool(_UUID.fullmatch(puuid)),
+            "subject": bool(UUID.fullmatch(puuid)),
         }
         status, value = self.ask(door, "/chat/v1/session")
-        value = value if isinstance(value, dict) else {}
+        value = as_dict(value)
         found["chat"] = {
             "status": status,
             "name": bool(value.get("game_name")) and bool(value.get("game_tag")),
@@ -432,7 +431,7 @@ class LocalClient:
             "state": str(value.get("state") or "")[:24],
         }
         status, value = self.ask(door, "/product-session/v1/external-sessions")
-        sessions = value if isinstance(value, dict) else {}
+        sessions = as_dict(value)
         products = sorted(
             {str(item.get("productId") or "")[:24] for item in sessions.values() if isinstance(item, dict)}
         )
@@ -485,10 +484,10 @@ class LocalClient:
             found = self._get(door, "/entitlements/v1/token")
         except LocalError:
             return None
-        found = found if isinstance(found, dict) else {}
+        found = as_dict(found)
         access, entitlements = str(found.get("accessToken") or ""), str(found.get("token") or "")
         puuid = str(found.get("subject") or token_claims(access).get("sub") or "").lower()
-        if not access or not entitlements or not _UUID.fullmatch(puuid):
+        if not access or not entitlements or not UUID.fullmatch(puuid):
             return None  # クライアントは開いているが、まだ誰もサインインしていない
         # exp が読めない（数でない）トークンは 1 時間もつとみなす: float() で落ちてサインインが読めなくならないように
         until = (to_float(token_claims(access).get("exp")) or self.clock() + 3600) - EARLY
@@ -500,7 +499,7 @@ class LocalClient:
             found = self._get(door, "/chat/v1/session")
         except LocalError:
             found = {}
-        found = found if isinstance(found, dict) else {}
+        found = as_dict(found)
         mine = str(found.get("puuid") or "").lower() == puuid
         return {
             "puuid": puuid,
@@ -595,7 +594,7 @@ class LocalClient:
         if not isinstance(message, list) or len(message) < 3 or message[0] != 8 or not isinstance(message[2], dict):
             return
         event, payload = message[1], message[2]
-        data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+        data = as_dict(payload.get("data"))
         if event == PRESENCES:
             with self._lock:
                 puuid = (self._tokens or {}).get("puuid", "")

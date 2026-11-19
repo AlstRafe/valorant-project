@@ -65,7 +65,7 @@
 {% if row.then %}<small class="then" title="{{ t('この試合時点のランク') }}">{% if row.then.rank.icon %}<img src="{{ media(row.then.rank.icon) }}" alt="{{ row.then.rank.name }}" width="22" height="22" loading="lazy">{% else %}{{ row.then.rank.name }}{% endif %}{% if row.then.rr is not none %}<span>{{ row.then.rr }} RR</span>{% endif %}</small>{% endif %}
 </span>
 <span class="cells">
-<span class="cell"><small>K / D / A</small><strong>{{ row.line.kills }} / {{ row.line.deaths }} / {{ row.line.assists }}</strong></span>
+<span class="cell"><small>K / D / A</small><strong class="kda">{{ row.line.kills }}&thinsp;/&thinsp;{{ row.line.deaths }}&thinsp;/&thinsp;{{ row.line.assists }}</strong></span>
 <span class="cell"><small>K/D</small><strong class="{{ 'up' if row.line.kd >= 1.2 else ('down' if row.line.kd < 0.8 else '') }}">{{ '%.2f'|format(row.line.kd) }}</strong></span>
 <span class="cell"><small>ADR</small><strong>{{ row.line.adr if row.rounds else '–' }}</strong></span>
 <span class="cell"><small>ACS</small><strong>{{ row.line.acs if row.rounds else '–' }}</strong></span>

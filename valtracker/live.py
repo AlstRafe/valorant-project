@@ -50,7 +50,7 @@ def _seasons(mmr) -> dict:
         if isinstance(mmr, dict)
         else {}
     )
-    return skills if isinstance(skills, dict) else {}
+    return as_dict(skills)
 
 
 def _act_info(mmr, act: str) -> dict | None:
@@ -66,7 +66,7 @@ def _rank(mmr, act: str) -> tuple[int, int]:
     for season, info in _seasons(mmr).items():
         if act and lower_id(season) == act and isinstance(info, dict) and to_int(info.get("CompetitiveTier")) > 2:
             return to_int(info.get("CompetitiveTier")), to_int(info.get("RankedRating"))
-    latest = mmr.get("LatestCompetitiveUpdate") if isinstance(mmr.get("LatestCompetitiveUpdate"), dict) else {}
+    latest = as_dict(mmr.get("LatestCompetitiveUpdate"))
     if act and lower_id(latest.get("SeasonID")) == act:
         return to_int(latest.get("TierAfterUpdate")), to_int(latest.get("RankedRatingAfterUpdate"))
     return 0, 0
@@ -79,7 +79,7 @@ def best_ever(mmr, old_acts=frozenset()) -> int:
     for season, info in _seasons(mmr).items():
         if not isinstance(info, dict):
             continue
-        won_at = info.get("WinsByTier") if isinstance(info.get("WinsByTier"), dict) else {}
+        won_at = as_dict(info.get("WinsByTier"))
         tiers = [to_int(tier) for tier, count in won_at.items() if to_int(count) > 0]
         tiers.append(to_int(info.get("CompetitiveTier")))
         best = max(best, todays_tier(max(tiers), lower_id(season) in old_acts))
@@ -91,7 +91,7 @@ def act_best(mmr, act: str) -> int:
     info = _act_info(mmr, act)
     if info is None:
         return 0
-    won_at = info.get("WinsByTier") if isinstance(info.get("WinsByTier"), dict) else {}
+    won_at = as_dict(info.get("WinsByTier"))
     tiers = [to_int(tier) for tier, count in won_at.items() if to_int(count) > 0]
     return max([*tiers, to_int(info.get("CompetitiveTier"))])
 
@@ -140,7 +140,7 @@ def average(rows: list[dict], look: dict) -> dict | None:
 
 
 def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
-    identity = item.get("PlayerIdentity") if isinstance(item.get("PlayerIdentity"), dict) else {}
+    identity = as_dict(item.get("PlayerIdentity"))
     agent = look["agents"].get(lower_id(item.get("CharacterID"))) or {}
     subject = lower_id(item.get("Subject"))
     # 同じパーティーの仲間（Riot のパーティーのメンバー、riot.Riot.live）にはゲームも名前を見せる
@@ -148,7 +148,7 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
     # 隠すのは名前だけ（riot.Riot は隠している人の名前をそもそも聞かない）
     hidden = bool(identity.get("Incognito")) and not mate
     name = look["names"].get(subject) if not hidden else None
-    badge = item.get("SeasonalBadgeInfo") if isinstance(item.get("SeasonalBadgeInfo"), dict) else {}
+    badge = as_dict(item.get("SeasonalBadgeInfo"))
     tier, rr = _rank(look["ranks"].get(subject), look["act"])
     if tier <= 2:
         tier, rr = to_int(item.get(rank_key) if rank_key in item else badge.get("Rank")), None
@@ -224,7 +224,7 @@ def _party(party: dict, look: dict, me: str, queue_name, now: float) -> dict:
     members = [
         _player(item, look, me, "CompetitiveTier") for item in as_list(party.get("Members")) if isinstance(item, dict)
     ]
-    making = party.get("MatchmakingData") if isinstance(party.get("MatchmakingData"), dict) else {}
+    making = as_dict(party.get("MatchmakingData"))
     state = str(party.get("State") or "")
     current = lower_id(making.get("QueueID"))
     eligible = [lower_id(queue) for queue in as_list(party.get("EligibleQueues")) if isinstance(queue, str) and queue]
@@ -249,7 +249,7 @@ def page(
     ``queue_name(id)``: ページの言語でのキューの名前、 ``agent_stats(map uuid, queue id)``: このサイトが見た試合での、
     そのマップでの各エージェントの成績（activity.Activity.agents）。"""
     phase = found.get("phase") or ""
-    match = found.get("match") if isinstance(found.get("match"), dict) else {}
+    match = as_dict(found.get("match"))
     agents = content.agent_index(lang)
     act = content.act(lang)
     look = {
@@ -287,7 +287,7 @@ def page(
     if phase == "menus" and isinstance(found.get("party"), dict):
         values["party"] = _party(found["party"], look, me, queue_name, float(found.get("at") or 0))
     if phase == "pregame":
-        team = match.get("AllyTeam") if isinstance(match.get("AllyTeam"), dict) else {}
+        team = as_dict(match.get("AllyTeam"))
         rows = [
             _player(item, look, me, "CompetitiveTier")
             for item in as_list(team.get("Players"))
@@ -376,7 +376,7 @@ def page(
             }
             for team, players in ordered
         ]
-        making = match.get("MatchmakingData") if isinstance(match.get("MatchmakingData"), dict) else {}
+        making = as_dict(match.get("MatchmakingData"))
         values["queue"] = queue_name(str(making.get("QueueID") or ""))
     # ページの誰かが名前を隠している: そのときだけ、名前が無い理由をページに書く
     shown = values["players"] + [row for team in values["teams"] for row in team["players"]]
@@ -402,7 +402,7 @@ def where(found: dict) -> str:
     "found"（試合が見つかった: エージェント選択前のゲームの 5 秒カウント）、"pregame"、"ingame"、 ""（閉じているか不明）
     。"""
     phase = found.get("phase") or ""
-    party = found.get("party") if isinstance(found.get("party"), dict) else {}
+    party = as_dict(found.get("party"))
     if phase == "menus":
         party_state = str(party.get("State") or "").upper()
         return "queue" if party_state == "MATCHMAKING" else "found" if "STARTING" in party_state else "menus"
@@ -414,7 +414,7 @@ def state(found: dict, content: Content, lang: str) -> dict:
     : ``{"phase": where(found), "words", "map", "match": 試合の ID（エージェント選択と試合）, "running", "every": タブが次に聞くまでの秒数, "icons": エージェント選択の前に用意しておくエージェントの絵（マッチング中と試合が見つかったときだけ）
     }``。ページの言語（``lang``）で。"""
     phase = where(found)
-    match = found.get("match") if isinstance(found.get("match"), dict) else {}
+    match = as_dict(found.get("match"))
     place = ""
     if phase in ("pregame", "ingame"):
         address = str(match.get("MapID") or "").rsplit("/", 1)[-1].lower()

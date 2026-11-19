@@ -81,8 +81,8 @@ def page(found: dict, content: Content, lang: str, show: str, weapon: str = "", 
     スキンのタブでは ``weapon``（uuid）がスキンを開いている武器（ゲームのコレクションも 1 つずつ開く）。
     ``sets``: 保存したセット（owner.py）。"""
     owned = found.get("owned") or {}
-    loadout = found.get("loadout") if isinstance(found.get("loadout"), dict) else {}
-    identity = loadout.get("Identity") if isinstance(loadout.get("Identity"), dict) else {}
+    loadout = as_dict(found.get("loadout"))
+    identity = as_dict(loadout.get("Identity"))
     cards = content.index("playercards", lang)
     card = cards.get(lower_id(identity.get("PlayerCardID"))) or {}
     title = content.index("playertitles", lang).get(lower_id(identity.get("PlayerTitleID"))) or {}
@@ -233,7 +233,7 @@ def snapshot(loadout: dict) -> dict:
         ]
     elif isinstance(loadout.get("Sprays"), list):
         kept["Sprays"] = [dict(item) for item in loadout["Sprays"] if isinstance(item, dict)]
-    identity = loadout.get("Identity") if isinstance(loadout.get("Identity"), dict) else {}
+    identity = as_dict(loadout.get("Identity"))
     kept["Identity"] = {key: identity[key] for key in ("PlayerCardID", "PlayerTitleID") if identity.get(key)}
     return kept
 

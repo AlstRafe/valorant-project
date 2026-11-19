@@ -296,7 +296,7 @@
 {% if row.then %}<small class="then" title="{{ t('この試合時点のランク') }}">{% if row.then.rank.icon %}<img src="{{ media(row.then.rank.icon) }}" alt="{{ row.then.rank.name }}" width="22" height="22" loading="lazy">{% else %}{{ row.then.rank.name }}{% endif %}{% if row.then.rr is not none %}<span>{{ row.then.rr }} RR</span>{% endif %}</small>{% endif %}
 </span>
 <span class="cells">
-<span class="cell"><small>K / D / A</small><strong>{{ row.line.kills }} / {{ row.line.deaths }} / {{ row.line.assists }}</strong></span>
+<span class="cell"><small>K / D / A</small><strong class="kda">{{ row.line.kills }}&thinsp;/&thinsp;{{ row.line.deaths }}&thinsp;/&thinsp;{{ row.line.assists }}</strong></span>
 <span class="cell"><small>K/D</small><strong class="{{ 'up' if row.line.kd >= 1.2 else ('down' if row.line.kd < 0.8 else '') }}">{{ '%.2f'|format(row.line.kd) }}</strong></span>
 <span class="cell"><small>ADR</small><strong>{{ row.line.adr if row.rounds else '–' }}</strong></span>
 <span class="cell"><small>ACS</small><strong>{{ row.line.acs if row.rounds else '–' }}</strong></span>
@@ -377,7 +377,7 @@
 <ul class="weapons">
 {% for weapon in summary.weapons %}
 {% set picture = media(weapon.icon) if weapon.icon else '' %}
-<li><span class="wpic">{% if picture %}<img src="{{ picture }}" alt="" width="96" height="32" loading="lazy">{% endif %}</span><strong>{{ weapon.name }}{% if weapon.far is not none %}<small>{{ t('平均 {far} m · 最長 {longest} m', far=weapon.far, longest=weapon.longest) }}</small>{% endif %}</strong><meter min="0" max="100" value="{{ weapon.share }}"></meter><span>{{ t('{count}キル', count='{:,}'.format(weapon.kills)) }}<small>{{ weapon.share }}%</small></span></li>
+<li><span class="wpic">{% if picture %}<img src="{{ picture }}" alt="" width="96" height="32" loading="lazy">{% endif %}</span><strong>{% if weapon.page %}<a href="{{ url_for('weapon', uuid=weapon.page) }}">{{ weapon.name }}</a>{% else %}{{ weapon.name }}{% endif %}{% if weapon.far is not none %}<small>{{ t('平均 {far} m · 最長 {longest} m', far=weapon.far, longest=weapon.longest) }}</small>{% endif %}</strong><meter min="0" max="100" value="{{ weapon.share }}"></meter><span>{{ t('{count}キル', count='{:,}'.format(weapon.kills)) }}<small>{{ weapon.share }}%</small></span></li>
 {% endfor %}
 </ul>
 </section>

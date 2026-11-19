@@ -47,7 +47,7 @@ def _kill(raw: dict, place: dict) -> list | None:
         return None
     killer_id = _puuid(raw.get("killer") or raw.get("killer_puuid"))
     killer = place.get(killer_id, -1)
-    weapon = raw.get("weapon") if isinstance(raw.get("weapon"), dict) else {}
+    weapon = as_dict(raw.get("weapon"))
     key = str(weapon.get("id") or raw.get("damage_weapon_id") or "").lower()
     name = str(weapon.get("name") or raw.get("damage_weapon_name") or "")
     helpers = []
@@ -115,7 +115,7 @@ def _round(raw: dict, place: dict, team: list) -> dict:
         hits = head + to_int(counted.get("bodyshots")) + to_int(counted.get("legshots"))
         if who is not None and hits:
             shots.append([who, head, hits])
-        economy = line.get("economy") if isinstance(line.get("economy"), dict) else {}
+        economy = as_dict(line.get("economy"))
         if who is not None and team[who]:
             loadout[team[who]] = loadout.get(team[who], 0) + to_int(economy.get("loadout_value"))
     ceremony = str(raw.get("ceremony") or raw.get("round_ceremony") or "").removeprefix("Ceremony").lower()
@@ -161,10 +161,8 @@ def digest(match: dict) -> dict:
     ids = [_puuid(player) for player in players]
     place = {puuid: number for number, puuid in enumerate(ids) if puuid}
     team = [str(player.get("team_id") or "") for player in players]
-    metadata = match.get("metadata") if isinstance(match.get("metadata"), dict) else {}
-    queue = (
-        str(as_dict(metadata.get("queue")).get("id") or "").lower() if isinstance(metadata.get("queue"), dict) else ""
-    )
+    metadata = as_dict(match.get("metadata"))
+    queue = str(as_dict(metadata.get("queue")).get("id") or "").lower()
     raw_rounds = [item for item in as_list(match.get("rounds")) if isinstance(item, dict)]
     rounds = [_round(item, place, team) for item in raw_rounds]
     rounds = rounds if any(item["w"] for item in rounds) else []
@@ -263,7 +261,7 @@ def extras(match: dict, me: int) -> dict:
     コンパクトなラウンドとキルから読む（これを数える前に保存した試合にもある）
     : ``{"flawless": 誰も失わずに取ったラウンド, "clutch": {相手の人数: [勝ち, 挑戦]}（チーム最後の 1 人になった時点、相手 1〜5）, "far": {武器のキー: [メートル, キル, 最長]}（両方の場所がわかるキル）
     }``。ラウンドとキルが無ければ {}。"""
-    digest = match.get("digest") if isinstance(match.get("digest"), dict) else {}
+    digest = as_dict(match.get("digest"))
     played, kills = as_list(digest.get("rounds")), as_list(digest.get("kills"))
     players = [player for player in as_list(match.get("players")) if isinstance(player, dict)]
     if not played or not kills or not 0 <= me < len(players):

@@ -27,6 +27,7 @@ from pathlib import Path
 from valtracker import pdmatch
 from valtracker.henrik import PAGE, HenrikError, slim_match
 from valtracker.riot import HISTORY_PAGE, RiotError
+from valtracker.util import as_dict
 
 #: 裏から Riot を呼ぶ間隔の秒数（0: 止める）: 持ち主自身のページ（ライブ、ストア）にも Riot の制限にも余裕を残す遅さ。
 FILL_SECONDS = 2.5
@@ -52,7 +53,7 @@ def _unpack(blob) -> dict:
         value = json.loads(zlib.decompress(blob).decode("utf-8"))
     except (zlib.error, ValueError, UnicodeDecodeError, TypeError):
         return {}
-    return value if isinstance(value, dict) else {}
+    return as_dict(value)
 
 
 def _started(match: dict) -> int:

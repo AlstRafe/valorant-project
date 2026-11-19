@@ -16,7 +16,7 @@ from urllib.parse import urlencode
 from valtracker import net
 from valtracker.cache import TTLCache
 from valtracker.henrik import https_only, known_region, slim_status
-from valtracker.util import as_list, to_int
+from valtracker.util import as_dict, as_list, to_int
 
 SITE = "https://playvalorant.com"
 NEWS = (
@@ -122,16 +122,16 @@ def _slim_news(data: dict) -> list:
     for item in as_list(data.get("data")):
         if not isinstance(item, dict) or not item.get("title"):
             continue
-        action = item.get("action") if isinstance(item.get("action"), dict) else {}
-        payload = action.get("payload") if isinstance(action.get("payload"), dict) else {}
+        action = as_dict(item.get("action"))
+        payload = as_dict(action.get("payload"))
         url = str(payload.get("url") or "")
         if url.startswith("/") and not url.startswith("//"):
             url = SITE + url
         tags = {str(tag.get("machineName") or "") for tag in as_list(item.get("tags")) if isinstance(tag, dict)}
-        category = item.get("category") if isinstance(item.get("category"), dict) else {}
-        media = item.get("media") if isinstance(item.get("media"), dict) else {}
+        category = as_dict(item.get("category"))
+        media = as_dict(item.get("media"))
         if media.get("type") != "image":
-            media = item.get("imageMedia") if isinstance(item.get("imageMedia"), dict) else {}
+            media = as_dict(item.get("imageMedia"))
         articles.append(
             {
                 "title": str(item["title"])[:200],
@@ -169,14 +169,14 @@ def _slim_schedule(page: str) -> list:
         teams = [team for team in as_list(item.get("matchTeams")) if isinstance(team, dict) and team.get("name")]
         if item.get("type") != "match" or len(teams) != 2:
             continue
-        league = item.get("league") if isinstance(item.get("league"), dict) else {}
-        tournament = item.get("tournament") if isinstance(item.get("tournament"), dict) else {}
-        match = item.get("match") if isinstance(item.get("match"), dict) else {}
-        strategy = match.get("strategy") if isinstance(match.get("strategy"), dict) else {}
+        league = as_dict(item.get("league"))
+        tournament = as_dict(item.get("tournament"))
+        match = as_dict(item.get("match"))
+        strategy = as_dict(match.get("strategy"))
         stage = " · ".join(str(part)[:60] for part in (tournament.get("name"), item.get("blockName")) if part)
         each = []
         for team in teams:
-            result = team.get("result") if isinstance(team.get("result"), dict) else {}
+            result = as_dict(team.get("result"))
             each.append(
                 {
                     "name": str(team["name"])[:60],

@@ -5,6 +5,8 @@
    "uuid": "7eaecc1b-4337-bbf6-6ab9-04b8f06b3319",
    "displayName": "アセント",
    "mapUrl": "/Game/Maps/Ascent/Ascent",
+   "tacticalDescription": "A/B Sites",
+   "coordinates": "45°26'BF'N,12°20'Q'E",
    "listViewIcon": "https://media.valorant-api.com/maps/7eaecc1b-4337-bbf6-6ab9-04b8f06b3319/listviewicon.png",
    "displayIcon": "https://media.valorant-api.com/maps/7eaecc1b-4337-bbf6-6ab9-04b8f06b3319/displayicon.png",
    "xMultiplier": 7e-05,
@@ -43,6 +45,19 @@
      }
     }
    ]
+  },
+  {
+   "uuid": "690b3ed2-4dff-945b-8223-6da834e30d24",
+   "displayName": "ディストリクト",
+   "mapUrl": "/Game/Maps/HURM/HURM_Alley/HURM_Alley",
+   "tacticalDescription": null,
+   "listViewIcon": "https://media.valorant-api.com/maps/690b3ed2-4dff-945b-8223-6da834e30d24/listviewicon.png",
+   "displayIcon": null,
+   "xMultiplier": 0,
+   "yMultiplier": 0,
+   "xScalarToAdd": 0,
+   "yScalarToAdd": 0,
+   "callouts": null
   }
  ]
 }

@@ -2,6 +2,7 @@
 {% block title %}{{ agent.displayName }} · {{ site_name }}{% endblock %}
 {% block description %}{{ agent.description|plain or t('VALORANT の全エージェントのロールとアビリティ。') }}{% endblock %}
 {% block main %}
+{% include "_game_nav.html" %}
 <section class="agent-head">
 {% if agent.fullPortrait or agent.displayIcon %}<img class="portrait" src="{{ media(agent.fullPortrait or agent.displayIcon) }}" alt="" width="240" height="240">{% endif %}
 <div>
@@ -18,5 +19,46 @@
 <li>{% if ability.displayIcon %}<img src="{{ media(ability.displayIcon) }}" alt="" width="40" height="40">{% endif %}<div><h3>{{ ability.displayName }}{% if ability.slot == 'Ultimate' %} <small>{{ t('アルティメット') }}</small>{% endif %}</h3><p>{{ ability.description|plain }}</p></div></li>
 {% endfor %}
 </ul>
+</section>
+
+<section aria-labelledby="num-title">
+<h2 id="num-title">{{ t('ピック率と勝率') }}</h2>
+<form class="skin-form" action="{{ url_for('agent', uuid=agent.uuid) }}" method="get">
+<label><span>{{ t('モード') }}</span>
+<select name="queue">
+{% for item in queues %}<option value="{{ item.key }}"{% if item.key == queue %} selected{% endif %}>{{ item.name }}</option>
+{% endfor %}</select></label>
+<button type="submit">{{ t('表示') }}</button>
+</form>
+{% if overall %}
+<dl class="numbers">
+<div><dt>{{ t('ピック率') }}</dt><dd>{{ overall.pick }}%</dd></div>
+<div><dt>{{ t('勝率') }}</dt><dd>{% if overall.few %}—{% else %}<span class="{{ 'win' if overall.win >= 50 else 'loss' }}">{{ overall.win }}%</span>{% endif %}</dd></div>
+<div><dt>{{ t('ピック') }}</dt><dd>{{ '{:,}'.format(overall.picks) }}<small>{{ t('{count} 試合のうち', count='{:,}'.format(overall.matches)) }}</small></dd></div>
+</dl>
+<p class="note">{{ t('直近 {days} 日の{queue}（当サイト集計）。{few} 試合未満は勝率を表示しません。', days=days, queue=queue_name, few=few) }}</p>
+{% if maps %}
+<h3>{{ t('マップ別') }}</h3>
+<div class="table-wrap"><table class="board plain">
+<thead><tr><th scope="col">{{ t('マップ') }}</th><th scope="col">{{ t('ピック率') }}</th><th scope="col">{{ t('勝率') }}</th><th scope="col">{{ t('試合') }}</th></tr></thead>
+<tbody>
+{% for row in maps %}<tr{% if row.few %} class="few"{% endif %}><th scope="row"><a href="{{ url_for('map_page', uuid=row.uuid, queue=queue if queue != 'competitive' else None) }}">{{ row.name }}</a></th><td>{{ row.pick }}%</td><td>{% if row.few %}—{% else %}<strong class="{{ 'win' if row.win >= 50 else 'loss' }}">{{ row.win }}%</strong>{% endif %}</td><td>{{ row.picks }}</td></tr>
+{% endfor %}</tbody>
+</table></div>
+{% endif %}
+{% if bands %}
+<h3>{{ t('ランク帯別') }}</h3>
+<div class="table-wrap"><table class="board plain">
+<thead><tr><th scope="col">{{ t('ランク') }}</th><th scope="col">{{ t('ピック率') }}</th><th scope="col">{{ t('勝率') }}</th><th scope="col">{{ t('試合') }}</th></tr></thead>
+<tbody>
+{% for row in bands %}<tr{% if row.few %} class="few"{% endif %}><th scope="row">{{ row.name }}</th><td>{{ row.pick }}%</td><td>{% if row.few %}—{% else %}<strong class="{{ 'win' if row.win >= 50 else 'loss' }}">{{ row.win }}%</strong>{% endif %}</td><td>{{ row.picks }}</td></tr>
+{% endfor %}</tbody>
+</table></div>
+{% endif %}
+<h3>{{ t('このエージェントの入った構成') }}</h3>
+{% include "_comps.html" %}
+{% else %}
+<p class="note">{{ t('集計できる試合がまだ足りません。') }}</p>
+{% endif %}
 </section>
 {% endblock %}

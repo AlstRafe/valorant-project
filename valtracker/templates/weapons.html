@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ t('武器') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('VALORANT の全武器の値段・ダメージ・連射・キルに必要な弾数と TTK。') }}{% endblock %}
+{% block main %}
+{% include "_game_nav.html" %}
+<section class="hero">
+<h1>{{ t('武器') }}</h1>
+<p class="lead">{{ t('VALORANT の全武器の値段・ダメージ・連射・キルに必要な弾数と TTK。') }}</p>
+</section>
+{% if not groups %}
+<p class="problem" role="alert">{{ t('武器のデータを読み込めませんでした。しばらくしてからお試しください。') }}</p>
+{% else %}
+{% for group in groups %}
+<section class="arsenal" aria-labelledby="cat-{{ group.key }}">
+<h2 id="cat-{{ group.key }}">{{ group.name }}</h2>
+<ul class="gun-grid">
+{% for item in group['items'] %}
+<li><a href="{{ url_for('weapon', uuid=item.uuid) }}">
+<span class="gun-pic">{% if item.icon %}<img src="{{ media(item.icon) }}" alt="" width="160" height="56" loading="lazy">{% endif %}</span>
+<span class="gun-name"><strong>{{ item.name }}</strong><small>{{ '{:,}'.format(item.cost) if item.cost else t('無料') }}</small></span>
+{% if item.damage %}<span class="gun-hits"><span><small>{{ t('頭') }}</small>{{ item.damage.head }}</span><span><small>{{ t('体') }}</small>{{ item.damage.body }}</span><span><small>{{ t('脚') }}</small>{{ item.damage.leg }}</span>{% if item.pellets > 1 %}<span class="gun-pellets"><small>{{ t('ペレット') }}</small>×{{ item.pellets }}</span>{% endif %}</span>{% endif %}
+{% if item.body %}<span class="gun-ttk">{{ t('アーマー 150 に体 {count} 発', count=item.body.shots) }}{% if item.body.ms is not none %} · TTK {{ item.body.ms }} ms{% endif %}</span>{% endif %}
+</a></li>
+{% endfor %}
+</ul>
+</section>
+{% endfor %}
+<details class="more">
+<summary>{{ t('計算方法') }}</summary>
+<p>{{ t('ダメージは一番近い距離のもの。アーマーは体力に足して数えます（なし 100・ライト 125・ヘビー 150）。TTK は最初の弾から倒すまでの時間で、全弾が当たったときのものです。ショットガンは 1 発の全ペレットが当たったとき。') }}</p>
+<p>{{ t('データ: valorant-api.com（ゲームのファイルから）。') }}</p>
+</details>
+{% endif %}
+{% endblock %}

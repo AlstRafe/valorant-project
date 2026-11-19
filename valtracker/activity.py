@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import itertools
+import json
 import random
 import sqlite3
 import statistics
@@ -31,7 +32,7 @@ from pathlib import Path
 from valtracker import pdmatch, stats
 from valtracker.henrik import slim_match
 from valtracker.riot import RiotError
-from valtracker.util import to_int
+from valtracker.util import as_dict, as_list, to_int
 
 #: コレクターが回るリージョン（HenrikDev の名前）。
 REGIONS = ("ap", "kr", "eu", "na", "latam", "br")
@@ -66,6 +67,9 @@ COLLECT_SECONDS = 240
 #: 1 回でゲーム自身の記録から読むプレイヤー 1 人の試合数（Collector._riot）: 数分ごとに数回の呼び出し。
 RIOT_MATCHES = 3
 CANDIDATES = 600
+#: 構成（5 体の組み合わせ）を出す数と、出すのに要る試合数（1 試合の偶然を「構成」にしない）。
+COMPS_SHOWN = 10
+COMPS_MIN = 2
 
 
 def _unix(value) -> int:
@@ -116,8 +120,8 @@ def _teams(match: dict) -> dict[str, bool]:
 
 def _facts(match: dict) -> dict | None:
     """（小さくした）試合から行に残すもの: 開始かサーバーの無いものは None。"""
-    metadata = match.get("metadata") or {}
-    queue = metadata.get("queue") if isinstance(metadata.get("queue"), dict) else {}
+    metadata = as_dict(match.get("metadata"))
+    queue = as_dict(metadata.get("queue"))
     started = _unix(metadata.get("started_at"))
     match_id = str(metadata.get("match_id") or "")
     if not started or not match_id:
@@ -134,6 +138,11 @@ def _facts(match: dict) -> dict | None:
     }
 
 
+def _map_id(match: dict) -> str:
+    """試合のマップの uuid（valorant-api.com のもの、小文字）。無ければ ""。"""
+    return str(as_dict(as_dict(match.get("metadata")).get("map")).get("id") or "").lower()
+
+
 def _picks(match: dict) -> list[tuple]:
     """2 チームの試合での各チームのエージェントと、
     そのチームが勝ったか: ``(match, team, agent, won, queue, tier, map, started)``。プレイヤーは残さず、
@@ -142,13 +151,12 @@ def _picks(match: dict) -> list[tuple]:
     teams = _teams(match)
     if not facts or len(teams) != 2 or not any(teams.values()):
         return []  # デスマッチか引き分け: 数えるものが無い
-    place = (match.get("metadata") or {}).get("map")
-    map_id = str((place or {}).get("id") or "").lower() if isinstance(place, dict) else ""
+    map_id = _map_id(match)
     found = {}
     for player in match.get("players") or []:
         if not isinstance(player, dict):
             continue
-        agent = player.get("agent") if isinstance(player.get("agent"), dict) else {}
+        agent = as_dict(player.get("agent"))
         team, uuid = str(player.get("team_id") or ""), str(agent.get("id") or "").lower()
         if team in teams and uuid:
             found[(team, uuid)] = (
@@ -162,6 +170,32 @@ def _picks(match: dict) -> list[tuple]:
                 facts["started"],
             )
     return list(found.values())
+
+
+def _sides(match: dict) -> tuple | None:
+    """2 チームの試合の攻守とサイト（ダイジェストのラウンドから）: ``(match, map, queue, tier, started,
+    攻撃側が取ったラウンド, 攻守のわかるラウンド, サイトの JSON {"A": [設置したラウンド, そのうち攻撃側が取った数]})``。
+    ラウンドの無い試合（コレクターの一覧など）と途中で終わった試合は None。"""
+    facts = _facts(match)
+    map_id = _map_id(match)
+    if not facts or not map_id:
+        return None
+    won = played = 0
+    sites: dict[str, list[int]] = {}
+    for item in as_list(as_dict(match.get("digest")).get("rounds")):
+        if not isinstance(item, dict) or not item.get("a") or not item.get("w"):
+            continue
+        attacked = item["w"] == item["a"]
+        played += 1
+        won += attacked
+        site = str(item.get("s") or "")[:4]
+        if site:  # 設置したラウンドだけサイトがある（rounds._round）
+            counted = sites.setdefault(site, [0, 0])
+            counted[0] += 1
+            counted[1] += attacked
+    if played < 5:
+        return None
+    return (facts["id"], map_id, facts["queue"], facts["tier"], facts["started"], won, played, json.dumps(sites))
 
 
 def _lines(match: dict) -> list[tuple]:
@@ -211,9 +245,15 @@ def _shaped(kind: str, answer):
     if not isinstance(answer, dict):
         return None
     if kind == "ranks":
-        tiers = answer.get("tiers") if isinstance(answer.get("tiers"), dict) else {}
+        tiers = as_dict(answer.get("tiers"))
         return {"lines": int(answer.get("lines") or 0), "tiers": {int(tier): int(n) for tier, n in tiers.items()}}
-    wanted = {"agents": ("matches", "agents", "maps"), "servers": ("servers", "waits", "lengths", "matches")}[kind]
+    wanted = {
+        "agents": ("matches", "agents", "maps"),
+        "servers": ("servers", "waits", "lengths", "matches"),
+        "maps": ("matches", "maps"),
+        "comps": ("teams", "comps"),
+        "agent": ("matches", "picks", "wins", "maps", "bands"),
+    }[kind]
     return answer if all(name in answer for name in wanted) else None
 
 
@@ -255,6 +295,10 @@ class Activity:
                     match TEXT, slot INTEGER, queue TEXT, tier INTEGER, acs REAL, adr REAL, kd REAL, hs REAL,
                     kast REAL, dd REAL, won REAL, started INTEGER, PRIMARY KEY (match, slot));
                 CREATE INDEX IF NOT EXISTS lines_started ON lines (started);
+                CREATE TABLE IF NOT EXISTS sides (
+                    match TEXT PRIMARY KEY, map TEXT, queue TEXT, tier INTEGER, started INTEGER,
+                    atk INTEGER, rounds INTEGER, sites TEXT);
+                CREATE INDEX IF NOT EXISTS sides_started ON sides (started);
                 """
             )
         return self._db
@@ -306,6 +350,7 @@ class Activity:
         self._remember(matches)
         picks = [row for match in matches or [] if isinstance(match, dict) for row in _picks(match)]
         lines = [row for match in matches or [] if isinstance(match, dict) for row in _lines(match)]
+        sides = [found for match in matches or [] if isinstance(match, dict) for found in [_sides(match)] if found]
         rows = [(f["id"], f["region"], f["cluster"], f["queue"], f["started"], f["length"], f["tier"]) for f in facts]
         try:
             with self._lock:
@@ -315,6 +360,10 @@ class Activity:
                 new = db.total_changes - before
                 db.executemany("INSERT OR IGNORE INTO gaps VALUES (?, ?, ?, ?, ?, ?, ?)", gaps)
                 db.executemany("INSERT OR IGNORE INTO picks VALUES (?, ?, ?, ?, ?, ?, ?, ?)", picks)
+                # 一覧で先に見た試合（ラウンド無し）を、あとでラウンドつきで読んだときも入る
+                counted = db.total_changes
+                db.executemany("INSERT OR IGNORE INTO sides VALUES (?, ?, ?, ?, ?, ?, ?, ?)", sides)
+                sided = db.total_changes != counted
                 fresh = db.total_changes
                 db.executemany("INSERT OR IGNORE INTO lines VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", lines)
                 if db.total_changes != fresh:
@@ -323,14 +372,14 @@ class Activity:
                 db.commit()
         except (sqlite3.Error, OverflowError):  # OverflowError: SQLite の整数に入らない数（壊れた答え）
             return 0  # 数字はおまけ: ディスクがいっぱい・ロック中でもページを壊さない
-        if new:
+        if new or sided:
             self._summary.clear()
         return new
 
     def _remember(self, matches: list) -> None:
         for match in matches or []:
-            region = str(((match or {}).get("metadata") or {}).get("region") or "").lower()
-            for player in (match or {}).get("players") or []:
+            region = str(as_dict(as_dict(match).get("metadata")).get("region") or "").lower()
+            for player in as_list(as_dict(match).get("players")):
                 if not isinstance(player, dict) or not player.get("puuid"):
                     continue
                 self.candidates.append((region, str(player["puuid"]), _tier(player)))
@@ -346,6 +395,7 @@ class Activity:
         db.execute("DELETE FROM gaps WHERE at < ?", (oldest,))
         db.execute("DELETE FROM picks WHERE started < ?", (oldest,))
         db.execute("DELETE FROM lines WHERE started < ?", (oldest,))
+        db.execute("DELETE FROM sides WHERE started < ?", (oldest,))
 
     # -- ページに出すもの -------------------------------------------------------------------------------
 
@@ -491,6 +541,134 @@ class Activity:
         listed.sort(key=lambda item: (-item["picks"], item["agent"]))
         found = {"matches": matches, "agents": listed, "maps": {key: len(seen) for key, seen in maps.items()}}
         self._summary[key] = (now, found)
+        return found
+
+    def _select(self, query: str, params: tuple) -> list:
+        """読むだけの問い合わせの行（読めなければ空: 数字はおまけ）。"""
+        try:
+            with self._lock:
+                return self._connect().execute(query, params).fetchall()
+        except sqlite3.Error:
+            return []
+
+    def _kept(self, key: tuple, seconds: float = 300):
+        """数分持つ集計（無いか古ければ None）。"""
+        kept = self._summary.get(key)
+        return kept[1] if kept and self.clock() - kept[0] < seconds else None
+
+    def maps(self, queue: str = "competitive") -> dict:
+        """直近 WINDOW_DAYS 日のマップごとの攻守とサイト（ラウンドまで読んだ試合から）: ``{"matches", "maps": {map:
+        {"matches", "atk": [攻撃側が取ったラウンド, ラウンド], "sites": {"A": [設置, そのうち攻撃側が取った]}}}}``。"""
+        shared = self._ask("maps", {"queue": queue})
+        if shared is not None:
+            return shared
+        key = ("maps", queue)
+        found = self._kept(key)
+        if found is not None:
+            return found
+        since = int(self.clock() - WINDOW_DAYS * 86400)
+        rows = self._select(
+            "SELECT map, atk, rounds, sites FROM sides WHERE queue = ? AND started >= ?", (queue, since)
+        )
+        maps: dict[str, dict] = {}
+        for map_id, won, played, sites in rows:
+            item = maps.setdefault(map_id, {"matches": 0, "atk": [0, 0], "sites": {}})
+            item["matches"] += 1
+            item["atk"][0] += won
+            item["atk"][1] += played
+            try:
+                planted = json.loads(sites or "{}")
+            except ValueError:
+                planted = {}
+            for site, counted in as_dict(planted).items():
+                if isinstance(counted, list) and len(counted) == 2:
+                    total = item["sites"].setdefault(str(site), [0, 0])
+                    total[0] += to_int(counted[0])
+                    total[1] += to_int(counted[1])
+        found = {"matches": len(rows), "maps": maps}
+        self._summary[key] = (self.clock(), found)
+        return found
+
+    def comps(self, queue: str = "competitive", map_id: str = "", agent: str = "") -> dict:
+        """直近 WINDOW_DAYS 日の 5 体の構成ごとの試合数と勝率: ``{"teams": 5 体がそろったチームの数, "comps":
+        [{"agents": [uuid × 5、並べ替え済み], "games", "wins", "win"（%）}]}``（多い順に COMPS_SHOWN まで、
+        COMPS_MIN 試合から）。マップと、構成に入っているエージェントで絞る。"""
+        shared = self._ask("comps", {"queue": queue, "map": map_id, "agent": agent})
+        if shared is not None:
+            return shared
+        key = ("comps", queue, map_id, agent)
+        found = self._kept(key)
+        if found is not None:
+            return found
+        since = int(self.clock() - WINDOW_DAYS * 86400)
+        rows = self._select(
+            "SELECT match, team, agent, won, map FROM picks WHERE queue = ? AND started >= ?", (queue, since)
+        )
+        teams: dict[tuple[str, str], list] = {}
+        for match, team, uuid, won, place in rows:
+            if map_id and place != map_id:
+                continue
+            teams.setdefault((match, team), [set(), won])[0].add(uuid)
+        counts: dict[tuple, list[int]] = {}
+        full = 0
+        for agents, won in teams.values():
+            if len(agents) != 5:
+                continue
+            full += 1
+            if agent and agent not in agents:
+                continue
+            counted = counts.setdefault(tuple(sorted(agents)), [0, 0])
+            counted[0] += 1
+            counted[1] += won
+        listed = [
+            {"agents": list(agents), "games": games, "wins": wins, "win": round(100 * wins / games, 1)}
+            for agents, (games, wins) in counts.items()
+            if games >= COMPS_MIN
+        ]
+        listed.sort(key=lambda item: (-item["games"], -item["win"], item["agents"]))
+        found = {"teams": full, "comps": listed[:COMPS_SHOWN]}
+        self._summary[key] = (self.clock(), found)
+        return found
+
+    def agent(self, uuid: str, queue: str = "competitive") -> dict:
+        """1 体のエージェントの直近 WINDOW_DAYS 日: ``{"matches"（全試合）, "picks", "wins", "maps": {map: [ピック, 勝ち,
+        そのマップの試合]}, "bands": {帯: [ピック, 勝ち, その帯の試合]}}``。ピック率はピック ÷ (2 × 試合)。"""
+        shared = self._ask("agent", {"queue": queue, "agent": uuid})
+        if shared is not None:
+            return shared
+        key = ("agent", queue, uuid)
+        found = self._kept(key)
+        if found is not None:
+            return found
+        since = int(self.clock() - WINDOW_DAYS * 86400)
+        rows = self._select(
+            "SELECT match, agent, won, tier, map FROM picks WHERE queue = ? AND started >= ?", (queue, since)
+        )
+        matches: set[str] = set()
+        by_map: dict[str, set] = {}
+        by_band: dict[str, set] = {}
+        found = {"matches": 0, "picks": 0, "wins": 0, "maps": {}, "bands": {}}
+        for match, picked, won, tier, place in rows:
+            matches.add(match)
+            named = band(tier) if queue == "competitive" else ""
+            if place:
+                by_map.setdefault(place, set()).add(match)
+            if named:
+                by_band.setdefault(named, set()).add(match)
+            if picked != uuid:
+                continue
+            found["picks"] += 1
+            found["wins"] += won
+            for part, name in (("maps", place), ("bands", named)):
+                if name:
+                    counted = found[part].setdefault(name, [0, 0, 0])
+                    counted[0] += 1
+                    counted[1] += won
+        found["matches"] = len(matches)
+        for part, seen in (("maps", by_map), ("bands", by_band)):
+            for name, counted in found[part].items():
+                counted[2] = len(seen.get(name, ()))
+        self._summary[key] = (self.clock(), found)
         return found
 
     def ranks(self, region: str) -> dict:

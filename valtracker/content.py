@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import threading
 import time
@@ -16,7 +17,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from valtracker import i18n, net
-from valtracker.util import as_list, to_int
+from valtracker.util import as_dict, as_list, to_int
 
 BASE = "https://valorant-api.com/v1"
 MEDIA = "https://media.valorant-api.com/"
@@ -73,7 +74,9 @@ FRESH_SECONDS = 24 * 3600
 #: 取り直しに失敗したら、次に試すまでこの時間は保存した一覧（か無し）を使う。
 RETRY_SECONDS = 600
 #: 残すキー（SLIM）が変わった一覧: 古い形で保存したものはすぐに取り直す（新しいものが来るまでは古いものを使う）。
-SHAPES = {"weapons": 2}
+SHAPES = {"weapons": 2, "arsenal": 2}
+#: 同じ答え（同じアドレス）から作る一覧: 1 回のダウンロード（/weapons は数 MB）で両方を保存する。
+TWINS = {"arsenal": ("weapons",), "weapons": ("arsenal",)}
 
 
 class Content:
@@ -108,12 +111,13 @@ class Content:
             data = [data]
         if not isinstance(data, list):
             return saved[1] if saved else []
-        if kind in SLIM:
-            data = [SLIM[kind](item) for item in data if isinstance(item, dict) and item.get("uuid")]
+        made = {name: _slimmed(name, data) for name in (kind, *TWINS.get(kind, ()))}
         with self._lock:
-            self._memory[key] = (now, data)
-            self._write(kind, code, now, data)
-        return data
+            for name, listed in made.items():
+                self._memory[(name, code)] = (now, listed)
+                self._tried[(name, code)] = now
+                self._write(name, code, now, listed)
+        return made[kind]
 
     def _file(self, kind: str, code: str) -> Path:
         return self.folder / f"{kind}-{code}.json"
@@ -209,7 +213,8 @@ class Content:
         return found
 
     def arsenal(self, lang: str) -> dict:
-        """全武器を uuid で: ``{"displayName", "killStreamIcon"}``。"""
+        """全武器を uuid で: ``{"displayName", "killStreamIcon", "displayIcon", "category", "cost", "stats"}``
+        （``stats`` は _slim_arsenal。近接武器には無い）。"""
         return {
             str(item["uuid"]).lower(): item
             for item in self._list("arsenal", lang)
@@ -261,6 +266,13 @@ class Content:
         return found[0] if found and isinstance(found[0], dict) else {}
 
 
+def _slimmed(kind: str, data: list) -> list:
+    """保存する形の一覧: SLIM のある種類は各項目の使う部分だけ。"""
+    if kind not in SLIM:
+        return data
+    return [SLIM[kind](item) for item in data if isinstance(item, dict) and item.get("uuid")]
+
+
 def _keep(item: dict, keys) -> dict:
     """残す項目はどれも文字列（名前、uuid、絵のアドレス）: ほかの型のもの（壊れた答え）は無いことにする。"""
     return {key: item[key] for key in keys if isinstance(item.get(key), str) and item[key]}
@@ -282,7 +294,7 @@ def _slim_weapon(weapon: dict) -> dict:
     """コレクションとスキン図鑑が出す部分だけの武器: valorant-api.com の /weapons は数 MB（性能、
     全レベルのアセットパス）あり、言語ごとに持つと小さな VM のメモリが埋まる。"""
     kept = _keep(weapon, ("uuid", "displayName", "category", "displayIcon", "defaultSkinUuid"))
-    shop = weapon.get("shopData") if isinstance(weapon.get("shopData"), dict) else {}
+    shop = as_dict(weapon.get("shopData"))
     kept["cost"] = to_int(shop.get("cost"))
     kept["skins"] = [
         {
@@ -300,9 +312,71 @@ def _slim_weapon(weapon: dict) -> dict:
     return kept
 
 
+def _numbers(item, keys) -> dict:
+    """数のキーだけ（壊れた値・nan は無いことにする）。"""
+    found = {}
+    for key in keys:
+        value = as_dict(item).get(key)
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value):
+            found[key] = value
+    return found
+
+
+def _enum(value) -> str:
+    """ゲームの列挙の名前の最後の部分: "EWallPenetrationDisplayType::Medium" -> "Medium"。"""
+    return str(value or "").rsplit("::", 1)[-1] if isinstance(value, str) else ""
+
+
+def _slim_arsenal(weapon: dict) -> dict:
+    """全員のページ用の武器: 名前とキルフィードの絵、武器のページ（weapons.py）の性能と値段。
+    ``stats``: 連射・マガジン・リロード・持ち替え・初弾の精度・壁抜き・ペレット数・ADS（倍率と連射）と、
+    距離ごとのダメージ ``ranges``（[始まり m, 終わり m, 頭, 体, 脚]）。性能の無いもの（近接武器）は ``stats`` 無し。"""
+    kept = _keep(weapon, ("uuid", "displayName", "killStreamIcon", "displayIcon", "category"))
+    kept["category"] = _enum(kept.get("category"))
+    shop = as_dict(weapon.get("shopData"))
+    kept["cost"] = to_int(shop.get("cost"))
+    numbers = as_dict(weapon.get("weaponStats"))
+    if not numbers:
+        return kept
+    stats = _numbers(
+        numbers,
+        (
+            "fireRate",
+            "magazineSize",
+            "reloadTimeSeconds",
+            "equipTimeSeconds",
+            "firstBulletAccuracy",
+            "shotgunPelletCount",
+        ),
+    )
+    stats["wall"] = _enum(numbers.get("wallPenetration"))
+    stats["feature"] = _enum(numbers.get("feature"))
+    stats["mode"] = _enum(numbers.get("fireMode"))
+    stats["alt"] = _enum(numbers.get("altFireType"))
+    stats["ads"] = _numbers(
+        numbers.get("adsStats"), ("zoomMultiplier", "fireRate", "burstCount", "firstBulletAccuracy")
+    )
+    ranges = []
+    for part in as_list(numbers.get("damageRanges")):
+        found = _numbers(part, ("rangeStartMeters", "rangeEndMeters", "headDamage", "bodyDamage", "legDamage"))
+        if len(found) == 5 and found["bodyDamage"] > 0:
+            ranges.append(
+                [
+                    found["rangeStartMeters"],
+                    found["rangeEndMeters"],
+                    found["headDamage"],
+                    found["bodyDamage"],
+                    found["legDamage"],
+                ]
+            )
+    stats["ranges"] = sorted(ranges)
+    kept["stats"] = stats
+    return kept
+
+
 def _slim_contract(item: dict) -> dict:
     """コントラクト（バトルパス、イベントのパス、エージェントのもの）: 種類、何のものか、各レベルの XP。"""
-    about = item.get("content") if isinstance(item.get("content"), dict) else {}
+    about = as_dict(item.get("content"))
     levels, epilogue = [], 0
     for chapter in as_list(about.get("chapters")):
         if not isinstance(chapter, dict):
@@ -328,7 +402,7 @@ SLIM = {
         **_keep(item, ("uuid", "displayName", "displayIcon")),
         "levels": _parts(item, "levels", ("uuid",)),
     },
-    "arsenal": lambda item: _keep(item, ("uuid", "displayName", "killStreamIcon")),
+    "arsenal": _slim_arsenal,
     "playercards": lambda item: _keep(item, ("uuid", "displayName", "smallArt", "wideArt")),
     "sprays": lambda item: {
         **_keep(item, ("uuid", "displayName", "displayIcon", "fullTransparentIcon")),

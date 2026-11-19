@@ -4,7 +4,7 @@ PD の contracts（riot.Riot.contracts）に、valorant-api.com の名前と各�
 from __future__ import annotations
 
 from valtracker.content import Content
-from valtracker.util import as_list, lower_id, to_int
+from valtracker.util import as_dict, as_list, lower_id, to_int
 
 
 def contract(item: dict, definition: dict, agents: dict) -> dict:
@@ -32,7 +32,7 @@ def contract(item: dict, definition: dict, agents: dict) -> dict:
 
 def page(found: dict, content: Content, lang: str, now: float, when) -> dict:
     """progress.html に出すもの。``when(iso)``: 持ち主の時計での時刻（tools.moment_info）。"""
-    answer = found.get("contracts") if isinstance(found.get("contracts"), dict) else {}
+    answer = as_dict(found.get("contracts"))
     known = content.index("contracts", lang)
     agents = content.agent_index(lang)
     act = content.act(lang, now) or {}
@@ -57,7 +57,7 @@ def page(found: dict, content: Content, lang: str, now: float, when) -> dict:
         key=lambda entry: (entry["complete"], -entry["share"], entry["name"]),
     )
     missions = [item for item in as_list(answer.get("Missions")) if isinstance(item, dict)]
-    metadata = answer.get("MissionMetadata") if isinstance(answer.get("MissionMetadata"), dict) else {}
+    metadata = as_dict(answer.get("MissionMetadata"))
     ends = sorted(str(item.get("ExpirationTime")) for item in missions if item.get("ExpirationTime"))
     return {
         "act": act.get("name") or "",

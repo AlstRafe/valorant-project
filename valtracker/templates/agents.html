@@ -2,9 +2,9 @@
 {% block title %}{{ t('エージェント') }} · {{ site_name }}{% endblock %}
 {% block description %}{{ t('VALORANT の全エージェントのロールとアビリティ。') }}{% endblock %}
 {% block main %}
+{% include "_game_nav.html" %}
 <section class="hero">
 <h1>{{ t('エージェント') }}</h1>
-<p class="meta"><a href="{{ url_for('agent_stats') }}">{{ t('ピック率と勝率') }}</a></p>
 </section>
 {% if not every %}
 <p class="problem" role="alert">{{ t('エージェント一覧を取得できませんでした。しばらくしてからお試しください。') }}</p>

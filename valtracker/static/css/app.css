@@ -5571,6 +5571,11 @@ html.leaving::after {
   font-size: 0.92rem;
   font-variant-numeric: tabular-nums;
 }
+/* K / D / A は切らない（スマホの幅で「20 / 15 …」になっていた）: 細いスペースで詰める */
+.match .cell strong.kda {
+  overflow: visible;
+  text-overflow: clip;
+}
 .match .cell .up {
   color: var(--win);
 }
@@ -5907,4 +5912,328 @@ form.row {
   :root:not([data-theme="light"]) .smurf.likely {
     color: #f0b44c;
   }
+}
+/* ゲームのデータのページ（エージェント・ピック率と勝率・マップ・武器）を行き来するチップ */
+.game-nav {
+  margin-top: 0.6rem;
+}
+.board strong.win,
+.comps strong.win,
+.numbers .win {
+  color: var(--win);
+}
+.board strong.loss,
+.comps strong.loss,
+.numbers .loss {
+  color: var(--loss);
+}
+.board tr.few td {
+  color: var(--soft);
+}
+.board td small {
+  color: var(--soft);
+  font-size: 0.78rem;
+}
+/* 武器（weapons.py） */
+.gun-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.6rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.gun-grid a {
+  display: grid;
+  gap: 0.4rem;
+  height: 100%;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+}
+.gun-grid a:hover {
+  border-color: var(--accent);
+}
+.gun-pic {
+  display: grid;
+  place-items: center;
+  height: 3.5rem;
+}
+.gun-pic img,
+.gun-head img {
+  width: auto;
+  max-width: 100%;
+  height: 3.5rem;
+  object-fit: contain;
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.55));
+}
+.gun-name {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.gun-name small,
+.gun-ttk {
+  color: var(--soft);
+  font-size: 0.82rem;
+}
+.gun-hits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.9rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.gun-hits small {
+  margin-right: 0.25rem;
+  color: var(--soft);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+.gun-head {
+  display: grid;
+  grid-template-columns: minmax(0, 14rem) minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  margin: 0.6rem 0 1rem;
+}
+.gun-head img {
+  height: auto;
+  max-height: 6rem;
+}
+.gun-head h1 {
+  margin: 0;
+}
+@media (max-width: 34rem) {
+  .gun-head {
+    grid-template-columns: 1fr;
+  }
+}
+.gun-table td,
+.gun-table th[scope="row"] {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.gun-table caption {
+  padding: 0.3rem 0;
+  color: var(--soft);
+  font-size: 0.85rem;
+  text-align: left;
+}
+.gun-table.kills td strong {
+  display: block;
+}
+.gun-table.kills {
+  margin-bottom: 0.8rem;
+}
+.gun-vs td.better {
+  color: var(--win);
+  font-weight: 700;
+}
+/* マップ（maps.py） */
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.6rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.map-grid a {
+  display: grid;
+  gap: 0.2rem;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  text-decoration: none;
+}
+.map-grid a:hover {
+  border-color: var(--accent);
+}
+.map-grid img {
+  width: 100%;
+  height: 5rem;
+  object-fit: cover;
+}
+.map-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.8rem 0;
+}
+.map-grid small {
+  padding: 0 0.8rem 0.7rem;
+  color: var(--soft);
+  font-size: 0.82rem;
+}
+.map-name .badge {
+  position: static;
+}
+.map-head img {
+  display: block;
+  width: 100%;
+  max-height: 8rem;
+  margin-top: 0.6rem;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.map-head h1 {
+  margin: 0.8rem 0 0;
+}
+.side-bars p {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr) 3.6rem;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.4rem 0;
+}
+.side-bars svg {
+  width: 100%;
+  height: 0.6rem;
+}
+.side-bars .back {
+  fill: var(--rule);
+}
+.side-bars .atk {
+  fill: var(--loss);
+}
+.side-bars .def {
+  fill: var(--blue);
+}
+.side-bars strong {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+/* ミニマップの上のコールアウト: スマホでは横にスクロールして読める大きさに */
+.callout-map {
+  overflow-x: auto;
+  padding: 0.5rem;
+  border-radius: 10px;
+  background: #181715;
+}
+.callout-svg {
+  display: block;
+  width: 100%;
+  min-width: 34rem;
+  max-width: 44rem;
+  height: auto;
+  margin-inline: auto;
+  aspect-ratio: 1;
+}
+.callout-svg text {
+  fill: #fff;
+  font-size: 2.1px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke: #111;
+  stroke-width: 0.5px;
+  stroke-linejoin: round;
+}
+.callout-svg text.l {
+  text-anchor: start;
+}
+.callout-svg text.r {
+  text-anchor: end;
+}
+.callout-svg text.a {
+  fill: #ffb3b8;
+}
+.callout-svg text.b {
+  fill: #b7d6ff;
+}
+.callout-svg text.c {
+  fill: #c9f2c0;
+}
+.callout-svg text.mid {
+  fill: #ffe39a;
+}
+.callout-list {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+.callout-list strong {
+  margin-right: 0.4rem;
+}
+/* 5 体の構成（_comps.html） */
+.comps {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.comps li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.8rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+}
+.comp-agents {
+  display: flex;
+  gap: 0.3rem;
+}
+.comp-agents img {
+  display: block;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 8px;
+  background: var(--paper);
+}
+.comp-numbers {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.comp-numbers small {
+  color: var(--soft);
+  font-size: 0.82rem;
+}
+/* 試合の経済（views._economy） */
+.eco-chart svg {
+  display: block;
+  width: 100%;
+  height: 7rem;
+}
+.eco-chart .t0,
+.eco-chart .w0,
+.key.t0 {
+  fill: var(--win);
+  background: var(--win);
+}
+.eco-chart .t1,
+.eco-chart .w1,
+.key.t1 {
+  fill: var(--loss);
+  background: var(--loss);
+}
+.plain-teams .eco-chart .t0,
+.plain-teams .eco-chart .w0,
+.plain-teams .key.t0 {
+  fill: var(--blue);
+  background: var(--blue);
+}
+.eco-chart .w9 {
+  fill: var(--rule);
+}
+.eco-table td {
+  font-variant-numeric: tabular-nums;
 }

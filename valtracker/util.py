@@ -5,7 +5,10 @@ from __future__ import annotations
 import base64
 import json
 import math
+import re
 
+#: Riot の ID（puuid・試合・パーティー・アイテムの uuid、小文字）。比べるのは ``fullmatch`` で。
+UUID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 #: 時刻として読む unix 秒の上限（西暦 3000 年）: これより先の数は壊れた値（日付にすると OverflowError）。
 LAST_MOMENT = 32_503_680_000
 

@@ -1,0 +1,8 @@
+{#- ゲームのデータのページ（エージェント・ピック率と勝率・マップ・武器）を行き来するチップ。 -#}
+{% set here = request.endpoint %}
+<nav class="modes game-nav" aria-label="{{ t('ゲームのデータ') }}">
+<a href="{{ url_for('agents') }}"{% if here in ('agents', 'agent') %} aria-current="true"{% endif %}>{{ t('エージェント') }}</a>
+<a href="{{ url_for('agent_stats') }}"{% if here == 'agent_stats' %} aria-current="true"{% endif %}>{{ t('ピック率と勝率') }}</a>
+<a href="{{ url_for('maps') }}"{% if here in ('maps', 'map_page') %} aria-current="true"{% endif %}>{{ t('マップ') }}</a>
+<a href="{{ url_for('weapons') }}"{% if here in ('weapons', 'weapon') %} aria-current="true"{% endif %}>{{ t('武器') }}</a>
+</nav>

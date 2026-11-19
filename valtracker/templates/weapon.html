@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ weapon.name }} · {{ t('武器') }} · {{ site_name }}{% endblock %}
+{% block description %}{{ t('{weapon} のダメージ・連射・キルに必要な弾数と TTK。', weapon=weapon.name) }}{% endblock %}
+{% macro kill(cell) -%}
+<strong>{{ t('{count} 発', count=cell.shots) }}</strong>{% if cell.ms is not none %}<small>{{ cell.ms }} ms</small>{% endif %}
+{%- endmacro %}
+{% block main %}
+<p class="crumb"><a href="{{ url_for('weapons') }}">{{ t('武器') }}</a></p>
+<section class="gun-head">
+{% if weapon.icon %}<img src="{{ media(weapon.icon) }}" alt="" width="320" height="112">{% endif %}
+<div>
+<h1>{{ weapon.name }}</h1>
+<p class="meta">{{ category_name }}{% for trait in traits %} · {{ trait }}{% endfor %}</p>
+</div>
+</section>
+<dl class="numbers">
+{% for fact in facts %}<div><dt>{{ fact.name }}</dt><dd>{{ fact.value }}{% if fact.unit %}<small>{{ fact.unit }}</small>{% endif %}</dd></div>
+{% endfor %}</dl>
+<p class="meta"><a href="{{ skins_url }}">{{ t('この武器のスキン') }} →</a></p>
+
+<section aria-labelledby="dmg-title">
+<h2 id="dmg-title">{{ t('距離ごとのダメージ') }}</h2>
+<div class="table-wrap"><table class="board plain gun-table">
+<thead><tr><th scope="col">{{ t('距離') }}</th>{% for key, name in parts %}<th scope="col">{{ name }}</th>{% endfor %}</tr></thead>
+<tbody>
+{% for band in bands %}<tr><th scope="row">{{ band.range }}</th>{% for key, name in parts %}<td>{{ band.damage[key] }}{% if weapon.pellets > 1 %}<small> ×{{ weapon.pellets }}</small>{% endif %}</td>{% endfor %}</tr>
+{% endfor %}</tbody>
+</table></div>
+</section>
+
+<section aria-labelledby="kill-title">
+<h2 id="kill-title">{{ t('キルに必要な弾数と TTK') }}</h2>
+<p class="note">{{ t('アーマーなし 100・ライト 125・ヘビー 150 の相手に、全弾が同じ部位に当たったとき。') }}{% if weapon.pellets > 1 %} {{ t('1 発の全ペレットが当たったとき。') }}{% endif %}</p>
+{% for band in bands %}
+<div class="table-wrap"><table class="board plain gun-table kills">
+{% if bands|length > 1 %}<caption>{{ band.range }}</caption>{% endif %}
+<thead><tr><th scope="col">{{ t('部位') }}</th>{% for health in health %}<th scope="col">{{ health }}</th>{% endfor %}</tr></thead>
+<tbody>
+{% for key, name in parts %}<tr><th scope="row">{{ name }}</th>{% for cell in band.kills[key] %}<td>{{ kill(cell) }}</td>{% endfor %}</tr>
+{% endfor %}</tbody>
+</table></div>
+{% endfor %}
+</section>
+
+<section aria-labelledby="vs-title">
+<h2 id="vs-title">{{ t('ほかの武器と比べる') }}</h2>
+<form class="skin-form" action="{{ url_for('weapon', uuid=weapon.uuid) }}" method="get">
+<label><span>{{ t('武器') }}</span>
+<select name="vs">
+<option value="">{{ t('選ぶ') }}</option>
+{% for item in choices %}<option value="{{ item.uuid }}"{% if rival and item.uuid == rival.uuid %} selected{% endif %}>{{ item.name }}</option>
+{% endfor %}</select></label>
+<button type="submit">{{ t('比べる') }}</button>
+</form>
+{% if rival %}
+<div class="table-wrap"><table class="board plain gun-vs">
+<thead><tr><th scope="col"><span class="sr">{{ t('項目') }}</span></th><th scope="col">{{ weapon.name }}</th><th scope="col"><a href="{{ url_for('weapon', uuid=rival.uuid) }}">{{ rival.name }}</a></th></tr></thead>
+<tbody>
+{% for row in versus %}<tr><th scope="row">{{ row.name }}</th><td{% if row.better == 'mine' %} class="better"{% endif %}>{{ row.mine }}{% if row.ms and row.mine != '–' %} ms{% endif %}</td><td{% if row.better == 'theirs' %} class="better"{% endif %}>{{ row.theirs }}{% if row.ms and row.theirs != '–' %} ms{% endif %}</td></tr>
+{% endfor %}</tbody>
+</table></div>
+<p class="note">{{ t('ダメージは一番近い距離の 1 発分。良い方に色。') }}</p>
+{% endif %}
+</section>
+{% endblock %}

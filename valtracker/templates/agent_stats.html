@@ -2,7 +2,7 @@
 {% block title %}{{ t('ピック率と勝率') }} · {{ t('エージェント') }} · {{ site_name }}{% endblock %}
 {% block description %}{{ t('エージェント別のピック率と勝率（当サイト集計）。') }}{% endblock %}
 {% block main %}
-<p class="crumb"><a href="{{ url_for('agents') }}">{{ t('エージェント') }}</a></p>
+{% include "_game_nav.html" %}
 <section class="hero">
 <h1>{{ t('ピック率と勝率') }}</h1>
 <p class="lead">{{ t('エージェント別のピック率と勝率（当サイト集計）。') }}</p>
