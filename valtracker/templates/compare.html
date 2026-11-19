@@ -43,6 +43,12 @@
 </table></div>
 <p class="compare-more"><a class="button quiet" href="{{ swap_url }}">{{ t('左右を入れ替える') }}</a></p>
 <p class="note">{% if span == 'act' %}{{ t('今アクトの平均（{a} 試合と {b} 試合）。', a='{:,}'.format((sides[0].found.summary or {}).get('games', 0)), b='{:,}'.format((sides[1].found.summary or {}).get('games', 0))) }}{% elif span %}{{ t('通算の平均（{a} 試合と {b} 試合）。', a='{:,}'.format((sides[0].found.summary or {}).get('games', 0)), b='{:,}'.format((sides[1].found.summary or {}).get('games', 0))) }}{% else %}{{ t('直近の試合（最大 {count} 試合）の平均。', count=recent) }}{% endif %}</p>
+{% if life_notes %}<div class="life-note">
+{% for note in life_notes %}{% if note.reading %}<p class="reading" role="status"><span class="spinner" aria-hidden="true"></span><span>{% if note.reading.via == 'riot' and note.reading.left %}{{ t('{name} の残りの試合を取得中（あと約 {left} 試合・{minutes} 分）', name=note.name, left='{:,}'.format(note.reading.left), minutes=[note.reading.minutes, 1]|max) }}{% else %}{{ t('{name} の残りの試合を取得中…', name=note.name) }}{% endif %}</span></p>
+{% endif %}{% if note.thin %}<p>{{ t('{name}: うち {thin} 試合は簡易データのため、KAST・ファーストキル率・クラッチ成功率・経済効率は残り {whole} 試合から集計。', name=note.name, thin='{:,}'.format(note.thin), whole='{:,}'.format(note.whole)) }}</p>
+{% endif %}{% endfor %}{% if life_notes|selectattr('reading')|list %}<p>{{ t('取得し終えるまで、その人の数値は取得できた試合だけのものです。') }} <a href="{{ again_url }}">{{ t('再集計') }}</a></p>
+{% endif %}</div>
+{% endif %}
 {% set names = rows|map(attribute='name')|list %}
 {% set terms = ['kda'] + (['acs'] if 'ACS' in names else []) + (['adr'] if 'ADR' in names else []) + (['hs'] if t('HS率') in names else []) + (['kast'] if 'KAST' in names else []) + (['dd'] if 'DDΔ' in names else []) + (['kad'] if 'KAD' in names else []) + (['kpr'] if t('キル / ラウンド') in names else []) + (['econ'] if t('経済効率') in names else []) %}
 {% include "_glossary.html" %}

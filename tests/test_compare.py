@@ -2,11 +2,13 @@
 
 import json
 import os
+import time
 import unittest
 from unittest import mock
 
-from helpers import FakeFetch, make_app
+from helpers import FakeFetch, fixture, make_app
 
+from valtracker import henrik
 from valtracker.compare import _best
 
 ORIGINAL = FakeFetch.__call__
@@ -15,6 +17,11 @@ ORIGINAL = FakeFetch.__call__
 def other_player(self, url, headers):
     """「Other#KR1」の HenrikDev の答え: フィクスチャのプレイヤーを別名にし、ランクとレベルを上げたもの。"""
     status, body = ORIGINAL(self, url, headers)
+    if "/Mate/" in url and "/v2/account/" in url and status == 200:
+        # 「Mate#0001」: フィクスチャの試合に一緒に出ている別のプレイヤー（puuid-2）
+        found = json.loads(body)
+        found["data"].update(name="Mate", tag="0001", puuid="puuid-2")
+        return status, json.dumps(found).encode()
     if "/Other/" not in url or status != 200:
         return status, body
     found = json.loads(body)
@@ -94,6 +101,48 @@ class CompareTest(unittest.TestCase):
         self.assertIn('href="/p/Other/KR1?span=all"', text)
         self.assertIn('href="/compare?a=Other%23KR1&amp;b=Tester%23JP1&amp;span=all"', text)
         self.assertNotIn("最大 15 試合", text)
+
+    def test_lifetime_says_whose_matches_are_still_loading(self):
+        """読み込み途中の人の通算は試合数が少ない: 比較ページにも理由を出す（片方だけ数が少なく、壊れて見えた）。"""
+        text = self.page("/compare?a=Tester%23JP1&b=Mate%230001&span=all")
+        self.assertIn("Tester#JP1 の残りの試合を取得中…", text)
+        self.assertIn("Mate#0001 の残りの試合を取得中…", text)
+        self.assertIn("取得し終えるまで、その人の数値は取得できた試合だけのものです。", text)
+        self.assertIn('<a href="/compare?a=Tester%23JP1&amp;b=Mate%230001&amp;span=all">再集計</a>', text)
+        archive = self.app.config["VAL_ARCHIVE"]
+        archive.save(archive.player("puuid-me") | {"finished": time.time()})
+        text = self.page("/compare?a=Tester%23JP1&b=Mate%230001&span=all")
+        self.assertNotIn("Tester#JP1 の残りの試合を取得中", text, "read through")
+        self.assertIn("Mate#0001 の残りの試合を取得中…", text)
+        self.assertNotIn("を取得中", self.page("/compare?a=Tester%23JP1&b=Mate%230001"), "not on the latest 15")
+
+    def test_lifetime_counts_each_player_from_their_own_matches(self):
+        """右側だけが出た試合: 右の通算だけが増え、左は左の試合のまま。簡易データの分はその人の行で言う。"""
+        base = henrik._slim_matches(json.loads(fixture("henrik_matches.json"))["data"])[0]
+        archive = self.app.config["VAL_ARCHIVE"]
+        extra = []
+        for number in range(3):
+            match = json.loads(json.dumps(base))
+            match["metadata"]["match_id"] = f"cccccccc-0000-4000-8000-{number:012d}"
+            match["metadata"]["started_at"] = f"2026-10-0{number + 1}T10:00:00Z"
+            match["players"] = [player for player in match["players"] if player["puuid"] != "puuid-me"]
+            extra.append(match)
+        archive.keep(extra)
+        archive.keep_thin("puuid-me", henrik._slim_stored(json.loads(fixture("henrik_stored.json"))["data"]))
+        thin = len([line for line in archive.thin("puuid-me", "competitive") if line["rounds"]])
+        self.assertGreater(thin, 0)
+        text = self.page("/compare?a=Tester%23JP1&b=Mate%230001&span=all")
+        self.assertIn(f"通算の平均（{2 + thin} 試合と 5 試合）", text)
+        self.assertIn(f"Tester#JP1: うち {thin} 試合は簡易データのため", text)
+        self.assertIn("残り 2 試合から集計", text)
+        self.assertNotIn("Mate#0001: うち", text)
+        row = text[text.index(">試合数<") :]
+        row = row[: row.index("</tr>")]
+        self.assertIn(f"<td>{2 + thin}</td>", row)
+        self.assertIn("<td>5</td>", row)
+        # 左右を入れ替えても、それぞれ自分の試合のまま
+        text = self.page("/compare?a=Mate%230001&b=Tester%23JP1&span=all")
+        self.assertIn(f"通算の平均（5 試合と {2 + thin} 試合）", text)
 
     def test_in_english(self):
         self.client.set_cookie("lang", "en-GB")

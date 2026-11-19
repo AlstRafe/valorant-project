@@ -1715,6 +1715,26 @@ TEXTS = {
         "en-GB": "Lifetime averages ({a} and {b} matches).",
         "zh-TW": "生涯平均（{a} 場與 {b} 場）。",
     },
+    "{name} の残りの試合を取得中（あと約 {left} 試合・{minutes} 分）": {
+        "ko": "{name}: 나머지 경기 불러오는 중(약 {left}경기·{minutes}분 남음)",
+        "en-GB": "{name}: loading the rest (about {left} matches, {minutes} min to go)",
+        "zh-TW": "{name}：正在取得其餘對戰（約剩 {left} 場、{minutes} 分鐘）",
+    },
+    "{name} の残りの試合を取得中…": {
+        "ko": "{name}: 나머지 경기 불러오는 중…",
+        "en-GB": "{name}: loading the rest…",
+        "zh-TW": "{name}：正在取得其餘對戰…",
+    },
+    "取得し終えるまで、その人の数値は取得できた試合だけのものです。": {
+        "ko": "다 불러올 때까지 그 사람의 수치는 불러온 경기만의 것입니다.",
+        "en-GB": "Until then, that player's numbers cover only the matches loaded so far.",
+        "zh-TW": "取得完成前，該玩家的數值只包含已取得的對戰。",
+    },
+    "{name}: うち {thin} 試合は簡易データのため、KAST・ファーストキル率・クラッチ成功率・経済効率は残り {whole} 試合から集計。": {
+        "ko": "{name}: 그중 {thin}경기는 요약 데이터뿐이라 KAST·퍼스트 킬 비율·클러치 성공률·경제 효율은 나머지 {whole}경기로 집계.",
+        "en-GB": "{name}: {thin} matches have summary data only, so KAST, first-kill rate, clutch win rate and econ rating use the other {whole}.",
+        "zh-TW": "{name}：其中 {thin} 場只有簡易資料，KAST、首殺率、殘局勝率、經濟效率以其餘 {whole} 場統計。",
+    },
     # 持ち主専用のページと枠: ヘッダーのライブタブ、トップの自分、ツールの自分のアカウント
     "ライブ": {
         "ko": "라이브",
