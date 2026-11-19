@@ -6,7 +6,7 @@
 {%- endmacro %}
 {% block main %}
 <p class="crumb"><a href="{{ url_for('weapons') }}">{{ t('武器') }}</a></p>
-<section class="gun-head">
+<section class="weapon-head">
 {% if weapon.icon %}<img src="{{ media(weapon.icon) }}" alt="" width="320" height="112">{% endif %}
 <div>
 <h1>{{ weapon.name }}</h1>
