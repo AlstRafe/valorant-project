@@ -202,7 +202,7 @@ def main() -> int:
             x=60,
             y=40,
             min_size=desktop.SMALLEST,
-            background_color="#161513",
+            background_color="#141822",
             text_select=True,
             on_top=True,  # 撮っている間はランナー自身のものを上に出さない
         )
