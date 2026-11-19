@@ -30,9 +30,14 @@
 <symbol id="end-surrender" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
 </svg>
 <ol class="timeline">
+{# 続けて印（ACE など）のあるラウンドは印を上と下に交互に置く（横に並ぶと重なる） #}
+{% set cer = namespace(low=false, before=false) %}
 {% for item in timeline %}
+{% set marked = item.ceremony in ('ace', 'teamace', 'flawless', 'clutch', 'thrifty') %}
+{% set cer.low = (not cer.low) if (marked and cer.before) else false %}
+{% set cer.before = marked %}
 {% set side = ('win' if item.won else 'loss') if item.won is not none else (item.winner|lower) %}
-<li class="{{ side }}{% if item.turn %} swap{% endif %}" title="{{ t('ラウンド {number}', number=item.number) }} · {% if item.won is not none %}{{ t('勝利') if item.won else t('敗北') }}{% else %}{{ t('レッド') if item.winner|lower == 'red' else t('ブルー') }}{% endif %}{% if item.end_words %} · {{ item.end_words }}{% endif %}{% if item.site %} · {{ t('{site} サイト', site=item.site) }}{% endif %}{% for team_id, buy in item.buys|dictsort %} · {{ t('レッド') if team_id|lower == 'red' else (t('ブルー') if team_id|lower == 'blue' else team_id) }}: {{ buy_words[buy] }}{% endfor %}">{% if item.kills %}<a href="#r{{ item.number }}">{% endif %}<span class="rn">{{ item.number }}</span><svg aria-hidden="true"><use href="#end-{{ item.end or 'elim' }}"/></svg>{% if item.ceremony in ('ace', 'teamace', 'flawless', 'clutch', 'thrifty') %}<span class="cer">{{ {'ace': 'ACE', 'teamace': 'TEAM ACE', 'flawless': 'FLAWLESS', 'clutch': 'CLUTCH', 'thrifty': 'THRIFTY'}[item.ceremony] }}</span>{% endif %}{% if item.kills %}</a>{% endif %}</li>
+<li class="{{ side }}{% if item.turn %} swap{% endif %}" title="{{ t('ラウンド {number}', number=item.number) }} · {% if item.won is not none %}{{ t('勝利') if item.won else t('敗北') }}{% else %}{{ t('レッド') if item.winner|lower == 'red' else t('ブルー') }}{% endif %}{% if item.end_words %} · {{ item.end_words }}{% endif %}{% if item.site %} · {{ t('{site} サイト', site=item.site) }}{% endif %}{% for team_id, buy in item.buys|dictsort %} · {{ t('レッド') if team_id|lower == 'red' else (t('ブルー') if team_id|lower == 'blue' else team_id) }}: {{ buy_words[buy] }}{% endfor %}">{% if item.kills %}<a href="#r{{ item.number }}">{% endif %}<span class="rn">{{ item.number }}</span><svg aria-hidden="true"><use href="#end-{{ item.end or 'elim' }}"/></svg>{% if marked %}<span class="cer{% if cer.low %} low{% endif %}">{{ {'ace': 'ACE', 'teamace': 'TEAM ACE', 'flawless': 'FLAWLESS', 'clutch': 'CLUTCH', 'thrifty': 'THRIFTY'}[item.ceremony] }}</span>{% endif %}{% if item.kills %}</a>{% endif %}</li>
 {% endfor %}
 </ol>
 <p class="note legend">{% if my_team %}<span class="key win"></span>{{ t('取ったラウンド') }} <span class="key loss"></span>{{ t('落としたラウンド') }}{% else %}<span class="key red"></span>{{ t('レッド') }} <span class="key blue"></span>{{ t('ブルー') }}{% endif %}</p>
