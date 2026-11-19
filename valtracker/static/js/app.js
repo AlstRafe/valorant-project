@@ -715,27 +715,27 @@
     canvas.height = 630;
     var c = canvas.getContext("2d");
     var font = 'system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Noto Sans KR", sans-serif';
-    c.fillStyle = "#141413";
+    c.fillStyle = "#141822";
     c.fillRect(0, 0, 1200, 630);
     if (images.wide) {
       c.globalAlpha = 0.35;
       c.drawImage(images.wide, 0, 0, 1200, 340);
       c.globalAlpha = 1;
       var fade = c.createLinearGradient(0, 120, 0, 340);
-      fade.addColorStop(0, "rgba(20,20,19,0)");
-      fade.addColorStop(1, "#141413");
+      fade.addColorStop(0, "rgba(20,24,34,0)");
+      fade.addColorStop(1, "#141822");
       c.fillStyle = fade;
       c.fillRect(0, 0, 1200, 340);
     }
-    c.fillStyle = "#ff4655";
+    c.fillStyle = "#ef7b85";
     c.fillRect(0, 0, 12, 630);
     c.textBaseline = "alphabetic";
-    c.fillStyle = "#e9e6df";
+    c.fillStyle = "#e3e6ec";
     c.font = "700 64px " + font;
     var name = fitted(c, card.name, 760);
     c.fillText(name, 64, 120);
     var after = c.measureText(name).width;
-    c.fillStyle = "#b9b4aa";
+    c.fillStyle = "#a4adbd";
     c.font = "500 40px " + font;
     c.fillText("#" + card.tag, 64 + after + 12, 120);
     var left = 64;
@@ -743,13 +743,13 @@
       c.drawImage(images.rank, 64, 150, 88, 88);
       left = 172;
     }
-    c.fillStyle = "#e9e6df";
+    c.fillStyle = "#e3e6ec";
     c.font = "700 40px " + font;
     c.fillText(fitted(c, card.rank, 600), left, 196);
-    c.fillStyle = "#b9b4aa";
+    c.fillStyle = "#a4adbd";
     c.font = "500 26px " + font;
     c.fillText(fitted(c, card.under, 700), left, 234);
-    c.fillStyle = "#b9b4aa";
+    c.fillStyle = "#a4adbd";
     c.font = "600 26px " + font;
     c.fillText(fitted(c, card.title, 1080), 64, 312);
     card.stats.forEach(function (stat, index) {
@@ -757,10 +757,10 @@
       var y = 330 + Math.floor(index / 3) * 110;
       c.fillStyle = "rgba(255,255,255,0.06)";
       c.fillRect(x, y, 340, 96);
-      c.fillStyle = "#b9b4aa";
+      c.fillStyle = "#a4adbd";
       c.font = "500 24px " + font;
       c.fillText(stat[0], x + 20, y + 34);
-      c.fillStyle = "#e9e6df";
+      c.fillStyle = "#e3e6ec";
       c.font = "700 40px " + font;
       c.fillText(String(stat[1]), x + 20, y + 80);
     });
@@ -771,13 +771,13 @@
         c.drawImage(image, x, 560, 44, 44);
         x += 54;
       }
-      c.fillStyle = "#e9e6df";
+      c.fillStyle = "#e3e6ec";
       c.font = "600 26px " + font;
       var said = fitted(c, agent.name, 220);
       c.fillText(said, x, 592);
       x += c.measureText(said).width + 32;
     });
-    c.fillStyle = "#b9b4aa";
+    c.fillStyle = "#a4adbd";
     c.font = "500 24px " + font;
     c.textAlign = "right";
     c.fillText(card.site, 1136, 592);

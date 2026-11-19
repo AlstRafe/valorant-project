@@ -1,91 +1,90 @@
-/* VAL Tracker。紙・インク・角丸・影はこのホストの全サイトと同じ共通トークン（Home Page の docs/CONVENTIONS.md
-   「デザインの共通トークン」）なので、一覧とこのサイトを行き来してもページの色と手触りは変わらない。
-   アクセントは VALORANT の赤で、紙の上では文字が読めるよう暗め、ダークでは光らないよう柔らかめにする。
-   背景はごく薄い色の光（body::before）、カードはその上の半透明の面（--surface）。目に痛い原色や真っ白は使わない。 */
+/* VAL Tracker。紙・インク・色の使い方はこのホストの全サイトと同じ共通トークン（Home Page の docs/CONVENTIONS.md
+   「デザインの共通トークン」、藍刷り）なので、一覧とこのサイトを行き来してもページの色は変わらない。
+   印刷した試合のプログラム（スコア表）のように: 冷たい紙のベタ地に藍のインクの文字と罫線、2 色目の山吹は塗りと強調だけ、
+   VALORANT の赤は小さな印（見出しの前の線、開いているタブ）と負けだけ。光・透け・影・丸み・グラデーションは使わない。 */
 :root {
-  --paper: #f5f3ef;
-  --card: #fffdf9;
-  /* 背景の光の上のカード: 少し透けて、ページ全体の色がなじむ */
-  --surface: rgb(255 253 249 / 0.74);
-  --ink: #1e1d1b;
-  --soft: #5c5952;
-  --rule: #dcd7cd;
-  /* 押せる・入力できるものの縁: ページに対して 3:1（WCAG 1.4.11）。線には --rule を使う */
-  --edge: #8a857b;
-  /* カードの上辺の 1px の光（inset の影） */
-  --line-hi: rgb(255 255 255 / 0.75);
-  --accent: #b8202f;
-  --on-a: #fff;
+  --paper: #edf0f2;
+  --card: #f8f9fa;
+  /* 箱は紙の上の罫で囲むだけ（塗らない）。入力欄・メニュー・知らせは --card で塗る */
+  --surface: transparent;
+  --ink: #19223a;
+  --soft: #4c5770;
+  --rule: #c9d0da;
+  /* 押せる・入力できるものの縁はインク（WCAG 1.4.11 の 3:1 を十分に超える）。行や列の間の線には --rule */
+  --edge: var(--ink);
+  /* リンクと開いているもの */
+  --link: #2a4a8f;
+  --accent: var(--link);
+  /* 2 色目（山吹）: 塗り・強調・マウスを乗せたボタン。紙の上の文字には使わない（1.7:1） */
+  --mark: #e8b04a;
+  --on-mark: #19223a;
+  /* VALORANT の赤: 小さな印だけ */
+  --val: #b8202f;
+  --on-a: #f8f9fa;
   --win: #17704f;
   --loss: #b8202f;
-  --draw: #64605a;
+  --draw: #5a6070;
   --blue: #245fb0;
-  /* 背景の光の色（ページの角に置く。文字は一番濃いところでも AA） */
-  --wash-a: color-mix(in srgb, var(--accent) 8%, transparent);
-  --wash-b: color-mix(in srgb, var(--blue) 8%, transparent);
-  --wash-c: color-mix(in srgb, var(--win) 6%, transparent);
-  --r-s: 10px;
-  --r-m: 14px;
-  --r-l: 20px;
-  --r-pill: 999px;
-  --shadow-1: 0 1px 2px rgb(40 30 20 / 0.05), 0 12px 32px -16px rgb(40 30 20 / 0.16), inset 0 1px 0 var(--line-hi);
-  --shadow-2: 0 2px 4px rgb(40 30 20 / 0.06), 0 22px 48px -20px rgb(40 30 20 / 0.24), inset 0 1px 0 var(--line-hi);
-  --shadow-pop: 0 16px 40px -12px rgb(40 30 20 / 0.22);
-  --btn-glow: color-mix(in srgb, var(--accent) 70%, transparent);
-  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --t: 180ms;
+  /* 角は入力欄とボタンだけ 2px、箱・行・絵は四角。影は無し（メニューだけ山吹の版ずれのような影） */
+  --r-s: 2px;
+  --r-m: 0;
+  --r-l: 0;
+  --r-pill: 2px;
+  --shadow-1: none;
+  --shadow-2: none;
+  --shadow-pop: 4px 4px 0 var(--mark);
+  /* 塗りのボタン: ライトはインクに紙の文字、マウスを乗せると山吹。ダークは明るい塗りがまぶしいので山吹（乗せると少し明るく） */
+  --btn: var(--ink);
+  --on-btn: var(--paper);
+  --btn-hover: var(--mark);
+  --t: 120ms;
   --sans: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  --serif: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", "IPAexMincho", "IPAMincho", serif;
+  /* 大きな数字: スコアボードのような字（Windows の Bahnschrift、Mac・iPhone の DIN）。無ければ本文の字 */
+  --num: "Bahnschrift", "DIN Alternate", var(--sans);
   --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
   --tabbar: 0px;
 }
 /* ダーク: 訪問者がヘッダーのボタンで選ぶまで端末の設定（<html data-theme>、ページのスクリプトが設定）。 */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #141413;
-    --card: #1e1d1b;
-    --surface: rgb(30 29 27 / 0.7);
-    --ink: #e9e6df;
-    --soft: #a7a39b;
-    --rule: #353330;
-    --edge: #78736a;
-    --line-hi: rgb(255 255 255 / 0.06);
-    --accent: #f0707a;
-    --on-a: #141310;
+    --paper: #141822;
+    --card: #1b2030;
+    --ink: #e3e6ec;
+    --soft: #a4adbd;
+    --rule: #2d3446;
+    --link: #9db4ec;
+    --mark: #d8ab52;
+    --on-mark: #141822;
+    --val: #ef7b85;
+    --on-a: #141822;
     --win: #4cc79a;
-    --loss: #f0707a;
-    --draw: #a8a49b;
+    --loss: #ef7b85;
+    --draw: #a4adbd;
     --blue: #6aa8f0;
-    --wash-a: color-mix(in srgb, var(--accent) 10%, transparent);
-    --wash-b: color-mix(in srgb, var(--blue) 10%, transparent);
-    --wash-c: color-mix(in srgb, var(--win) 6%, transparent);
-    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 32px -16px rgb(0 0 0 / 0.55), inset 0 1px 0 var(--line-hi);
-    --shadow-2: 0 2px 4px rgb(0 0 0 / 0.4), 0 22px 48px -20px rgb(0 0 0 / 0.65), inset 0 1px 0 var(--line-hi);
-    --shadow-pop: 0 16px 40px -12px rgb(0 0 0 / 0.6);
-    --btn-glow: color-mix(in srgb, var(--accent) 40%, transparent);
+    --btn: var(--mark);
+    --on-btn: var(--on-mark);
+    --btn-hover: color-mix(in srgb, var(--mark) 78%, var(--ink));
   }
 }
 :root[data-theme="dark"] {
-  --paper: #141413;
-  --card: #1e1d1b;
-  --surface: rgb(30 29 27 / 0.7);
-  --ink: #e9e6df;
-  --soft: #a7a39b;
-  --rule: #353330;
-  --edge: #78736a;
-  --line-hi: rgb(255 255 255 / 0.06);
-  --accent: #f0707a;
-  --on-a: #141310;
+  --paper: #141822;
+  --card: #1b2030;
+  --ink: #e3e6ec;
+  --soft: #a4adbd;
+  --rule: #2d3446;
+  --link: #9db4ec;
+  --mark: #d8ab52;
+  --on-mark: #141822;
+  --val: #ef7b85;
+  --on-a: #141822;
   --win: #4cc79a;
-  --loss: #f0707a;
-  --draw: #a8a49b;
+  --loss: #ef7b85;
+  --draw: #a4adbd;
   --blue: #6aa8f0;
-  --wash-a: color-mix(in srgb, var(--accent) 10%, transparent);
-  --wash-b: color-mix(in srgb, var(--blue) 10%, transparent);
-  --wash-c: color-mix(in srgb, var(--win) 6%, transparent);
-  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 32px -16px rgb(0 0 0 / 0.55), inset 0 1px 0 var(--line-hi);
-  --shadow-2: 0 2px 4px rgb(0 0 0 / 0.4), 0 22px 48px -20px rgb(0 0 0 / 0.65), inset 0 1px 0 var(--line-hi);
-  --shadow-pop: 0 16px 40px -12px rgb(0 0 0 / 0.6);
-  --btn-glow: color-mix(in srgb, var(--accent) 40%, transparent);
+  --btn: var(--mark);
+  --on-btn: var(--on-mark);
+  --btn-hover: color-mix(in srgb, var(--mark) 78%, var(--ink));
   color-scheme: dark;
 }
 :root[data-theme="light"] {
@@ -93,12 +92,15 @@
 }
 /* その言語の文字を持つフォント（日本語フォントにはハングルが無く、漢字も台湾のものではない）。 */
 :lang(ko) {
+  --serif: "AppleMyungjo", "Nanum Myeongjo", "Batang", "Noto Serif KR", serif;
   --sans: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
 }
 :lang(zh-TW) {
+  --serif: "Songti TC", "PMingLiU", "Noto Serif TC", serif;
   --sans: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
 }
 :lang(en) {
+  --serif: Georgia, "Times New Roman", serif;
   --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 html:lang(ko) body {
@@ -113,43 +115,14 @@ html {
   background: var(--paper);
   color: var(--ink);
   -webkit-text-size-adjust: 100%;
-  scrollbar-color: color-mix(in srgb, var(--soft) 45%, transparent) transparent;
   accent-color: var(--accent);
 }
-/* body には背景を付けない: 後ろの固定レイヤー（下）が見えるように。文字の色の確認（tests/ui/audit.js）は
-   html の紙の色で測る。光は一番濃い角でも文字が AA のまま（上の --wash-*）。 */
 body {
   margin: 0 auto;
   max-width: 62rem;
   padding: 0 1rem calc(2rem + var(--tabbar));
   font: 16px/1.65 var(--sans);
-}
-/* 背景: ページの角に置いた大きな色の光と、右上から差すアクセントの斜めの光（VALORANT の角ばった形）。
-   画面に固定（スクロールで動かない）。絵は使わない（CSP は img-src 'self'）。 */
-body::before,
-body::after {
-  content: "";
-  position: fixed;
-  z-index: -1;
-  pointer-events: none;
-}
-body::before {
-  inset: 0;
-  background:
-    radial-gradient(56rem 38rem at 6% -8%, var(--wash-a), transparent 70%),
-    radial-gradient(50rem 34rem at 100% 6%, var(--wash-b), transparent 70%),
-    radial-gradient(64rem 40rem at 46% 112%, var(--wash-c), transparent 70%);
-}
-body::after {
-  top: 0;
-  right: 0;
-  width: min(80vw, 64rem);
-  height: min(80vh, 40rem);
-  background:
-    linear-gradient(118deg, transparent 38%, var(--wash-a) 50%, transparent 62%),
-    linear-gradient(118deg, transparent 58%, var(--wash-b) 66%, transparent 74%);
-  -webkit-mask-image: radial-gradient(farthest-side at 100% 0, #000, transparent);
-  mask-image: radial-gradient(farthest-side at 100% 0, #000, transparent);
+  background: var(--paper);
 }
 a {
   color: var(--accent);
@@ -163,11 +136,9 @@ summary,
 input,
 select {
   transition:
-    color var(--t) var(--ease),
-    background-color var(--t) var(--ease),
-    border-color var(--t) var(--ease),
-    box-shadow var(--t) var(--ease),
-    transform var(--t) var(--ease);
+    color var(--t) ease,
+    background-color var(--t) ease,
+    border-color var(--t) ease;
 }
 a:focus-visible,
 button:focus-visible,
@@ -175,18 +146,22 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
 }
 ::selection {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  background: color-mix(in srgb, var(--mark) 60%, transparent);
+  color: var(--ink);
 }
 img {
   max-width: 100%;
 }
+/* 見出し: 明朝（その言語の）の題字、字の間を詰める（palt）。 */
 h1,
 h2,
 h3 {
+  font-family: var(--serif);
+  font-weight: 600;
   line-height: 1.3;
   letter-spacing: 0.01em;
   font-feature-settings: "palt";
@@ -200,51 +175,24 @@ p {
 }
 h1 {
   margin: 0;
-  font-size: clamp(1.75rem, 1.45rem + 1.2vw, 2.15rem);
-  font-weight: 800;
-  letter-spacing: 0.005em;
+  font-size: clamp(1.9rem, 1.5rem + 1.5vw, 2.5rem);
+  line-height: 1.2;
 }
 h2 {
-  margin: 2.2rem 0 0.8rem;
-  font-size: 1.18rem;
-  font-weight: 750;
+  margin: 2.6rem 0 0.9rem;
+  font-size: 1.25rem;
+  letter-spacing: 0.02em;
 }
-/* 見出しの前の小さな斜めの印（ゲームの UI の刻み）: 赤から青へ。 */
-main h2::before {
-  content: "";
-  display: inline-block;
-  width: 0.3rem;
-  height: 0.92em;
-  margin-right: 0.55rem;
-  border-radius: 2px;
-  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 35%, var(--blue)));
-  transform: skewX(-14deg);
-  vertical-align: -0.08em;
+/* 本文の節の見出し: 上に VALORANT の赤の短い線（全サイトの見出しの印）。flex の見出しでも同じに出るよう上の縁で描く。
+   箱の中の見出しには無し（下）。 */
+main h2 {
+  padding-top: 0.6rem;
+  border-top: 3px solid transparent;
+  border-image: linear-gradient(90deg, var(--val) 1.2rem, transparent 1.2rem) 1;
 }
-/* 横に並べる見出し（チーム、ストア、シーズン）: 印は並びの最初の 1 つ。間は見出しの gap から引く */
-.team h2::before,
-.shelf h2::before,
-.season-card h2::before {
-  align-self: center;
-  margin-right: calc(0.55rem - 0.8rem);
-}
-.team h2::before {
-  margin-right: calc(0.55rem - 0.6rem);
-}
-.season-card h2::before {
-  margin-right: calc(0.55rem - 0.7rem);
-}
-/* ページを開いたとき本文がそっと浮かぶ（動きを減らす設定では無し）。 */
-@media (prefers-reduced-motion: no-preference) {
-  main {
-    animation: rise 0.32s var(--ease) both;
-  }
-}
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
+:is(.season-card, .server, .panel, .notice) h2 {
+  padding-top: 0;
+  border-top: 0;
 }
 .sr {
   position: absolute;
@@ -260,7 +208,7 @@ main h2::before {
   top: -3rem;
   z-index: 20;
   padding: 0.5rem 0.9rem;
-  border-radius: var(--r-pill);
+  border-radius: var(--r-s);
   background: var(--accent);
   color: var(--on-a);
 }
@@ -269,28 +217,27 @@ main h2::before {
 }
 
 /* ヘッダー: 名前、ページ、テーマと言語。折り返さない: 狭い画面ではページが下のタブバーに移り、
-   ボタンは文字を無くす（一番長い英語で測った）。ページの上に浮かぶすりガラスの帯。
-   バーの中の幅は前と同じ（外へ 0.6rem 広げて内に 0.6rem）なので、測った幅はそのまま。 */
+   ボタンは文字を無くす（一番長い英語で測った）。紙のベタ地に、下は題字の下のような太いインクの罫。 */
 .top {
   position: sticky;
-  top: 0.5rem;
+  top: 0;
   z-index: 10;
-  margin: 0.5rem -0.6rem 1.6rem;
-  padding: 0 0.6rem;
-  border-radius: var(--r-l);
+  margin: 0 -1rem 2rem;
+  padding: 0 1rem;
+  /* 普通の背景: ここで backdrop-filter を使うと、スマホの固定タブバーがヘッダーの中に入ってしまう。 */
+  background: var(--paper);
+  border-bottom: 3px solid var(--ink);
 }
-/* すりガラスは ::before に: ヘッダー自身に backdrop-filter を付けると、スマホの固定タブバーがヘッダーの中に入ってしまう。 */
-.top::before {
+/* 題字の下の二重の罫: 太い 3px と、2px あけて細い 1px（あいだは紙で埋め、下の文字が透けない） */
+.top::after {
   content: "";
   position: absolute;
-  inset: 0;
-  z-index: -1;
-  border: 1px solid color-mix(in srgb, var(--rule) 80%, transparent);
-  border-radius: inherit;
-  background: color-mix(in srgb, var(--card) 72%, transparent);
-  box-shadow: var(--shadow-1);
-  -webkit-backdrop-filter: blur(16px) saturate(1.3);
-  backdrop-filter: blur(16px) saturate(1.3);
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 1px;
+  background: var(--ink);
+  box-shadow: 0 -2px 0 var(--paper);
 }
 .bar {
   display: flex;
@@ -304,17 +251,19 @@ main h2::before {
   gap: 0.45rem;
   flex: none;
   color: var(--ink);
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-weight: 900;
+  letter-spacing: 0.03em;
   text-decoration: none;
 }
 .brand svg {
   width: 1.6rem;
   height: 1.6rem;
-  fill: var(--accent);
+  fill: var(--val);
 }
+/* ページのタブ: バーの高さいっぱいの文字。開いているページは下の罫に乗る赤い線。 */
 .tabs {
   display: flex;
+  align-self: stretch;
   gap: 0.2rem;
   flex: 1;
   min-width: 0;
@@ -323,8 +272,7 @@ main h2::before {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.4rem 0.6rem;
-  border-radius: var(--r-pill);
+  padding: 0 0.6rem;
   color: var(--soft);
   font-size: 0.92rem;
   text-decoration: none;
@@ -335,7 +283,7 @@ main h2::before {
 }
 .tabs a[aria-current] {
   color: var(--ink);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: inset 0 -3px 0 var(--val);
   font-weight: 700;
 }
 .tabs svg,
@@ -569,7 +517,7 @@ main h2::before {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.55rem 0.75rem;
-  border-radius: 6px;
+  border-radius: var(--r-s);
   color: var(--ink);
   text-decoration: none;
 }
@@ -626,33 +574,31 @@ main h2::before {
 
 /* スマホ: ページは下のタブバー（入力中、キーボードが出ている間は隠す）。 */
 @media (max-width: 760px) {
-  /* 下のタブバーも画面の端から少し離して浮かべる（すりガラス、ホームバーの分は下に空ける）。 */
   :root {
-    --tabbar: calc(4.3rem + env(safe-area-inset-bottom));
+    --tabbar: calc(3.6rem + env(safe-area-inset-bottom));
   }
   .tabs {
     position: fixed;
-    left: 0.5rem;
-    right: 0.5rem;
-    bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 10;
     justify-content: space-around;
-    padding: 0.3rem 0.4rem;
-    border: 1px solid color-mix(in srgb, var(--rule) 80%, transparent);
-    border-radius: var(--r-l);
-    background: color-mix(in srgb, var(--card) 78%, transparent);
-    box-shadow: var(--shadow-pop);
-    -webkit-backdrop-filter: blur(18px) saturate(1.3);
-    backdrop-filter: blur(18px) saturate(1.3);
+    padding: 0 0.5rem env(safe-area-inset-bottom);
+    background: var(--paper);
+    border-top: 2px solid var(--ink);
   }
   .tabs a {
     flex-direction: column;
+    justify-content: center;
     gap: 0.1rem;
     flex: 1;
     max-width: 8rem;
-    padding: 0.3rem 0.4rem;
-    border-radius: var(--r-m);
+    padding: 0.35rem 0.4rem;
     font-size: 0.72rem;
+  }
+  .tabs a[aria-current] {
+    box-shadow: inset 0 3px 0 var(--val);
   }
   .tabs svg {
     width: 1.35rem;
@@ -736,7 +682,7 @@ main h2::before {
 .live-tab[data-phase="pregame"] .live-dot,
 .live-tab[data-phase="ingame"] .live-dot {
   display: block;
-  background: var(--accent);
+  background: var(--val);
 }
 .live-tab[data-phase="found"] .live-dot,
 .live-tab[data-phase="pregame"] .live-dot {
@@ -757,14 +703,32 @@ main h2::before {
 .hero {
   padding: 1rem 0 0.5rem;
 }
-/* ページの題: インクからアクセントへ少しだけ色が移る（どこでも AA の濃さ）。 */
-.hero h1 {
-  width: fit-content;
-  max-width: 100%;
-  background: linear-gradient(100deg, var(--ink) 30%, color-mix(in srgb, var(--accent) 55%, var(--ink)));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+/* トップの検索の右の空き: 山吹の網点（印刷の飾り。文字の下には置かない、広い画面だけ）。 */
+@media (min-width: 1000px) {
+  .hero:has(> .search) {
+    position: relative;
+  }
+  .hero:has(> .search)::after {
+    content: "";
+    position: absolute;
+    top: 0.4rem;
+    right: 0;
+    width: 15rem;
+    height: 9.5rem;
+    background: radial-gradient(circle, var(--mark) 1.3px, transparent 1.7px) 0 0 / 10px 10px;
+    -webkit-mask-image: radial-gradient(farthest-side at 100% 0, #000 25%, transparent);
+    mask-image: radial-gradient(farthest-side at 100% 0, #000 25%, transparent);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  :root[data-theme="dark"] .hero:has(> .search)::after {
+    opacity: 0.35;
+  }
+}
+@media (min-width: 1000px) and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .hero:has(> .search)::after {
+    opacity: 0.35;
+  }
 }
 .lead {
   max-width: 40rem;
@@ -806,43 +770,39 @@ button,
   min-height: 2.9rem;
   padding: 0 1.2rem;
   border: 0;
-  border-radius: var(--r-pill);
-  /* 塗りの色は --fill から: マウスを乗せると少し濃く（ダークでは明るく）なる。背景を自分で決めるボタンには効かない */
-  --fill: var(--accent);
+  border-radius: var(--r-s);
+  /* 塗りはインク、文字は紙。マウスを乗せると山吹の塗りにインクの文字（--fill と --on-fill から:
+     背景を自分で決めるボタンには効かない） */
+  --fill: var(--btn);
+  --on-fill: var(--on-btn);
   background: var(--fill);
-  color: var(--on-a);
+  color: var(--on-fill);
   font: inherit;
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
 }
-:where(button, .button):hover {
-  --fill: color-mix(in srgb, var(--accent) 86%, var(--ink));
-}
-:where(button, .button):active:not(:disabled) {
-  transform: translateY(1px);
-}
-/* 送信の塗りのボタン（検索など）とリンクのボタン: アクセントの色の柔らかい影 */
-:where(button[type="submit"]:not([class]), .button:not(.quiet)) {
-  box-shadow: 0 8px 18px -10px var(--btn-glow);
+:where(button, .button):hover:not(:disabled) {
+  --fill: var(--btn-hover);
+  --on-fill: var(--on-mark);
 }
 button.quiet {
   background: transparent;
-  color: var(--soft);
+  color: var(--ink);
   border: 1px solid var(--edge);
 }
 .problem {
   margin: 0.8rem 0 0;
   padding: 0.7rem 0.9rem;
   border-left: 4px solid var(--loss);
-  border-radius: 6px;
+  border-radius: var(--r-s);
   background: color-mix(in srgb, var(--loss) 9%, transparent);
 }
 .done {
   margin: 0.8rem 0 0;
   padding: 0.7rem 0.9rem;
   border-left: 4px solid var(--win);
-  border-radius: 6px;
+  border-radius: var(--r-s);
   background: color-mix(in srgb, var(--win) 9%, transparent);
 }
 .note {
@@ -897,23 +857,6 @@ button.quiet {
 }
 .person:hover {
   border-color: var(--accent);
-}
-/* 押せるカード: マウスを乗せると少し浮く（2px まで、動きを減らす設定では浮かない）。 */
-@media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  .person:hover,
-  .match a:hover,
-  .agent-grid a:hover,
-  .tool-grid a:hover,
-  .me-links a:hover,
-  .news a:hover,
-  .chromas a:hover,
-  .guns a:hover,
-  .compare-who a:hover,
-  .gun-grid a:hover,
-  .map-grid a:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-2);
-  }
 }
 .person .prank {
   flex: none;
@@ -1047,18 +990,17 @@ button.quiet {
 .fav[aria-pressed="true"] svg {
   fill: currentColor;
 }
+/* ランクと数字は 1 つの表のように: 罫 1 本で区切ったます目（外はインクの罫）。 */
 .ranks {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: 0.6rem;
+  gap: 1px;
   margin-top: 0.6rem;
+  padding: 1px;
 }
 .rank {
   padding: 0.8rem 1rem;
-  border: 1px solid var(--rule);
-  border-radius: var(--r-m);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
+  box-shadow: 0 0 0 1px var(--rule);
 }
 .rank p {
   margin: 0;
@@ -1072,7 +1014,8 @@ button.quiet {
   align-items: center;
   gap: 0.5rem;
   min-height: 2.6rem;
-  font-size: 1.2rem;
+  font-family: var(--num);
+  font-size: 1.25rem;
   font-weight: 700;
 }
 .value img {
@@ -1358,15 +1301,13 @@ span.tri.down {
 .numbers {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
-  gap: 0.6rem;
+  gap: 1px;
   margin: 0;
+  padding: 1px;
 }
 .numbers div {
   padding: 0.7rem 0.9rem;
-  border: 1px solid var(--rule);
-  border-radius: var(--r-m);
-  background: var(--surface);
-  box-shadow: var(--shadow-1);
+  box-shadow: 0 0 0 1px var(--rule);
 }
 .numbers dt {
   color: var(--soft);
@@ -1374,7 +1315,8 @@ span.tri.down {
 }
 .numbers dd {
   margin: 0;
-  font-size: 1.25rem;
+  font-family: var(--num);
+  font-size: 1.35rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -1404,7 +1346,7 @@ span.tri.down {
   place-items: center;
   width: 1.6rem;
   height: 1.6rem;
-  border-radius: 5px;
+  border-radius: var(--r-s);
   background: var(--draw);
   color: var(--on-a);
   font-size: 0.75rem;
@@ -1486,7 +1428,7 @@ span.tri.down {
   bottom: -0.35rem;
   transform: translateX(-50%);
   padding: 0 0.3rem;
-  border-radius: 4px;
+  border-radius: var(--r-s);
   background: #c99a2e;
   color: #1d1c1a;
   font-size: 0.6rem;
@@ -1517,6 +1459,8 @@ span.tri.down {
   font-size: 0.8rem;
 }
 .match .score strong {
+  font-family: var(--num);
+  font-size: 1.15rem;
   font-variant-numeric: tabular-nums;
 }
 .match.win .score strong {
@@ -1684,11 +1628,11 @@ abbr[title] {
   vertical-align: 0.05rem;
 }
 .pill.good {
-  background: color-mix(in srgb, var(--win) 18%, transparent);
+  border: 1px solid;
   color: var(--win);
 }
 .pill.bad {
-  background: color-mix(in srgb, var(--loss) 16%, transparent);
+  border: 1px solid;
   color: var(--loss);
 }
 .body-figure {
@@ -1763,7 +1707,7 @@ meter {
 .who-cell img {
   width: 1.75rem;
   height: 1.75rem;
-  border-radius: 6px;
+  border-radius: var(--r-s);
 }
 .map-cards {
   display: grid;
@@ -1889,7 +1833,7 @@ meter {
 :root:not([data-theme="dark"]) .items:not(.skins) .item:not(:has(> .skin-link)) > img {
   padding: 0.3rem;
   border-radius: var(--r-s);
-  background-color: #34312b;
+  background-color: #2a3142;
 }
 :root:not([data-theme="dark"]) .items .item > .skin-link > img,
 :root:not([data-theme="dark"]) .items.skins .item > img {
@@ -2003,7 +1947,8 @@ meter {
   gap: 0.6rem;
 }
 .team h2 strong {
-  font-size: 1.5rem;
+  font-family: var(--num);
+  font-size: 1.6rem;
 }
 .team.win h2 strong {
   color: var(--win);
@@ -2070,7 +2015,7 @@ meter {
 .board th[scope="row"] img {
   width: 2rem;
   height: 2rem;
-  border-radius: 6px;
+  border-radius: var(--r-s);
 }
 /* 長い名前（幅の広い文字で 16 まで）はスマホの画面からチームの数値を押し出してしまう: 短く切り、全体は title に */
 .board th[scope="row"] .pn {
@@ -2197,7 +2142,7 @@ meter {
   top: -0.4rem;
   right: -0.2rem;
   padding: 0 0.2rem;
-  border-radius: 4px;
+  border-radius: var(--r-s);
   background: #c99a2e;
   color: #1d1c1a;
   font-size: 0.5rem;
@@ -2257,7 +2202,7 @@ meter {
 .mvp-tag {
   flex: none;
   padding: 0 0.25rem;
-  border-radius: 4px;
+  border-radius: var(--r-s);
   background: #c99a2e;
   color: #1d1c1a;
   font-size: 0.6rem;
@@ -2288,7 +2233,7 @@ meter {
 .duel-list img {
   width: 2rem;
   height: 2rem;
-  border-radius: 6px;
+  border-radius: var(--r-s);
 }
 .duel-list .pn {
   flex: 1;
@@ -2361,7 +2306,7 @@ meter {
 .kills .kp img {
   width: 1.5rem;
   height: 1.5rem;
-  border-radius: 4px;
+  border-radius: var(--r-s);
 }
 .kills .mine {
   color: var(--win);
@@ -2480,7 +2425,7 @@ meter {
   height: 2.5rem;
   padding: 0.3rem;
   border-radius: var(--r-s);
-  background: #2a2926;
+  background: #273046;
 }
 .abilities h3 {
   margin: 0;
@@ -2705,12 +2650,11 @@ code {
   padding: 0;
   list-style: none;
 }
-/* 下の注意書き: 両端が消えていく細い線の下に。 */
+/* 下の注意書き: 紙面の終わりのインクの罫の下に。 */
 .foot {
   margin-top: 3.5rem;
-  padding-top: 1.2rem;
-  border-top: 1px solid transparent;
-  border-image: linear-gradient(90deg, transparent, var(--rule) 18%, var(--rule) 82%, transparent) 1;
+  padding-top: 1rem;
+  border-top: 2px solid var(--ink);
   color: var(--soft);
   font-size: 0.8rem;
 }
@@ -2950,7 +2894,7 @@ code {
   gap: 0.2rem 0.6rem;
   padding: 0.6rem 0.9rem;
   border-left: 4px solid var(--loss);
-  border-radius: 6px;
+  border-radius: var(--r-s);
   background: color-mix(in srgb, var(--loss) 9%, transparent);
   color: var(--ink);
   text-decoration: none;
@@ -3283,7 +3227,7 @@ code {
   margin: 0.8rem 0 0;
   padding: 0.7rem 0.9rem;
   border-left: 4px solid var(--draw);
-  border-radius: 6px;
+  border-radius: var(--r-s);
   background: color-mix(in srgb, var(--draw) 9%, transparent);
   font-weight: 700;
 }
@@ -3510,7 +3454,7 @@ code {
 }
 .game-head .live {
   padding: 0 0.4rem;
-  border-radius: 4px;
+  border-radius: var(--r-s);
   background: var(--accent);
   color: var(--on-a);
   font-weight: 800;
@@ -3537,20 +3481,20 @@ code {
 .team-row img {
   box-sizing: border-box;
   padding: 0.15rem;
-  border-radius: 6px;
-  background-color: #77726a;
+  border-radius: var(--r-s);
+  background-color: #6f7789;
 }
 /* app.js がロゴの明るさを測ったあと: 明るいロゴは暗い台、暗いロゴは明るい台 */
 .team-row img.logo-light {
-  background-color: #24221f;
+  background-color: #1d2333;
 }
 .team-row img.logo-dark {
-  background-color: #f4f1ea;
+  background-color: #eef1f4;
 }
 .no-logo {
   display: inline-grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: var(--r-s);
   background: color-mix(in srgb, var(--draw) 18%, var(--card));
   color: var(--soft);
   font-size: 0.6rem;
@@ -4279,7 +4223,7 @@ code {
     top: 0.2rem;
     right: 0.2rem;
     padding: 0.05rem 0.25rem;
-    border-radius: 6px;
+    border-radius: var(--r-s);
     background: var(--card);
     font-size: 0.66rem;
     line-height: 1.2;
@@ -4307,7 +4251,7 @@ code {
   gap: 0.3rem;
   padding: 0.6rem 0.9rem;
   border-left: 4px solid var(--draw);
-  border-radius: 6px;
+  border-radius: var(--r-s);
   background: var(--surface);
 }
 .role-agents {
@@ -4323,7 +4267,7 @@ code {
 .role-agent img {
   width: 1.75rem;
   height: 1.75rem;
-  border-radius: 6px;
+  border-radius: var(--r-s);
 }
 .wear {
   display: flex;
@@ -4644,7 +4588,7 @@ code {
   flex: none;
   width: 1.75rem;
   height: 1.75rem;
-  border-radius: 6px;
+  border-radius: var(--r-s);
 }
 .agent-cell span {
   display: grid;
@@ -4793,7 +4737,7 @@ code {
 .agent-list img {
   width: 1.5rem;
   height: 1.5rem;
-  border-radius: 4px;
+  border-radius: var(--r-s);
 }
 .agent-list span {
   overflow-wrap: normal;
@@ -4926,7 +4870,7 @@ html.leaving::after {
 }
 .score-big .grade {
   padding: 0.05rem 0.45rem;
-  border-radius: 6px;
+  border-radius: var(--r-s);
   background: var(--grade);
   color: var(--card);
   font-weight: 800;
@@ -4990,7 +4934,7 @@ html.leaving::after {
   display: inline-block;
   min-width: 2.4rem;
   padding: 0 0.3rem;
-  border-radius: 5px;
+  border-radius: var(--r-s);
   background: var(--grade);
   color: var(--card);
   font-size: 0.78rem;
@@ -5081,7 +5025,7 @@ html.leaving::after {
 .heat-figure {
   padding: 0.5rem;
   border-radius: var(--r-s);
-  background: #181715;
+  background: #151a26;
 }
 .heat-svg {
   display: block;
@@ -5545,7 +5489,7 @@ html.leaving::after {
 .set > img {
   width: 3.5rem;
   height: 3.5rem;
-  border-radius: 6px;
+  border-radius: var(--r-s);
   object-fit: cover;
 }
 .set-text {
@@ -6378,7 +6322,7 @@ form.row {
   overflow-x: auto;
   padding: 0.5rem;
   border-radius: var(--r-s);
-  background: #181715;
+  background: #151a26;
 }
 .callout-svg {
   display: block;
