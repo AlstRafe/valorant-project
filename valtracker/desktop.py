@@ -566,7 +566,7 @@ def window(url: str, folder: Path, close_after: float = 0, minimized: bool = Fal
         maximized=start["maximized"] and not minimized,
         minimized=minimized,
         min_size=SMALLEST,
-        background_color="#f6f4ef" if light_windows() else "#161513",  # サイトの紙の色
+        background_color="#edf0f2" if light_windows() else "#141822",  # サイトの紙の色
         text_select=True,
     )
     remember(shown, folder)
