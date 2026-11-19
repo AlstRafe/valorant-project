@@ -365,11 +365,42 @@ class DesktopAppTest(unittest.TestCase):
         self.assertEqual(text.count('<span class="party p2" title="パーティー 2">'), 2, "two strangers together")
         self.assertIn('<small class="team-party">パーティー 2人</small>', text)
         self.assertIn("同じ番号の人は同じパーティーです。", text)
-        self.assertNotIn("PC アプリで表示されます", text, "this is the app")
+        self.assertNotIn("PC アプリだけに表示されます", text, "this is the app")
         self.assertNotIn("Leak", text, "never the name a presence carries")
         asked = self.api.asked.count("/chat/v4/presences")
         self.look()
         self.assertEqual(self.api.asked.count("/chat/v4/presences"), asked, "kept a while: the parties do not change")
+
+    def test_the_other_team_shows_its_parties_as_soon_as_the_client_has_them(self):
+        """相手チームのプレゼンスは対戦が始まってから届く: 届くまでは何人わかったかを書き、イベントで届いたら
+        その時に /live に読み直させて番号を出す（次の確認や 20 秒を待たない）。"""
+        self.listening()
+        self.riot.phase = "ingame"
+        door = read_lockfile(self.lockfile)
+        strangers = ["a1111111-0000-4000-8000-000000000001", "b2222222-0000-4000-8000-000000000001"]
+        self.riot.pd["coregame"]["Players"].append(
+            {
+                "Subject": strangers[1],
+                "TeamID": "Blue",
+                "CharacterID": "11111111-1111-4111-8111-111111111111",
+                "PlayerIdentity": {"AccountLevel": 80, "Incognito": True},
+                "SeasonalBadgeInfo": {"Rank": 15},
+            }
+        )
+        self.api.presences = [presence("INGAME")]
+        self.local.handle(door, event(EVENTS[0], {"presences": [presence("INGAME")]}))
+        text = self.client.get("/live").get_data(as_text=True)
+        self.assertIn("パーティーの確認中: 4 人中 2 人", text, "the owner and the party member from GLZ")
+        self.assertNotIn('class="party p2"', text)
+        version = self.local.version
+        theirs = "9b000000-0000-4000-8000-000000000002"
+        self.local.handle(door, event(EVENTS[0], {"presences": [in_party(subject, theirs) for subject in strangers]}))
+        self.assertEqual(self.local.version, version + 1, "the page reads again at once")
+        self.assertEqual(self.client.get(f"/live/next?after={version}").get_json(), {"version": version + 1})
+        text = self.client.get("/live").get_data(as_text=True)
+        self.assertEqual(text.count('<span class="party p2" title="パーティー 2">'), 2)
+        self.assertNotIn("パーティーの確認中", text, "everyone is known")
+        self.assertIn("同じ番号の人は同じパーティーです。", text)
 
     def test_an_event_reads_the_game_at_once(self):
         self.listening()

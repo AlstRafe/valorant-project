@@ -16,16 +16,25 @@ from pathlib import Path
 from unittest import mock
 
 from helpers import PUUID, make_app
-from test_desktop import FRIEND, PARTY, FakeClient, event, presence
+from test_desktop import FRIEND, PARTY, FakeClient, event, in_party, presence
 
 from valtracker import checkup, friends, pc
-from valtracker.localclient import PARTIES_KEEP, PRESENCES, LocalClient, moment, read_lockfile
+from valtracker.localclient import (
+    PARTIES_KEEP,
+    PARTIES_RETRY,
+    PARTY_NEWS_GAP,
+    PRESENCES,
+    LocalClient,
+    moment,
+    read_lockfile,
+)
 from valtracker.settings import Settings
 
 ASCENT = "/Game/Maps/Ascent/Ascent"
 OTHER = "0e0e0e0e-1111-4222-8333-555555555555"
 THIRD = "0f0f0f0f-1111-4222-8333-666666666666"
 CARD = "c0000000-0000-4000-8000-00000000000a"
+THEIRS = "9b000000-0000-4000-8000-000000000002"
 
 
 def packed(data: dict) -> str:
@@ -224,6 +233,72 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(self.client.parties(), {}, "read again")
         self.lockfile.unlink()
         self.assertIsNone(self.client.parties(), "the client closed")
+
+    def test_players_still_unknown_are_read_again_soon(self):
+        """相手チームのプレゼンスは対戦が始まってから届く: 試合にパーティーのわからない人がいる間は PARTIES_RETRY
+        ごとに読み直す（20 秒待たない）。全員わかれば PARTIES_KEEP 持つ。何人わかったかはチェックアップ用に残る。"""
+        self.api.presences = [presence("INGAME")]
+        wanted = {PUUID, OTHER}
+        self.assertEqual(self.client.parties(wanted, "ingame"), {PUUID: PARTY})
+        asked = self.api.asked.count("/chat/v4/presences")
+        self.now += PARTIES_RETRY / 2
+        self.client.parties(wanted, "ingame")
+        self.assertEqual(self.api.asked.count("/chat/v4/presences"), asked, "not at every look")
+        self.assertEqual(self.client.match_parties, {"ingame": {"players": 2, "known": 1}})
+        self.now += PARTIES_RETRY
+        self.api.presences.append(in_party(OTHER, THEIRS))
+        self.assertEqual(self.client.parties(wanted, "ingame"), {PUUID: PARTY, OTHER: THEIRS})
+        self.assertEqual(self.api.asked.count("/chat/v4/presences"), asked + 1)
+        self.now += PARTIES_RETRY * 2
+        self.client.parties(wanted, "ingame")
+        self.assertEqual(self.api.asked.count("/chat/v4/presences"), asked + 1, "everyone is known: kept")
+        self.assertEqual(self.client.match_parties, {"ingame": {"players": 2, "known": 2}})
+        self.client.parties({PUUID}, "pregame")
+        self.assertEqual(self.client.match_parties, {"pregame": {"players": 1, "known": 1}}, "the next match")
+
+    def test_a_party_heard_in_an_event_tells_the_page_at_once(self):
+        """クライアントのイベントで同じ試合の人のプレゼンスが届いたら、その時に /live に知らせる（次の確認を待たない）。
+        続けて届いたものは PARTY_NEWS_GAP のあとに 1 回でまとめる。フレンドなど試合にいない人のものは知らせない。"""
+        self.listening()
+        wanted = {PUUID, OTHER, THIRD}
+        self.client.parties(wanted, "ingame")
+        version = self.client.version
+        self.now += 60
+        self.client.handle(self.door, event(PRESENCES, {"presences": [in_party(OTHER, THEIRS)]}))
+        self.assertEqual(self.client.version, version + 1)
+        self.client.handle(self.door, event(PRESENCES, {"presences": [in_party(OTHER, THEIRS)]}))
+        self.client.handle(self.door, event(PRESENCES, {"presences": [in_party(FRIEND, THEIRS)]}))
+        self.assertEqual(self.client.version, version + 1, "nothing new for this match")
+        self.client.handle(self.door, event(PRESENCES, {"presences": [in_party(THIRD, THEIRS)]}))
+        timer = self.client._news_timer
+        self.assertIsNotNone(timer, "told again after the gap")
+        self.assertEqual(self.client.version, version + 1)
+        self.assertLessEqual(timer.interval, PARTY_NEWS_GAP)
+        timer.cancel()
+        self.client._party_news_late()
+        self.assertEqual(self.client.version, version + 2)
+        self.assertEqual(
+            self.client.parties(wanted, "ingame"), {PUUID: PARTY, FRIEND: PARTY, OTHER: THEIRS, THIRD: THEIRS}
+        )
+        self.client.handle(self.door, event(PRESENCES, {"presences": [presence("MENUS")]}))
+        version = self.client.version
+        self.now += 60
+        self.client.handle(self.door, event(PRESENCES, {"presences": [in_party(OTHER, PARTY)]}))
+        self.assertEqual(self.client.version, version, "the match is over")
+
+    def test_party_ids_from_the_jwt_or_without_a_product(self):
+        """private が空で privateJwt にあるもの、product の無いもの（試合の人のプレゼンス）も読む。"""
+        inner = base64.urlsafe_b64encode(
+            json.dumps({"private": packed({"partyPresenceData": {"partyId": THEIRS}})}).encode()
+        )
+        self.api.presences = [
+            {"puuid": OTHER, "product": "valorant", "private": "", "privateJwt": f"e30.{inner.decode().rstrip('=')}.x"},
+            {"puuid": THIRD, "private": packed({"partyPresenceData": {"partyId": THEIRS}})},
+            {"puuid": FRIEND, "product": "valorant", "private": "", "privateJwt": "not a jwt"},
+        ]
+        self.assertEqual(self.client.parties(), {OTHER: THEIRS, THIRD: THEIRS})
+        seen = self.client.examine()["parties"]
+        self.assertEqual((seen["others"], seen["with_party"], seen["empty"], seen["jwt"]), (3, 2, 2, 2))
 
     def test_a_match_found_is_told_once(self):
         told = []
@@ -520,6 +595,8 @@ class PagesTest(unittest.TestCase):
         self.assertIn("サインイン済み", text)
         self.assertIn("メニュー（現行形式）", text)
         self.assertIn("presence: ok 200 count=2 mine=1 shape=nested loop=MENUS", text)
+        self.assertIn("parties: skip others=1 party=1 empty=0 jwt=0", text)
+        self.assertIn("試合中か試合のあとにチェックできます", text)
         self.assertNotIn("[riot]", text)
         for secret in (PUUID, PARTY, "Owner", "JP1"):
             self.assertNotIn(secret, text.split('<pre class="report"')[1])
@@ -545,6 +622,20 @@ class PagesTest(unittest.TestCase):
         ):
             self.assertIn(line, report)
         self.assertNotIn(PUUID, report)
+
+    def test_the_parties_of_the_last_match(self):
+        """チェックアップの「試合のパーティー」: 直近の対戦で何人分のパーティーが届いたか（数だけ）。"""
+        seen = {"others": 9, "with_party": 9, "empty": 0, "jwt": 0, "match": {}}
+        self.assertEqual(checkup._parties_item(seen)["state"], "skip")
+        seen["match"] = {"pregame": {"players": 5, "known": 5}}
+        item = checkup._parties_item(seen)
+        self.assertEqual(
+            (item["state"], item["words"], item["values"]), ("ok", checkup.SAID["partiespre"], {"total": 5, "known": 5})
+        )
+        seen["match"]["ingame"] = {"players": 10, "known": 6}
+        item = checkup._parties_item(seen)
+        self.assertEqual((item["state"], item["values"]), ("part", {"total": 10, "known": 6}))
+        self.assertEqual(item["code"], "others=9 party=9 empty=0 jwt=0 ingame=6/10 pregame=5/5")
 
     def test_what_a_server_refused_is_said_without_ids(self):
         self.app.riot.broken.add("wallet")

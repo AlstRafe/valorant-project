@@ -39,6 +39,7 @@ NAMES = {
     "game": "VALORANT の起動",
     "server": "ゲームのサーバー",
     "presence": "自分のステータス",
+    "parties": "試合のパーティー",
     "events": "クライアントからの通知",
     "friends": "フレンド一覧",
     "live": "現在のゲーム（ライブ）",
@@ -72,6 +73,9 @@ SAID = {
     "notthere": "VALORANT は起動中ですが、自分のステータスが届いていません",
     "strange": "未対応の形式です（レポートをコピーして報告してください）",
     "nogame": "VALORANT の起動後にチェックできます",
+    "partiesin": "直近の対戦: {total} 人中 {known} 人のパーティーがわかりました",
+    "partiespre": "直近のエージェント選択: 味方 {total} 人中 {known} 人（相手チームは対戦が始まってから届きます）",
+    "nomatch": "試合中か試合のあとにチェックできます",
     "listening": "待機中（受信: ステータス {presences} 回・起動 {sessions} 回・試合通知 {pushes} 回）",
     "deaf": "未接続（数秒おきに再接続します）",
     "people": "{count} 人",
@@ -175,6 +179,7 @@ def local_items(local) -> list[dict]:
         items.append(_item("presence", "bad", "notthere", code))
     else:
         items.append(_item("presence", "skip", "nogame", code))
+    items.append(_parties_item(seen["parties"]))
     heard = seen["heard"]
     items.append(
         _item(
@@ -194,6 +199,21 @@ def local_items(local) -> list[dict]:
             _item("friends", "ok", "people", f"friends={count} presences={len(listed['presences'])}", count=count)
         )
     return items
+
+
+def _parties_item(parties: dict) -> dict:
+    """試合のパーティー: 直近の試合で、同じ試合の人のプレゼンス（partyId）が何人分届いたか。数だけ。"""
+    match = parties["match"]
+    code = f"others={parties['others']} party={parties['with_party']} empty={parties['empty']} jwt={parties['jwt']}"
+    code += "".join(f" {phase}={counts['known']}/{counts['players']}" for phase, counts in sorted(match.items()))
+    for phase, said in (("ingame", "partiesin"), ("pregame", "partiespre")):
+        counts = match.get(phase)
+        if counts:
+            whole = counts["known"] >= counts["players"]
+            return _item(
+                "parties", "ok" if whole else "part", said, code, total=counts["players"], known=counts["known"]
+            )
+    return _item("parties", "skip", "nomatch", code)
 
 
 def _riot(key: str, read, said=None) -> dict:

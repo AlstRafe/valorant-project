@@ -699,7 +699,7 @@ class OwnerTest(unittest.TestCase):
         self.assertEqual(text.count('<span class="party p1" title="パーティー 1">'), 2, "the owner and the member")
         self.assertIn('<small class="team-party">パーティー 2人</small>', text)
         self.assertIn("同じ番号の人は同じパーティーです。", text)
-        self.assertIn("ほかの人のパーティーは PC アプリで表示されます。", text, "the site knows only the owner's")
+        self.assertIn("相手や野良のパーティーは PC アプリだけに表示されます", text, "the site knows only the owner's")
         self.assertNotIn("Teammate", text, "someone outside the party who hides their name")
         self.assertIn("パーティー外の非公開プレイヤーは名前を表示しません", text)
         asked = b"".join(body or b"" for _, url, _, body in self.riot.asked if url.endswith("/name-service/v2/players"))
