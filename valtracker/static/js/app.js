@@ -558,6 +558,48 @@
     }
   }
 
+  // eスポーツのチームのロゴは白いものも黒いものも灰色のものもあり、どの色の台でもどれかが消える（本番で白は紙の上、
+  // 黒は暗い台、灰色は灰色の台で消えた）: 描かれた部分の平均の色の明るさを測り、明るいロゴは暗い台、暗いロゴは
+  // 明るい台に載せる（台の色は CSS。測れないうちと測れない絵は中くらいの灰色の台のまま）
+  function logos() {
+    var canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 16;
+    var draw = canvas.getContext && canvas.getContext("2d", { willReadFrequently: true });
+    if (!draw) return;
+    function linear(part) {
+      var c = part / 255;
+      return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    }
+    function measure(img) {
+      var data;
+      try {
+        draw.clearRect(0, 0, 16, 16);
+        draw.drawImage(img, 0, 0, 16, 16);
+        data = draw.getImageData(0, 0, 16, 16).data;
+      } catch (e) {
+        return; // ほかのサイトの絵: 読めない
+      }
+      var solid = 0;
+      var sum = [0, 0, 0];
+      for (var i = 0; i < data.length; i += 4) {
+        if (data[i + 3] < 128) continue;
+        solid++;
+        for (var c = 0; c < 3; c++) sum[c] += data[i + c];
+      }
+      if (!solid) return;
+      var light = 0.2126 * linear(sum[0] / solid) + 0.7152 * linear(sum[1] / solid) + 0.0722 * linear(sum[2] / solid);
+      // 0.18: 暗い台（明るさ 0.016）からも明るい台（0.88）からもコントラスト 3.5 以上離れる境目
+      img.classList.add(light > 0.18 ? "logo-light" : "logo-dark");
+    }
+    document.querySelectorAll(".team-row img").forEach(function (img) {
+      if (img.complete && img.naturalWidth) measure(img);
+      else
+        img.addEventListener("load", function () {
+          measure(img);
+        });
+    });
+  }
+
   function teams() {
     var list = document.querySelector(".schedule");
     if (!list) return;
@@ -1728,6 +1770,7 @@
     countdowns();
     zone();
     teams();
+    logos();
     night();
     refresh();
     updating();
