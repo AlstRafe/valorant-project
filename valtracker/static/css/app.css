@@ -3312,18 +3312,13 @@ code {
   height: 1.75rem;
   object-fit: contain;
 }
-/* チームのロゴは公式サイトの暗い画面向け（白いものが多い）: 紙の上では暗い台に載せる */
-:root:not([data-theme="dark"]) .team-row img {
+/* チームのロゴは白いものも黒いものもある（本番で白は紙の上、黒は暗い台の上で消えた）: どちらからも
+   コントラスト 4.5 ほど離れた中くらいの灰色の台に、どちらのテーマでも載せる */
+.team-row img {
   box-sizing: border-box;
   padding: 0.15rem;
   border-radius: 6px;
-  background-color: #34312b;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .team-row img {
-    padding: 0;
-    background-color: transparent;
-  }
+  background-color: #77726a;
 }
 .no-logo {
   display: inline-grid;
