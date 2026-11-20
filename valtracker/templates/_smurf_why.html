@@ -1,0 +1,12 @@
+{#- サブ垢の推定の根拠（smurf.guess、_smurf.html とプレイヤーページ）: 確率と信頼度、出発点から材料ごとに確率を
+    何ポイント動かしたか（全部足すと確率）、使っていない材料。棒は同じ物差し（smurf.FULL ポイントでいっぱい）（右がサブ垢寄り、左が本垢寄り）。 #}
+{%- set sure = {'high': t('信頼度: 高'), 'mid': t('信頼度: 中'), 'low': t('信頼度: 低')}[guess.sure] %}
+<span class="why-head"><strong class="why-num {{ guess.kind }}">{{ guess.percent }}%</strong><span class="why-title"><span class="why-name">{{ t('サブ垢の確率（推定）') }}</span><span class="why-sure sure-{{ guess.sure }}">{{ sure }}{% if guess.sure == 'low' %} · {{ t('材料が少ないので参考程度') }}{% endif %}</span></span>{% if guess.popup %}<button type="button" class="why-close" popovertarget="{{ guess.popup }}" popovertargetaction="hide" title="{{ t('閉じる') }}" aria-label="{{ t('閉じる') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>{% endif %}</span>
+<meter class="why-meter {{ guess.kind }}" min="0" max="100" value="{{ guess.percent }}" aria-hidden="true"></meter>
+<span class="why-list" role="list">
+<span class="why-row why-base" role="listitem"><span class="why-text">{{ t('出発点: ランク戦をする人の約 1 割がサブ垢という見当') }}</span><b>{{ guess.base }}%</b></span>
+{% for sign in guess.signs %}<span class="why-row" role="listitem"><span class="why-text">{{ t(sign.words[0], **sign.words[1]) }}</span><span class="why-pull" aria-hidden="true"><meter class="to-main" min="0" max="100" value="{{ sign.share if sign.points < 0 else 0 }}"></meter><meter class="to-smurf" min="0" max="100" value="{{ sign.share if sign.points > 0 else 0 }}"></meter></span><b class="{{ 'to-smurf' if sign.points > 0 else 'to-main' if sign.points < 0 else '' }}">{{ '%+d'|format(sign.points) if sign.points else '±0' }}</b></span>
+{% endfor %}<span class="why-row why-total" role="listitem"><span class="why-text">{{ t('サブ垢の確率') }}</span><b>{{ guess.percent }}%</b></span>
+</span>
+{% if guess.unused %}<span class="why-unused">{{ t('使っていない材料') }}: {% for item in guess.unused %}{{ t(item[0], **item[1]) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}
+<span class="why-note">{{ t('推定です。どの材料も単独では何も証明しません。数字は各材料が確率を何ポイント動かしたかで、出発点に全部足すと上の確率になります。') }}</span>

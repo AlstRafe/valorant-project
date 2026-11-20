@@ -1,2 +1,10 @@
-{# サブ垢の推測（smurf.py）: 小さなチップ。理由はホバーとスクリーンリーダーで #}
-{%- if guess %}{% set words = {'likely': t('サブ垢の可能性: 高'), 'maybe': t('サブ垢の可能性: あり'), 'main': t('本垢らしい')}[guess.kind] %}<span class="smurf {{ guess.kind }}" title="{{ t('推測') }}: {% for item in guess.why %}{{ t(item[0], **item[1]) }}{% if not loop.last %} · {% endif %}{% endfor %}">{{ words }}<span class="sr"> ({{ t('推測') }}: {% for item in guess.why %}{{ t(item[0], **item[1]) }}{% if not loop.last %} · {% endif %}{% endfor %})</span></span>{% endif -%}
+{#- サブ垢の推定（smurf.py）: 確率の高い方とその %（「サブ垢 82%」「本垢 93%」）。押すと根拠（_smurf_why.html）
+    : ライブの席（guess.popup）はその場に出るポップオーバー（試合中もページを離れずに）、プレイヤーページはページの中の根拠へ。
+    信頼度の低いもの（材料が 1 つ）は点線の枠。マウスを乗せると根拠の文も出る。 #}
+{%- if guess %}
+{%- set label = t('サブ垢 {percent}%', percent=guess.shown) if guess.side == 'smurf' else t('本垢 {percent}%', percent=guess.shown) %}
+{%- set sure = {'high': t('信頼度: 高'), 'mid': t('信頼度: 中'), 'low': t('信頼度: 低')}[guess.sure] %}
+{%- set said %}{{ t('サブ垢の確率 {percent}%（推定）', percent=guess.percent) }} · {{ sure }}{% for sign in guess.signs %} · {{ t(sign.words[0], **sign.words[1]) }} {{ '%+d'|format(sign.points) if sign.points else '±0' }}{% endfor %}{% endset %}
+{%- if guess.popup %}<button type="button" class="smurf {{ guess.kind }} sure-{{ guess.sure }}" popovertarget="{{ guess.popup }}" title="{{ said }}">{{ label }}</button><span class="smurf-pop" id="{{ guess.popup }}" popover>{% include "_smurf_why.html" %}</span>
+{%- else %}<a class="smurf {{ guess.kind }} sure-{{ guess.sure }}" href="#smurf" title="{{ said }}">{{ label }}</a>{% endif %}
+{%- endif -%}

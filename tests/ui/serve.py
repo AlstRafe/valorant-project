@@ -809,6 +809,8 @@ def main() -> None:
     def wsgi(environ, start):
         if "visitor=1" in environ.get("HTTP_COOKIE", ""):
             environ["homepage.visitor"] = True
+        if local is None:  # Home Page の下で動くとき: ヘッダーに「サイト一覧」（PC アプリには無い）
+            environ["homepage.home"] = "/"
         # ?update=1: 新しい PC アプリが出ている（desktop.look_for_updates が見つけた）
         newer = {"commit": "f" * 40, "date": "2026-11-13 09:00", "url": release.PAGE, "ready": True}
         if environ.get("PATH_INFO", "") not in ("/app/update", "/app/update/state"):  # 更新自身のものが持つ
