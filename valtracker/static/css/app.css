@@ -293,11 +293,27 @@ main h2 {
 .bar:has(.home-link) {
   gap: 0.75rem;
 }
-/* 場所を作る: PC ではタブの絵を省く（文字だけで足りる。ライブの点は残す）、狭いスマホではサイト名を省く（ロゴは残す）。
-   一番長い日本語（持ち主の 6 つのタブ）と英語で、320〜1440 px を測った。 */
+/* 場所を作る: PC ではタブの絵を省く（文字だけで足りる。ライブの点は残す）、640px 以下ではテーマと言語のボタンを絵だけに、
+   400px 以下ではサイト名を省く（ロゴは残す）。持ち主の 6 つのタブ、4 言語で、320〜1440 px を 8〜40 px おきに測った。 */
 @media (min-width: 761px) {
   .bar:has(.home-link) .tabs a > svg {
     display: none;
+  }
+}
+@media (max-width: 640px) {
+  .bar:has(.home-link) .theme {
+    padding: 0 0.6rem;
+  }
+  .bar:has(.home-link) .lang summary {
+    padding: 0 0.6rem;
+  }
+  .bar:has(.home-link) :is(.theme .words, .lang summary span) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 @media (max-width: 400px) {
