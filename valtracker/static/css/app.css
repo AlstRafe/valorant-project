@@ -260,6 +260,56 @@ main h2 {
   height: 1.6rem;
   fill: var(--val);
 }
+/* サイト一覧（ポータル）へ戻る: ヘッダーの左端、どのページでも見える（ヘッダーは上に貼り付く）。
+   ボタンと同じ枠で押せるものとわかるように。場所が足りない幅では矢印だけ（名前は title と aria-label）。 */
+.home-link {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 2.25rem;
+  padding: 0 0.7rem 0 0.45rem;
+  border: 1px solid var(--edge);
+  border-radius: var(--r-pill);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.home-link:hover {
+  background: var(--mark);
+  color: var(--on-mark);
+}
+.home-link svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.bar:has(.home-link) {
+  gap: 0.75rem;
+}
+/* 場所を作る: PC ではタブの絵を省く（文字だけで足りる。ライブの点は残す）、狭いスマホではサイト名を省く（ロゴは残す）。
+   一番長い日本語（持ち主の 6 つのタブ）と英語で、320〜1440 px を測った。 */
+@media (min-width: 761px) {
+  .bar:has(.home-link) .tabs a > svg {
+    display: none;
+  }
+}
+@media (max-width: 400px) {
+  .bar:has(.home-link) .brand span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
 /* ページのタブ: バーの高さいっぱいの文字。開いているページは下の罫に乗る赤い線。 */
 .tabs {
   display: flex;
@@ -6085,35 +6135,267 @@ form.row {
   height: 1.4rem;
 }
 
-/* サブ垢の推測（smurf.py）: 「高」は琥珀色、「あり」は灰色、本垢は緑 */
-.smurf {
+/* サブ垢の推定（smurf.py）: 確率の高い方とその %。サブ垢寄りは琥珀色、どちらとも言えないは灰色、本垢寄りは緑。
+   信頼度の低いもの（材料が 1 つ）は点線の枠。押すと根拠（ライブはポップオーバー、プレイヤーページはページの中）。 */
+.smurf,
+button.smurf {
   display: inline-block;
+  min-height: 0;
   margin-left: 0.3rem;
   padding: 0 0.45rem;
   border: 1px solid currentColor;
   border-radius: var(--r-pill);
+  background: transparent;
+  font: inherit;
   font-size: 0.72rem;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   line-height: 1.5;
+  text-decoration: none;
   white-space: nowrap;
   vertical-align: 0.05em;
-  cursor: help;
+  cursor: pointer;
 }
-.smurf.likely {
+.smurf.sure-low {
+  border-style: dashed;
+}
+.smurf.likely,
+.why-num.likely {
   color: #8a5300;
 }
-.smurf.maybe {
+.smurf.maybe,
+.why-num.maybe {
   color: var(--soft);
 }
-.smurf.main {
+.smurf.main,
+.why-num.main {
   color: var(--win);
 }
-:root[data-theme="dark"] .smurf.likely {
+/* 乗せると枠が太くなる（塗ると小さな字が薄くなる） */
+:where(button.smurf):hover:not(:disabled),
+a.smurf:hover {
+  box-shadow: inset 0 0 0 1px currentColor;
+  color: inherit;
+}
+/* スマホ: 指で押せる高さ（24px 以上） */
+@media (max-width: 760px) {
+  .smurf,
+  button.smurf {
+    padding: 0.2rem 0.5rem;
+  }
+}
+.smurf.likely:hover {
+  color: #8a5300;
+}
+.smurf.maybe:hover {
+  color: var(--soft);
+}
+.smurf.main:hover {
+  color: var(--win);
+}
+:root[data-theme="dark"] :is(.smurf.likely, .why-num.likely) {
   color: #f0b44c;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .smurf.likely {
+  :root:not([data-theme="light"]) :is(.smurf.likely, .why-num.likely) {
     color: #f0b44c;
+  }
+}
+/* 根拠: 大きな確率と信頼度、出発点から材料ごとのポイント（中央から右がサブ垢寄り、左が本垢寄りの棒）、合計 */
+.smurf-pop,
+.smurf-card {
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.smurf-pop > *,
+.smurf-card > * {
+  display: block;
+}
+.smurf-card {
+  margin: 1rem 0 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--rule);
+}
+.why-head {
+  display: flex !important;
+  align-items: center;
+  gap: 0.7rem;
+}
+.why-num {
+  font-family: var(--num);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.why-title {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.why-name {
+  font-weight: 700;
+}
+.why-sure {
+  color: var(--soft);
+  font-size: 0.8rem;
+}
+.why-close {
+  flex: none;
+  align-self: start;
+  width: 2.25rem;
+  min-height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--edge);
+  background: transparent;
+  color: var(--ink);
+}
+.why-close:hover {
+  background: var(--mark);
+  color: var(--on-mark);
+}
+.why-close svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.why-meter {
+  width: 100%;
+  height: 0.5rem;
+  margin: 0.6rem 0 0.4rem;
+}
+.why-list {
+  display: grid !important;
+  margin: 0;
+}
+.why-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 7rem 3rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+  border-top: 1px solid var(--rule);
+}
+.why-base .why-text,
+.why-total .why-text {
+  grid-column: 1 / 3;
+}
+.why-row b {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.why-row b.to-smurf,
+.why-total b {
+  color: inherit;
+}
+.why-row b.to-main {
+  color: var(--win);
+}
+.why-base,
+.why-base b {
+  color: var(--soft);
+  font-weight: 400;
+}
+.why-total {
+  border-top: 2px solid var(--ink);
+  font-weight: 700;
+}
+.why-pull {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+/* 0 の線: 棒はここから左右へ */
+.why-pull::before {
+  content: "";
+  position: absolute;
+  top: -0.2rem;
+  bottom: -0.2rem;
+  left: calc(50% - 0.5px);
+  width: 1px;
+  background: var(--soft);
+}
+.why-pull meter {
+  width: 100%;
+  height: 0.45rem;
+}
+/* 左の棒（本垢寄り）は中央から左へ伸びる */
+.why-pull .to-main {
+  transform: scaleX(-1);
+}
+.why-unused,
+.why-note {
+  margin-top: 0.4rem;
+  color: var(--soft);
+  font-size: 0.8rem;
+}
+/* 棒の色: サブ垢寄りは山吹、本垢寄りは緑、全体の確率はその判定の色 */
+.why-pull meter,
+.why-meter {
+  appearance: none;
+  border: 0;
+  background: var(--rule);
+}
+.why-pull meter {
+  background: transparent;
+}
+.why-pull meter::-webkit-meter-bar,
+.why-meter::-webkit-meter-bar {
+  height: inherit;
+  border: 0;
+  border-radius: 0;
+  background: var(--rule);
+}
+.why-pull meter::-webkit-meter-bar {
+  background: transparent;
+}
+.why-pull .to-smurf::-webkit-meter-optimum-value,
+.why-meter.likely::-webkit-meter-optimum-value {
+  background: var(--mark);
+}
+.why-pull .to-main::-webkit-meter-optimum-value,
+.why-meter.main::-webkit-meter-optimum-value {
+  background: var(--win);
+}
+.why-meter.maybe::-webkit-meter-optimum-value {
+  background: var(--soft);
+}
+.why-pull .to-smurf::-moz-meter-bar,
+.why-meter.likely::-moz-meter-bar {
+  background: var(--mark);
+}
+.why-pull .to-main::-moz-meter-bar,
+.why-meter.main::-moz-meter-bar {
+  background: var(--win);
+}
+.why-meter.maybe::-moz-meter-bar {
+  background: var(--soft);
+}
+/* ライブの席の根拠: ページの上に重ねる（試合中もページを離れずに）。外を押すか Esc で閉じる */
+.smurf-pop {
+  width: min(28rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  padding: 1rem 1.1rem;
+  overflow: auto;
+  border: 1px solid var(--ink);
+  background: var(--card);
+  box-shadow: var(--shadow-pop);
+  text-align: left;
+  white-space: normal;
+}
+.smurf-pop::backdrop {
+  background: rgb(10 14 24 / 0.35);
+}
+@media (max-width: 34rem) {
+  .why-row {
+    grid-template-columns: minmax(0, 1fr) 4.5rem 2.6rem;
+    gap: 0.45rem;
   }
 }
 /* ゲームのデータのページ（エージェント・ピック率と勝率・マップ・武器）を行き来するチップ */

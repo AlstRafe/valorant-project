@@ -78,6 +78,8 @@ const MADE_UP = [
   "/live?phase=found",
   "/live?phase=pregame",
   "/live?phase=ingame",
+  // 席のサブ垢の推定を押して開いた根拠（ポップオーバー）
+  "/live?phase=ingame#smurf-open",
   "/collection?show=cards",
   "/collection?weapon=9c82e19d-4575-0200-1a81-3eacf00cf872&equip=ok",
   "/collection?show=titles",
@@ -471,6 +473,10 @@ async function main() {
             .goto(base + where, { waitUntil: desktop ? "load" : "networkidle", timeout: 60000 })
             .catch((error) => errors.push(String(error).slice(0, 120)));
           await page.waitForTimeout(desktop ? 700 : live ? 400 : 200);
+          if (where.endsWith("#smurf-open"))
+            await page
+              .click("button.smurf", { timeout: 5000 })
+              .catch((error) => errors.push(String(error).slice(0, 120)));
           // 遅い本番では読み込みが 60 秒を過ぎてから次の文書に移ることがある: 移り終わるのを待ってもう一度だけ見る
           const found = await page.evaluate(inspect).catch(async (error) => {
             await page.waitForLoadState("load", { timeout: 30000 }).catch(() => {});
@@ -558,6 +564,14 @@ async function livePage(browser) {
   if (!kept || loads !== 1) early.push(["page reloads", "/live?phase=pregame", "", `${loads} loads`]);
   else if (!(await page.locator(".verdict").count()))
     early.push(["no note after a pick", "/live?phase=pregame", "", ""]);
+  // 席のサブ垢の根拠: 開いたまま読み直しが来ても閉じない（見ている間に消えない）
+  const open = () => page.evaluate(() => Boolean(document.querySelector(".smurf-pop:popover-open")));
+  await page.click("button.smurf", { timeout: 5000 }).catch(() => {});
+  if (!(await open())) early.push(["smurf reasons do not open", "/live?phase=pregame", "", ""]);
+  else {
+    await page.waitForTimeout(4500); // 2 秒ごとの読み直しが 2 回
+    if (!(await open())) early.push(["smurf reasons closed by a refresh", "/live?phase=pregame", "", ""]);
+  }
   await page.close();
 }
 
