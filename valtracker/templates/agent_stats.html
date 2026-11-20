@@ -5,7 +5,7 @@
 {% include "_game_nav.html" %}
 <section class="hero">
 <h1>{{ t('ピック率と勝率') }}</h1>
-<p class="lead">{{ t('エージェント別のピック率と勝率（当サイト集計）。') }}</p>
+<p class="lead">{{ t('エージェント別のピック率と勝率（当サイト集計）。')|phrases }}</p>
 </section>
 <form class="skin-form" action="{{ url_for('agent_stats') }}" method="get">
 <label><span>{{ t('モード') }}</span>

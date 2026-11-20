@@ -1,9 +1,18 @@
 {% extends "base.html" %}
+{#- トップページ: 全サイト共通の「製品ページ」（Home Page の docs/CONVENTIONS.md）。最初の区画は画面の高さいっぱいの
+    検索と、このブラウザーのお気に入り・最近見たプレイヤー。そのあと 1 区画に 1 つのこと: 持ち主のアカウント、
+    プレイヤーの戦績（パソコン幅では画面の見本を固定し、その横を数字の事実が通る）、PC アプリ（黒い面）、
+    ゲームのデータ、ほかの機能。区画は背景の色で分ける（--bg と --alt を交互に）。動きは app.css の最後。 #}
+{% macro chev(href, words, outside=false) -%}
+<a class="chev" href="{{ href }}"{% if outside %} rel="noopener noreferrer" target="_blank"{% endif %}>{{ words }}<span aria-hidden="true">›</span></a>
+{%- endmacro %}
 {% block main %}
+<section class="opening" aria-labelledby="top-title">
+<div class="opening-in">
 <div class="notice-box" data-load="{{ url_for('status_notice') }}" data-quiet hidden></div>
-<section class="hero">
-<h1>{{ t('プレイヤー検索') }}</h1>
-<p class="lead">{{ t('Riot ID でランクと戦績を検索できます。') }}</p>
+<p class="eyebrow"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 6h6l6 13 6-13h6L19 27h-6z"/></svg>{{ site_name }}</p>
+<h1 id="top-title"><span class="ph">{{ t('Riot ID ひとつで、') }}</span>{% if lang in ('ko', 'en-GB') %} {% endif %}<span class="ph">{{ t('通算の記録まで。') }}</span></h1>
+<p class="lead">{{ t('ランク、最近の試合、エージェント別・マップ別の成績を、Riot ID を入れるだけで。')|phrases }}</p>
 {% if no_key %}<p class="app-update first-key"><strong>{{ t('HenrikDev の API キーが未設定です。') }}</strong> {{ t('プレイヤー検索に必要です（無料）。ライブ・ショップ・所持品はキーなしで使えます。') }} <a href="{{ url_for('settings') }}">{{ t('キーを設定') }}</a></p>
 {% endif %}<form class="search" action="{{ url_for('search') }}" method="get" role="search">
 <label for="q" class="sr">{{ t('Riot ID') }}</label>
@@ -17,21 +26,25 @@
 <p class="note">{{ t('最近見た「{name}」:', name=name_only) }}</p>
 <ul class="people-list" id="same-name" data-name="{{ name_only }}" data-base="{{ request.script_root }}/p/"></ul>
 </div>{% endif %}
-<nav class="quick" aria-label="{{ t('その他の機能') }}">
-<a href="{{ url_for('leaderboard') }}">{{ t('ランキング') }}</a>
-<a href="{{ url_for('servers') }}">{{ t('サーバーの混雑状況') }}</a>
-<a href="{{ url_for('queue_settings') }}">{{ t('マップとパーティー') }}</a>
-<a href="{{ url_for('crosshair') }}">{{ t('クロスヘア') }}</a>
-<a href="{{ url_for('sensitivity') }}">{{ t('感度変換') }}</a>
-<a href="{{ url_for('maps') }}">{{ t('マップ') }}</a>
-<a href="{{ url_for('weapons') }}">{{ t('武器') }}</a>
-</nav>
-<p class="note china-link"><a href="{{ url_for('tools') }}#china">{{ t('中国大陸版（无畏契约）について') }}</a></p>
+<p class="hint">{{ t('例: Name#JP1') }} · <a href="{{ url_for('help_page') }}#riot-id">{{ t('タグの確認方法') }}</a></p>
+{#- このブラウザーに保存したプレイヤー（app.js が <template> から作る）: どちらも空なら区画ごと出さない #}
+<div class="mine">
+<section class="people" aria-labelledby="fav-title">
+<h2 id="fav-title">{{ t('お気に入り') }}</h2>
+<ul class="people-list" id="favorites" data-base="{{ request.script_root }}/p/" data-empty="{{ t('プレイヤーページの ☆ で追加できます。') }}"></ul>
+</section>
+<section class="people" aria-labelledby="recent-title">
+<h2 id="recent-title">{{ t('最近見たプレイヤー') }}</h2>
+<ul class="people-list" id="recent" data-base="{{ request.script_root }}/p/" data-empty="{{ t('まだありません。') }}"></ul>
+</section>
+</div>
+</div>
 </section>
 
 {% if me %}
-<section class="me-box" aria-labelledby="me-title">
-<h2 id="me-title">{{ t('マイアカウント') }}</h2>
+<section class="feature band me-box" aria-labelledby="me-title">
+<p class="eyebrow">{{ t('持ち主だけ') }}</p>
+<h2 id="me-title" class="headline">{{ t('マイアカウント') }}</h2>
 {% include "_accounts.html" %}
 <ul class="me-links">
 {% if me.linked and me.name %}<li><a href="{{ url_for('player', name=me.name, tag=me.tag) }}"><strong>{{ t('戦績') }}</strong><small>{{ me.name }}#{{ me.tag }}</small></a></li>{% endif %}
@@ -43,15 +56,78 @@
 {% if not me.linked %}<p class="note">{{ t('Riot アカウントを連携すると、戦績・ライブ・所持品が使えます。') }} <a href="{{ url_for('settings') }}#riot">{{ t('連携する') }}</a></p>{% endif %}
 </section>
 {% endif %}
-<section class="people" aria-labelledby="fav-title">
-<h2 id="fav-title">{{ t('お気に入り') }}</h2>
-<ul class="people-list" id="favorites" data-base="{{ request.script_root }}/p/" data-empty="{{ t('プレイヤーページの ☆ で追加できます。') }}"></ul>
-<noscript><p class="note">{{ t('お気に入りには JavaScript が必要です。') }}</p></noscript>
+
+<section class="feature split{% if not me %} band{% endif %}" id="stats" aria-labelledby="stats-title">
+<p class="eyebrow">{{ t('プレイヤーの戦績') }}</p>
+<h2 class="headline" id="stats-title">{{ t('1 試合ずつ、ゲームより深く。')|phrases }}</h2>
+<p class="desc">{{ t('KAST、ファーストキル、クラッチ、キルとデスの場所。同じランク帯の中での位置も。')|phrases }}</p>
+<p class="go"><a class="open" href="#q">{{ t('プレイヤー検索') }}</a>{{ chev(url_for('help_page') ~ '#numbers', t('用語集')) }}</p>
+<div class="view">
+<div class="view-bar"><b>{{ t('プレイヤーのページ') }}</b><span>{{ t('Riot ID を入れるだけ') }}</span></div>
+<ol class="view-rows">
+<li><b>{{ t('RR の推移') }}</b><span>{{ t('今アクト最高と通算最高のランクも')|phrases }}</span></li>
+<li><b>{{ t('VAL スコア') }}</b><span>{{ t('同じランク帯と比べた評価')|phrases }}</span></li>
+<li><b>{{ t('最近の試合') }}</b><span>{{ t('ゲームのキャリアと同じ並び')|phrases }}</span></li>
+<li><b>{{ t('エージェント別') }} · {{ t('マップ別') }}</b><span>{{ t('勝率・K/D・ACS')|phrases }}</span></li>
+<li><b>{{ t('キルとデスの場所') }}</b><span>{{ t('ミニマップの上に')|phrases }}</span></li>
+<li><b>{{ t('シーズン別の成績') }}</b><span>{{ t('前のアクトからの変化')|phrases }}</span></li>
+</ol>
+</div>
+<ul class="facts">
+<li><b>15</b><span>{{ t('直近の試合を、ゲームのキャリアと同じ数だけ')|phrases }}</span></li>
+<li><b>{{ t('通算') }}</b><span>{{ t('読んだ試合はすべて残して数える')|phrases }}</span></li>
+<li><b>{{ t('上位 %') }}</b><span>{{ t('同じランク帯のプレイヤーと比べて')|phrases }}</span></li>
+</ul>
 </section>
 
-<section class="people" aria-labelledby="recent-title">
-<h2 id="recent-title">{{ t('最近見たプレイヤー') }}</h2>
-<ul class="people-list" id="recent" data-base="{{ request.script_root }}/p/" data-empty="{{ t('まだありません。') }}"></ul>
+<section class="feature plate" id="app" aria-labelledby="app-title">
+<p class="eyebrow">{{ t('ライブ') if desktop else t('PC アプリ') }}</p>
+<h2 class="headline" id="app-title">{{ t('試合の横に、もうひとつの画面。')|phrases }}</h2>
+<p class="desc">{% if desktop %}{{ t('ゲームと連動して、キュー開始とエージェント選択ができます。')|phrases }}{% else %}{{ t('Windows 用アプリです。VALORANT をプレイする PC で使うと、サイトにはない機能が使えます。')|phrases }}{% endif %}</p>
+<p class="go">{% if desktop %}<a class="open" href="{{ url_for('live') }}">{{ t('ライブ') }}</a>{{ chev(url_for('help_page') ~ '#app', t('できること')) }}{% else %}<a class="open" href="{{ url_for('help_page') }}#app">{{ t('できること') }}</a>{% endif %}</p>
+<div class="view">
+<div class="view-bar"><b>{{ t('ライブ') }}</b><span>{{ t('ゲームの場面ごとに') }}</span></div>
+<ol class="view-rows flow">
+<li><b>{{ t('メニュー') }}</b><span>{{ t('キューの開始・キャンセル')|phrases }}</span></li>
+<li><b>{{ t('試合が見つかりました') }}</b><span>{{ t('試合が見つかるとタスクバーの点滅や音で通知')|phrases }}</span></li>
+<li><b>{{ t('エージェント選択') }}</b><span>{{ t('構成と勝率を見てピック・確定')|phrases }}</span></li>
+<li><b>{{ t('対戦中') }}</b><span>{{ t('全員のエージェントとランク')|phrases }}</span></li>
+</ol>
+</div>
+<p class="aside">{{ t('ゲーム本体には一切触れません。オーバーレイもキー入力もなく、ゲームより低い優先度で動作します。')|phrases }}</p>
+</section>
+
+<section class="feature band" id="game" aria-labelledby="data-title">
+<p class="eyebrow">{{ t('ゲームのデータ') }}</p>
+<h2 class="headline" id="data-title">{{ t('試合の前に、知っておく。')|phrases }}</h2>
+<p class="desc">{{ t('ピック率と勝率、マップのコールアウトと攻守の勝率、武器のダメージと TTK。')|phrases }}</p>
+<p class="go"><a class="open" href="{{ url_for('agents') }}">{{ t('エージェント') }}</a>{{ chev(url_for('agent_stats'), t('ピック率と勝率')) }}</p>
+<ul class="tool-grid tiles">
+<li><a href="{{ url_for('agents') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.2-7 8-7s7 2.5 8 7"/></svg><strong>{{ t('エージェント') }}</strong><small>{{ t('アビリティと役割') }}</small></a></li>
+<li><a href="{{ url_for('agent_stats') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c.7-3.8 3-6 6-6 1.5 0 2.8.5 3.8 1.5"/><path d="M15 20v-4M18 20v-7M21 20v-2"/></svg><strong>{{ t('ピック率と勝率') }}</strong><small>{{ t('エージェント別のピック率と勝率') }}</small></a></li>
+<li><a href="{{ url_for('maps') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg><strong>{{ t('マップ') }}</strong><small>{{ t('コールアウト・攻守の勝率・強い構成') }}</small></a></li>
+<li><a href="{{ url_for('weapons') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h15l3 2v2H9l-1.5 5H4l1.5-5H3z"/><path d="M12 13v2"/></svg><strong>{{ t('武器') }}</strong><small>{{ t('ダメージ・確殺数・TTK') }}</small></a></li>
+</ul>
+</section>
+
+<section class="feature" id="more" aria-labelledby="more-title">
+<p class="eyebrow">{{ t('その他の機能') }}</p>
+<h2 class="headline" id="more-title">{{ t('ランキングから、クロスヘアまで。')|phrases }}</h2>
+<p class="go"><a class="open" href="{{ url_for('tools') }}">{{ t('すべてのツール') }}</a></p>
+<div class="view">
+<ol class="view-rows links-rows">
+<li><a href="{{ url_for('leaderboard') }}"><b>{{ t('ランキング') }}</b><span>{{ t('地域別の上位プレイヤー') }}</span></a></li>
+<li><a href="{{ url_for('compare') }}"><b>{{ t('プレイヤー比較') }}</b><span>{{ t('2 人の戦績を並べて比較') }}</span></a></li>
+<li><a href="{{ url_for('servers') }}"><b>{{ t('サーバーの混雑状況') }}</b><span>{{ t('時間帯別の混雑と待ち時間の目安') }}</span></a></li>
+<li><a href="{{ url_for('queue_settings') }}"><b>{{ t('マップとパーティー') }}</b><span>{{ t('マッププールとランク差の制限') }}</span></a></li>
+<li><a href="{{ url_for('shop') }}"><b>{{ t('ショップ') }}</b><span>{{ t('販売中のバンドル') }}</span></a></li>
+<li><a href="{{ url_for('crosshair') }}"><b>{{ t('クロスヘア') }}</b><span>{{ t('プレビューと定番コード') }}</span></a></li>
+<li><a href="{{ url_for('sensitivity') }}"><b>{{ t('感度変換') }}</b><span>{{ t('他ゲームからの変換と振り向き距離') }}</span></a></li>
+<li><a href="{{ url_for('news') }}"><b>{{ t('ニュース') }}</b><span>{{ t('パッチノートと公式ニュース') }}</span></a></li>
+<li><a href="{{ url_for('esports') }}"><b>{{ t('eスポーツ') }}</b><span>{{ t('大会の日程・結果・ライブスコア') }}</span></a></li>
+</ol>
+</div>
+<p class="aside china-link"><a href="{{ url_for('tools') }}#china">{{ t('中国大陸版（无畏契约）について') }}</a></p>
 </section>
 <template id="person"><li><a class="person"><img class="prank" alt="" width="24" height="24" hidden><span class="pname"></span><span class="ptag"></span></a></li></template>
 {% endblock %}

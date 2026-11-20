@@ -397,7 +397,7 @@ class PagesTest(unittest.TestCase):
     def test_top_page_leads_a_first_visit_on(self):
         text = self.page("/")
         for path in ("/leaderboard", "/servers", "/queues", "/crosshair", "/sensitivity"):
-            self.assertIn(f'href="{path}"', text.split('class="quick"')[1].split("</nav>")[0])
+            self.assertIn(f'href="{path}"', text.split('id="more"')[1].split("</section>")[0])
 
     def test_agents_by_role(self):
         text = self.page("/agents")

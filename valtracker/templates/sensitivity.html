@@ -5,7 +5,7 @@
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">
 <h1>{{ t('感度変換') }}</h1>
-<p class="lead">{{ t('他ゲームと VALORANT の感度を相互変換。DPI 変更後の感度と振り向き距離も計算します。') }}</p>
+<p class="lead">{{ t('他ゲームと VALORANT の感度を相互変換。DPI 変更後の感度と振り向き距離も計算します。')|phrases }}</p>
 </section>
 <form class="sens-form" action="{{ url_for('sensitivity') }}" method="get">
 <label><span>{{ t('ゲーム') }}</span>

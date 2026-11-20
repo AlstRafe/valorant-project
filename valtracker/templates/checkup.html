@@ -5,7 +5,7 @@
 {% block main %}
 <section class="hero">
 <h1>{{ t('診断') }}</h1>
-<p class="lead">{{ t('データの取得元を 1 つずつチェックします。ゲーム本体には触れません。') }}</p>
+<p class="lead">{{ t('データの取得元を 1 つずつチェックします。ゲーム本体には触れません。')|phrases }}</p>
 </section>
 {% for group in groups %}
 <section class="panel checkup" aria-labelledby="check-{{ group.key }}">
