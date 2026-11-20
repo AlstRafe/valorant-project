@@ -5,7 +5,7 @@
 {% include "_game_nav.html" %}
 <section class="hero">
 <h1>{{ t('マップ') }}</h1>
-<p class="lead">{{ t('VALORANT の各マップのコールアウト、攻撃・防衛の勝率、よく使われるエージェントと構成。') }}</p>
+<p class="lead">{{ t('VALORANT の各マップのコールアウト、攻撃・防衛の勝率、よく使われるエージェントと構成。')|phrases }}</p>
 </section>
 {% if not cards %}
 <p class="problem" role="alert">{{ t('マップのデータを読み込めませんでした。しばらくしてからお試しください。') }}</p>

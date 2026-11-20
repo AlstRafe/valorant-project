@@ -5,7 +5,7 @@
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">
 <h1>{{ t('ニュース') }}</h1>
-<p class="lead">{{ t('VALORANT 公式のニュースとパッチノート。') }}</p>
+<p class="lead">{{ t('VALORANT 公式のニュースとパッチノート。')|phrases }}</p>
 <form class="search" action="{{ url_for('news') }}" method="get" role="search">
 {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
 <label for="news-q" class="sr">{{ t('ニュースを検索') }}</label>

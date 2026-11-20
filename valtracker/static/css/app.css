@@ -1,107 +1,151 @@
-/* VAL Tracker。紙・インク・色の使い方はこのホストの全サイトと同じ共通トークン（Home Page の docs/CONVENTIONS.md
-   「デザインの共通トークン」、藍刷り）なので、一覧とこのサイトを行き来してもページの色は変わらない。
-   印刷した試合のプログラム（スコア表）のように: 冷たい紙のベタ地に藍のインクの文字と罫線、2 色目の山吹は塗りと強調だけ、
-   VALORANT の赤は小さな印（見出しの前の線、開いているタブ）と負けだけ。光・透け・影・丸み・グラデーションは使わない。 */
+/* VAL Tracker。このホストの全サイトと同じ「製品ページ」（Home Page の docs/CONVENTIONS.md 「デザインの共通トークン」v3、
+   基準の実装は homepage/portal.css）なので、一覧とこのサイトを行き来しても地の色と文字は変わらない。
+   ほぼ白・淡い灰・ほぼ黒の面に、操作は青 1 色、VALORANT の赤はロゴと区画の上の名前だけ。区画は線ではなく
+   背景の色と余白で分け、角は四角（ボタンと入力欄だけ 2px）。影・光・グラデーションは使わない。
+   動きはスクロールに結び付けた CSS だけ（このファイルの最後）。 */
 :root {
-  --paper: #edf0f2;
-  --card: #f8f9fa;
-  /* 箱は紙の上の罫で囲むだけ（塗らない）。入力欄・メニュー・知らせは --card で塗る */
-  --surface: transparent;
-  --ink: #19223a;
-  --soft: #4c5770;
-  --rule: #c9d0da;
-  /* 押せる・入力できるものの縁はインク（WCAG 1.4.11 の 3:1 を十分に超える）。行や列の間の線には --rule */
-  --edge: var(--ink);
-  /* リンクと開いているもの */
-  --link: #2a4a8f;
-  --accent: var(--link);
-  /* 2 色目（山吹）: 塗り・強調・マウスを乗せたボタン。紙の上の文字には使わない（1.7:1） */
-  --mark: #e8b04a;
-  --on-mark: #19223a;
-  /* VALORANT の赤: 小さな印だけ */
+  --bg: #fbfbfa;
+  --alt: #f0f0ee;
+  --screen: #ffffff;
+  --ink: #1a1a1c;
+  --soft: #5f6166;
+  /* 区切りの細い線（入力欄やボタンの枠にはしない: 3:1 に届かない） */
+  --line: #d6d6d3;
+  /* 入力欄・メニュー・副ボタンの枠（3.3:1 以上） */
+  --edge: #7d7f84;
+  /* リンク・主ボタンの地・フォーカスの輪・選んでいるもの */
+  --link: #1f5fd1;
+  --on-link: #ffffff;
+  /* 黒い面: トップページに 1 つだけ、どちらのテーマでも白い文字の区画 */
+  --plate: #121315;
+  /* VALORANT の赤: ロゴと区画の上の名前だけ（本文やボタンには使わない） */
   --val: #b8202f;
-  --on-a: #f8f9fa;
   --win: #17704f;
   --loss: #b8202f;
-  --draw: #5a6070;
+  --draw: #5f6166;
   --blue: #245fb0;
-  /* 角は入力欄とボタンだけ 2px、箱・行・絵は四角。影は無し（メニューだけ山吹の版ずれのような影） */
-  --r-s: 2px;
-  --r-m: 0;
-  --r-l: 0;
-  --r-pill: 2px;
-  --shadow-1: none;
-  --shadow-2: none;
-  --shadow-pop: 4px 4px 0 var(--mark);
-  /* 塗りのボタン: ライトはインクに紙の文字、マウスを乗せると山吹。ダークは明るい塗りがまぶしいので山吹（乗せると少し明るく） */
-  --btn: var(--ink);
-  --on-btn: var(--paper);
-  --btn-hover: var(--mark);
-  --t: 120ms;
-  --sans: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
-  --serif: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", "IPAexMincho", "IPAMincho", serif;
-  /* 大きな数字: スコアボードのような字（Windows の Bahnschrift、Mac・iPhone の DIN）。無ければ本文の字 */
-  --num: "Bahnschrift", "DIN Alternate", var(--sans);
+  --r: 2px;
+  --t: 240ms;
+  /* きびきび始まって静かに止まる（マウスを乗せたとき・開いたときの登場・スクロールに結び付けた動き） */
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --settle: cubic-bezier(0.16, 1, 0.3, 1);
+  --follow: cubic-bezier(0.3, 0.6, 0.3, 1);
+  --nav: 3.25rem;
+  --gutter: 1rem;
+  --wide: 65rem;
+  /* 本文の左右の余白: 中身は最大 --wide の 1 列、画面いっぱいの区画（.bleed）はこの分だけ外へ広げる。
+     100vw はスクロールバーを含むが、広げる量と余白が同じ値なので、ページより広くはならない */
+  --pad: max(var(--gutter), (100vw - var(--wide)) / 2);
+  --sans: "Hiragino Sans", "Yu Gothic UI", "Meiryo", "Noto Sans JP", system-ui, sans-serif;
   --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
   --tabbar: 0px;
 }
-/* ダーク: 訪問者がヘッダーのボタンで選ぶまで端末の設定（<html data-theme>、ページのスクリプトが設定）。 */
+/* ダーク: 訪問者がヘッダーのボタンで選ぶまで端末の設定（<html data-theme>、ページのスクリプトが設定）。
+   黒ではなくほぼ黒、白ではなく少し落とした白。 */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #141822;
-    --card: #1b2030;
-    --ink: #e3e6ec;
-    --soft: #a4adbd;
-    --rule: #2d3446;
-    --link: #9db4ec;
-    --mark: #d8ab52;
-    --on-mark: #141822;
+    --bg: #0f0f10;
+    --alt: #161618;
+    --screen: #1c1c1f;
+    --ink: #ececed;
+    --soft: #a3a5ab;
+    --line: #2a2b2f;
+    --edge: #6b6d73;
+    --link: #7fa8f5;
+    --on-link: #0f0f10;
+    --plate: #0b0b0c;
     --val: #ef7b85;
-    --on-a: #141822;
     --win: #4cc79a;
     --loss: #ef7b85;
-    --draw: #a4adbd;
+    --draw: #a3a5ab;
     --blue: #6aa8f0;
-    --btn: var(--mark);
-    --on-btn: var(--on-mark);
-    --btn-hover: color-mix(in srgb, var(--mark) 78%, var(--ink));
   }
 }
 :root[data-theme="dark"] {
-  --paper: #141822;
-  --card: #1b2030;
-  --ink: #e3e6ec;
-  --soft: #a4adbd;
-  --rule: #2d3446;
-  --link: #9db4ec;
-  --mark: #d8ab52;
-  --on-mark: #141822;
+  --bg: #0f0f10;
+  --alt: #161618;
+  --screen: #1c1c1f;
+  --ink: #ececed;
+  --soft: #a3a5ab;
+  --line: #2a2b2f;
+  --edge: #6b6d73;
+  --link: #7fa8f5;
+  --on-link: #0f0f10;
+  --plate: #0b0b0c;
   --val: #ef7b85;
-  --on-a: #141822;
   --win: #4cc79a;
   --loss: #ef7b85;
-  --draw: #a4adbd;
+  --draw: #a3a5ab;
   --blue: #6aa8f0;
-  --btn: var(--mark);
-  --on-btn: var(--on-mark);
-  --btn-hover: color-mix(in srgb, var(--mark) 78%, var(--ink));
   color-scheme: dark;
 }
 :root[data-theme="light"] {
   color-scheme: light;
 }
+/* 黒い面（.plate）と、ランクの三角の台（.onigiri）: 同じ変数をダークの値に置き換える。部品は変数だけで書くので、
+   面の上でもそのまま使える */
+.plate,
+.onigiri {
+  --bg: var(--plate);
+  --alt: var(--plate);
+  --screen: #18191c;
+  --ink: #ededee;
+  --soft: #a3a5ab;
+  --line: #2b2d31;
+  --edge: #6b6d73;
+  --link: #8fb3ff;
+  --on-link: #121315;
+  --val: #ef7b85;
+  --win: #4cc79a;
+  --loss: #ef7b85;
+  --draw: #a3a5ab;
+  --blue: #6aa8f0;
+  color-scheme: dark;
+}
+/* 以前の名前（このファイルの部品が使う）: 新しい変数から。上の面の中でも、その面の値で決まるよう同じ所に書く */
+:root,
+.plate,
+.onigiri {
+  --paper: var(--bg);
+  --card: var(--screen);
+  /* 箱は --screen の地に 1px の線（画面の見本と同じ） */
+  --surface: var(--screen);
+  --rule: var(--line);
+  --accent: var(--link);
+  --on-a: var(--on-link);
+  /* 山吹の 2 色目は無くなった: 残った塗りは青、乗せたらインク */
+  --mark: var(--link);
+  --on-mark: var(--on-link);
+  --btn: var(--link);
+  --on-btn: var(--on-link);
+  --btn-hover: var(--ink);
+  --r-s: var(--r);
+  --r-m: 0;
+  --r-l: 0;
+  --r-pill: var(--r);
+  --shadow-1: none;
+  --shadow-2: none;
+  --shadow-pop: none;
+  /* 書体は --sans と --mono だけ（明朝も、数字だけの別の書体も使わない） */
+  --serif: var(--sans);
+  --num: var(--sans);
+}
 /* その言語の文字を持つフォント（日本語フォントにはハングルが無く、漢字も台湾のものではない）。 */
 :lang(ko) {
-  --serif: "AppleMyungjo", "Nanum Myeongjo", "Batang", "Noto Serif KR", serif;
   --sans: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif;
 }
 :lang(zh-TW) {
-  --serif: "Songti TC", "PMingLiU", "Noto Serif TC", serif;
   --sans: "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
 }
 :lang(en) {
-  --serif: Georgia, "Times New Roman", serif;
   --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+/* 改行の位置（全言語、どの画面幅でも）: 日本語は文節で（auto-phrase。対応しないブラウザーでは今までどおり）、
+   韓国語は語の間で、入りきらないときだけ語の中で。見出しは行の長さをそろえ（balance）、文は最後の行に 1 語だけ
+   残さない（pretty）。「Riot ID」や数字と単位の間は、app.js の glue() が改行しない空白にする。 */
+html:lang(ja) body {
+  word-break: auto-phrase;
+  overflow-wrap: break-word;
 }
 html:lang(ko) body {
   word-break: keep-all;
@@ -112,22 +156,36 @@ html:lang(ko) body {
   box-sizing: border-box;
 }
 html {
-  background: var(--paper);
+  background: var(--bg);
   color: var(--ink);
   -webkit-text-size-adjust: 100%;
   accent-color: var(--accent);
+  scroll-padding-top: calc(var(--nav) + 0.5rem);
 }
 body {
-  margin: 0 auto;
-  max-width: 62rem;
-  padding: 0 1rem calc(2rem + var(--tabbar));
-  font: 16px/1.65 var(--sans);
-  background: var(--paper);
+  margin: 0;
+  padding: 0 0 var(--tabbar);
+  font: 16px/1.7 var(--sans);
+  background: var(--bg);
+}
+@media (min-width: 48rem) {
+  :root {
+    --gutter: 1.5rem;
+  }
+}
+@media (min-width: 64rem) {
+  :root {
+    --gutter: 3rem;
+  }
+}
+main {
+  display: flow-root;
+  padding: 0 var(--pad);
 }
 a {
   color: var(--accent);
-  text-underline-offset: 0.18em;
-  text-decoration-thickness: from-font;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
 }
 a,
 button,
@@ -136,63 +194,66 @@ summary,
 input,
 select {
   transition:
-    color var(--t) ease,
-    background-color var(--t) ease,
-    border-color var(--t) ease;
+    color var(--t) var(--ease),
+    background-color var(--t) var(--ease),
+    border-color var(--t) var(--ease),
+    text-decoration-color var(--t) var(--ease),
+    opacity var(--t) var(--ease);
 }
-a:focus-visible,
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-summary:focus-visible {
+:focus-visible {
   outline: 2px solid var(--link);
   outline-offset: 2px;
 }
 ::selection {
-  background: color-mix(in srgb, var(--mark) 60%, transparent);
-  color: var(--ink);
+  background: var(--link);
+  color: var(--on-link);
 }
 img {
   max-width: 100%;
 }
-/* 見出し: 明朝（その言語の）の題字、字の間を詰める（palt）。 */
+/* 見出し: 太いゴシック、字の間を詰める（palt）。大きな見出しほど詰める */
+h1,
+h2,
+h3,
+h4,
+summary,
+.eyebrow,
+.view-bar b {
+  text-wrap: balance;
+}
 h1,
 h2,
 h3 {
-  font-family: var(--serif);
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: 0.01em;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
   font-feature-settings: "palt";
-  text-wrap: balance;
 }
-:lang(ja) :is(h1, h2, h3, .lead) {
-  word-break: auto-phrase;
-}
-p {
+:is(p, li, dd, dt, figcaption, blockquote, small) {
   text-wrap: pretty;
+}
+/* 句（i18n.phrases が日本語・中国語の読点と句点で分ける）: 行は句の切れ目で分かれ、1 つの句が 1 行に入らない
+   ときだけ句の中で折れる */
+.ph {
+  display: inline-block;
 }
 h1 {
   margin: 0;
-  font-size: clamp(1.9rem, 1.5rem + 1.5vw, 2.5rem);
-  line-height: 1.2;
+  font-size: clamp(2.1rem, 1.5rem + 2.4vw, 3.25rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
 }
 h2 {
-  margin: 2.6rem 0 0.9rem;
-  font-size: 1.25rem;
-  letter-spacing: 0.02em;
+  margin: 3.25rem 0 1rem;
+  font-size: clamp(1.4rem, 1.15rem + 0.9vw, 1.85rem);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
 }
-/* 本文の節の見出し: 上に VALORANT の赤の短い線（全サイトの見出しの印）。flex の見出しでも同じに出るよう上の縁で描く。
-   箱の中の見出しには無し（下）。 */
-main h2 {
-  padding-top: 0.6rem;
-  border-top: 3px solid transparent;
-  border-image: linear-gradient(90deg, var(--val) 1.2rem, transparent 1.2rem) 1;
+h3 {
+  font-weight: 700;
 }
 :is(.season-card, .server, .panel, .notice) h2 {
-  padding-top: 0;
-  border-top: 0;
+  letter-spacing: 0;
 }
 .sr {
   position: absolute;
@@ -208,42 +269,45 @@ main h2 {
   top: -3rem;
   z-index: 20;
   padding: 0.5rem 0.9rem;
-  border-radius: var(--r-s);
-  background: var(--accent);
-  color: var(--on-a);
+  border-radius: var(--r);
+  background: var(--link);
+  color: var(--on-link);
 }
 .skip:focus {
   top: 0.6rem;
 }
 
-/* ヘッダー: 名前、ページ、テーマと言語。折り返さない: 狭い画面ではページが下のタブバーに移り、
-   ボタンは文字を無くす（一番長い英語で測った）。紙のベタ地に、下は題字の下のような太いインクの罫。 */
+/* ヘッダー: 名前、ページ、テーマと言語。高さ 3.25rem、下に細い線 1 本。半透明にしてぼかし、ページがその下を通る
+   （ぼかしは疑似要素に: ヘッダーそのものに backdrop-filter を付けると、スマホの固定タブバーがヘッダーの中に入る）。
+   折り返さない: 狭い画面ではページが下のタブバーに移り、ボタンは文字を無くす（一番長い英語で測った）。 */
 .top {
   position: sticky;
   top: 0;
   z-index: 10;
-  margin: 0 -1rem 2rem;
-  padding: 0 1rem;
-  /* 普通の背景: ここで backdrop-filter を使うと、スマホの固定タブバーがヘッダーの中に入ってしまう。 */
-  background: var(--paper);
-  border-bottom: 3px solid var(--ink);
+  margin: 0 0 1rem;
+  padding: 0 var(--pad);
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
 }
-/* 題字の下の二重の罫: 太い 3px と、2px あけて細い 1px（あいだは紙で埋め、下の文字が透けない） */
-.top::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -6px;
-  height: 1px;
-  background: var(--ink);
-  box-shadow: 0 -2px 0 var(--paper);
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .top {
+    background: transparent;
+  }
+  .top::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
 }
-.bar {
+.top > .bar {
   display: flex;
   align-items: center;
   gap: 1rem;
-  min-height: 3.5rem;
+  min-height: var(--nav);
 }
 .brand {
   display: inline-flex;
@@ -251,16 +315,17 @@ main h2 {
   gap: 0.45rem;
   flex: none;
   color: var(--ink);
-  font-weight: 900;
-  letter-spacing: 0.03em;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
   text-decoration: none;
 }
 .brand svg {
-  width: 1.6rem;
-  height: 1.6rem;
+  width: 1.45rem;
+  height: 1.45rem;
   fill: var(--val);
 }
-/* ページのタブ: バーの高さいっぱいの文字。開いているページは下の罫に乗る赤い線。 */
+/* ページのタブ: バーの高さいっぱいの文字。開いているページはインクの文字と、下の線に重なる 2px のインクの線 */
 .tabs {
   display: flex;
   align-self: stretch;
@@ -274,7 +339,7 @@ main h2 {
   gap: 0.35rem;
   padding: 0 0.6rem;
   color: var(--soft);
-  font-size: 0.92rem;
+  font-size: 0.875rem;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -283,23 +348,23 @@ main h2 {
 }
 .tabs a[aria-current] {
   color: var(--ink);
-  box-shadow: inset 0 -3px 0 var(--val);
+  box-shadow: inset 0 -2px 0 var(--ink);
   font-weight: 700;
 }
 .tabs svg,
 .fav svg {
-  width: 1.15rem;
-  height: 1.15rem;
+  width: 1.1rem;
+  height: 1.1rem;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 .tools {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
   flex: none;
   margin-left: auto;
 }
@@ -318,10 +383,14 @@ main h2 {
   min-height: 2.25rem;
   padding: 0;
   border: 1px solid var(--edge);
-  border-radius: var(--r-pill);
-  background: var(--surface);
+  border-radius: var(--r);
+  background: transparent;
   color: var(--ink);
   cursor: pointer;
+}
+.app-nav button:hover:not(:disabled),
+.app-settings:hover {
+  background: var(--alt);
 }
 .app-nav button:disabled {
   color: var(--soft);
@@ -332,8 +401,8 @@ main h2 {
   flex: none;
 }
 .app-settings[aria-current] {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--link);
+  color: var(--link);
 }
 .app-nav svg,
 .app-settings svg {
@@ -392,10 +461,9 @@ main h2 {
 /* リリースに新しい PC アプリがある（desktop.py が時々見る）。 */
 .app-update {
   margin: 1rem 0 0;
-  padding: 0.7rem 0.9rem;
-  border: 1px solid var(--accent);
-  border-radius: var(--r-m);
-  background: var(--surface);
+  padding: 0.8rem 1rem;
+  border-left: 3px solid var(--link);
+  background: var(--alt);
 }
 .first-key {
   margin: 0.4rem 0 1rem;
@@ -430,19 +498,27 @@ main h2 {
   color: var(--loss);
 }
 
-/* ライト/ダークのボタンと言語メニュー: このホストの全サイトと同じ（portal.css）。 */
-.theme {
+/* ライト/ダークのボタンと言語メニュー: このホストの全サイトと同じ（portal.css）。枠無し、乗せると淡い灰の地 */
+.theme,
+.lang summary {
   display: inline-flex;
   align-items: center;
   min-height: 2.25rem;
-  padding: 0 0.8rem;
-  border: 1px solid var(--edge);
-  border-radius: var(--r-pill);
-  background: var(--surface);
+  padding: 0 0.6rem;
+  border: 0;
+  border-radius: var(--r);
+  background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 400;
   cursor: pointer;
+}
+.theme:hover:not(:disabled),
+.lang summary:hover,
+.lang[open] summary {
+  background: var(--alt);
+  color: var(--ink);
 }
 .theme > span {
   display: none;
@@ -470,16 +546,7 @@ main h2 {
   font-size: 0.85rem;
 }
 .lang summary {
-  display: inline-flex;
-  align-items: center;
   gap: 0.4rem;
-  min-height: 2.25rem;
-  padding: 0 0.8rem;
-  border: 1px solid var(--edge);
-  border-radius: var(--r-pill);
-  background: var(--surface);
-  color: var(--ink);
-  cursor: pointer;
   list-style: none;
   user-select: none;
 }
@@ -505,40 +572,40 @@ main h2 {
   z-index: 5;
   min-width: 11.5rem;
   margin: 0;
-  padding: 0.35rem;
+  padding: 0.3rem 0;
   list-style: none;
-  background: var(--card);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-s);
-  box-shadow: var(--shadow-pop);
+  background: var(--screen);
+  border: 1px solid var(--edge);
+  border-radius: var(--r);
+}
+.lang li + li {
+  border-top: 1px solid var(--line);
 }
 .lang a {
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.55rem 0.75rem;
-  border-radius: var(--r-s);
+  padding: 0.5rem 0.85rem;
   color: var(--ink);
   text-decoration: none;
 }
 .lang a:hover {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  background: var(--alt);
+}
+.lang a:focus-visible {
+  outline-offset: -2px;
 }
 .lang a[aria-current] {
   font-weight: 700;
-  color: var(--accent);
+  color: var(--link);
 }
 .lang a[aria-current]::after {
   content: "✓";
 }
 
-/* 5 つのタブでヘッダーが埋まる（画面の幅にかかわらず、ページと同じ 62rem）: このホストの全サイトと同じく、
-   省けるものから省く（docs/CONVENTIONS.md）: テーマボタンの文、言語の名前、ロゴの横のサイト名の順。
-   一番長い英語と日本語で測った。 */
+/* 5 つのタブでヘッダーが埋まる: このホストの全サイトと同じく、省けるものから省く（docs/CONVENTIONS.md）
+   : テーマボタンの文、言語の名前、ロゴの横のサイト名の順。一番長い英語と日本語で測った。 */
 @media (min-width: 761px) {
-  .theme {
-    padding: 0 0.6rem;
-  }
   .theme .words {
     position: absolute;
     width: 1px;
@@ -549,9 +616,6 @@ main h2 {
   }
 }
 @media (min-width: 761px) and (max-width: 940px) {
-  .lang summary {
-    padding: 0 0.6rem;
-  }
   .lang summary span {
     position: absolute;
     width: 1px;
@@ -572,7 +636,7 @@ main h2 {
   }
 }
 
-/* スマホ: ページは下のタブバー（入力中、キーボードが出ている間は隠す）。 */
+/* スマホ: ページは下のタブバー（入力中、キーボードが出ている間は隠す）。上のヘッダーと同じく半透明にぼかす。 */
 @media (max-width: 760px) {
   :root {
     --tabbar: calc(3.6rem + env(safe-area-inset-bottom));
@@ -585,8 +649,15 @@ main h2 {
     z-index: 10;
     justify-content: space-around;
     padding: 0 0.5rem env(safe-area-inset-bottom);
-    background: var(--paper);
-    border-top: 2px solid var(--ink);
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+  }
+  @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .tabs {
+      background: color-mix(in srgb, var(--bg) 86%, transparent);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      backdrop-filter: saturate(180%) blur(20px);
+    }
   }
   .tabs a {
     flex-direction: column;
@@ -598,7 +669,7 @@ main h2 {
     font-size: 0.72rem;
   }
   .tabs a[aria-current] {
-    box-shadow: inset 0 3px 0 var(--val);
+    box-shadow: inset 0 2px 0 var(--ink);
   }
   .tabs svg {
     width: 1.35rem;
@@ -609,9 +680,6 @@ main h2 {
   }
 }
 @media (max-width: 30rem) {
-  .theme {
-    padding: 0 0.6rem;
-  }
   .theme .words,
   .lang summary span {
     position: absolute;
@@ -620,9 +688,6 @@ main h2 {
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
-  }
-  .lang summary {
-    padding: 0 0.6rem;
   }
 }
 
@@ -667,7 +732,7 @@ main h2 {
   width: 0.55rem;
   height: 0.55rem;
   border-radius: 50%;
-  box-shadow: 0 0 0 2px var(--paper);
+  box-shadow: 0 0 0 2px var(--bg);
 }
 .live-tab[data-phase="menus"] .live-dot {
   display: block;
@@ -693,86 +758,68 @@ main h2 {
     opacity: 0.35;
   }
 }
-@media (max-width: 760px) {
-  .live-dot {
-    box-shadow: 0 0 0 2px var(--card);
-  }
-}
 
-/* トップ: 検索とプレイヤーの一覧 */
+/* ページの頭: 大きな題と短い説明。題の上下に余白をとり、本文の区画は余白で分ける */
 .hero {
-  padding: 1rem 0 0.5rem;
-}
-/* トップの検索の右の空き: 山吹の網点（印刷の飾り。文字の下には置かない、広い画面だけ）。 */
-@media (min-width: 1000px) {
-  .hero:has(> .search) {
-    position: relative;
-  }
-  .hero:has(> .search)::after {
-    content: "";
-    position: absolute;
-    top: 0.4rem;
-    right: 0;
-    width: 15rem;
-    height: 9.5rem;
-    background: radial-gradient(circle, var(--mark) 1.3px, transparent 1.7px) 0 0 / 10px 10px;
-    -webkit-mask-image: radial-gradient(farthest-side at 100% 0, #000 25%, transparent);
-    mask-image: radial-gradient(farthest-side at 100% 0, #000 25%, transparent);
-    opacity: 0.55;
-    pointer-events: none;
-  }
-  :root[data-theme="dark"] .hero:has(> .search)::after {
-    opacity: 0.35;
-  }
-}
-@media (min-width: 1000px) and (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .hero:has(> .search)::after {
-    opacity: 0.35;
-  }
+  padding: clamp(1.5rem, 0.5rem + 3vw, 3rem) 0 0.5rem;
 }
 .lead {
   max-width: 40rem;
-  margin: 0.6rem 0 0;
+  margin: 0.8rem 0 0;
   color: var(--soft);
+  font-size: clamp(1.02rem, 0.95rem + 0.3vw, 1.15rem);
+  line-height: 1.7;
 }
 .meta {
   margin: 0.2rem 0 0;
   color: var(--soft);
   font-size: 0.9rem;
 }
+/* 入力欄と検索ボタンを 1 つの枠につなぐ（全サイトの検索欄と同じ）。入力欄の枠は --edge、ボタンは青の四角 */
 .search {
   display: flex;
-  gap: 0.5rem;
   max-width: 34rem;
-  margin-top: 1.2rem;
+  margin-top: 1.4rem;
 }
 .search input,
 .stack input {
   flex: 1;
   min-width: 0;
-  min-height: 2.9rem;
+  min-height: 2.75rem;
   padding: 0 0.9rem;
   border: 1px solid var(--edge);
-  border-radius: var(--r-s);
-  background: var(--card);
+  border-radius: var(--r);
+  background: var(--screen);
   color: var(--ink);
   font: inherit;
-  font-size: 1.05rem;
+  font-size: 1rem;
+}
+.search input {
+  border-right: 0;
+  border-radius: var(--r) 0 0 var(--r);
+}
+.search input::placeholder,
+.stack input::placeholder {
+  color: var(--soft);
+  opacity: 1;
+}
+.search button {
+  flex: none;
+  border-radius: 0 var(--r) var(--r) 0;
 }
 .search input[aria-invalid="true"] {
   border-color: var(--loss);
 }
+/* 主ボタン: 青の地に白い文字、乗せるとインクの地（全サイト同じ）。持ち上げたり影を付けたりしない */
 button,
 .button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.9rem;
-  padding: 0 1.2rem;
+  min-height: 2.75rem;
+  padding: 0 1.15rem;
   border: 0;
-  border-radius: var(--r-s);
-  /* 塗りはインク、文字は紙。マウスを乗せると山吹の塗りにインクの文字（--fill と --on-fill から:
-     背景を自分で決めるボタンには効かない） */
+  border-radius: var(--r);
   --fill: var(--btn);
   --on-fill: var(--on-btn);
   background: var(--fill);
@@ -784,26 +831,30 @@ button,
 }
 :where(button, .button):hover:not(:disabled) {
   --fill: var(--btn-hover);
-  --on-fill: var(--on-mark);
+  --on-fill: var(--bg);
 }
-button.quiet {
+/* 副ボタン: 枠だけ。乗せると淡い灰の地 */
+button.quiet,
+.button.quiet {
   background: transparent;
   color: var(--ink);
   border: 1px solid var(--edge);
 }
+:is(button, .button).quiet:hover:not(:disabled) {
+  background: var(--alt);
+  color: var(--ink);
+}
 .problem {
   margin: 0.8rem 0 0;
   padding: 0.7rem 0.9rem;
-  border-left: 4px solid var(--loss);
-  border-radius: var(--r-s);
-  background: color-mix(in srgb, var(--loss) 9%, transparent);
+  border-left: 3px solid var(--loss);
+  background: color-mix(in srgb, var(--loss) 8%, var(--bg));
 }
 .done {
   margin: 0.8rem 0 0;
   padding: 0.7rem 0.9rem;
-  border-left: 4px solid var(--win);
-  border-radius: var(--r-s);
-  background: color-mix(in srgb, var(--win) 9%, transparent);
+  border-left: 3px solid var(--win);
+  background: color-mix(in srgb, var(--win) 8%, var(--bg));
 }
 .note {
   color: var(--soft);
@@ -847,16 +898,15 @@ button.quiet {
   align-items: baseline;
   gap: 0.1rem;
   padding: 0.75rem 0.9rem;
-  border: 1px solid var(--rule);
-  border-radius: var(--r-m);
-  background: var(--surface);
+  border: 1px solid var(--line);
+  background: var(--screen);
   color: var(--ink);
   text-decoration: none;
   overflow: hidden;
-  box-shadow: var(--shadow-1);
 }
 .person:hover {
-  border-color: var(--accent);
+  border-color: var(--edge);
+  background: var(--alt);
 }
 .person .prank {
   flex: none;
@@ -1101,14 +1151,12 @@ button.quiet {
 .act[hidden] {
   display: none;
 }
-/* 幕のランクの三角はゲームと同じく夜の藍の台に（レディアントの淡い三角は紙の上で消えた）。台の上はダークの色 */
+/* 幕のランクの三角はゲームと同じく黒い台に（レディアントの淡い三角は明るい地の上で消えた）。台の上はダークの色（上の .onigiri の変数） */
 .onigiri {
   flex: none;
   --w: 2.6rem;
-  --rule: #2d3446;
-  --accent: #9db4ec;
   padding: 0.4rem;
-  background: #141822;
+  background: var(--plate);
 }
 .tri-row {
   display: flex;
@@ -1168,31 +1216,36 @@ span.tri.down {
   }
 }
 
-/* 初回（まだ何も保存していない）用のトップページのほかのこと: 折り返す小さなリンク。 */
+/* ページの中の目次（ヘルプ）: 「文 ›」のリンクを折り返して並べる（全サイトの「›」リンクと同じ） */
 .quick {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 1rem;
+  gap: 0 1.6rem;
+  margin-top: 1.2rem;
 }
 .quick a {
   display: inline-flex;
   align-items: center;
-  min-height: 2.25rem;
-  padding: 0 0.8rem;
-  border: 1px solid var(--rule);
-  border-radius: var(--r-pill);
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 0.88rem;
-  text-decoration: none;
+  min-height: 2.75rem;
+  color: var(--link);
+  font-size: 0.98rem;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+}
+.quick a::after {
+  content: "›";
+  margin-left: 0.3em;
+  transition: transform var(--t) var(--ease);
 }
 .quick a:hover {
-  border-color: var(--accent);
+  text-decoration-color: currentColor;
+}
+.quick a:hover::after {
+  transform: translateX(0.2em);
 }
 .china-link {
   margin: 0.8rem 0 0;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 .china-link a {
   color: var(--soft);
@@ -1835,7 +1888,7 @@ meter {
 :root:not([data-theme="dark"]) .items:not(.skins) .item:not(:has(> .skin-link)) > img {
   padding: 0.3rem;
   border-radius: var(--r-s);
-  background-color: #2a3142;
+  background-color: #1f2023;
 }
 :root:not([data-theme="dark"]) .items .item > .skin-link > img,
 :root:not([data-theme="dark"]) .items.skins .item > img {
@@ -2434,7 +2487,7 @@ meter {
   height: 2.5rem;
   padding: 0.3rem;
   border-radius: var(--r-s);
-  background: #273046;
+  background: #1f2023;
 }
 .abilities h3 {
   margin: 0;
@@ -2655,96 +2708,122 @@ code {
 .links {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1.4rem;
+  gap: 0.5rem 1.75rem;
   padding: 0;
   list-style: none;
 }
-/* 下の注意書き: 紙面の終わりのインクの罫の下に。 */
+/* 画面いっぱいの区画: 本文の左右の余白（--pad）の分だけ外へ広げ、中身は同じ列に */
+.bleed,
+.tool-section {
+  margin-inline: calc(var(--pad) * -1);
+  padding-inline: var(--pad);
+}
+/* ページの終わり: 淡い灰の面にヘルプと注意書き（線ではなく地の色で本文と分ける） */
 .foot {
-  margin-top: 3.5rem;
-  padding-top: 1rem;
-  border-top: 2px solid var(--ink);
+  margin-top: clamp(4rem, 2rem + 6vw, 7rem);
+  padding: 2.5rem var(--pad) 3rem;
+  background: var(--alt);
   color: var(--soft);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+}
+/* トップページは区画の余白で終わるので、続けて余白はとらない */
+body:has(main > .feature) .foot {
+  margin-top: 0;
 }
 .foot p {
+  max-width: 52rem;
   margin: 0.4rem 0;
 }
 .back {
   font-size: 0.9rem;
 }
 
-/* ツールのページ（tools.py）: ツールごとのカード。 */
-.tool-grid {
+/* ツールのページ（tools.py）: 種類ごとに 1 区画（地の色を交互に）、ツールは細い線でつないだ格子のタイル。 */
+.tool-section {
+  padding-block: clamp(2.5rem, 1.5rem + 3vw, 4rem);
+}
+.tool-section:nth-of-type(odd) {
+  background: var(--alt);
+}
+.tool-section h2 {
+  margin: 0 0 1.25rem;
+}
+.tool-grid,
+.me-links {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  gap: 0.7rem;
-  margin: 0.6rem 0 0;
-  padding: 0;
+  margin: 0;
+  padding: 0 1px 1px 0;
   list-style: none;
 }
-.tool-grid a {
+/* 枠は 1 本ずつ重ねる: 最後の行が埋まっていなくても、線は並んでいるタイルの周りだけ */
+.tool-grid li,
+.me-links li {
+  margin: 0 -1px -1px 0;
+  border: 1px solid var(--line);
+}
+.tool-grid a,
+.me-links a {
   display: grid;
-  grid-template-columns: 2.2rem 1fr;
-  gap: 0.1rem 0.8rem;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-content: start;
+  gap: 0.15rem 0.9rem;
   height: 100%;
-  padding: 1rem;
-  border: 1px solid var(--rule);
-  border-radius: var(--r-l);
-  background: var(--surface);
+  padding: 1.15rem 1.25rem 1.25rem;
+  background: var(--screen);
   color: var(--ink);
   text-decoration: none;
-  box-shadow: var(--shadow-1);
 }
-.tool-grid a:hover {
-  border-color: var(--accent);
+.tool-grid a:hover,
+.me-links a:hover {
+  background: var(--alt);
+}
+.tool-grid strong::after,
+.me-links strong::after {
+  content: "›";
+  display: inline-block;
+  margin-left: 0.35em;
+  color: var(--soft);
+  font-weight: 400;
+  transition:
+    transform var(--t) var(--ease),
+    color var(--t) var(--ease);
+}
+.tool-grid a:hover strong::after,
+.me-links a:hover strong::after {
+  color: var(--link);
+  transform: translateX(0.2em);
 }
 .tool-grid svg {
   grid-row: span 2;
-  width: 2.2rem;
-  height: 2.2rem;
+  width: 2rem;
+  height: 2rem;
   fill: none;
-  stroke: var(--accent);
-  stroke-width: 1.6;
+  stroke: var(--ink);
+  stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.tool-grid small {
+.tool-grid strong {
+  font-size: 1.02rem;
+}
+.tool-grid small,
+.me-links small {
   color: var(--soft);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 
 /* トップページの自分の枠（持ち主だけ）: 自分のページ、今のゲーム、パス、コレクション。 */
-.me-box {
-  margin: 1.6rem 0 0;
-}
 .me-links {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
-  gap: 0.5rem;
-  margin: 0.6rem 0 0;
-  padding: 0;
-  list-style: none;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  margin-top: 1.5rem;
 }
 .me-links a {
-  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.15rem;
-  height: 100%;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid var(--rule);
-  border-radius: var(--r-m);
-  background: var(--surface);
-  color: var(--ink);
-  text-decoration: none;
-  box-shadow: var(--shadow-1);
-}
-.me-links a:hover {
-  border-color: var(--accent);
 }
 .me-links small {
-  color: var(--soft);
-  font-size: 0.8rem;
   overflow-wrap: anywhere;
 }
 @media (max-width: 34rem) {
@@ -2753,39 +2832,28 @@ code {
   }
 }
 
-/* 種類ごとのツール: スマホでは 1 行に 2 つ、絵を文の上にして、ページが 3 画面の長さにならないように。 */
-.tool-section h2 {
-  margin: 1.6rem 0 0;
-  color: var(--soft);
-  font-size: 0.95rem;
-  letter-spacing: 0.04em;
-}
-.tool-section:first-of-type h2 {
-  margin-top: 0.6rem;
-}
+/* スマホでは 1 行に 2 つ、絵を文の上にして、ページが 3 画面の長さにならないように。 */
 @media (max-width: 34rem) {
   .tool-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.45rem;
   }
   .tool-grid a {
     grid-template-columns: 1fr;
-    align-content: start;
     gap: 0.2rem;
-    padding: 0.6rem 0.65rem 0.7rem;
-    border-radius: var(--r-m);
+    padding: 0.8rem 0.8rem 0.9rem;
   }
   .tool-grid svg {
     grid-row: auto;
-    width: 1.45rem;
-    height: 1.45rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-bottom: 0.2rem;
   }
   .tool-grid strong {
-    font-size: 0.86rem;
+    font-size: 0.92rem;
     line-height: 1.35;
   }
   .tool-grid small {
-    font-size: 0.74rem;
+    font-size: 0.8rem;
     line-height: 1.4;
   }
 }
@@ -3495,7 +3563,7 @@ code {
 }
 /* app.js がロゴの明るさを測ったあと: 明るいロゴは暗い台、暗いロゴは明るい台 */
 .team-row img.logo-light {
-  background-color: #1d2333;
+  background-color: #1c1c1f;
 }
 .team-row img.logo-dark {
   background-color: #eef1f4;
@@ -3828,7 +3896,8 @@ code {
 .no-agent {
   display: grid;
   place-items: center;
-  background: var(--rule);
+  background: var(--alt);
+  box-shadow: inset 0 0 0 1px var(--line);
   color: var(--soft);
   font-weight: 700;
 }
@@ -5034,7 +5103,7 @@ html.leaving::after {
 .heat-figure {
   padding: 0.5rem;
   border-radius: var(--r-s);
-  background: #151a26;
+  background: #121315;
 }
 .heat-svg {
   display: block;
@@ -5975,7 +6044,8 @@ form.row {
   width: 1.4rem;
   height: 1.4rem;
   border-radius: 50%;
-  background: var(--rule);
+  background: var(--alt);
+  box-shadow: inset 0 0 0 1px var(--line);
   color: var(--soft);
   font-size: 0.8rem;
   font-weight: 700;
@@ -6331,7 +6401,7 @@ form.row {
   overflow-x: auto;
   padding: 0.5rem;
   border-radius: var(--r-s);
-  background: #151a26;
+  background: #121315;
 }
 .callout-svg {
   display: block;
@@ -6452,4 +6522,751 @@ form.row {
 }
 .eco-table td {
   font-variant-numeric: tabular-nums;
+}
+
+/* ── トップページ: 製品ページ（Home Page の portal.css と同じ形） ─────────────────────────────────────────────
+   最初の区画は画面の高さいっぱい: サイト名、大きな見出し、ひとこと、検索、このブラウザーのプレイヤー。
+   そのあと 1 区画に 1 つのこと: 名前（VALORANT の赤）→ 大きな見出し → 1〜2 文 → 青い入口と「›」→ 画面の見本 →
+   大きな数字の事実。区画どうしは背景の色（--bg / --alt / 黒い面）と余白で分け、線や枠では分けない。 */
+.opening {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  min-height: min(46rem, calc(100svh - var(--nav) - var(--tabbar)));
+  margin-top: -1rem;
+  padding: clamp(2.5rem, 1rem + 5vw, 5rem) 0 clamp(3.5rem, 2rem + 5vw, 6rem);
+}
+.opening-in > * {
+  max-width: 46rem;
+}
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  color: var(--val);
+  font-size: clamp(1.05rem, 0.98rem + 0.3vw, 1.25rem);
+  font-weight: 700;
+  line-height: 1.3;
+}
+.eyebrow svg {
+  flex: none;
+  width: 1.3em;
+  height: 1.3em;
+  fill: currentColor;
+}
+.opening h1 {
+  margin-top: 0.75rem;
+  font-size: clamp(2.6rem, 1.2rem + 6vw, 6rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+.opening .lead {
+  max-width: 38rem;
+  margin-top: 1.3rem;
+  font-size: clamp(1.05rem, 0.95rem + 0.5vw, 1.3rem);
+}
+.opening .search {
+  max-width: 36rem;
+  margin-top: clamp(1.75rem, 1rem + 2vw, 2.5rem);
+}
+.opening .search input {
+  min-height: 3.25rem;
+  padding-inline: 1.1rem;
+  font-size: 1.1rem;
+}
+.opening .search button {
+  min-height: 3.25rem;
+  padding: 0 1.6rem;
+  font-size: 1.05rem;
+}
+.opening :is(.problem, .app-update, .notice-box, .same-name) {
+  text-align: left;
+}
+.opening .notice-box {
+  margin-bottom: 2rem;
+}
+.hint {
+  margin: 0.8rem 0 0;
+  color: var(--soft);
+  font-size: 0.9rem;
+}
+/* このブラウザーのお気に入りと最近見たプレイヤー: 細い線で分けた行。どちらも空なら出さない */
+.mine {
+  display: grid;
+  gap: 1.75rem 3rem;
+  margin-top: clamp(2.75rem, 1.5rem + 4vw, 4.5rem);
+  text-align: left;
+}
+.opening-in > .mine {
+  max-width: 52rem;
+}
+.mine:not(:has(.person)) {
+  display: none;
+}
+.mine h2 {
+  margin: 0 0 0.5rem;
+  color: var(--soft);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.mine .people-list {
+  display: block;
+  border-top: 1px solid var(--line);
+}
+.mine .people-list li {
+  border-bottom: 1px solid var(--line);
+}
+.mine .people-list .empty {
+  padding: 0.75rem 0;
+  font-size: 0.9rem;
+}
+.mine .person {
+  align-items: center;
+  min-height: 3rem;
+  padding: 0.5rem 0.4rem;
+  border: 0;
+  background: transparent;
+}
+.mine .person:hover {
+  background: var(--alt);
+}
+.mine .person::after {
+  content: "›";
+  margin-left: auto;
+  padding-left: 0.75rem;
+  color: var(--soft);
+  transition:
+    color var(--t) var(--ease),
+    transform var(--t) var(--ease);
+}
+.mine .person:hover::after {
+  color: var(--link);
+  transform: translateX(0.2em);
+}
+@media (min-width: 48rem) {
+  .mine {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* 見つからない・エラー: 中央の 1 列に大きな見出しと戻る道 */
+.hero.missing {
+  max-width: 38rem;
+  margin: 12vh auto 4rem;
+}
+.missing h1 {
+  margin-top: 0.4rem;
+}
+
+/* 1 区画に 1 つのこと。画面いっぱいの幅（本文の余白の分だけ外へ）、上下に大きな余白 */
+.feature {
+  margin-inline: calc(var(--pad) * -1);
+  padding: clamp(4.5rem, 2rem + 8vw, 9rem) var(--pad);
+  scroll-margin-top: var(--nav);
+}
+.feature.band {
+  background: var(--alt);
+}
+/* 黒い面: どちらのテーマでも白い文字（変数は上の .plate で置き換えてある） */
+.feature.plate {
+  background: var(--plate);
+  color: var(--ink);
+}
+.headline {
+  margin: 0.6rem 0 0;
+  font-size: clamp(2.1rem, 1.1rem + 4vw, 4.25rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+}
+.feature .desc {
+  max-width: 40rem;
+  margin: 1.25rem 0 0;
+  color: var(--soft);
+  font-size: clamp(1.05rem, 0.95rem + 0.4vw, 1.25rem);
+}
+.feature .aside {
+  max-width: 40rem;
+  margin: 1.75rem 0 0;
+  color: var(--soft);
+  font-size: 0.95rem;
+}
+/* 入口: 青い主ボタン 1 つと、「文 ›」のリンク（下線は乗せたときだけ、› が少し横へ） */
+.go {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.75rem;
+  margin: 1.75rem 0 0;
+}
+.open {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 1.15rem;
+  border-radius: var(--r);
+  background: var(--link);
+  color: var(--on-link);
+  font-weight: 700;
+  text-decoration: none;
+}
+.open:hover {
+  background: var(--ink);
+  color: var(--bg);
+}
+.chev {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  font-size: 1.06rem;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+}
+.chev:hover {
+  text-decoration-color: currentColor;
+}
+.chev span {
+  display: inline-block;
+  margin-left: 0.3em;
+  transition: transform var(--t) var(--ease);
+}
+.chev:hover span {
+  transform: translateX(0.2em);
+}
+/* 持ち主の欄: 毎日使う場所なので、見出しは小さめ、余白も少なめ */
+.feature.me-box {
+  padding-block: clamp(3rem, 1.5rem + 5vw, 5.5rem);
+}
+.me-box .headline {
+  font-size: clamp(1.75rem, 1.2rem + 2.2vw, 2.75rem);
+}
+.me-box .accounts {
+  margin-top: 1.25rem;
+}
+
+/* 画面の見本: 1px の線の枠に --screen の地。上の帯に名前と副題、中に行（番号は等幅、行ごとに細い線） */
+.view {
+  margin-top: clamp(2.5rem, 1rem + 4vw, 4rem);
+  border: 1px solid var(--line);
+  background: var(--screen);
+  text-align: left;
+}
+.view-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.75rem;
+  padding: 0.75rem 1.1rem;
+  border-bottom: 1px solid var(--line);
+}
+.view-bar b {
+  font-size: 1rem;
+}
+.view-bar > span {
+  color: var(--soft);
+  font-size: 0.9rem;
+}
+.view-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: row;
+}
+.view-rows li + li {
+  border-top: 1px solid var(--line);
+}
+.view-rows li,
+.view-rows a {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.1rem 0.5rem;
+  padding: 0.85rem 1.1rem;
+}
+.view-rows li:has(> a) {
+  display: block;
+  padding: 0;
+}
+.view-rows a {
+  grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color var(--t) var(--ease);
+}
+.view-rows a:hover {
+  background: var(--alt);
+}
+.view-rows a::after {
+  content: "›";
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: var(--soft);
+  transition:
+    color var(--t) var(--ease),
+    transform var(--t) var(--ease);
+}
+.view-rows a:hover::after {
+  color: var(--link);
+  transform: translateX(0.2em);
+}
+.view-rows li::before,
+.view-rows a::before {
+  counter-increment: row;
+  content: counter(row, decimal-leading-zero);
+  grid-row: span 2;
+  color: var(--soft);
+  font: 0.8rem var(--mono);
+}
+.view-rows li:has(> a)::before {
+  content: none;
+}
+.view-rows b {
+  font-size: 1.02rem;
+}
+.view-rows :is(li, a) > span {
+  grid-column: 2;
+  color: var(--soft);
+  font-size: 0.92rem;
+}
+@media (min-width: 40rem) {
+  .view-rows li,
+  .view-rows a {
+    grid-template-columns: 2.4rem minmax(0, 1fr) minmax(0, 1.2fr);
+  }
+  .view-rows a {
+    grid-template-columns: 2.4rem minmax(0, 1fr) minmax(0, 1.2fr) auto;
+  }
+  .view-rows li::before,
+  .view-rows a::before {
+    grid-row: auto;
+  }
+  .view-rows :is(li, a) > span {
+    grid-column: 3;
+  }
+  .view-rows a::after {
+    grid-column: 4;
+    grid-row: auto;
+  }
+}
+/* PC アプリの場面の流れ: 番号の代わりに 1 本の線の上の点（スクロールに合わせて線が伸び、点が灯る: 最後の動き） */
+.flow {
+  position: relative;
+}
+.flow li {
+  position: relative;
+}
+.flow li + li {
+  border-top: 0;
+}
+.flow::before {
+  content: "";
+  position: absolute;
+  left: calc(1.1rem + 0.35rem - 0.5px);
+  top: 1.7rem;
+  bottom: 1.7rem;
+  width: 1px;
+  background: var(--line);
+}
+.flow li::before {
+  content: "";
+  align-self: center;
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 1.5px solid var(--link);
+  border-radius: 50%;
+  background: var(--screen);
+}
+@media (min-width: 40rem) {
+  .flow li::before {
+    align-self: baseline;
+    transform: translateY(0.05rem);
+  }
+}
+
+/* 数字の事実: 2〜4 個を横に並べ、それぞれの前に細い縦線。スマホでは縦に並べ、上に横線 */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1.5rem 0;
+  margin: clamp(2.5rem, 1rem + 3vw, 3.5rem) 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+.facts li {
+  display: flex;
+  flex-direction: column;
+  padding: 0 1.5rem;
+  border-left: 1px solid var(--line);
+}
+.facts b {
+  font-size: clamp(2rem, 1.4rem + 2vw, 3rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  font-feature-settings: "palt";
+}
+.facts li > span {
+  margin-top: 0.35rem;
+  color: var(--soft);
+  font-size: 1rem;
+}
+.feature .tiles {
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  margin-top: clamp(2.5rem, 1rem + 4vw, 4rem);
+}
+@media (max-width: 30rem) {
+  .facts {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .facts li {
+    padding: 0.9rem 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+  .opening .search button {
+    padding: 0 1.1rem;
+  }
+}
+
+/* 中くらいから広い画面: 製品ページのように中央ぞろえ（スマホは左ぞろえ: 中央ぞろえの長い文は読みにくい） */
+@media (min-width: 48rem) {
+  .opening,
+  .feature > :is(.eyebrow, .headline, .desc, .go, .aside) {
+    text-align: center;
+  }
+  .opening-in > *,
+  .feature > :is(.desc, .aside) {
+    margin-inline: auto;
+  }
+  :is(.opening, .feature) :is(.eyebrow, .go),
+  .opening .search {
+    justify-content: center;
+  }
+  .opening .search {
+    margin-inline: auto;
+  }
+  /* 中央ぞろえの文は行の長さをそろえる（1 行目だけ長く、2 行目に 2〜3 語、にならないように） */
+  .opening .lead,
+  .feature > :is(.desc, .aside) {
+    text-wrap: balance;
+  }
+  .me-box .accounts {
+    justify-content: center;
+  }
+}
+
+/* 広い画面の戦績の区画: 文を左に、画面の見本を右の窓の端まで広げて固定し、その横を数字の事実が 1 つずつ通り過ぎる */
+@media (min-width: 64rem) {
+  .feature.split {
+    display: grid;
+    grid-template-columns:
+      [full-start] minmax(var(--gutter), 1fr) [text-start] minmax(0, 28rem) [text-end] minmax(2.5rem, 5rem)
+      [visual-start] minmax(0, 34rem) [visual-end] minmax(var(--gutter), 1fr) [full-end];
+    grid-template-rows: repeat(4, auto) 1fr;
+    align-items: start;
+    padding-inline: 0;
+  }
+  .feature.split > * {
+    grid-column: text;
+    max-width: none;
+    margin-inline: 0;
+    text-align: left;
+  }
+  .feature.split > :is(.eyebrow, .go) {
+    justify-content: flex-start;
+  }
+  .feature.split > .view {
+    grid-column: visual-start / full-end;
+    grid-row: 1 / -1;
+    position: sticky;
+    top: calc(var(--nav) + 3rem);
+    margin-top: 0;
+    border-right: 0;
+  }
+  .feature.split > .facts {
+    display: block;
+    margin-top: 0;
+  }
+  .feature.split .facts li {
+    margin-top: clamp(4rem, 18vh, 11rem);
+    padding: 0;
+    border-left: 0;
+  }
+  .feature.split .facts b {
+    font-size: clamp(3rem, 1.5rem + 3vw, 4.5rem);
+  }
+}
+
+/* ── 動き ──────────────────────────────────────────────────────────────────────────────────────────────────────
+   訪問者が動きを減らすよう求めていないときだけ（PC アプリのウィンドウはいつも求める: 動きは無い）。動きが無くても、
+   スクロールに結び付けられないブラウザーでも、すべてが最初から見えて使える。動きはすでにあるものを見せるだけ。
+   スクロールに結び付けたもの（animation-timeline、JavaScript なし）は上へ戻ると逆に再生される。ひとりでに動くのは
+   開いたときの登場（1 回）だけ。戦績・試合・比較・ライブのような数字の多いページは読みやすさを優先し、題の登場だけ。 */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+  /* トップ: 開いたとき、名前、見出しの句、ひとこと、検索、プレイヤーの順に時間差で現れる */
+  .opening .eyebrow,
+  .opening h1 .ph,
+  .opening-in > :is(.lead, .search, .hint, .mine, .app-update) {
+    animation: arrive 1.1s var(--settle) both;
+  }
+  .opening h1 .ph:nth-child(1) {
+    animation-delay: 0.12s;
+  }
+  .opening h1 .ph:nth-child(2) {
+    animation-delay: 0.26s;
+  }
+  .opening-in > .lead {
+    animation-delay: 0.42s;
+  }
+  .opening-in > :is(.search, .app-update) {
+    animation-delay: 0.52s;
+  }
+  .opening-in > .hint {
+    animation-delay: 0.6s;
+  }
+  .opening-in > .mine {
+    animation-delay: 0.7s;
+  }
+  /* ほかのページの題とひとことも、開いたときに一度だけ（ライブは 20 秒ごとに読み直すので除く） */
+  main:not([data-page="live"]) > .hero > :is(h1, .lead) {
+    animation: arrive 0.9s var(--settle) both;
+  }
+  main:not([data-page="live"]) > .hero > .lead {
+    animation-delay: 0.1s;
+  }
+
+  @supports (animation-timeline: view()) {
+    /* ...ページが進むと、最初の区画は奥へ下がって消える */
+    .opening {
+      view-timeline: --opening block;
+    }
+    .opening-in {
+      animation: step-back linear both;
+      animation-timeline: --opening;
+      animation-range: exit 0% exit 90%;
+    }
+    /* 区画の名前・見出し・文・入口は、上がってくるにつれて下からせり上がる */
+    .feature > :is(.eyebrow, .headline, .desc, .go, .aside, .accounts) {
+      animation: rise var(--follow) both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 30%;
+    }
+    /* 黒い面の見出しは、下から幕が上がるように現れる */
+    .feature.plate > .headline {
+      animation:
+        rise var(--follow) both,
+        uncover var(--follow) both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 35%;
+    }
+    /* 画面の見本は小さめから大きくなり、ページより少し遅れて上がる（視差） */
+    .feature > .view {
+      animation: grow var(--follow) both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 45%;
+    }
+    /* 見本の行は 1 行ずつ横から */
+    .view-rows li {
+      animation: slide-in var(--follow) both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+    .view-rows li:nth-child(2) {
+      animation-range: entry 0% cover 26%;
+    }
+    .view-rows li:nth-child(3) {
+      animation-range: entry 0% cover 30%;
+    }
+    .view-rows li:nth-child(4) {
+      animation-range: entry 0% cover 34%;
+    }
+    .view-rows li:nth-child(n + 5) {
+      animation-range: entry 0% cover 38%;
+    }
+    /* PC アプリの場面: 線がスクロールに合わせて上から伸び、場面の点がそこを通るときに灯る */
+    .flow {
+      view-timeline: --flow block;
+    }
+    .flow::after {
+      content: "";
+      position: absolute;
+      left: calc(1.1rem + 0.35rem - 0.5px);
+      top: 1.7rem;
+      bottom: 1.7rem;
+      width: 1px;
+      background: var(--link);
+      transform-origin: top;
+      animation: draw linear both;
+      animation-timeline: --flow;
+      animation-range: entry 60% cover 55%;
+    }
+    .flow li {
+      view-timeline: --step block;
+    }
+    .flow li::before {
+      animation: light linear both;
+      animation-timeline: --step;
+      animation-range: cover 30% cover 40%;
+    }
+    /* タイルは上下から組み上がる（隣どうしで向きを変える） */
+    :is(.tiles, .me-links) li,
+    main[data-page="tools"] .tool-grid li {
+      animation: assemble var(--follow) both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+    :is(.tiles, .me-links) li:nth-child(even),
+    main[data-page="tools"] .tool-grid li:nth-child(even) {
+      animation-name: assemble-down;
+    }
+    :is(.tiles, .me-links) li:nth-child(n + 3),
+    main[data-page="tools"] .tool-grid li:nth-child(n + 3) {
+      animation-range: entry 0% cover 28%;
+    }
+    /* 数字の事実は 1 つずつ下から、大きな数字は下から現れる */
+    .facts li {
+      animation: rise var(--follow) both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 24%;
+    }
+    .facts li:nth-child(2) {
+      animation-range: entry 0% cover 30%;
+    }
+    .facts li:nth-child(3) {
+      animation-range: entry 0% cover 36%;
+    }
+    .facts b {
+      animation: uncover var(--follow) both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+    /* 文の多いページ（ツール、ヘルプ、ゲームのデータ）: 節の見出しは入ってくるときに少しせり上がる */
+    main:is(
+        [data-page="tools"],
+        [data-page="help_page"],
+        [data-page="agents"],
+        [data-page="maps"],
+        [data-page="weapons"]
+      )
+      > section:not(.hero)
+      > h2 {
+      animation: rise-small var(--follow) both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+
+    @media (min-width: 64rem) {
+      /* 文の横で: 見本は右の端から入って止まり、数字は画面の中央を通るときだけ明るくなる */
+      .feature.split {
+        view-timeline: --split block;
+      }
+      .feature.split > .view {
+        animation: from-edge var(--follow) both;
+        animation-timeline: --split;
+        animation-range: entry 0% entry 75%;
+      }
+      .feature.split .facts li {
+        animation: pass-by linear both;
+        animation-timeline: view();
+        animation-range: cover 5% cover 95%;
+      }
+      .feature.split .facts b {
+        animation: none;
+      }
+    }
+  }
+}
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem);
+  }
+}
+@keyframes step-back {
+  to {
+    opacity: 0;
+    transform: translateY(-3rem) scale(0.94);
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(2.25rem);
+  }
+}
+@keyframes rise-small {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+}
+@keyframes grow {
+  from {
+    opacity: 0.35;
+    transform: translateY(5rem) scale(0.9);
+  }
+}
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-1.75rem);
+  }
+}
+@keyframes assemble {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem) scale(0.94);
+  }
+}
+@keyframes assemble-down {
+  from {
+    opacity: 0;
+    transform: translateY(-1.5rem) scale(0.94);
+  }
+}
+@keyframes uncover {
+  from {
+    clip-path: inset(100% -0.3em -0.3em -0.3em);
+  }
+  to {
+    clip-path: inset(-0.3em);
+  }
+}
+@keyframes draw {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes light {
+  to {
+    background: var(--link);
+  }
+}
+@keyframes from-edge {
+  from {
+    opacity: 0.3;
+    transform: translateX(10rem);
+  }
+}
+@keyframes pass-by {
+  0% {
+    opacity: 0.12;
+    transform: translateY(2rem);
+  }
+  38%,
+  62% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0.12;
+    transform: translateY(-1.5rem);
+  }
 }

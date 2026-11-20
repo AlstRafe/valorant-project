@@ -168,6 +168,7 @@ def create_app(
         return url_for("picture", path=path) if path else ""
 
     app.add_template_filter(content.plain, "plain")
+    app.add_template_filter(i18n.phrases, "phrases")
 
     def _updated_once() -> bool:
         """アプリを更新した直後か: 更新後に最初に描くページだけ true。"""
