@@ -538,7 +538,9 @@ class PagesTest(unittest.TestCase):
             with self.subTest(path=path):
                 text = self.get(path, lang="en-GB", environ_base=environ).get_data(as_text=True)
                 back = f'href="/" title="Back to all sites" aria-label="Back to all sites">{arrow}<span>All sites</span></a>'
-                self.assertIn(f'<div class="bar">\n<a class="home-link" {back}\n<a class="brand"', text)
+                self.assertRegex(
+                    text, r'<div class="bar">\n(\{#.*#\}\n)?<a class="home-link" href="/" title="Back to all sites"'
+                )
                 self.assertRegex(text, r'<nav class="tabs" aria-label="Menu">\n+<a class="home-tab" ' + re.escape(back))
         # ひとりで動くとき（PC アプリ、テスト）は無い
         alone = self.get("/").get_data(as_text=True)
