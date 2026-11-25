@@ -262,8 +262,13 @@ class PagesTest(unittest.TestCase):
         self.assertEqual(old.count('"></span>') - old.count(' won"'), 4, "5 wins: 4 places left")
         self.assertIn('<span class="up">+18 RR</span>', text)  # コンペティティブの各試合の RR
         self.assertIn('<span class="down">-15 RR</span>', text)
-        # サブ垢の推測。理由はホバーで
-        self.assertRegex(text, r'<span class="smurf (main|maybe|likely)" title="推測: ')
+        # サブ垢の推定: レベルの横に %、根拠はページの中（足すと確率）
+        self.assertRegex(
+            text,
+            r'<a class="smurf (main|maybe|likely) sure-(high|mid|low)" href="#smurf" title="サブ垢の確率 \d+%（推定）',
+        )
+        self.assertIn('<div class="smurf-card" id="smurf">', text)
+        self.assertIn("出発点: ランク戦をする人の約 1 割がサブ垢という見当", text)
         # 各試合の行: ランク（絵、無ければ名前）とその試合後の RR
         self.assertRegex(text, r'<small class="then" title="この試合時点のランク">.*?<span>\d+ RR</span></small>')
         self.assertIn('<span class="mvp match" title="マッチ MVP">MVP', text)  # 試合の最高コンバットスコア

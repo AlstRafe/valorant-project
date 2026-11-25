@@ -73,7 +73,7 @@ _PIECES = re.compile(
 #: one even under ``white-space: nowrap`` (「深色模式：/自動」「同じ/パーティー」).
 _ONE_LINE = {"button", "summary", "label", "nav"}
 #: ...and any element with one of these classes.
-_ONE_LINE_CLASS = re.compile(r"""\sclass="[^"]*\b(?:badge|chip|mvp-tag|pn|tag)\b""")
+_ONE_LINE_CLASS = re.compile(r"""\sclass="[^"]*\b(?:badge|chip|mvp-tag|pn|tag|home-link|home-tab)\b""")
 _TAG = re.compile(r"<(/?)([a-zA-Z][\w-]*)")
 
 

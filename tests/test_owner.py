@@ -334,6 +334,25 @@ class OwnerTest(unittest.TestCase):
         self.assertEqual(text.count('class="team-average"'), 1, "the other team has one rank: no average")
         self.assertIn("今アクト 15勝 / 30試合", text)
 
+    def test_every_seat_shows_the_smurf_chance_and_why(self):
+        """サブ垢の推定は % で、押すとその場で根拠が開く（試合中もページを離れずに）。名前を隠している人にも。"""
+        self.link()
+        self.riot.phase = "ingame"
+        text = self.page("/live")
+        chip = r'<button type="button" class="smurf (?:main|maybe|likely) sure-\w+" popovertarget="([\w-]+)"'
+        chips = re.findall(chip, text)
+        self.assertGreaterEqual(len(chips), 2)
+        self.assertEqual(len(set(chips)), len(chips), "one popover per seat")
+        for popup in chips:
+            self.assertRegex(popup, r"^smurf-[0-9a-f]{12}$", "no puuid on the page")
+            self.assertIn(f'<span class="smurf-pop" id="{popup}" popover>', text)
+        self.assertRegex(text, r">(サブ垢|本垢) \d+%</button>")
+        self.assertIn("サブ垢の確率（推定）", text)
+        self.assertIn("今アクトの勝率", text, "the act's record from the game")
+        self.assertNotIn(PUUID, text)
+        self.app.config["VAL_RIOT"].cache.put("live", None, 0)
+        self.assertEqual(re.findall(chip, self.page("/live")), chips, "the same ids at each look")
+
     def test_the_last_match_once_it_is_over(self):
         self.link()
         self.riot.phase = "ingame"

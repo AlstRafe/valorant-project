@@ -21,6 +21,7 @@ TEXTS = {
     "エージェント": {"ko": "요원", "en-GB": "Agents", "zh-TW": "特務"},
     "設定": {"ko": "설정", "en-GB": "Settings", "zh-TW": "設定"},
     "サイト一覧へ戻る": {"ko": "사이트 목록으로 돌아가기", "en-GB": "Back to all sites", "zh-TW": "回到網站列表"},
+    "サイト一覧": {"ko": "사이트 목록", "en-GB": "All sites", "zh-TW": "網站列表"},
     "VALORANT の戦績トラッカー。ランク、試合履歴、エージェント、ショップ、クロスヘア。": {
         "ko": "VALORANT 전적 트래커. 랭크, 경기 기록, 요원, 상점, 조준선.",
         "en-GB": "A VALORANT tracker: ranks, match history, agents, the store and crosshairs.",
@@ -3411,10 +3412,39 @@ TEXTS = {
         "en-GB": "Rank at the time of this match",
         "zh-TW": "這場對戰當時的牌位",
     },
-    "サブ垢の可能性: 高": {"ko": "부계정 가능성: 높음", "en-GB": "Likely a smurf", "zh-TW": "可能是小帳: 高"},
-    "サブ垢の可能性: あり": {"ko": "부계정 가능성: 있음", "en-GB": "Maybe a smurf", "zh-TW": "可能是小帳"},
-    "本垢らしい": {"ko": "본계정으로 보임", "en-GB": "Looks like a main", "zh-TW": "看似主帳"},
-    "推測": {"ko": "추정", "en-GB": "A guess", "zh-TW": "推測"},
+    # サブ垢の推定（smurf.py、2026-11-20: 確率と根拠）
+    "サブ垢 {percent}%": {"ko": "부계정 {percent}%", "en-GB": "Smurf {percent}%", "zh-TW": "小帳 {percent}%"},
+    "本垢 {percent}%": {"ko": "본계정 {percent}%", "en-GB": "Main {percent}%", "zh-TW": "主帳 {percent}%"},
+    "サブ垢の確率 {percent}%（推定）": {
+        "ko": "부계정 확률 {percent}% (추정)",
+        "en-GB": "Smurf chance {percent}% (an estimate)",
+        "zh-TW": "小帳機率 {percent}%（推估）",
+    },
+    "サブ垢の確率（推定）": {
+        "ko": "부계정 확률 (추정)",
+        "en-GB": "Chance of a smurf (an estimate)",
+        "zh-TW": "小帳機率（推估）",
+    },
+    "サブ垢の確率": {"ko": "부계정 확률", "en-GB": "Smurf chance", "zh-TW": "小帳機率"},
+    "信頼度: 高": {"ko": "신뢰도: 높음", "en-GB": "Confidence: high", "zh-TW": "可信度：高"},
+    "信頼度: 中": {"ko": "신뢰도: 보통", "en-GB": "Confidence: medium", "zh-TW": "可信度：中"},
+    "信頼度: 低": {"ko": "신뢰도: 낮음", "en-GB": "Confidence: low", "zh-TW": "可信度：低"},
+    "材料が少ないので参考程度": {
+        "ko": "근거가 적어 참고용",
+        "en-GB": "little to go on, treat it as a hint",
+        "zh-TW": "依據不多，僅供參考",
+    },
+    "出発点: ランク戦をする人の約 1 割がサブ垢という見当": {
+        "ko": "출발점: 랭크전 플레이어의 약 10%가 부계정이라는 가정",
+        "en-GB": "Starting point: roughly 1 in 10 ranked players is a smurf (an assumption)",
+        "zh-TW": "起點：假設約一成的牌位戰玩家是小帳",
+    },
+    "使っていない材料": {"ko": "쓰지 않은 근거", "en-GB": "Not used", "zh-TW": "未使用的依據"},
+    "推定です。どの材料も単独では何も証明しません。数字は各材料が確率を何ポイント動かしたかで、出発点に全部足すと上の確率になります。": {
+        "ko": "추정입니다. 어떤 근거도 혼자서는 아무것도 증명하지 않습니다. 숫자는 각 근거가 확률을 몇 포인트 움직였는지이며, 출발점에 모두 더하면 위의 확률이 됩니다.",
+        "en-GB": "An estimate: no sign proves anything on its own. Each number is how many points that sign moved the chance; the starting point plus all of them gives the chance above.",
+        "zh-TW": "這是推估，任何依據單獨都證明不了什麼。數字是各依據讓機率變動了幾個百分點，起點加上全部就是上面的機率。",
+    },
     "レベル {level} でこのランク": {
         "ko": "레벨 {level}에 이 랭크",
         "en-GB": "This rank at level {level}",
@@ -3425,26 +3455,51 @@ TEXTS = {
         "en-GB": "A low level for the rank ({level})",
         "zh-TW": "以牌位來說等級偏低（{level}）",
     },
+    "レベル {level}（ランク相応）": {
+        "ko": "레벨 {level}(랭크에 맞음)",
+        "en-GB": "Level {level} (fits the rank)",
+        "zh-TW": "等級 {level}（與牌位相符）",
+    },
+    "レベル {level}（長く遊んでいる）": {
+        "ko": "레벨 {level}(오래 플레이함)",
+        "en-GB": "Level {level} (played for a long time)",
+        "zh-TW": "等級 {level}（玩了很久）",
+    },
     "ランク戦は {count} アクトだけ": {
         "ko": "랭크전은 {count}개 액트뿐",
         "en-GB": "Ranked in only {count} acts",
         "zh-TW": "只打過 {count} 章牌位戰",
     },
-    "最近の勝率 {rate}%": {"ko": "최근 승률 {rate}%", "en-GB": "Recent win rate {rate}%", "zh-TW": "近期勝率 {rate}%"},
+    "ランク戦 {count} アクト": {
+        "ko": "랭크전 {count}개 액트",
+        "en-GB": "Ranked in {count} acts",
+        "zh-TW": "打過 {count} 章牌位戰",
+    },
+    "ランク戦 {count} アクト（長い経歴）": {
+        "ko": "랭크전 {count}개 액트(긴 경력)",
+        "en-GB": "Ranked in {count} acts (a long history)",
+        "zh-TW": "打過 {count} 章牌位戰（資歷長）",
+    },
+    "最近の勝率 {rate}%（{games} 試合）": {
+        "ko": "최근 승률 {rate}%({games}경기)",
+        "en-GB": "Recent win rate {rate}% ({games} matches)",
+        "zh-TW": "近期勝率 {rate}%（{games} 場）",
+    },
+    "今アクトの勝率 {rate}%（{games} 試合）": {
+        "ko": "이번 액트 승률 {rate}%({games}경기)",
+        "en-GB": "Win rate this act {rate}% ({games} matches)",
+        "zh-TW": "本章勝率 {rate}%（{games} 場）",
+    },
     "同じランク帯の中で VAL スコア {score}": {
         "ko": "같은 랭크대에서 VAL 점수 {score}",
         "en-GB": "VAL score {score} among the same ranks",
         "zh-TW": "同牌位帶中 VAL 分數 {score}",
     },
-    "レベル {level}・ランクに見合った成績": {
-        "ko": "레벨 {level}, 랭크에 맞는 성적",
-        "en-GB": "Level {level}, numbers fit the rank",
-        "zh-TW": "等級 {level}，成績與牌位相符",
-    },
-    "ランク戦 {count} アクト・ランクに見合った成績": {
-        "ko": "경쟁전 {count}막, 랭크에 맞는 성적",
-        "en-GB": "{count} acts of ranked, numbers fit the rank",
-        "zh-TW": "競技 {count} 幕，成績與牌位相符",
+    "レベルは非公開": {"ko": "레벨 비공개", "en-GB": "Level hidden", "zh-TW": "等級未公開"},
+    "試合が少ないので勝率は使っていない（{games} 試合）": {
+        "ko": "경기가 적어 승률은 쓰지 않음({games}경기)",
+        "en-GB": "Too few matches for the win rate ({games})",
+        "zh-TW": "場數太少，未使用勝率（{games} 場）",
     },
     # 武器・マップ・構成・試合の経済（2026-11-19）
     "武器のデータを読み込めませんでした。しばらくしてからお試しください。": {

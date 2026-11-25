@@ -48,6 +48,7 @@
 </div>
 {% endif %}
 </div>
+{% if smurf %}<div class="smurf-card" id="smurf">{% with guess=smurf %}{% include "_smurf_why.html" %}{% endwith %}</div>{% endif %}
 <p class="profile-more"><a class="button quiet" href="{{ url_for('compare', a=name ~ '#' ~ tag) }}">{{ t('比較する') }}</a>
 {% if read %}<span class="read-at" id="read-at">{{ t('{minutes} 分前に更新', minutes=read.minutes) if read.minutes else t('たった今更新') }}{% if read.again %} · <a class="refresh" href="{{ url_for('player', name=name, tag=tag, mode=mode or None, span=span or None, act=act_key, fresh=1, full=1) }}" data-part="{{ url_for('player_part', name=name, tag=tag, mode=mode or None, span=span or None, act=act_key, fresh=1) }}" data-busy="{{ t('更新中…') }}">{{ t('データを更新') }}</a>{% endif %}</span>{% endif %}</p>
 </section>

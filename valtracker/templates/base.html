@@ -28,6 +28,8 @@
 <a class="skip" href="#main">{{ t('本文へスキップ') }}</a>
 <header class="top">
 <div class="bar">
+{#- サイト一覧（Home Page のポータル）へ: どのページでもヘッダーの左端に。PC アプリ（home が無い）には無い #}
+{% if home %}<a class="home-link" href="{{ home }}" title="{{ t('サイト一覧へ戻る') }}" aria-label="{{ t('サイト一覧へ戻る') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"/></svg><span>{{ t('サイト一覧') }}</span></a>{% endif %}
 <a class="brand" href="{{ url_for('top') }}"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 6h6l6 13 6-13h6L19 27h-6z"/></svg><span>{{ site_name }}</span></a>
 <nav class="tabs" aria-label="{{ t('メニュー') }}">
 {% set here = request.endpoint %}

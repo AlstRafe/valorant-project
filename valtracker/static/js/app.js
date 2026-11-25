@@ -1067,6 +1067,16 @@
     });
   }
 
+  // ``box`` の中で開いているポップオーバーの id（無い、または :popover-open を知らないブラウザーでは ""）。
+  function openPopover(box) {
+    try {
+      var open = box.querySelector("[popover]:popover-open");
+      return open ? open.id : "";
+    } catch (error) {
+      return "";
+    }
+  }
+
   // ``fresh``（同じ部分を読み直したもの）で変わったところを ``old`` に入れる。
   // 残る要素はそのまま: 出している絵は作り直さず（エージェントの四角が確認のたびに点滅して取り直されていた）、
   // ボタンはフォーカスを保つ。子はタグ・id・最初のクラス・ラベルで対応させ、残りは足すか取り除く。
@@ -1205,14 +1215,19 @@
       var focused = document.activeElement;
       var left = window.scrollX;
       var top = window.scrollY;
+      var shown = openPopover(box);
       morph(box, fresh);
       window.scrollTo(left, top);
+      // 開いていた根拠（サブ垢の推定）: 差し込みで要素が動くと閉じる。見ている間は開いたままに
+      var again = shown && document.getElementById(shown);
+      if (again && again.showPopover && !openPopover(box)) again.showPopover();
       box.querySelectorAll("select[name]").forEach(function (select) {
         if (chosen[select.name] && select.querySelector('option[value="' + chosen[select.name] + '"]'))
           select.value = chosen[select.name];
       });
-      var again = focused && focused.tagName === "BUTTON" && document.activeElement !== focused ? twin(focused) : null;
-      if (again) again.focus({ preventScroll: true });
+      var twinned =
+        focused && focused.tagName === "BUTTON" && document.activeElement !== focused ? twin(focused) : null;
+      if (twinned) twinned.focus({ preventScroll: true });
       document.dispatchEvent(new CustomEvent("val:refreshed"));
       return true;
     }

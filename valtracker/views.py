@@ -753,7 +753,8 @@ def player_page(
         len((mmr or {}).get("seasons") or []) if mmr else None,
         summary.get("games", 0) if summary else 0,
         summary.get("win_rate") if summary else None,
-        scores["value"] if scores and scores["games"] >= 5 else None,
+        scores["value"] if scores else None,
+        scores["games"] if scores else 0,
     )
     if summary:
         summary["score"] = scores
