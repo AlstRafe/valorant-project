@@ -391,6 +391,10 @@ h3 {
     white-space: nowrap;
   }
 }
+/* スマホの下のタブバーの最初のタブ（.home-tab）: 広い画面では出さない */
+.tabs .home-tab {
+  display: none;
+}
 /* ページのタブ: バーの高さいっぱいの文字。開いているページはインクの文字と、下の線に重なる 2px のインクの線 */
 .tabs {
   display: flex;
@@ -744,6 +748,52 @@ h3 {
   .typing .tabs {
     display: none;
   }
+  /* サイト一覧へは、親指の届く下のタブバーの最初のタブから（home-page docs/CONVENTIONS.md）。ヘッダーのものは隠す */
+  .bar .home-link {
+    display: none;
+  }
+  /* 戻る道のぶん、タブを詰める（名前は 1 行のまま: 長い名前のタブが広く、短い名前のタブが狭くなる） */
+  .tabs:has(> .home-tab) {
+    padding-inline: 0.2rem;
+  }
+  .tabs:has(> .home-tab) a {
+    padding-inline: 0.2rem;
+  }
+  .tabs a.home-tab {
+    display: flex;
+    flex: 0 0 4rem;
+    padding-inline: 0.1rem;
+    border-right: 1px solid var(--rule);
+    color: var(--ink);
+    font-size: 0.68rem;
+    line-height: 1.15;
+    text-align: center;
+    white-space: normal;
+  }
+  .home-tab svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+/* 持ち主（ライブのタブもある 7 つ）の 390px より狭いスマホ: タブの名前を少し小さく */
+@media (max-width: 389px) {
+  .tabs:has(> .home-tab):has(> .live-tab) a:not(.home-tab) {
+    font-size: 0.66rem;
+  }
+}
+/* 360px より狭いスマホ: サイトのタブは開いているページのほかは絵だけ（名前は読み上げに残る） */
+@media (max-width: 359px) {
+  .tabs:has(> .home-tab) a:not(.home-tab, [aria-current]) > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 @media (max-width: 30rem) {
   .theme .words,
@@ -761,15 +811,15 @@ h3 {
    どの幅でも 5 つ入るところに 6 つ入る（4 言語すべてで測った）。
    点で持ち主のゲームの状態を出す（app.js の liveWatch）。 */
 @media (min-width: 761px) {
-  .tabs:has(> :nth-child(6)) {
+  .tabs:has(> .live-tab) {
     gap: 0.1rem;
   }
-  .tabs:has(> :nth-child(6)) a {
+  .tabs:has(> .live-tab) a {
     padding-inline: 0.35rem;
   }
 }
 @media (min-width: 761px) and (max-width: 940px) {
-  .bar:has(.tabs > :nth-child(6)) .brand span {
+  .bar:has(.live-tab) .brand span {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -779,10 +829,10 @@ h3 {
   }
 }
 @media (max-width: 760px) {
-  .tabs:has(> :nth-child(6)) {
+  .tabs:has(> .live-tab) {
     padding-inline: 0.2rem;
   }
-  .tabs:has(> :nth-child(6)) a {
+  .tabs:has(> .live-tab) a {
     padding-inline: 0.1rem;
   }
 }
@@ -7281,7 +7331,8 @@ a.smurf:hover {
       [visual-start] minmax(0, 34rem) [visual-end] minmax(var(--gutter), 1fr) [full-end];
     grid-template-rows: repeat(4, auto) 1fr;
     align-items: start;
-    padding-inline: 0;
+    padding-inline: 0; /* 見本が右の端から入ってくる間も横スクロールを出さない（clip は sticky を止めない） */
+    overflow-x: clip;
   }
   .feature.split > * {
     grid-column: text;
