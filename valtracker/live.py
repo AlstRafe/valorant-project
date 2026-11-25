@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime
 
 from valtracker import i18n, smurf
@@ -96,8 +97,9 @@ def act_best(mmr, act: str) -> int:
     return max([*tiers, to_int(info.get("CompetitiveTier"))])
 
 
-def _smurf(tier: int, level: int | None, mmr, act: str) -> dict | None:
-    """レベル、ランク戦のアクト、今のアクト（``act``）の戦績からのサブ垢の推測（smurf.guess）。"""
+def _smurf(tier: int, level: int | None, mmr, act: str, subject: str = "") -> dict | None:
+    """レベル、ランク戦のアクト、今のアクト（``act``）の戦績からのサブ垢の推定（smurf.guess）。
+    ``popup``: 根拠のポップオーバーの id（席が読み直されても同じ。puuid そのものはページに出さない）。"""
     skills = _seasons(mmr)
     acts = (
         sum(1 for info in skills.values() if isinstance(info, dict) and to_int(info.get("NumberOfGames")) > 0)
@@ -105,13 +107,17 @@ def _smurf(tier: int, level: int | None, mmr, act: str) -> dict | None:
         else None
     )
     record = _record(mmr, act) if act else None
-    return smurf.guess(
+    guessed = smurf.guess(
         tier if tier > 2 else 0,
         level,
         acts,
         record["games"] if record else 0,
         record["win_rate"] if record else None,
+        act_record=True,
     )
+    if guessed:
+        guessed["popup"] = "smurf-" + hashlib.sha256(subject.encode()).hexdigest()[:12]
+    return guessed
 
 
 def _record(mmr, act: str) -> dict | None:
@@ -175,7 +181,7 @@ def _player(item: dict, look: dict, me: str, rank_key: str) -> dict:
         "record": _record(look["ranks"].get(subject), look["act"]),
         "peak": _rank_of(best_ever(look["ranks"].get(subject), look.get("old_acts") or frozenset()), look),
         "act_peak": _rank_of(act_best(look["ranks"].get(subject), look["act"]), look),
-        "smurf": _smurf(tier, level, look["ranks"].get(subject), look["act"]),
+        "smurf": _smurf(tier, level, look["ranks"].get(subject), look["act"], subject),
         "team": str(item.get("TeamID") or ""),
         "owner": bool(item.get("IsOwner")),
         "subject": subject,
