@@ -775,6 +775,7 @@ def main() -> None:
         client_folder = tempfile.TemporaryDirectory()
         local = desktop_client(Path(client_folder.name))
     app, fetch, _ = make_app(local=local)
+    app.config["VAL_PHRASES"] = True  # 本番と同じく文節に <wbr>（単体テストだけ切る）
     fetch.esports_page = True  # 予定は Riot の eスポーツサイトから、結果は HenrikDev から
     # Riot アカウント 2 つ、1 つ目を表示: もう一方へのボタンは持ち主のページにある（PC アプリでは 1
     # つ目が作りものの Riot Client のもの）

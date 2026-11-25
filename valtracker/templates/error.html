@@ -1,13 +1,11 @@
 {% extends "base.html" %}
 {% block title %}{{ message }} · {{ site_name }}{% endblock %}
 {% block main %}
-<section class="hero">
-<p class="meta">{{ t('エラー {status}', status=status) }}</p>
+{#- 見つからない・エラー: 中央の 1 列に大きな見出しと、戻る道（全サイトの 404 と同じ形） #}
+<section class="hero missing">
+<p class="eyebrow">{{ t('エラー {status}', status=status) }}</p>
 <h1>{{ message }}</h1>
-{% if status == 404 %}<p class="lead">{{ t('URL が変わったか、削除された可能性があります。') }}</p>{% endif %}
-<ul class="links">
-<li><a href="{{ url_for('top') }}">{{ t('{name} トップ', name=site_name) }}</a></li>
-{% if home %}<li><a href="{{ home }}">{{ t('サイト一覧へ戻る') }}</a></li>{% endif %}
-</ul>
+{% if status == 404 %}<p class="lead">{{ t('URL が変わったか、削除された可能性があります。')|phrases }}</p>{% endif %}
+<p class="go"><a class="open" href="{{ url_for('top') }}">{{ t('{name} トップ', name=site_name) }}</a>{% if home %}<a class="chev" href="{{ home }}">{{ t('サイト一覧へ戻る') }}<span aria-hidden="true">›</span></a>{% endif %}</p>
 </section>
 {% endblock %}

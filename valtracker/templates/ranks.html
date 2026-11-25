@@ -5,7 +5,7 @@
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">
 <h1>{{ t('ランクの分布') }}</h1>
-<p class="lead">{{ t('コンペティティブのランク別人数比と上位 %（当サイト集計の推定値）。') }}</p>
+<p class="lead">{{ t('コンペティティブのランク別人数比と上位 %（当サイト集計の推定値）。')|phrases }}</p>
 </section>
 <nav class="modes" aria-label="{{ t('地域') }}">
 {% for item in regions %}<a href="{{ item.url }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>

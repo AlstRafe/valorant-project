@@ -15,7 +15,7 @@ from html import escape
 from valtracker import i18n
 
 THEME_SCRIPT = (
-    '(function(){var d=document,r=d.documentElement,o=["auto","light","dark"],c={light:"#edf0f2",dark:"#141822"};'
+    '(function(){var d=document,r=d.documentElement,o=["auto","light","dark"],c={light:"#fbfbfa",dark:"#0f0f10"};'
     'function get(){try{var t=localStorage.getItem("theme");return o.indexOf(t)>0?t:"auto"}'
     'catch(e){return r.getAttribute("data-theme")||"auto"}}'
     'function set(t){if(t==="auto")r.removeAttribute("data-theme");else r.setAttribute("data-theme",t);'

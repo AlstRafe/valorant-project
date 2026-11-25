@@ -20,7 +20,7 @@
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">
 <h1>{{ t('クロスヘア') }}</h1>
-<p class="lead">{{ t('クロスヘアコードを貼ると、ゲームでの見た目をプレビューできます。') }}</p>
+<p class="lead">{{ t('クロスヘアコードを貼ると、ゲームでの見た目をプレビューできます。')|phrases }}</p>
 <details class="more"><summary>{{ t('コードの出し方') }}</summary><p>{{ t('ゲームの「設定 → クロスヘア → プロファイルのコードをコピー」でコピーできます。') }}</p></details>
 <form class="search" action="{{ url_for('crosshair') }}" method="get">
 <label for="code" class="sr">{{ t('クロスヘアのコード') }}</label>

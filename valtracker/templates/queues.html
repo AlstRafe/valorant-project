@@ -5,7 +5,7 @@
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">
 <h1>{{ t('マップとパーティー') }}</h1>
-<p class="lead">{{ t('現在のマッププールと、コンペティティブのパーティー制限。') }}</p>
+<p class="lead">{{ t('現在のマッププールと、コンペティティブのパーティー制限。')|phrases }}</p>
 </section>
 {% if problem %}
 <p class="problem" role="alert">{{ problem }}</p>

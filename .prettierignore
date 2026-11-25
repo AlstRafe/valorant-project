@@ -4,3 +4,5 @@
 tests/fixtures/
 instance/
 package-lock.json
+# BudouX の学習済みモデル: budoux 0.7.0 のまま（Home Page の homepage/phrases と同じ）。
+valtracker/phrases/*.json

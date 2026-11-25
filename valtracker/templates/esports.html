@@ -5,7 +5,7 @@
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">
 <h1>{{ t('eスポーツ') }}</h1>
-<p class="lead">{{ t('VCT などの大会の日程・結果・ライブスコア。') }}</p>
+<p class="lead">{{ t('VCT などの大会の日程・結果・ライブスコア。')|phrases }}</p>
 </section>
 {% if problem %}
 <p class="problem" role="alert">{{ problem }}{% if detail %} <code lang="en">{{ detail }}</code>{% endif %}</p>

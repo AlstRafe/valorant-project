@@ -87,11 +87,6 @@ TEXTS = {
     },
     # 検索とお気に入り（トップ）
     "プレイヤー検索": {"ko": "플레이어 검색", "en-GB": "Find a player", "zh-TW": "搜尋玩家"},
-    "Riot ID でランクと戦績を検索できます。": {
-        "ko": "Riot ID로 랭크와 전적을 검색합니다.",
-        "en-GB": "Look up anyone's rank and matches by Riot ID.",
-        "zh-TW": "輸入 Riot ID 查詢牌位與戰績。",
-    },
     "Riot ID": {"ko": "Riot ID", "en-GB": "Riot ID", "zh-TW": "Riot ID"},
     "名前#タグ": {"ko": "이름#태그", "en-GB": "Name#tag", "zh-TW": "名稱#標籤"},
     "「名前#タグ」の形式で入力してください（例: Name#JP1）。": {
@@ -104,11 +99,6 @@ TEXTS = {
         "ko": "플레이어 페이지의 ☆로 추가합니다.",
         "en-GB": "Add players with the ☆ on their page.",
         "zh-TW": "在玩家頁面按 ☆ 即可加入。",
-    },
-    "お気に入りには JavaScript が必要です。": {
-        "ko": "즐겨찾기에는 JavaScript가 필요합니다.",
-        "en-GB": "Favourites need JavaScript.",
-        "zh-TW": "我的最愛需要啟用 JavaScript。",
     },
     "最近見たプレイヤー": {"ko": "최근 본 플레이어", "en-GB": "Recently viewed", "zh-TW": "最近查看的玩家"},
     "まだありません。": {"ko": "아직 없습니다.", "en-GB": "None yet.", "zh-TW": "目前還沒有。"},
@@ -3719,4 +3709,89 @@ TEXTS = {
         "en-GB": "Pick rates, win rates, side win rates and comps: from the matches this site has read (last 14 days)",
         "zh-TW": "選用率、勝率、攻守勝率、陣容：本站讀取的對戰統計（最近 14 天）",
     },
+    # トップページ（製品ページ、2026-11-20）
+    "Riot ID ひとつで、": {"ko": "Riot ID 하나로", "en-GB": "One Riot ID.", "zh-TW": "一個 Riot ID，"},
+    "通算の記録まで。": {"ko": "통산 기록까지.", "en-GB": "Lifetime stats.", "zh-TW": "查到生涯紀錄。"},
+    "ランク、最近の試合、エージェント別・マップ別の成績を、Riot ID を入れるだけで。": {
+        "ko": "Riot ID만 입력하면 랭크와 최근 경기, 요원별·맵별 성적까지.",
+        "en-GB": "Rank, recent matches and results by agent and map, from just a Riot ID.",
+        "zh-TW": "只要輸入 Riot ID，就能看到牌位、近期對戰與各特務、各地圖的戰績。",
+    },
+    "例: Name#JP1": {"ko": "예: Name#JP1", "en-GB": "e.g. Name#JP1", "zh-TW": "例如 Name#JP1"},
+    "持ち主だけ": {"ko": "소유자 전용", "en-GB": "Owner only", "zh-TW": "僅限擁有者"},
+    "プレイヤーの戦績": {"ko": "플레이어 전적", "en-GB": "Player stats", "zh-TW": "玩家戰績"},
+    "1 試合ずつ、ゲームより深く。": {
+        "ko": "한 경기씩, 게임보다 깊게.",
+        "en-GB": "Every match, deeper than the game.",
+        "zh-TW": "每一場，都比遊戲更深入。",
+    },
+    "KAST、ファーストキル、クラッチ、キルとデスの場所。同じランク帯の中での位置も。": {
+        "ko": "KAST, 퍼스트 킬, 클러치, 킬과 데스 위치. 같은 랭크대 안에서의 위치까지.",
+        "en-GB": "KAST, first kills, clutches and where kills and deaths happen. And where you stand among the same ranks.",
+        "zh-TW": "KAST、首殺、殘局勝利、擊殺與陣亡位置，還有在同牌位段中的位置。",
+    },
+    "プレイヤーのページ": {"ko": "플레이어 페이지", "en-GB": "Player page", "zh-TW": "玩家頁面"},
+    "Riot ID を入れるだけ": {"ko": "Riot ID만 입력", "en-GB": "Just enter a Riot ID", "zh-TW": "只要輸入 Riot ID"},
+    "今アクト最高と通算最高のランクも": {
+        "ko": "이번 액트 최고와 역대 최고 랭크도",
+        "en-GB": "With act and all-time peak ranks",
+        "zh-TW": "也有本章最高與生涯最高牌位",
+    },
+    "同じランク帯と比べた評価": {
+        "ko": "같은 랭크대와 비교한 평가",
+        "en-GB": "Rated against the same ranks",
+        "zh-TW": "與同牌位段相比的評價",
+    },
+    "ゲームのキャリアと同じ並び": {
+        "ko": "게임 내 경력과 같은 구성",
+        "en-GB": "Laid out like the in-game career",
+        "zh-TW": "與遊戲內生涯相同的排列",
+    },
+    "勝率・K/D・ACS": {"ko": "승률·K/D·ACS", "en-GB": "Win rate, K/D, ACS", "zh-TW": "勝率、K/D、ACS"},
+    "ミニマップの上に": {"ko": "미니맵 위에", "en-GB": "On the minimap", "zh-TW": "標在小地圖上"},
+    "前のアクトからの変化": {
+        "ko": "지난 액트 대비 변화",
+        "en-GB": "Change since the last act",
+        "zh-TW": "與上一章相比的變化",
+    },
+    "直近の試合を、ゲームのキャリアと同じ数だけ": {
+        "ko": "최근 경기를 게임 내 경력과 같은 수만큼",
+        "en-GB": "Recent matches, as many as the in-game career",
+        "zh-TW": "近期對戰，與遊戲內生涯相同的場數",
+    },
+    "読んだ試合はすべて残して数える": {
+        "ko": "읽은 경기는 모두 저장해 집계",
+        "en-GB": "Every match read is kept and counted",
+        "zh-TW": "讀取過的對戰全部保留並計入",
+    },
+    "上位 %": {"ko": "상위 %", "en-GB": "Top %", "zh-TW": "前 %"},
+    "同じランク帯のプレイヤーと比べて": {
+        "ko": "같은 랭크대 플레이어와 비교",
+        "en-GB": "Against players of the same ranks",
+        "zh-TW": "與同牌位段的玩家相比",
+    },
+    "試合の横に、もうひとつの画面。": {
+        "ko": "경기 옆에, 또 하나의 화면.",
+        "en-GB": "A second screen beside the game.",
+        "zh-TW": "對戰旁的第二個畫面。",
+    },
+    "できること": {"ko": "할 수 있는 것", "en-GB": "What it does", "zh-TW": "功能一覽"},
+    "ゲームの場面ごとに": {"ko": "게임 장면마다", "en-GB": "At each stage of the game", "zh-TW": "依遊戲的每個階段"},
+    "試合の前に、知っておく。": {
+        "ko": "경기 전에, 미리 알아두기.",
+        "en-GB": "Know it before the match.",
+        "zh-TW": "對戰之前，先掌握。",
+    },
+    "ピック率と勝率、マップのコールアウトと攻守の勝率、武器のダメージと TTK。": {
+        "ko": "픽률과 승률, 맵 콜아웃과 공수 승률, 무기 피해량과 TTK.",
+        "en-GB": "Pick and win rates, map callouts and side win rates, weapon damage and TTK.",
+        "zh-TW": "選用率與勝率、地圖點位名稱與攻守勝率、武器傷害與 TTK。",
+    },
+    "アビリティと役割": {"ko": "스킬과 역할군", "en-GB": "Abilities and roles", "zh-TW": "技能與定位"},
+    "ランキングから、クロスヘアまで。": {
+        "ko": "리더보드부터 조준선까지.",
+        "en-GB": "From the leaderboard to crosshairs.",
+        "zh-TW": "從排行榜到準星。",
+    },
+    "すべてのツール": {"ko": "모든 도구", "en-GB": "All tools", "zh-TW": "所有工具"},
 }

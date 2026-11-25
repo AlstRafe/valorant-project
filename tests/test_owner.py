@@ -290,7 +290,7 @@ class OwnerTest(unittest.TestCase):
 
     def test_the_top_pages_box(self):
         text = self.page("/")
-        self.assertIn('<h2 id="me-title">マイアカウント</h2>', text)
+        self.assertIn('<h2 id="me-title" class="headline">マイアカウント</h2>', text)
         self.assertIn("Riot アカウントを連携すると", text)
         self.assertNotIn("<strong>戦績</strong>", text, "not linked yet: whose page is not known")
         self.assertNotIn("me-title", self.page("/", environ_base=VISITOR))

@@ -5,7 +5,7 @@
 <p class="crumb"><a href="{{ url_for('tools') }}">{{ t('ツール') }}</a></p>
 <section class="hero">
 <h1>{{ t('サーバーの混雑状況') }}</h1>
-<p class="lead">{{ t('サーバー別の混雑する時間帯と待ち時間の推定。') }}</p>
+<p class="lead">{{ t('サーバー別の混雑する時間帯と待ち時間の推定。')|phrases }}</p>
 </section>
 <nav class="modes" aria-label="{{ t('地域') }}">
 {% for item in regions %}<a href="{{ item.url }}"{% if item.current %} aria-current="true"{% endif %}>{{ item.name }}</a>

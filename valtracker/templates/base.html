@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="format-detection" content="telephone=no">
-<meta name="theme-color" content="#edf0f2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#141822" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#fbfbfa" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f0f10" media="(prefers-color-scheme: dark)">
 <script>{{ theme_script|safe }}</script>
 <title>{% block title %}{{ site_name }}{% endblock %}</title>
 <meta name="description" content="{% block description %}{{ t('VALORANT の戦績トラッカー。ランク、試合履歴、エージェント、ショップ、クロスヘア。') }}{% endblock %}">
@@ -45,7 +45,7 @@
 <div class="tools">{% if desktop %}<span class="app-nav">{#- PC アプリのウィンドウにはブラウザーのバーが無い: 戻る・進む・再読み込み（app.js。Alt+←/→ と F5 も）、アプリらしく設定も #}<button type="button" data-go="back" title="{{ t('戻る') }} (Alt+←)" aria-label="{{ t('戻る') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 5.5 4.5 12l6.5 6.5"/></svg></button><button type="button" data-go="forward" title="{{ t('進む') }} (Alt+→)" aria-label="{{ t('進む') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 5.5l6.5 6.5-6.5 6.5"/></svg></button><button type="button" data-go="reload" title="{{ t('再読み込み') }} (F5)" aria-label="{{ t('再読み込み') }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4.2h-4.2"/></svg></button></span><a class="app-settings" href="{{ url_for('settings') }}" title="{{ t('設定') }}" aria-label="{{ t('設定') }}"{% if here == 'settings' %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M19 7h1M4 12h3M13 12h7M4 17h10M20 17h0"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="12" r="2.2"/><circle cx="17" cy="17" r="2.2"/></svg></a>{% endif %}{{ theme_button|safe }}{{ language_menu|safe }}</div>
 </div>
 </header>
-<main id="main">
+<main id="main" data-page="{{ request.endpoint }}">
 {#- the PC app: a newer build is out. The built app replaces itself at a press of the button (update.py); the
     source, or a folder that cannot be written, is told where to download it. #}
 {% if update and updating and updating.possible %}<div class="app-update" role="status" data-update="{{ url_for('app_update_state') }}"{% if updating.busy %} data-busy{% endif %}><strong>{{ t('アップデートがあります。') }}</strong>
