@@ -8,10 +8,13 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from html import escape
 from http.cookies import SimpleCookie
 from urllib.parse import parse_qsl, urlencode
+
+from markupsafe import Markup
 
 from valtracker.locale import TEXTS
 
@@ -25,6 +28,25 @@ LOCALES = {"ja": "ja_JP", "ko": "ko_KR", "en-GB": "en_GB", "zh-TW": "zh_TW"}
 CONTENT = {"ja": "ja-JP", "ko": "ko-KR", "en-GB": "en-US", "zh-TW": "zh-TW"}
 COOKIE = "lang"
 COOKIE_SECONDS = 365 * 24 * 3600
+
+
+#: 句の切れ目: 日本語・中国語の読点と句点のあと（文の終わりは除く）。空白で語を分ける言語（英語、韓国語）は
+#: 語の間で折れるので分けない（長い句が 1 つ丸ごと次の行へ送られ、前の行に 1 語だけ残ってしまう）。
+_PHRASE = re.compile(r"(?<=[、。，．！？：；])(?=\S)")
+
+
+def phrases(said) -> Markup:
+    """見出しや短い文を句ごとの <span class="ph">（app.css で inline-block）に: 行は句の切れ目で分かれ、
+    1 つの句が 1 行に入らないときだけ句の中で折れる（どの画面幅でも「もう / ひとつの画面」のように切れない）。"""
+    said = str(said)
+    pieces, start = [], 0
+    for found in _PHRASE.finditer(said):
+        pieces.append((said[start : found.start()], found.group()))
+        start = found.end()
+    pieces.append((said[start:], ""))
+    if len(pieces) < 2:
+        return Markup.escape(said)
+    return Markup("").join(Markup('<span class="ph">{}</span>{}').format(piece, gap) for piece, gap in pieces if piece)
 
 
 def text(lang: str, ja: str, **values) -> str:

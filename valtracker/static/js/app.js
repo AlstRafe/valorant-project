@@ -278,6 +278,7 @@
         statCard();
         share();
         showCopies();
+        glue(box);
       })
       .catch(failed);
   }
@@ -305,8 +306,40 @@
           box.innerHTML = html; // こちらのサーバーの部分。テンプレートでエスケープ済み
           box.hidden = !html.trim();
           times();
+          glue(box);
         })
         .catch(failed);
+    });
+  }
+
+  // 不自然な改行を避ける（全言語、どの画面幅でも）: 「Riot ID」の間、数字とその単位（"15 試合"、"15 matches"、
+  // "레벨 120"、"全 12 件"）、空白のあとのひらがなと句読点（"VALORANT の"、"ID を"）の前では行を分けない。
+  // その空白を改行しない空白（U+00A0）に置き換えるだけで、間隔は変わらない。日本語の文節での改行と見出しの
+  // 行の長さは CSS（word-break: auto-phrase、text-wrap）。コード・入力欄・コピーするもの・ライブ（20 秒ごとに
+  // 読み直す）は触らない。
+  var CJK = "\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af";
+  var GLUE = new RegExp(
+    "(\\bRiot) (?=ID\\b)|(\\d) (?=[A-Za-z%" +
+      CJK +
+      "])|([" +
+      CJK +
+      "]) (?=\\d)|(\\S) (?=[\u3041-\u3096\u3001\u3002\uff0c\uff09\u300d])",
+    "g",
+  );
+  var KEEP = "script, style, textarea, code, pre, kbd, samp, [data-copy], [contenteditable], .pname, .ptag";
+  function glue(root) {
+    root = root || document.body;
+    if (!root || document.querySelector('main[data-page="live"]')) return;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    var found = [];
+    for (var node = walker.nextNode(); node; node = walker.nextNode()) {
+      GLUE.lastIndex = 0;
+      if (node.data.indexOf(" ") >= 0 && GLUE.test(node.data) && !node.parentElement.closest(KEEP)) found.push(node);
+    }
+    found.forEach(function (text) {
+      text.data = text.data.replace(GLUE, function (all, riot, digit, letter, before) {
+        return (riot || digit || letter || before) + "\u00a0";
+      });
     });
   }
 
@@ -715,27 +748,27 @@
     canvas.height = 630;
     var c = canvas.getContext("2d");
     var font = 'system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", "Noto Sans KR", sans-serif';
-    c.fillStyle = "#141822";
+    c.fillStyle = "#121315";
     c.fillRect(0, 0, 1200, 630);
     if (images.wide) {
       c.globalAlpha = 0.35;
       c.drawImage(images.wide, 0, 0, 1200, 340);
       c.globalAlpha = 1;
       var fade = c.createLinearGradient(0, 120, 0, 340);
-      fade.addColorStop(0, "rgba(20,24,34,0)");
-      fade.addColorStop(1, "#141822");
+      fade.addColorStop(0, "rgba(18,19,21,0)");
+      fade.addColorStop(1, "#121315");
       c.fillStyle = fade;
       c.fillRect(0, 0, 1200, 340);
     }
     c.fillStyle = "#ef7b85";
     c.fillRect(0, 0, 12, 630);
     c.textBaseline = "alphabetic";
-    c.fillStyle = "#e3e6ec";
+    c.fillStyle = "#ededee";
     c.font = "700 64px " + font;
     var name = fitted(c, card.name, 760);
     c.fillText(name, 64, 120);
     var after = c.measureText(name).width;
-    c.fillStyle = "#a4adbd";
+    c.fillStyle = "#a3a5ab";
     c.font = "500 40px " + font;
     c.fillText("#" + card.tag, 64 + after + 12, 120);
     var left = 64;
@@ -743,13 +776,13 @@
       c.drawImage(images.rank, 64, 150, 88, 88);
       left = 172;
     }
-    c.fillStyle = "#e3e6ec";
+    c.fillStyle = "#ededee";
     c.font = "700 40px " + font;
     c.fillText(fitted(c, card.rank, 600), left, 196);
-    c.fillStyle = "#a4adbd";
+    c.fillStyle = "#a3a5ab";
     c.font = "500 26px " + font;
     c.fillText(fitted(c, card.under, 700), left, 234);
-    c.fillStyle = "#a4adbd";
+    c.fillStyle = "#a3a5ab";
     c.font = "600 26px " + font;
     c.fillText(fitted(c, card.title, 1080), 64, 312);
     card.stats.forEach(function (stat, index) {
@@ -757,10 +790,10 @@
       var y = 330 + Math.floor(index / 3) * 110;
       c.fillStyle = "rgba(255,255,255,0.06)";
       c.fillRect(x, y, 340, 96);
-      c.fillStyle = "#a4adbd";
+      c.fillStyle = "#a3a5ab";
       c.font = "500 24px " + font;
       c.fillText(stat[0], x + 20, y + 34);
-      c.fillStyle = "#e3e6ec";
+      c.fillStyle = "#ededee";
       c.font = "700 40px " + font;
       c.fillText(String(stat[1]), x + 20, y + 80);
     });
@@ -771,13 +804,13 @@
         c.drawImage(image, x, 560, 44, 44);
         x += 54;
       }
-      c.fillStyle = "#e3e6ec";
+      c.fillStyle = "#ededee";
       c.font = "600 26px " + font;
       var said = fitted(c, agent.name, 220);
       c.fillText(said, x, 592);
       x += c.measureText(said).width + 32;
     });
-    c.fillStyle = "#a4adbd";
+    c.fillStyle = "#a3a5ab";
     c.font = "500 24px " + font;
     c.textAlign = "right";
     c.fillText(card.site, 1136, 592);
@@ -1795,6 +1828,7 @@
     mapPick();
     statCard();
     crosshairs();
+    glue();
   });
   addEventListener("storage", function (e) {
     if (e.key === FAVORITES || e.key === RECENT || e.key === null) lists();

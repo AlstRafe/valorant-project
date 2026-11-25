@@ -49,6 +49,8 @@ jobs:
           --icon valtracker/static/apple-touch-icon.png
           --add-data "valtracker/templates;valtracker/templates"
           --add-data "valtracker/static;valtracker/static"
+          --add-data "valtracker/phrases/ja.json;valtracker/phrases"
+          --add-data "valtracker/phrases/zh-hant.json;valtracker/phrases"
           --add-data "valtracker/BUILD;valtracker"
           --collect-submodules valtracker
           desktop/VALTracker.py

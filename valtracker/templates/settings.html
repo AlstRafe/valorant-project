@@ -8,7 +8,7 @@
 {% block main %}
 <section class="hero">
 <h1>{{ t('設定') }}</h1>
-{% if not desktop %}<p class="lead">{{ t('サイトの持ち主専用のページです。') }}</p>{% endif %}
+{% if not desktop %}<p class="lead">{{ t('サイトの持ち主専用のページです。')|phrases }}</p>{% endif %}
 {% if saved %}<p class="done" role="status">{{ saved }}</p>{% endif %}
 </section>
 {% if desktop %}

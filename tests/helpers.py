@@ -318,6 +318,7 @@ def make_app(key: str = "HDEV-test-key", mount: str = "", local=None):
     app = create_app(mount=mount, instance=Path(folder.name), fetch=fetch, send=riot, local=local)
     app.riot = riot
     app.config["TESTING"] = True
+    app.config["VAL_PHRASES"] = False  # テストは書いたままの HTML を見る（<wbr> は test_pages の PhrasesTest）
     if key:
         app.config["VAL_SETTINGS"].save(henrik_key=key)
     remove = folder.cleanup

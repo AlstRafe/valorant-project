@@ -15,7 +15,7 @@ from urllib.parse import urlencode
 
 from flask import Flask, current_app, g, request, url_for
 
-from valtracker import content, i18n, net, paths, release, security, theme
+from valtracker import content, i18n, net, paths, phrases, release, security, theme
 from valtracker.activity import COLLECT_SECONDS, Activity, Collector
 from valtracker.archive import FILL_SECONDS, Archive, Filler
 from valtracker.cache import TTLCache
@@ -113,6 +113,9 @@ def create_app(
     )
     #: プレイヤーページが数える通算（views._lifetime）
     app.config["VAL_LIVES"] = TTLCache(6)
+    app.config["VAL_PHRASES"] = (
+        True  # ページの日本語・中国語に文節の <wbr>（テストは書いた HTML そのままを見るので切る）
+    )
     security.init_app(app, instance, mount)
     app.config["VAL_RATINGS"] = Ratings(instance, app.config["SECRET_KEY"])  # security.secret_key(): bytes
 
@@ -146,6 +149,13 @@ def create_app(
             response.headers.add("Vary", "Cookie, Accept-Language")
         return response
 
+    @app.after_request
+    def _phrases(response):
+        # 日本語・中国語は文節の間でだけ折り返す（どのブラウザでも同じに。valtracker/phrases、CSS の word-break: keep-all）
+        if app.config["VAL_PHRASES"] and response.mimetype == "text/html" and not response.direct_passthrough:
+            response.set_data(phrases.mark_page(response.get_data(as_text=True), getattr(g, "lang", i18n.DEFAULT)))
+        return response
+
     versions: dict[str, str] = {}
 
     def asset(name: str, external: bool = False) -> str:
@@ -168,6 +178,7 @@ def create_app(
         return url_for("picture", path=path) if path else ""
 
     app.add_template_filter(content.plain, "plain")
+    app.add_template_filter(i18n.phrases, "phrases")
 
     def _updated_once() -> bool:
         """アプリを更新した直後か: 更新後に最初に描くページだけ true。"""

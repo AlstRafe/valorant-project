@@ -5,7 +5,7 @@
 {% include "_game_nav.html" %}
 <section class="hero">
 <h1>{{ t('武器') }}</h1>
-<p class="lead">{{ t('VALORANT の全武器の値段・ダメージ・連射・キルに必要な弾数と TTK。') }}</p>
+<p class="lead">{{ t('VALORANT の全武器の値段・ダメージ・連射・キルに必要な弾数と TTK。')|phrases }}</p>
 </section>
 {% if not groups %}
 <p class="problem" role="alert">{{ t('武器のデータを読み込めませんでした。しばらくしてからお試しください。') }}</p>
