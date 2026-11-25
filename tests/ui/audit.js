@@ -166,10 +166,15 @@ function inspect() {
   };
   const clipped = (el) => up(el.parentElement).clips;
   const fixed = (el) => up(el).fixed;
-  // 閉じた <details> の中（summary 以外）: 箱はあるが画面には無い。
+  // 閉じた <details> の中（その details 自身の summary 以外）: 箱はあるが画面には無い。
+  // 閉じた details の中の、さらに内側の details の summary も見えない（設定の「アカウントを追加」の中の「詳しく」）。
   const folded = (el) => {
-    const details = el.closest("details:not([open])");
-    return Boolean(details) && !el.closest("summary");
+    for (let details = el.closest("details:not([open])"); details;) {
+      const summary = el.closest("summary");
+      if (!summary || !details.contains(summary) || summary.parentElement !== details) return true;
+      details = details.parentElement && details.parentElement.closest("details:not([open])");
+    }
+    return false;
   };
   const own = (el) => [...el.childNodes].some((node) => node.nodeType === 3 && node.textContent.trim());
   const all = [...document.body.querySelectorAll("*")].filter(
