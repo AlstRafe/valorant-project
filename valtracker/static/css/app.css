@@ -5787,9 +5787,13 @@ html.leaving::after {
 .numbers dd a {
   color: inherit;
 }
-/* Riot ID のタグ（#JP1）と武器の名前は 1 語: 折らない */
+/* 1 語のまとまりは折らない: Riot ID のタグ（#JP1）、武器の名前、印（バッジ）、ヘッダーのボタン
+   （文節の <wbr> で「深色模式：/自動」「同じ/パーティー」と折れていた） */
 .pn small,
-.weapons strong > a {
+.weapons strong > a,
+.badge,
+.top .theme,
+.top .lang summary {
   white-space: nowrap;
 }
 @media (max-width: 40rem) {

@@ -69,13 +69,34 @@ _PIECES = re.compile(
 )
 
 
+#: Elements that stay on one line (buttons, menus, tabs, badges): no ``<wbr>`` inside them, since Chrome breaks at
+#: one even under ``white-space: nowrap`` (「深色模式：/自動」「同じ/パーティー」).
+_ONE_LINE = {"button", "summary", "label", "nav"}
+#: ...and any element with one of these classes.
+_ONE_LINE_CLASS = re.compile(r"""\sclass="[^"]*\b(?:badge|chip|mvp-tag|pn|tag)\b""")
+_TAG = re.compile(r"<(/?)([a-zA-Z][\w-]*)")
+
+
 def mark_page(page: str, lang: str) -> str:
     """A drawn HTML page with ``mark`` applied to the text between its tags (only text with letters beyond ASCII:
-    English needs nothing)."""
+    English needs nothing), except inside elements kept on one line (``_ONE_LINE``)."""
     out = []
+    held = ""  # the element kept on one line we are inside, and how deep in elements of its name
+    depth = 0
     for found in _PIECES.finditer(page):
         piece = found.group()
-        if piece[0] != "<" and not piece.isascii():
+        if piece[0] == "<":
+            tag = _TAG.match(piece)
+            if tag and not piece.endswith("/>"):
+                closing, name = tag.group(1) == "/", tag.group(2).lower()
+                if held:
+                    if name == held:
+                        depth += -1 if closing else 1
+                        if not depth:
+                            held = ""
+                elif not closing and (name in _ONE_LINE or _ONE_LINE_CLASS.search(piece)):
+                    held, depth = name, 1
+        elif not held and not piece.isascii():
             piece = mark(html.unescape(piece), lang)
         out.append(piece)
     return "".join(out)

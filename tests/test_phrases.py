@@ -93,6 +93,16 @@ class PageTest(unittest.TestCase):
             self.assertIn(kept, marked)
         self.assertIn("<p>Riot\u00a0ID\u00a0を<wbr>入れるだけで。</p>", marked)
 
+    def test_one_line_elements_get_no_break(self):
+        page = (
+            '<button class="theme"><span class="words">深色模式：自動</span></button>'
+            '<span id="x" class="badge">同じパーティー</span><nav><a>エージェント選択</a></nav>'
+            "<p>ゲームより低い優先度で動作します</p>"
+        )
+        marked = mark_page(page, "zh-TW")
+        self.assertEqual(marked.count("<wbr>"), 2, marked)
+        self.assertTrue(marked.startswith(page[: page.index("<p>")]))
+
     def test_escaped_text_stays_escaped(self):
         marked = mark_page("<p>&lt;script&gt; と &amp; の説明です</p>", "ja")
         self.assertEqual(marked.replace("<wbr>", ""), "<p>&lt;script&gt; と &amp; の説明です</p>")
