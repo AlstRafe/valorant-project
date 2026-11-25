@@ -140,16 +140,14 @@
 :lang(en) {
   --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
-/* 改行の位置（全言語、どの画面幅でも）: 日本語は文節で（auto-phrase。対応しないブラウザーでは今までどおり）、
-   韓国語は語の間で、入りきらないときだけ語の中で。見出しは行の長さをそろえ（balance）、文は最後の行に 1 語だけ
-   残さない（pretty）。「Riot ID」や数字と単位の間は、app.js の glue() が改行しない空白にする。 */
-html:lang(ja) body {
-  word-break: auto-phrase;
-  overflow-wrap: break-word;
-}
-html:lang(ko) body {
+/* 改行の位置（全言語、どのブラウザー・画面幅でも）: 日本語と中国語は文節の間だけ。サーバーが文節の間に <wbr> を
+   入れ（valtracker/phrases、Google BudouX のモデル）、ここでは字と字の間で折らない（keep-all。auto-phrase は Chrome
+   だけ）。韓国語は語の間で。入りきらない長い語だけ語の中で折る（anywhere は表の数字の列や小さな印まで 1 字の幅に
+   細くするので break-word）。見出しは行の長さをそろえ（balance）、文は最後の行に 1 語だけ残さない（pretty）。
+   「Riot ID」や数字と単位の間は改行しない空白（サーバーと、後から入る文には app.js の glue()）。 */
+body {
   word-break: keep-all;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 * {
@@ -5789,6 +5787,11 @@ html.leaving::after {
 .numbers dd a {
   color: inherit;
 }
+/* Riot ID のタグ（#JP1）と武器の名前は 1 語: 折らない */
+.pn small,
+.weapons strong > a {
+  white-space: nowrap;
+}
 @media (max-width: 40rem) {
   .numbers.big {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5805,6 +5808,12 @@ html.leaving::after {
   }
   .numbers:not(.big) dt {
     font-size: 0.75rem;
+  }
+}
+/* 狭いスマホでは 2 列: 3 列だと「1時間20分」「ラウンドの 59%」が語の途中で折れていた */
+@media (max-width: 26rem) {
+  .numbers:not(.big) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 /* グラフは 2 回描く: 横長と、スマホ用に幅の割に高いもの（文字が読める）。下に最初と最後の日付。 */

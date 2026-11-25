@@ -21,9 +21,14 @@ Riot アカウントと連携する VALORANT のトラッカー。サイト一�
 - 動き: スクロールに合わせた CSS だけ（`animation-timeline: view()`、`@supports` と `prefers-reduced-motion: no-preference`
   の中）。JS の動きは無し、常に動き続けるものも無し。動きを止めても読める。数字の多いページ（戦績・試合・ライブ・比較）は
   見出しだけ。PC アプリの窓は動きを減らす設定で開くので、アプリでは動かない
-- 改行: ja は `word-break: auto-phrase`、ko は `keep-all`、見出しは `text-wrap: balance`、文は `pretty`。
-  訳した文の「、」「。」の後で切りたいところは Jinja の `|phrases`（句ごとに `.ph` の塊）。JS の `glue()` は「Riot ID」、数字と
-  単位や語の間の空白を改行しない空白にして、数字や助詞だけが次の行に落ちないようにする（ライブのページは除く）
+- 改行（Home Page の CONVENTIONS.md「改行」と同じ）: 日本語・中国語は文節の間だけで折る。描いたページの文（タグの間の
+  文字だけ。属性・スクリプト・タイトル・入力欄はそのまま）に、サーバーが文節の間の `<wbr>` を入れる
+  （`valtracker/phrases`、Google BudouX のモデル。`__init__.py` の after_request。単体テストは `VAL_PHRASES` を切って
+  書いたままの HTML を見る）。CSS は `word-break: keep-all; overflow-wrap: break-word`（anywhere は表の数字の列や
+  小さな印を 1 字の幅まで細くした）。`auto-phrase` は Chrome だけなので使わない。「Riot ID を」「約 1 分」は
+  改行しない空白、見出しは `text-wrap: balance`、文は `pretty`。訳文の句ごとの塊は Jinja の `|phrases`（トップの
+  大見出しの動き）、後から JS が入れる文は `glue()`。確かめ方: 4 言語 × 320〜1920px で全テキストの改行位置を取り出し、
+  語の途中・1 字だけの行が無いこと
 
 ## 画面
 

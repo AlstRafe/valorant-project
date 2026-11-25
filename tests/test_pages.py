@@ -67,6 +67,19 @@ class PagesTest(unittest.TestCase):
         self.assertIn(f"'sha256-{digest}'", csp)
         self.assertEqual(scripts[0], theme.THEME_SCRIPT)
 
+    def test_phrases_on_the_drawn_page(self):
+        # 日本語・中国語の文節の間に <wbr>（valtracker/phrases）。タグの中、スクリプト、タイトルは書いたまま
+        self.app.config["VAL_PHRASES"] = True
+        for lang in ("ja", "zh-TW"):
+            for path in ("/", "/help", "/tools"):
+                with self.subTest(lang=lang, path=path):
+                    text = self.get(path, lang=lang).get_data(as_text=True)
+                    self.assertIn("<wbr>", text)
+                    self.assertNotRegex(text, r"<[^<>]*<wbr>", "never inside a tag")
+                    self.assertEqual(re.findall(r"<script>(.*?)</script>", text, re.DOTALL), [theme.THEME_SCRIPT])
+                    self.assertRegex(text, r"<title>[^<]+</title>")
+        self.assertIn("Riot\u00a0ID", self.get("/", lang="ja").get_data(as_text=True))
+
     def test_no_outside_addresses_in_pages(self):
         for path in ("/", "/p/Tester/JP1", "/p/Tester/JP1?full=1", "/agents", f"/m/ap/{MATCH}"):
             with self.subTest(path=path):
