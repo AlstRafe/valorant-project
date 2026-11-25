@@ -21,6 +21,7 @@ TEXTS = {
     "エージェント": {"ko": "요원", "en-GB": "Agents", "zh-TW": "特務"},
     "設定": {"ko": "설정", "en-GB": "Settings", "zh-TW": "設定"},
     "サイト一覧へ戻る": {"ko": "사이트 목록으로 돌아가기", "en-GB": "Back to all sites", "zh-TW": "回到網站列表"},
+    "サイト一覧": {"ko": "사이트 목록", "en-GB": "All sites", "zh-TW": "網站列表"},
     "VALORANT の戦績トラッカー。ランク、試合履歴、エージェント、ショップ、クロスヘア。": {
         "ko": "VALORANT 전적 트래커. 랭크, 경기 기록, 요원, 상점, 조준선.",
         "en-GB": "A VALORANT tracker: ranks, match history, agents, the store and crosshairs.",

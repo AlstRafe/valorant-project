@@ -525,6 +525,21 @@ class PagesTest(unittest.TestCase):
         self.assertIn("Page not found", text)
         self.assertIn("Back to all sites", text)
 
+    def test_the_way_back_to_the_site_list_is_always_in_reach(self):
+        """ホームページのサーバーの下: 広い画面はヘッダーの最初、スマホは下のタブバーの最初のタブ（どのページも）。"""
+        home = {"homepage.home": "/"}
+        arrow = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 5.5 4.5 12l6.5 6.5"/></svg>'
+        for path, environ in (("/", home), ("/leaderboard", {**home, **VISITOR}), ("/nowhere", home)):
+            with self.subTest(path=path):
+                text = self.get(path, lang="en-GB", environ_base=environ).get_data(as_text=True)
+                back = f'href="/" title="Back to all sites" aria-label="Back to all sites">{arrow}<span>All sites</span></a>'
+                self.assertIn(f'<div class="bar">\n<a class="home-link" {back}\n<a class="brand"', text)
+                self.assertRegex(text, r'<nav class="tabs" aria-label="Menu">\n+<a class="home-tab" ' + re.escape(back))
+        # ひとりで動くとき（PC アプリ、テスト）は無い
+        alone = self.get("/").get_data(as_text=True)
+        self.assertNotIn("home-link", alone)
+        self.assertNotIn("home-tab", alone)
+
     def test_settings_are_the_owners(self):
         self.assertEqual(self.get("/settings").status_code, 200)
         self.assertEqual(self.get("/settings", environ_base=VISITOR).status_code, 404)

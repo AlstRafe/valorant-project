@@ -260,6 +260,48 @@ main h2 {
   height: 1.6rem;
   fill: var(--val);
 }
+/* サイト一覧（ホームページのサーバー）へ戻る道（home-page docs/CONVENTIONS.md「サイト一覧へ戻る道」）:
+   いつも押せる所に、いつも言葉つきで（矢印だけにしない）。広い画面はヘッダーの最初（ヘッダーは上に留まる）、
+   スマホは下のタブバーの最初のタブ（.home-tab、ほかのタブと同じ形で、罫で分ける）。 */
+.home-link {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  align-self: stretch;
+  gap: 0.4rem;
+  padding: 0 0.9rem 0 0;
+  border-right: 1px solid var(--rule);
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.home-link:hover {
+  color: var(--accent);
+}
+.home-link svg,
+.home-tab svg {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .home-link svg {
+    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .home-link:hover svg {
+    transform: translateX(-3px);
+  }
+}
+.tabs .home-tab {
+  display: none;
+}
 /* ページのタブ: バーの高さいっぱいの文字。開いているページは下の罫に乗る赤い線。 */
 .tabs {
   display: flex;
@@ -572,6 +614,48 @@ main h2 {
   }
 }
 
+/* サイト一覧へ戻る道の場所（ホームページのサーバーの下だけ。一番長い日本語と英語、持ち主の 6 つのタブで測った）:
+   1101px から: ヘッダーはページの列より左右に最大 4rem 広がる（列の外の余白から。縦のスクロールバーの分は残す。
+   エージェント選択と試合のページ .live-wide は列自体が広いので広げない）。
+   941〜1100px: 戻る道は矢印の下に言葉（タブバーのタブと同じ形）、サイト名は隠してロゴだけ。
+   761〜940px: そのうえタブも絵の下に言葉。 */
+@media (min-width: 1101px) {
+  body:not(:has(.live-wide)) .top:has(.home-link) {
+    --wider: clamp(0px, (100vw - 62rem) / 2 - 1.25rem, 4rem);
+    margin-inline: calc(-1rem - var(--wider));
+  }
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .home-link {
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.1rem;
+    padding-right: 0.7rem;
+    font-size: 0.68rem;
+    line-height: 1.15;
+  }
+  .bar:has(.home-link) .brand span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+@media (min-width: 761px) and (max-width: 940px) {
+  .bar:has(.home-link) .tabs a {
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.1rem;
+    font-size: 0.72rem;
+    line-height: 1.15;
+  }
+  .bar:has(.home-link) .tabs a[aria-current] {
+    box-shadow: inset 0 -3px 0 var(--val);
+  }
+}
+
 /* スマホ: ページは下のタブバー（入力中、キーボードが出ている間は隠す）。 */
 @media (max-width: 760px) {
   :root {
@@ -607,6 +691,45 @@ main h2 {
   .typing .tabs {
     display: none;
   }
+  .home-link {
+    display: none;
+  }
+  /* 戻る道のぶん、タブを詰める（名前は 1 行のまま: 長い名前のタブが広く、短い名前のタブが狭くなる。
+     日本語の持ち主の 6 つ、英語の Leaderboard で 360px に入る） */
+  .tabs:has(> .home-tab) {
+    padding-inline: 0.2rem;
+  }
+  .tabs:has(> .home-tab) a {
+    padding-inline: 0.2rem;
+  }
+  .tabs a.home-tab {
+    display: flex;
+    flex: 0 0 4rem;
+    padding-inline: 0.1rem;
+    border-right: 1px solid var(--rule);
+    color: var(--ink);
+    font-size: 0.68rem;
+    line-height: 1.15;
+    text-align: center;
+    white-space: normal;
+  }
+}
+/* 持ち主（ライブのタブもある 7 つ）の 390px より狭いスマホ: タブの名前を少し小さく */
+@media (max-width: 389px) {
+  .tabs:has(> .home-tab):has(> .live-tab) a:not(.home-tab) {
+    font-size: 0.66rem;
+  }
+}
+/* 360px より狭いスマホ: サイトのタブは開いているページのほかは絵だけ（名前は読み上げに残る） */
+@media (max-width: 359px) {
+  .tabs:has(> .home-tab) a:not(.home-tab, [aria-current]) > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 @media (max-width: 30rem) {
   .theme {
@@ -630,15 +753,15 @@ main h2 {
    どの幅でも 5 つ入るところに 6 つ入る（4 言語すべてで測った）。
    点で持ち主のゲームの状態を出す（app.js の liveWatch）。 */
 @media (min-width: 761px) {
-  .tabs:has(> :nth-child(6)) {
+  .tabs:has(> .live-tab) {
     gap: 0.1rem;
   }
-  .tabs:has(> :nth-child(6)) a {
+  .tabs:has(> .live-tab) a {
     padding-inline: 0.35rem;
   }
 }
 @media (min-width: 761px) and (max-width: 940px) {
-  .bar:has(.tabs > :nth-child(6)) .brand span {
+  .bar:has(.live-tab) .brand span {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -648,10 +771,10 @@ main h2 {
   }
 }
 @media (max-width: 760px) {
-  .tabs:has(> :nth-child(6)) {
+  .tabs:has(> .live-tab) {
     padding-inline: 0.2rem;
   }
-  .tabs:has(> :nth-child(6)) a {
+  .tabs:has(> .live-tab) a {
     padding-inline: 0.1rem;
   }
 }
