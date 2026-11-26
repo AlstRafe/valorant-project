@@ -545,7 +545,27 @@ def last_match(app) -> None:
         record["matchInfo"] |= {"matchId": match_id, "gameStartMillis": int(time.time() - 2400) * 1000}
     pd["matches"][match_id] = record
     pd["player"] = helpers.PUUID
-    pd["updates"]["Matches"][0]["MatchID"] = match_id
+    # 今回のセッション（session.py）: 40 分おきの 6 試合（最後がこの試合）、ランクが 1 つ上がり、±0 が 1 つ。
+    # 昨日の 1 試合は、間が開いているので数えない
+    template = pd["updates"]["Matches"][0]
+    tier, rr, rows = 15, 62, []
+    for back, earned in ((0, 18), (1, -14), (2, 21), (3, 0), (4, 23), (5, -9), (30, 15)):
+        after_tier, after_rr = tier, rr
+        rows.append(
+            template
+            | {
+                "MatchID": match_id if back == 0 else f"bbbbbbbb-0000-4000-8000-0000000001{back:02d}",
+                "MatchStartTime": int(time.time() - 2400 - back * 2400) * 1000,
+                "TierAfterUpdate": after_tier,
+                "TierBeforeUpdate": after_tier,
+                "RankedRatingAfterUpdate": after_rr,
+                "RankedRatingEarned": earned,
+            }
+        )
+        rr -= earned
+        if rr < 0:
+            tier, rr = tier - 1, rr + 100
+    pd["updates"]["Matches"] = rows
 
 
 def four_offers(app) -> None:

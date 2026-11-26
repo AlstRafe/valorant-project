@@ -1674,6 +1674,7 @@
       } else return;
       e.preventDefault();
     });
+    savePrefs();
     document.addEventListener(
       "click",
       function (e) {
@@ -1691,6 +1692,45 @@
       },
       true,
     );
+  }
+
+  // 設定の「PC アプリ」: チェックを変えたらその場で保存（アプリの設定はふつう押した瞬間に効く。「保存」を押し忘れて
+  // 通知が来ないことが無いように）。答えのページの「保存しました」かエラーをボタンの横に出す。保存ボタンは隠す。
+  function savePrefs() {
+    var form = document.querySelector("form.app-prefs");
+    if (!form || !window.fetch || !window.FormData || !window.DOMParser) return;
+    var save = form.querySelector('button[name="do"][value="app"]');
+    var said = document.createElement("span");
+    said.className = "prefs-said";
+    said.setAttribute("role", "status");
+    if (save) {
+      save.hidden = true;
+      save.parentNode.appendChild(said);
+    } else form.appendChild(said);
+    var sending = null;
+    form.addEventListener("change", function (e) {
+      if (!e.target.matches || !e.target.matches('input[type="checkbox"][name]')) return;
+      var body = new FormData(form);
+      body.set("do", "app");
+      said.textContent = "";
+      var mine = (sending = fetch(location.pathname, { method: "POST", body: body, credentials: "same-origin" })
+        .then(function (answer) {
+          return answer.text();
+        })
+        .then(function (text) {
+          if (mine !== sending) return;
+          var page = new DOMParser().parseFromString(text, "text/html");
+          var told = page.querySelector('.problem[role="alert"], .done[role="status"]');
+          said.textContent = told ? told.textContent.trim() : "";
+          said.classList.toggle("no", Boolean(told && told.classList.contains("problem")));
+          // 断られた（スタートアップに登録できない）: チェックをページの答えに戻す
+          var back = page.querySelector('form.app-prefs input[name="' + e.target.name + '"]');
+          if (back) e.target.checked = back.checked;
+        })
+        .catch(function () {
+          if (mine === sending) location.reload();
+        }));
+    });
   }
 
   // 移動中のページ: 待ちが感じられるくらい長くなったら上に細いバー（html.leaving、app.css）。

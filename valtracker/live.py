@@ -212,13 +212,14 @@ def _party_count(rows: list[dict], parties: dict) -> tuple[int, int]:
     return sum(bool(row["subject"] and parties.get(row["subject"])) for row in rows), len(rows)
 
 
-def _team_parties(rows: list[dict]) -> list[int]:
-    """チームの席にいるパーティーの人数（大きい順。2 人以上）: 見出しに「パーティー 3人」のように出す。"""
+def _team_parties(rows: list[dict]) -> list[tuple[int, int]]:
+    """チームの席にいるパーティー（2 人以上）の (番号, 人数)、大きい順: 見出しに席と同じ色の番号と
+    「パーティー 3人」を出す（番号だけでは、どの「パーティー 2人」がどの席か分からない）。"""
     sizes: dict[int, int] = {}
     for row in rows:
         if row["party"]:
             sizes[row["party"]] = sizes.get(row["party"], 0) + 1
-    return sorted((size for size in sizes.values() if size >= 2), reverse=True)
+    return sorted(((number, size) for number, size in sizes.items() if size >= 2), key=lambda pair: (-pair[1], pair[0]))
 
 
 def _seconds_since(value, now: float) -> int | None:

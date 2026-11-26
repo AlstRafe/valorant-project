@@ -363,7 +363,9 @@ class DesktopAppTest(unittest.TestCase):
         text = self.client.get("/live").get_data(as_text=True)
         self.assertEqual(text.count('<span class="party p1" title="パーティー 1">'), 2, "the owner's party first")
         self.assertEqual(text.count('<span class="party p2" title="パーティー 2">'), 2, "two strangers together")
-        self.assertIn('<small class="team-party">パーティー 2人</small>', text)
+        self.assertIn(
+            '<small class="team-party"><span class="party p2" aria-hidden="true">2</span>パーティー 2人</small>', text
+        )
         self.assertIn("同じ番号の人は同じパーティーです。", text)
         self.assertNotIn("PC アプリだけに表示されます", text, "this is the app")
         self.assertNotIn("Leak", text, "never the name a presence carries")
