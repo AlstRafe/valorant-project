@@ -1865,6 +1865,27 @@ TEXTS = {
         "en-GB": "See the match you just played",
         "zh-TW": "查看剛才的對戰",
     },
+    "今回のセッション": {"ko": "이번 세션", "en-GB": "This session", "zh-TW": "這次的遊玩"},
+    "{time} から · {count} 試合": {
+        "ko": "{time}부터 · {count}경기",
+        "en-GB": "Since {time} · {count} matches",
+        "zh-TW": "{time} 起 · {count} 場",
+    },
+    "±0 が {count} 試合": {
+        "ko": "±0 {count}경기",
+        "en-GB": "{count} at ±0",
+        "zh-TW": "±0 有 {count} 場",
+    },
+    "次のランクまで {rr} RR": {
+        "ko": "다음 랭크까지 {rr} RR",
+        "en-GB": "{rr} RR to the next rank",
+        "zh-TW": "距離下個牌位 {rr} RR",
+    },
+    "試合ごとの RR（古い順）": {
+        "ko": "경기별 RR(오래된 순)",
+        "en-GB": "RR per match (oldest first)",
+        "zh-TW": "每場的 RR（由舊到新）",
+    },
     "直前の試合": {"ko": "방금 한 경기", "en-GB": "The match you just played", "zh-TW": "剛才的對戰"},
     "全員のスコアボードは試合終了の数分後に見られます。": {
         "ko": "전체 점수판은 경기 종료 몇 분 뒤에 볼 수 있습니다.",

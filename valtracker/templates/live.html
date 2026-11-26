@@ -23,6 +23,22 @@
 <li{% if phase == 'ingame' %} aria-current="step"{% endif %}><strong>{{ t('対戦中') }}</strong><span>{{ t('全員のエージェントとランク') }}</span></li>
 </ol>
 {%- endmacro %}
+{% macro session_box() -%}
+{% if play_session %}
+{#- 続けてプレイしたコンペティティブの勝敗と RR（session.py）: 次の試合の前に、今日の調子と次のランクまでを 1 目で #}
+{% set run = play_session %}
+<section class="play-session" aria-labelledby="session-title">
+<h2 id="session-title">{{ t('今回のセッション') }} <small>{{ t('{time} から · {count} 試合', time=run.started.strftime('%H:%M'), count=run.matches|length) }}</small></h2>
+<div class="session-sum">
+<p class="session-net"><strong class="{{ 'up' if run.net > 0 else ('down' if run.net < 0 else '') }}">{{ '%+d'|format(run.net) if run.net else '±0' }}</strong><span>RR</span></p>
+<p class="session-record"><strong>{{ t('{wins}勝 {losses}敗', wins=run.wins, losses=run.losses) }}</strong>{% if run.even %}<small>{{ t('±0 が {count} 試合', count=run.even) }}</small>{% endif %}</p>
+<p class="session-rank">{% if run.rank.icon %}<img src="{{ media(run.rank.icon) }}" alt="" width="40" height="40">{% endif %}<span><strong>{{ run.rank.name }}</strong> <span>{{ run.rr }} RR</span>{% if run.to_next is not none %}<small>{{ t('次のランクまで {rr} RR', rr=run.to_next) }}</small>{% endif %}</span></p>
+</div>
+{% if run.to_next is not none %}<progress class="rr-bar session-bar" max="100" value="{{ [run.rr, 100]|min }}" aria-label="RR {{ run.rr }} / 100"></progress>{% endif %}
+<ol class="session-games" aria-label="{{ t('試合ごとの RR（古い順）') }}">{% for row in run.matches %}<li class="{{ 'up' if row.change > 0 else ('down' if row.change < 0 else 'even') }}">{% if row.link %}<a href="{{ row.link }}">{% else %}<span>{% endif %}<strong>{{ '%+d'|format(row.change) if row.change else '±0' }}</strong><small>{{ row.when }}</small>{% if row.link %}</a>{% else %}</span>{% endif %}</li>{% endfor %}</ol>
+</section>
+{% endif %}
+{%- endmacro %}
 {% block title %}{{ t('ライブ') }} · {{ site_name }}{% endblock %}
 {% block main %}
 {#- agent select and a match: the whole lobby in one screen (the page as wide as the window lets it, the rows
@@ -76,6 +92,7 @@
 <p class="note">{{ t('全員のスコアボードは試合終了の数分後に見られます。') }}</p>
 </section>
 {% elif last_match and not playing %}<p class="last-match"><a class="button quiet" href="{{ last_match }}">{{ t('直前の試合を見る') }}</a> <small>{{ t('試合終了の数分後から見られます。') }}</small></p>{% endif %}
+{% if not phase %}{{ session_box() }}{% endif %}
 {% if not phase %}
 <p class="note">{% if running is none %}{{ t('ゲームの状態を取得できませんでした。') }}{% else %}{{ t('VALORANT を起動すると、ここからキューを開始できます。') }}{% endif %}</p>
 {% if account and account.linked %}
@@ -124,7 +141,7 @@
 {% if phase == 'pregame' %}
 <div class="live-cols pregame-cols">
 <section class="live-ally" aria-labelledby="ally-title">
-<h2 id="ally-title">{{ t('味方') }}{% if average %} <small class="team-average">{{ t('平均 {rank}', rank=average.name) }}</small>{% endif %}{% for size in parties|sort(reverse=true) %} <small class="team-party">{{ t('パーティー {count}人', count=size) }}</small>{% endfor %}</h2>
+<h2 id="ally-title">{{ t('味方') }}{% if average %} <small class="team-average">{{ t('平均 {rank}', rank=average.name) }}</small>{% endif %}{% for size in parties %} <small class="team-party"><span class="party p{{ (loop.index - 1) % 5 + 1 }}" aria-hidden="true">{{ loop.index }}</span>{{ t('パーティー {count}人', count=size) }}</small>{% endfor %}</h2>
 <ul class="seats">{% for row in players %}{{ person(row) }}{% endfor %}</ul>
 {% if enemy_size %}<p class="note">{{ t('相手は {locked} / {size} 人が確定', locked=enemy_locked, size=enemy_size) }}</p>{% endif %}
 </section>
@@ -160,7 +177,7 @@
 <div class="live-cols">
 {% for team in teams %}
 <section aria-labelledby="team-{{ loop.index }}">
-<h2 id="team-{{ loop.index }}">{{ t('味方') if team.ours else t('相手') }}{% if team.average %} <small class="team-average">{{ t('平均 {rank}', rank=team.average.name) }}</small>{% endif %}{% for size in team.parties %} <small class="team-party">{{ t('パーティー {count}人', count=size) }}</small>{% endfor %}</h2>
+<h2 id="team-{{ loop.index }}">{{ t('味方') if team.ours else t('相手') }}{% if team.average %} <small class="team-average">{{ t('平均 {rank}', rank=team.average.name) }}</small>{% endif %}{% for number, size in team.parties %} <small class="team-party"><span class="party p{{ (number - 1) % 5 + 1 }}" aria-hidden="true">{{ number }}</span>{{ t('パーティー {count}人', count=size) }}</small>{% endfor %}</h2>
 <ul class="seats">{% for row in team.players %}{{ person(row) }}{% endfor %}</ul>
 </section>
 {% endfor %}
@@ -170,7 +187,7 @@
 {% if names_missing %}<p class="note">{{ t('名前を読み込めませんでした。') }}</p>{% endif %}
 {% if playing and (parties or not desktop or party_known < party_total) %}<p class="note">{% if parties %}{{ t('同じ番号の人は同じパーティーです。') }} {% endif %}{% if not desktop %}{{ t('相手や野良のパーティーは PC アプリだけに表示されます（サイトでわかるのは自分のパーティーだけです）。') }}{% elif party_known < party_total %}{{ t('パーティーの確認中: {total} 人中 {known} 人（Riot クライアントから届きしだい表示します）。', total=party_total, known=party_known) }}{% endif %}</p>{% endif %}
 {% if hidden_names %}<p class="note">{{ t('パーティー外の非公開プレイヤーは名前を表示しません。') }}</p>{% endif %}
-{% if phase == 'menus' %}{{ steps() }}{% endif %}
+{% if phase == 'menus' %}{{ session_box() }}{{ steps() }}{% endif %}
 {% if not playing %}<p class="note">{% if desktop %}{{ t('ゲームの状態に合わせて自動で更新されます。') }}{% else %}{{ t('数秒ごとに自動で更新されます。') }}{% endif %}</p>{% endif %}
 {% endif %}
 </div>

@@ -501,7 +501,9 @@ class OwnerTest(unittest.TestCase):
         text = self.page("/live")
         self.assertIn('id="last-title"', text)
         self.assertNotIn(" RR</span>", text)
-        self.assertFalse([url for _, url, _, _ in self.riot.asked if "competitiveupdates" in url], "not asked for")
+        # 結果の RR は聞かない（今回のセッションが聞く 1 回だけ）
+        self.assertEqual(self.app.config["VAL_LAST_RESULT"]["rr_tries"], 0, "not asked for")
+        self.assertLessEqual(len([url for _, url, _, _ in self.riot.asked if "competitiveupdates" in url]), 1)
 
     def test_nothing_explained_again_during_a_match(self):
         """エージェント選択と試合: ロビーが画面を占める。ページが何をするかは、
@@ -716,7 +718,9 @@ class OwnerTest(unittest.TestCase):
         self.assertIn('Secret<span class="tag">#9999</span>', text, "a party member who hides their name")
         # 持ち主と仲間に同じ番号（1）: サイトでわかるのは持ち主のパーティーだけ
         self.assertEqual(text.count('<span class="party p1" title="パーティー 1">'), 2, "the owner and the member")
-        self.assertIn('<small class="team-party">パーティー 2人</small>', text)
+        self.assertIn(
+            '<small class="team-party"><span class="party p1" aria-hidden="true">1</span>パーティー 2人</small>', text
+        )
         self.assertIn("同じ番号の人は同じパーティーです。", text)
         self.assertIn("相手や野良のパーティーは PC アプリだけに表示されます", text, "the site knows only the owner's")
         self.assertNotIn("Teammate", text, "someone outside the party who hides their name")

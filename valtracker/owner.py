@@ -27,6 +27,7 @@ from valtracker import friends as friends_page
 from valtracker import i18n, pdmatch, security
 from valtracker import live as live_page
 from valtracker import progress as progress_page
+from valtracker import session as play_session
 from valtracker.activity import LINE_QUEUES
 from valtracker.collection import CHARM, STARTERS
 from valtracker.content import media_path
@@ -46,6 +47,8 @@ LAST_PLAYED_EVERY = 120
 #: Riot からの最後の試合の結果（_last_result）: 最大 RESULT_TRIES 回、
 #: RESULT_EVERY 秒に 1 回まで聞く（試合が終わって数秒で出る。射撃場には無い）。少しあとに書かれる RR も同じ。
 RESULT_EVERY, RESULT_TRIES = 12.0, 8
+#: 「今回のセッション」（_session）のために持ち主の RR の記録を聞き直す間隔。
+SESSION_EVERY = 120
 IDENTITY = {"cards": "PlayerCardID", "titles": "PlayerTitleID"}
 #: /live のボタンを押した後の文: （文, うまくいったか）。
 LIVE_SAID = {
@@ -193,9 +196,42 @@ def _last_result(match_id: str) -> dict | None:
             kept["rr"] = riot.rr_updates(region, puuid)["changes"].get(match_id)
         if kept["rr"]:
             archive.keep_rr(puuid, {match_id: kept["rr"]})
+            told = current_app.config.get("VAL_SESSION") or {}
+            if told.get("puuid") == puuid:  # 今回のセッションにすぐ入る（聞き直しを待たない）
+                told["changes"] = {**told.get("changes", {}), match_id: kept["rr"]}
     row = match_row(match, player, {match_id: kept["rr"]} if kept["rr"] else {})
     row["score"] = match_score(row["line"], row["rounds"], row["queue_id"], row["tier"], row["result"]["won"])
     return row
+
+
+def _session() -> dict | None:
+    """/live の「今回のセッション」（session.summary）: ゲームをプレイしているアカウントの最近のコンペティティブの
+    試合と RR。Riot に聞くのは SESSION_EVERY 秒に 1 回まで（ページは数秒ごとに読み直す）。各試合へのリンクと、
+    今のランクの名前と絵を付ける。"""
+    riot = current_app.config["VAL_RIOT"]
+    status, puuid = riot.status(game=True), riot.me(game=True)
+    if not puuid:
+        return None
+    region = status["shard"] if status["shard"] in REGIONS else "ap"
+    kept = current_app.config.setdefault("VAL_SESSION", {})
+    now = time.time()
+    if kept.get("puuid") != puuid or now - kept.get("asked", 0.0) >= SESSION_EVERY:
+        changes = kept.get("changes", {}) if kept.get("puuid") == puuid else {}
+        with contextlib.suppress(RiotError):
+            changes = riot.rr_updates(region, puuid)["changes"]
+        kept.clear()
+        kept |= {"puuid": puuid, "asked": now, "changes": changes}
+    found = play_session.summary(kept["changes"], now)
+    if found is None:
+        return None
+    me = f"{status['name']}#{status['tag']}" if status["name"] and status["tag"] else None
+    for row in found["matches"]:
+        row["link"] = url_for("match", region=region, match_id=row["id"], me=me) if UUID.fullmatch(row["id"]) else ""
+        row["when"] = datetime.fromtimestamp(row["at"], JST).strftime("%H:%M")
+    tier = current_app.config["VAL_CONTENT"].tiers(g.lang).get(found["tier"]) or {}
+    name = str(tier.get("tierName") or "")
+    found["rank"] = {"name": name.title() if name.isupper() else name, "icon": tier.get("smallIcon")}
+    return found
 
 
 def _match_link(match_id: str) -> str:
@@ -436,6 +472,7 @@ def register(app: Flask) -> None:
             live_state=live_page.state(found, current_app.config["VAL_CONTENT"], g.lang),
             last_match=_match_link(last),
             last_result=_last_result(last) if found.get("phase") not in ("pregame", "ingame") else None,
+            play_session=_session() if found.get("phase") not in ("pregame", "ingame") else None,
             # ゲームが閉じた: 持ち主のほかのページへのリンク（アカウントは設定ページと同じく読む）
             account=shown if not found.get("phase") else None,
             game_account=f"{playing['name']}#{playing['tag']}" if other else "",
