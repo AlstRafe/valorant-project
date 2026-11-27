@@ -208,7 +208,10 @@ class WorldTest(unittest.TestCase):
         self.assertIn('src="/pic/lolesports/teams/th.png"', text)
         self.assertIn('src="/pic/lolesports/leagues/1789037825209_valorant-logo.png"', text, "http:// made https")
         self.assertNotIn("Only one", text)
-        self.assertEqual(text.count('data-team="TBD"'), 2, "each match once")
+        self.assertEqual(
+            text.count('<div class="team-row tbd">'), 2, "each match once (a team not decided yet: 未定, no star)"
+        )
+        self.assertNotIn('data-team="TBD"', text)
         self.assertLess(text.index("北アメリカ"), text.index("Team Heretics"), "by time")
         self.assertEqual(self.fetch.henrik_calls(), [], "no HenrikDev call for the schedule")
         self.assertTrue(any(url == "https://valorantesports.com/ja-JP/schedule" for url, _ in self.fetch.asked))

@@ -841,6 +841,7 @@ TEXTS = {
         "en-GB": "e.g. patch, agent",
         "zh-TW": "例：更新、特務",
     },
+    "未定": {"ko": "미정", "en-GB": "TBD", "zh-TW": "未定"},
     "お気に入りチームのみ": {"ko": "즐겨찾는 팀만", "en-GB": "My teams only", "zh-TW": "只看我的最愛隊伍"},
     "大会": {
         "ko": "대회",
