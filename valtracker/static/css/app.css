@@ -7021,13 +7021,15 @@ a.smurf:hover {
 }
 
 /* ── トップページ: 製品ページ（Home Page の portal.css と同じ形） ─────────────────────────────────────────────
-   最初の区画は中身の高さだけ: サイト名（見出し）、何ができるかの文、検索、このブラウザーのプレイヤー。
+   最初の区画は画面いっぱい（スクロールで奥へ下がる）: サイト名（見出し）、何ができるかの文、検索、このブラウザーのプレイヤー。
    そのあと 1 区画に 1 つのこと: 機能の名前（見出し）→ 具体的な 2〜3 文 → 青い入口と「›」→ 画面の見本。
    標語の見出し・飾りの大きな数字・中央ぞろえはやめた（2026-11-27「全部 AI っぽい」）。どの幅でも左ぞろえ。
    区画どうしは背景の色（--bg / --alt / 黒い面）と余白で分け、線や枠では分けない。 */
 .opening {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  min-height: min(46rem, calc(100svh - var(--nav) - var(--tabbar)));
   margin-top: -1rem;
   padding: clamp(3rem, 1.5rem + 5vw, 6rem) 0 clamp(3rem, 2rem + 3vw, 4.5rem);
 }
@@ -7502,9 +7504,18 @@ a.smurf:hover {
   html {
     scroll-behavior: smooth;
   }
-  /* トップ: 開いたとき、最初の区画がひとまとまりで一度だけ現れる */
-  .opening-in {
-    animation: arrive 0.7s var(--settle) both;
+  /* トップ: 開いたとき、サイト名・文・検索・プレイヤーが時間差で一度だけ現れる */
+  .opening-in > * {
+    animation: arrive 1s var(--settle) both;
+  }
+  .opening-in > :nth-child(3) {
+    animation-delay: 0.12s;
+  }
+  .opening-in > :nth-child(4) {
+    animation-delay: 0.24s;
+  }
+  .opening-in > :nth-child(n + 5) {
+    animation-delay: 0.36s;
   }
   /* ほかのページの題とひとことも、開いたときに一度だけ（ライブは 20 秒ごとに読み直すので除く） */
   main:not([data-page="live"]) > .hero > :is(h1, .lead) {
@@ -7515,6 +7526,66 @@ a.smurf:hover {
   }
 
   @supports (animation-timeline: view()) {
+    /* ...ページが進むと、最初の区画は奥へ下がって消える */
+    .opening {
+      view-timeline: --opening block;
+    }
+    .opening-in {
+      animation: step-back linear both;
+      animation-timeline: --opening;
+      animation-range: exit 0% exit 90%;
+    }
+    /* 区画の見出しは下から幕が上がるように現れ、文と入口は少し遅れて薄く現れるだけ（全部を同じ「下からふわっ」にしない） */
+    .feature > :is(.eyebrow, .headline) {
+      animation: uncover var(--follow) both;
+      animation-timeline: view();
+      animation-range: entry 5% cover 25%;
+    }
+    .feature > :is(.desc, .go, .aside, .accounts) {
+      animation: fade linear both;
+      animation-timeline: view();
+      animation-range: entry 15% cover 32%;
+    }
+    /* タイルは上下から組み上がる（隣どうしで向きを変える） */
+    :is(.tiles, .me-links) li,
+    main[data-page="tools"] .tool-grid li {
+      animation: assemble var(--follow) both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+    :is(.tiles, .me-links) li:nth-child(even),
+    main[data-page="tools"] .tool-grid li:nth-child(even) {
+      animation-name: assemble-down;
+    }
+    :is(.tiles, .me-links) li:nth-child(n + 3),
+    main[data-page="tools"] .tool-grid li:nth-child(n + 3) {
+      animation-range: entry 0% cover 28%;
+    }
+    /* 文の多いページ（ツール、ヘルプ、ゲームのデータ）: 節の見出しは入ってくるときに少しせり上がる */
+    main:is(
+        [data-page="tools"],
+        [data-page="help_page"],
+        [data-page="agents"],
+        [data-page="maps"],
+        [data-page="weapons"]
+      )
+      > section:not(.hero)
+      > h2 {
+      animation: rise-small var(--follow) both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+    @media (min-width: 64rem) {
+      /* 文の横で: 戦績の見本は右の窓の端から入って止まる */
+      .feature.split {
+        view-timeline: --split block;
+      }
+      .feature.split > .view {
+        animation: from-edge var(--follow) both;
+        animation-timeline: --split;
+        animation-range: entry 0% entry 75%;
+      }
+    }
     /* 画面の見本は小さめから大きくなり、ページより少し遅れて上がる（視差） */
     .feature > .view {
       animation: grow var(--follow) both;
@@ -7570,6 +7641,50 @@ a.smurf:hover {
   from {
     opacity: 0;
     transform: translateY(1.25rem);
+  }
+}
+@keyframes step-back {
+  to {
+    opacity: 0;
+    transform: translateY(-3rem) scale(0.94);
+  }
+}
+@keyframes rise-small {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes assemble {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem) scale(0.94);
+  }
+}
+@keyframes assemble-down {
+  from {
+    opacity: 0;
+    transform: translateY(-1.5rem) scale(0.94);
+  }
+}
+@keyframes uncover {
+  from {
+    clip-path: inset(100% -0.3em -0.3em -0.3em);
+    transform: translateY(0.5em);
+  }
+  to {
+    clip-path: inset(-0.3em);
+  }
+}
+@keyframes from-edge {
+  from {
+    opacity: 0.3;
+    transform: translateX(10rem);
   }
 }
 @keyframes grow {
