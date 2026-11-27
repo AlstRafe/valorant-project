@@ -3703,6 +3703,14 @@ body:has(main > .feature) .foot {
 .team-row.won .team-name {
   font-weight: 800;
 }
+/* 勝ち上がり待ちの枠（API の「TBD」）は「未定」と薄く。ロゴの場所は点線の枠だけ、お気に入りの星は出さない */
+.team-row.tbd {
+  color: var(--soft);
+}
+.team-row.tbd .no-logo {
+  border: 1px dashed var(--line);
+  background: none;
+}
 .wins {
   min-width: 1.4rem;
   font-size: 1.1rem;
@@ -7018,7 +7026,7 @@ a.smurf:hover {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   margin-top: -1rem;
-  padding: clamp(2.25rem, 1rem + 3vw, 3.75rem) 0 clamp(2.5rem, 1.5rem + 3vw, 4rem);
+  padding: clamp(3rem, 1.5rem + 5vw, 6rem) 0 clamp(3rem, 2rem + 3vw, 4.5rem);
 }
 .opening-in > * {
   max-width: 46rem;
@@ -7045,9 +7053,9 @@ a.smurf:hover {
   align-items: center;
   gap: 0.3em;
   margin: 0;
-  font-size: clamp(2.2rem, 1.4rem + 2.8vw, 3.5rem);
-  line-height: 1.08;
-  letter-spacing: -0.02em;
+  font-size: clamp(2.75rem, 1.2rem + 5.5vw, 5.5rem);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
 }
 .opening h1 svg {
   flex: none;
@@ -7059,8 +7067,8 @@ a.smurf:hover {
   max-width: 40rem;
   margin-top: 1rem;
   color: var(--ink);
-  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.1rem);
-  line-height: 1.8;
+  font-size: clamp(1.05rem, 0.95rem + 0.45vw, 1.25rem);
+  line-height: 1.75;
 }
 .opening .search {
   max-width: 36rem;
@@ -7159,7 +7167,7 @@ a.smurf:hover {
 /* 1 区画に 1 つのこと。画面いっぱいの幅（本文の余白の分だけ外へ）、上下に大きな余白 */
 .feature {
   margin-inline: calc(var(--pad) * -1);
-  padding: clamp(3rem, 1.5rem + 5vw, 5.5rem) var(--pad);
+  padding: clamp(4rem, 2rem + 7vw, 8.5rem) var(--pad);
   scroll-margin-top: var(--nav);
 }
 .feature.band {
@@ -7172,18 +7180,18 @@ a.smurf:hover {
 }
 .headline {
   margin: 0;
-  font-size: clamp(1.8rem, 1.2rem + 2.2vw, 2.75rem);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  font-size: clamp(2.25rem, 1.1rem + 4vw, 4.25rem);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
 }
 .eyebrow + .headline {
   margin-top: 0.4rem;
 }
 .feature .desc {
   max-width: 40rem;
-  margin: 1rem 0 0;
-  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.1rem);
-  line-height: 1.8;
+  margin: 1.25rem 0 0;
+  font-size: clamp(1.05rem, 0.95rem + 0.4vw, 1.2rem);
+  line-height: 1.75;
 }
 .feature .aside {
   max-width: 40rem;

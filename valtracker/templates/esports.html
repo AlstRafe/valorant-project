@@ -31,12 +31,14 @@
 {% for game in games %}<li class="game {{ game.state }}">
 <p class="game-head">{% if game.state == 'inProgress' %}<span class="live">{{ t('試合中') }}</span>{% elif game.when %}<time datetime="{{ game.when.iso }}">{{ game.when.text }}</time>{% endif %}<span>{% set icon = picture(game.league.icon) %}{% if icon %}<img src="{{ icon }}" alt="" width="20" height="20" loading="lazy">{% endif %}{% if game.tournament and game.league.name and game.tournament.startswith(game.league.name) %}{{ game.tournament }}{% else %}{{ game.league.name }}{% if game.tournament %} · {{ game.tournament }}{% endif %}{% endif %}{% if game.best_of %} · Bo{{ game.best_of }}{% endif %}</span></p>
 <div class="teams">
-{% for team in game.teams %}<div class="team-row{% if team.won %} won{% endif %}" data-team="{{ team.name }}">
+{% for team in game.teams %}{% if team.name|upper in ('TBD', 'TBA', '') %}<div class="team-row tbd">
+<span class="no-logo" aria-hidden="true"></span><span class="team-name">{{ t('未定') }}</span>
+</div>{% else %}<div class="team-row{% if team.won %} won{% endif %}" data-team="{{ team.name }}">
 {% set logo = picture(team.icon) %}{% if logo %}<img src="{{ logo }}" alt="" width="28" height="28" loading="lazy">{% else %}<span class="no-logo" aria-hidden="true">{{ team.code[:3] }}</span>{% endif %}
 <span class="team-name">{{ team.name }}</span>
 <button type="button" class="star" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.5 2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/></svg><span class="sr">{{ t('{team} をお気に入りに追加', team=team.name) }}</span></button>
 {% if game.state != 'unstarted' %}<strong class="wins">{{ team.wins }}</strong>{% endif %}
-</div>
+</div>{% endif %}
 {% endfor %}</div>
 {% if game.vod and game.state == 'completed' %}<p class="vod"><a href="{{ game.vod }}" rel="noopener" target="_blank">{{ t('試合の動画') }}</a></p>{% endif %}
 </li>

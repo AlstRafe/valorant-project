@@ -641,7 +641,7 @@
       var names = marked();
       list.querySelectorAll(".game").forEach(function (game) {
         var any = false;
-        game.querySelectorAll(".team-row").forEach(function (row) {
+        game.querySelectorAll(".team-row[data-team]").forEach(function (row) {
           var name = row.getAttribute("data-team");
           var on = names.indexOf(name) >= 0;
           any = any || on;
