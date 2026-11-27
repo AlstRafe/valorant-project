@@ -20,7 +20,7 @@ Riot アカウントと連携する VALORANT のトラッカー。サイト一�
   （.headline）、説明（.desc）、行き先（.go: 青いボタン + ›）、画面の見本（.view と .view-rows）
 - 動き: スクロールに合わせた CSS だけ（`animation-timeline: view()`、`@supports` と `prefers-reduced-motion: no-preference`
   の中）。JS の動きは無し、常に動き続けるものも無し。動きを止めても読める。数字の多いページ（戦績・試合・ライブ・比較）は
-  見出しだけ。PC アプリの窓は動きを減らす設定で開くので、アプリでは動かない
+  見出しだけ。PC アプリも同じ動き（Windows の「アニメーション効果」に従う）。ただしアプリではライブの点を点滅させない
 - 改行（Home Page の CONVENTIONS.md「改行」と同じ）: 日本語・中国語は文節の間だけで折る。描いたページの文（タグの間の
   文字だけ。属性・スクリプト・タイトル・入力欄はそのまま）に、サーバーが文節の間の `<wbr>` を入れる
   （`valtracker/phrases`、Google BudouX のモデル。`__init__.py` の after_request。単体テストは `VAL_PHRASES` を切って
@@ -381,7 +381,7 @@ PD の答えの形は公開されていないので、読めなかったもの�
   `MATCHMADE_GAME_STARTING`）、起動・終了、Riot のプッシュ（ares-parties / ares-pregame / ares-core-game）を受け、
   `/live/next`（ロングポーリング、25 秒）でページに伝える。ページは知らせが来たらすぐ読み直す（いつもの間隔の読み直しも残す）。
   GLZ の session は聞かない（プレゼンスでわかる）。ゲームが閉じていれば Riot には何も聞かない
-- 負荷: 優先度「通常以下」＋効率モード＋メモリ優先度低、WebView2 は `--disable-gpu --force-prefers-reduced-motion`、
+- 負荷: 優先度「通常以下」＋効率モード＋メモリ優先度低、WebView2 は `--disable-gpu`（動きはスクロール中だけ描く CSS、点滅なし）、
   ウィンドウが隠れている間は何も読まない、前面に出ない、活動の収集（`VAL_COLLECT_SECONDS`）は 0
 - 守り: 127.0.0.1 だけで待ち、Host が自分のアドレスでない要求は 403（DNS リバインディング）。二重起動しない（ミューテックス。
   2 度目の起動は、題名と WinForms のウィンドウクラスで自分のウィンドウを見つけて前に出すだけ。アプリが自分から前に出るのは
