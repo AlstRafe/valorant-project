@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{#- トップページ: 全サイト共通の「製品ページ」（Home Page の docs/CONVENTIONS.md）。最初の区画は画面の高さいっぱいの
-    検索と、このブラウザーのお気に入り・最近見たプレイヤー。そのあと 1 区画に 1 つのこと: 持ち主のアカウント、
-    プレイヤーの戦績（パソコン幅では画面の見本を固定し、その横を数字の事実が通る）、PC アプリ（黒い面）、
-    ゲームのデータ、ほかの機能。区画は背景の色で分ける（--bg と --alt を交互に）。動きは app.css の最後。 #}
+{#- トップページ: 全サイト共通の「製品ページ」（Home Page の docs/CONVENTIONS.md）。最初の区画はサイト名と何が
+    できるかの文、検索、このブラウザーのお気に入り・最近見たプレイヤー。そのあと 1 区画に 1 つのこと: 持ち主の
+    アカウント、プレイヤーの戦績（パソコン幅では画面の見本が右）、PC アプリ（黒い面）、ゲームのデータ、ほかの機能。
+    見出しは機能の名前だけ（標語にしない、2026-11-27）。区画は背景の色で分ける。動きは app.css の最後。 #}
 {% macro chev(href, words, outside=false) -%}
 <a class="chev" href="{{ href }}"{% if outside %} rel="noopener noreferrer" target="_blank"{% endif %}>{{ words }}<span aria-hidden="true">›</span></a>
 {%- endmacro %}
@@ -10,9 +10,8 @@
 <section class="opening" aria-labelledby="top-title">
 <div class="opening-in">
 <div class="notice-box" data-load="{{ url_for('status_notice') }}" data-quiet hidden></div>
-<p class="eyebrow"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 6h6l6 13 6-13h6L19 27h-6z"/></svg>{{ site_name }}</p>
-<h1 id="top-title"><span class="ph">{{ t('Riot ID ひとつで、') }}</span>{% if lang in ('ko', 'en-GB') %} {% endif %}<span class="ph">{{ t('通算の記録まで。') }}</span></h1>
-<p class="lead">{{ t('ランク、最近の試合、エージェント別・マップ別の成績を、Riot ID を入れるだけで。')|phrases }}</p>
+<h1 id="top-title"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 6h6l6 13 6-13h6L19 27h-6z"/></svg>{{ site_name }}</h1>
+<p class="lead">{{ t('Riot ID（名前#タグ）を入れると、ランク、最近の試合、エージェント別・マップ別の成績が出ます。一度読んだ試合は消さずに残すので、通算の数字も見られます。')|phrases }}</p>
 {% if no_key %}<p class="app-update first-key"><strong>{{ t('HenrikDev の API キーが未設定です。') }}</strong> {{ t('プレイヤー検索に必要です（無料）。ライブ・ショップ・所持品はキーなしで使えます。') }} <a href="{{ url_for('settings') }}">{{ t('キーを設定') }}</a></p>
 {% endif %}<form class="search" action="{{ url_for('search') }}" method="get" role="search">
 <label for="q" class="sr">{{ t('Riot ID') }}</label>
@@ -58,9 +57,8 @@
 {% endif %}
 
 <section class="feature split{% if not me %} band{% endif %}" id="stats" aria-labelledby="stats-title">
-<p class="eyebrow">{{ t('プレイヤーの戦績') }}</p>
-<h2 class="headline" id="stats-title">{{ t('1 試合ずつ、ゲームより深く。')|phrases }}</h2>
-<p class="desc">{{ t('KAST、ファーストキル、クラッチ、キルとデスの場所。同じランク帯の中での位置も。')|phrases }}</p>
+<h2 class="headline" id="stats-title">{{ t('プレイヤーの戦績') }}</h2>
+<p class="desc">{{ t('KAST、ファーストキル、クラッチ、キルとデスの場所まで出します。最近の試合はゲームのキャリアと同じ 15 試合、それより前も読んだ分は通算に入れ、同じランク帯の中で上位何 % かも見られます。')|phrases }}</p>
 <p class="go"><a class="open" href="#q">{{ t('プレイヤー検索') }}</a>{{ chev(url_for('help_page') ~ '#numbers', t('用語集')) }}</p>
 <div class="view">
 <div class="view-bar"><b>{{ t('プレイヤーのページ') }}</b><span>{{ t('Riot ID を入れるだけ') }}</span></div>
@@ -73,16 +71,10 @@
 <li><b>{{ t('シーズン別の成績') }}</b><span>{{ t('前のアクトからの変化')|phrases }}</span></li>
 </ol>
 </div>
-<ul class="facts">
-<li><b>15</b><span>{{ t('直近の試合を、ゲームのキャリアと同じ数だけ')|phrases }}</span></li>
-<li><b>{{ t('通算') }}</b><span>{{ t('読んだ試合はすべて残して数える')|phrases }}</span></li>
-<li><b>{{ t('上位 %') }}</b><span>{{ t('同じランク帯のプレイヤーと比べて')|phrases }}</span></li>
-</ul>
 </section>
 
 <section class="feature plate" id="app" aria-labelledby="app-title">
-<p class="eyebrow">{{ t('ライブ') if desktop else t('PC アプリ') }}</p>
-<h2 class="headline" id="app-title">{{ t('試合の横に、もうひとつの画面。')|phrases }}</h2>
+<h2 class="headline" id="app-title">{{ t('ライブ') if desktop else t('PC アプリ') }}</h2>
 <p class="desc">{% if desktop %}{{ t('ゲームと連動して、キュー開始とエージェント選択ができます。')|phrases }}{% else %}{{ t('Windows 用アプリです。VALORANT をプレイする PC で使うと、サイトにはない機能が使えます。')|phrases }}{% endif %}</p>
 <p class="go">{% if desktop %}<a class="open" href="{{ url_for('live') }}">{{ t('ライブ') }}</a>{{ chev(url_for('help_page') ~ '#app', t('できること')) }}{% else %}<a class="open" href="{{ url_for('help_page') }}#app">{{ t('できること') }}</a>{% endif %}</p>
 <div class="view">
@@ -98,8 +90,7 @@
 </section>
 
 <section class="feature band" id="game" aria-labelledby="data-title">
-<p class="eyebrow">{{ t('ゲームのデータ') }}</p>
-<h2 class="headline" id="data-title">{{ t('試合の前に、知っておく。')|phrases }}</h2>
+<h2 class="headline" id="data-title">{{ t('ゲームのデータ') }}</h2>
 <p class="desc">{{ t('ピック率と勝率、マップのコールアウトと攻守の勝率、武器のダメージと TTK。')|phrases }}</p>
 <p class="go"><a class="open" href="{{ url_for('agents') }}">{{ t('エージェント') }}</a>{{ chev(url_for('agent_stats'), t('ピック率と勝率')) }}</p>
 <ul class="tool-grid tiles">
@@ -111,8 +102,7 @@
 </section>
 
 <section class="feature" id="more" aria-labelledby="more-title">
-<p class="eyebrow">{{ t('その他の機能') }}</p>
-<h2 class="headline" id="more-title">{{ t('ランキングから、クロスヘアまで。')|phrases }}</h2>
+<h2 class="headline" id="more-title">{{ t('その他の機能') }}</h2>
 <p class="go"><a class="open" href="{{ url_for('tools') }}">{{ t('すべてのツール') }}</a></p>
 <div class="view">
 <ol class="view-rows links-rows">
