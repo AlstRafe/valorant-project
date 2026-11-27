@@ -7010,16 +7010,15 @@ a.smurf:hover {
 }
 
 /* ── トップページ: 製品ページ（Home Page の portal.css と同じ形） ─────────────────────────────────────────────
-   最初の区画は画面の高さいっぱい: サイト名、大きな見出し、ひとこと、検索、このブラウザーのプレイヤー。
-   そのあと 1 区画に 1 つのこと: 名前（VALORANT の赤）→ 大きな見出し → 1〜2 文 → 青い入口と「›」→ 画面の見本 →
-   大きな数字の事実。区画どうしは背景の色（--bg / --alt / 黒い面）と余白で分け、線や枠では分けない。 */
+   最初の区画は中身の高さだけ: サイト名（見出し）、何ができるかの文、検索、このブラウザーのプレイヤー。
+   そのあと 1 区画に 1 つのこと: 機能の名前（見出し）→ 具体的な 2〜3 文 → 青い入口と「›」→ 画面の見本。
+   標語の見出し・飾りの大きな数字・中央ぞろえはやめた（2026-11-27「全部 AI っぽい」）。どの幅でも左ぞろえ。
+   区画どうしは背景の色（--bg / --alt / 黒い面）と余白で分け、線や枠では分けない。 */
 .opening {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  align-content: center;
-  min-height: min(46rem, calc(100svh - var(--nav) - var(--tabbar)));
   margin-top: -1rem;
-  padding: clamp(2.5rem, 1rem + 5vw, 5rem) 0 clamp(3.5rem, 2rem + 5vw, 6rem);
+  padding: clamp(2.25rem, 1rem + 3vw, 3.75rem) 0 clamp(2.5rem, 1.5rem + 3vw, 4rem);
 }
 .opening-in > * {
   max-width: 46rem;
@@ -7040,24 +7039,32 @@ a.smurf:hover {
   height: 1.3em;
   fill: currentColor;
 }
+/* 見出しはサイト名そのもの（文字は --ink、V の印だけ VALORANT の赤） */
 .opening h1 {
-  margin-top: 0.75rem;
-  font-size: clamp(2.2rem, 0.8rem + 7vw, 6rem);
+  display: flex;
+  align-items: center;
+  gap: 0.3em;
+  margin: 0;
+  font-size: clamp(2.2rem, 1.4rem + 2.8vw, 3.5rem);
   line-height: 1.08;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
 }
-/* 見出しの句（「Riot ID ひとつで、」）が 1 行に入る幅: 46rem（ほかの行）では最大の字で読点だけが次の行に落ちた */
-.opening-in > h1 {
-  max-width: 64rem;
+.opening h1 svg {
+  flex: none;
+  width: 0.85em;
+  height: 0.85em;
+  fill: var(--val);
 }
 .opening .lead {
-  max-width: 38rem;
-  margin-top: 1.3rem;
-  font-size: clamp(1.05rem, 0.95rem + 0.5vw, 1.3rem);
+  max-width: 40rem;
+  margin-top: 1rem;
+  color: var(--ink);
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.1rem);
+  line-height: 1.8;
 }
 .opening .search {
   max-width: 36rem;
-  margin-top: clamp(1.75rem, 1rem + 2vw, 2.5rem);
+  margin-top: 1.5rem;
 }
 .opening .search input {
   min-height: 3.25rem;
@@ -7152,7 +7159,7 @@ a.smurf:hover {
 /* 1 区画に 1 つのこと。画面いっぱいの幅（本文の余白の分だけ外へ）、上下に大きな余白 */
 .feature {
   margin-inline: calc(var(--pad) * -1);
-  padding: clamp(4.5rem, 2rem + 8vw, 9rem) var(--pad);
+  padding: clamp(3rem, 1.5rem + 5vw, 5.5rem) var(--pad);
   scroll-margin-top: var(--nav);
 }
 .feature.band {
@@ -7164,16 +7171,19 @@ a.smurf:hover {
   color: var(--ink);
 }
 .headline {
-  margin: 0.6rem 0 0;
-  font-size: clamp(2.1rem, 1.1rem + 4vw, 4.25rem);
-  line-height: 1.12;
-  letter-spacing: -0.025em;
+  margin: 0;
+  font-size: clamp(1.8rem, 1.2rem + 2.2vw, 2.75rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.eyebrow + .headline {
+  margin-top: 0.4rem;
 }
 .feature .desc {
   max-width: 40rem;
-  margin: 1.25rem 0 0;
-  color: var(--soft);
-  font-size: clamp(1.05rem, 0.95rem + 0.4vw, 1.25rem);
+  margin: 1rem 0 0;
+  font-size: clamp(1rem, 0.95rem + 0.25vw, 1.1rem);
+  line-height: 1.8;
 }
 .feature .aside {
   max-width: 40rem;
@@ -7358,6 +7368,28 @@ a.smurf:hover {
   width: 1px;
   background: var(--line);
 }
+/* 順番に意味のない一覧には番号を付けない（飾りの 01・02… は「AI っぽさ」の一つだった、2026-11-27）。
+   1 列目は PC アプリの場面の点（.flow）にだけ使う */
+.view-rows:not(.flow) li::before,
+.view-rows a::before {
+  content: "";
+}
+.view-rows:not(.flow) li,
+.view-rows a {
+  grid-template-columns: 0 minmax(0, 1fr);
+  padding-left: 0.6rem;
+}
+.view-rows a {
+  grid-template-columns: 0 minmax(0, 1fr) auto;
+}
+@media (min-width: 40rem) {
+  .view-rows:not(.flow) li {
+    grid-template-columns: 0 minmax(0, 1fr) minmax(0, 1.2fr);
+  }
+  .view-rows a {
+    grid-template-columns: 0 minmax(0, 1fr) minmax(0, 1.2fr) auto;
+  }
+}
 .flow li::before {
   content: "";
   align-self: center;
@@ -7421,34 +7453,7 @@ a.smurf:hover {
   }
 }
 
-/* 中くらいから広い画面: 製品ページのように中央ぞろえ（スマホは左ぞろえ: 中央ぞろえの長い文は読みにくい） */
-@media (min-width: 48rem) {
-  .opening,
-  .feature > :is(.eyebrow, .headline, .desc, .go, .aside) {
-    text-align: center;
-  }
-  .opening-in > *,
-  .feature > :is(.desc, .aside) {
-    margin-inline: auto;
-  }
-  :is(.opening, .feature) :is(.eyebrow, .go),
-  .opening .search {
-    justify-content: center;
-  }
-  .opening .search {
-    margin-inline: auto;
-  }
-  /* 中央ぞろえの文は行の長さをそろえる（1 行目だけ長く、2 行目に 2〜3 語、にならないように） */
-  .opening .lead,
-  .feature > :is(.desc, .aside) {
-    text-wrap: balance;
-  }
-  .me-box .accounts {
-    justify-content: center;
-  }
-}
-
-/* 広い画面の戦績の区画: 文を左に、画面の見本を右の窓の端まで広げて固定し、その横を数字の事実が 1 つずつ通り過ぎる */
+/* 広い画面の戦績の区画: 文を左に、画面の見本を右の窓の端まで広げる */
 @media (min-width: 64rem) {
   .feature.split {
     display: grid;
@@ -7472,22 +7477,8 @@ a.smurf:hover {
   .feature.split > .view {
     grid-column: visual-start / full-end;
     grid-row: 1 / -1;
-    position: sticky;
-    top: calc(var(--nav) + 3rem);
     margin-top: 0;
     border-right: 0;
-  }
-  .feature.split > .facts {
-    display: block;
-    margin-top: 0;
-  }
-  .feature.split .facts li {
-    margin-top: clamp(4rem, 18vh, 11rem);
-    padding: 0;
-    border-left: 0;
-  }
-  .feature.split .facts b {
-    font-size: clamp(3rem, 1.5rem + 3vw, 4.5rem);
   }
 }
 
@@ -7500,29 +7491,9 @@ a.smurf:hover {
   html {
     scroll-behavior: smooth;
   }
-  /* トップ: 開いたとき、名前、見出しの句、ひとこと、検索、プレイヤーの順に時間差で現れる */
-  .opening .eyebrow,
-  .opening h1 .ph,
-  .opening-in > :is(.lead, .search, .hint, .mine, .app-update) {
-    animation: arrive 1.1s var(--settle) both;
-  }
-  .opening h1 .ph:nth-child(1) {
-    animation-delay: 0.12s;
-  }
-  .opening h1 .ph:nth-child(2) {
-    animation-delay: 0.26s;
-  }
-  .opening-in > .lead {
-    animation-delay: 0.42s;
-  }
-  .opening-in > :is(.search, .app-update) {
-    animation-delay: 0.52s;
-  }
-  .opening-in > .hint {
-    animation-delay: 0.6s;
-  }
-  .opening-in > .mine {
-    animation-delay: 0.7s;
+  /* トップ: 開いたとき、最初の区画がひとまとまりで一度だけ現れる */
+  .opening-in {
+    animation: arrive 0.7s var(--settle) both;
   }
   /* ほかのページの題とひとことも、開いたときに一度だけ（ライブは 20 秒ごとに読み直すので除く） */
   main:not([data-page="live"]) > .hero > :is(h1, .lead) {
@@ -7533,29 +7504,6 @@ a.smurf:hover {
   }
 
   @supports (animation-timeline: view()) {
-    /* ...ページが進むと、最初の区画は奥へ下がって消える */
-    .opening {
-      view-timeline: --opening block;
-    }
-    .opening-in {
-      animation: step-back linear both;
-      animation-timeline: --opening;
-      animation-range: exit 0% exit 90%;
-    }
-    /* 区画の名前・見出し・文・入口は、上がってくるにつれて下からせり上がる */
-    .feature > :is(.eyebrow, .headline, .desc, .go, .aside, .accounts) {
-      animation: rise var(--follow) both;
-      animation-timeline: view();
-      animation-range: entry 10% cover 30%;
-    }
-    /* 黒い面の見出しは、下から幕が上がるように現れる */
-    .feature.plate > .headline {
-      animation:
-        rise var(--follow) both,
-        uncover var(--follow) both;
-      animation-timeline: view();
-      animation-range: entry 10% cover 35%;
-    }
     /* 画面の見本は小さめから大きくなり、ページより少し遅れて上がる（視差） */
     .feature > .view {
       animation: grow var(--follow) both;
@@ -7605,96 +7553,12 @@ a.smurf:hover {
       animation-timeline: --step;
       animation-range: cover 30% cover 40%;
     }
-    /* タイルは上下から組み上がる（隣どうしで向きを変える） */
-    :is(.tiles, .me-links) li,
-    main[data-page="tools"] .tool-grid li {
-      animation: assemble var(--follow) both;
-      animation-timeline: view();
-      animation-range: entry 0% cover 22%;
-    }
-    :is(.tiles, .me-links) li:nth-child(even),
-    main[data-page="tools"] .tool-grid li:nth-child(even) {
-      animation-name: assemble-down;
-    }
-    :is(.tiles, .me-links) li:nth-child(n + 3),
-    main[data-page="tools"] .tool-grid li:nth-child(n + 3) {
-      animation-range: entry 0% cover 28%;
-    }
-    /* 数字の事実は 1 つずつ下から、大きな数字は下から現れる */
-    .facts li {
-      animation: rise var(--follow) both;
-      animation-timeline: view();
-      animation-range: entry 0% cover 24%;
-    }
-    .facts li:nth-child(2) {
-      animation-range: entry 0% cover 30%;
-    }
-    .facts li:nth-child(3) {
-      animation-range: entry 0% cover 36%;
-    }
-    .facts b {
-      animation: uncover var(--follow) both;
-      animation-timeline: view();
-      animation-range: entry 0% cover 30%;
-    }
-    /* 文の多いページ（ツール、ヘルプ、ゲームのデータ）: 節の見出しは入ってくるときに少しせり上がる */
-    main:is(
-        [data-page="tools"],
-        [data-page="help_page"],
-        [data-page="agents"],
-        [data-page="maps"],
-        [data-page="weapons"]
-      )
-      > section:not(.hero)
-      > h2 {
-      animation: rise-small var(--follow) both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 100%;
-    }
-
-    @media (min-width: 64rem) {
-      /* 文の横で: 見本は右の端から入って止まり、数字は画面の中央を通るときだけ明るくなる */
-      .feature.split {
-        view-timeline: --split block;
-      }
-      .feature.split > .view {
-        animation: from-edge var(--follow) both;
-        animation-timeline: --split;
-        animation-range: entry 0% entry 75%;
-      }
-      .feature.split .facts li {
-        animation: pass-by linear both;
-        animation-timeline: view();
-        animation-range: cover 5% cover 95%;
-      }
-      .feature.split .facts b {
-        animation: none;
-      }
-    }
   }
 }
 @keyframes arrive {
   from {
     opacity: 0;
     transform: translateY(1.25rem);
-  }
-}
-@keyframes step-back {
-  to {
-    opacity: 0;
-    transform: translateY(-3rem) scale(0.94);
-  }
-}
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(2.25rem);
-  }
-}
-@keyframes rise-small {
-  from {
-    opacity: 0;
-    transform: translateY(1rem);
   }
 }
 @keyframes grow {
@@ -7709,26 +7573,6 @@ a.smurf:hover {
     transform: translateX(-1.75rem);
   }
 }
-@keyframes assemble {
-  from {
-    opacity: 0;
-    transform: translateY(1.5rem) scale(0.94);
-  }
-}
-@keyframes assemble-down {
-  from {
-    opacity: 0;
-    transform: translateY(-1.5rem) scale(0.94);
-  }
-}
-@keyframes uncover {
-  from {
-    clip-path: inset(100% -0.3em -0.3em -0.3em);
-  }
-  to {
-    clip-path: inset(-0.3em);
-  }
-}
 @keyframes draw {
   from {
     transform: scaleY(0);
@@ -7737,26 +7581,5 @@ a.smurf:hover {
 @keyframes light {
   to {
     background: var(--link);
-  }
-}
-@keyframes from-edge {
-  from {
-    opacity: 0.3;
-    transform: translateX(10rem);
-  }
-}
-@keyframes pass-by {
-  0% {
-    opacity: 0.12;
-    transform: translateY(2rem);
-  }
-  38%,
-  62% {
-    opacity: 1;
-    transform: none;
-  }
-  100% {
-    opacity: 0.12;
-    transform: translateY(-1.5rem);
   }
 }
