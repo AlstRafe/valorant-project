@@ -46,9 +46,11 @@ from pathlib import Path
 from valtracker import NAME, create_app, pc, release, update
 from valtracker.localclient import LocalClient, moment
 
-#: ウィンドウのエンジンに伝えること: グラフィックカード無し、
-#: アニメーション無し（サイトの prefers-reduced-motion のルール）。
-BROWSER_ARGUMENTS = "--disable-gpu --force-prefers-reduced-motion --disable-features=ElasticOverscroll"
+#: ウィンドウのエンジンに伝えること: グラフィックカード無し（VALORANT の GPU を使わない）。
+#: 動きはサイトと同じ（2026-11-28、「ウェブの Apple みたいな動作がない」）: スクロールに結び付けた CSS だけで、
+#: スクロールしている間しか描かない。Windows の「アニメーション効果」をオフにした人には prefers-reduced-motion で止まる。
+#: ひとりでに動き続けるもの（ライブの点の点滅）はアプリでは止める（app.css の body.app）。
+BROWSER_ARGUMENTS = "--disable-gpu --disable-features=ElasticOverscroll"
 #: ウィンドウの最初の大きさと最小の大きさ（760 px 未満でサイトのスマホ向けレイアウト）。
 SIZE, SMALLEST = (1180, 860), (400, 560)
 #: 画面でウィンドウの下に空けておく場所: Windows のタスクバー。
